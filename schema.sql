@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     placa VARCHAR(20),
     estado VARCHAR(30) NOT NULL,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS personas_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS personas_solicitud (
     identificacion BIGINT NOT NULL,
     cargo VARCHAR(100),
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. Tabla Hija: Equipos de Cómputo asociados
 CREATE TABLE IF NOT EXISTS equipos_solicitud (
@@ -38,4 +38,4 @@ CREATE TABLE IF NOT EXISTS equipos_solicitud (
     modelo VARCHAR(50) NOT NULL,
     serie VARCHAR(100) NOT NULL,
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
-);
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

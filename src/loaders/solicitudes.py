@@ -1,6 +1,6 @@
 from typing import TypedDict, List
 from config import settings
-from src.loaders import guardar_solicitud_bd
+from src.loaders.solicitudes_loaders import guardar_solicitud_bd, UPDATE_solicitud_bd, GET_solicitud_bd, DELETE_solicitud_bd
 
 LISTA_SOLICITUDES = []
 #========================================================
@@ -70,7 +70,7 @@ def crear_solicitud(
         "doc_adjuntos": doc_adjuntos,
         
         # Estado Inicial del Flujo
-        "estado": settings.ESTADO_EN_REVISION,
+        "estado": settings.ESTADO_ENVIADO,
         
         "aprobaciones": {
             "SST": {"evaluado": False, "aprobado": False, "comentario": ""},
@@ -89,4 +89,64 @@ def crear_solicitud(
 
     respuesta_bd = guardar_solicitud_bd(nueva_solicitud)    
     
+    return respuesta_bd
+
+def editar_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
+
+    """
+    Permite editar la solicitud ÚNICAMENTE si su estado actual es 'ENVIADO'.
+    Si ya pasó a 'EN REVISION' o cualquier otro estado, bloquea la edición.
+    """
+    
+    # 1. Consultar el estado actual en la base de datos
+    actual = GET_solicitud_bd(solicitud_id)
+    if not actual["exito"]:
+        return actual
+
+    estado_actual = actual["datos"]["estado"]
+
+    ESTADO_PERMITIDO = getattr(settings, "ESTADO_ENVIADO", "ENVIADO")
+
+    if estado_actual != ESTADO_PERMITIDO:
+        return {
+            "exito": False, 
+            "mensaje": f"No se puede modificar la solicitud #{solicitud_id}. "
+                       f"Estado actual: '{estado_actual}'. Solo se permite editar cuando está en '{ESTADO_PERMITIDO}'."
+        }
+
+    # Formatear la placa a mayúsculas si viene en los datos
+    if "vehiculo" in datos_actualizados and "placa" in datos_actualizados["vehiculo"]:
+        datos_actualizados["vehiculo"]["placa"] = datos_actualizados["vehiculo"]["placa"].upper()
+
+    return UPDATE_solicitud_bd(solicitud_id, datos_actualizados)
+
+def eliminar_solicitud(solicitud_id: int) -> dict:
+
+    """
+    Permite eliminar una solicitud.
+    Aplica reglas de negocio antes de borrar en la base de datos.
+    """
+
+    # Verificar si la solicitud existe y en qué estado está
+    actual = GET_solicitud_bd(solicitud_id)
+    if not actual.get("exito"):
+        return actual
+
+    estado_actual = actual["datos"]["estado"]
+
+    estado_aprovado = getattr(settings, "ESTADO_APROVADO", "APROVADO")
+    estado_revision = getattr(settings, "ESTADO_EN_REVISION", "EN REVISION")
+
+    if estado_actual in [estado_aprovado, estado_revision]:
+        return {
+            "exito": False,
+            "mensaje": f"No se puede eliminar la solicitud #{solicitud_id} porque ya ha sido APROBADA o se encuentra en REVISIÓN."
+        }
+
+    respuesta_bd = DELETE_solicitud_bd(solicitud_id)
+    
+    if respuesta_bd.get("exito"):
+        global LISTA_SOLICITUDES
+        LISTA_SOLICITUDES = [s for s in LISTA_SOLICITUDES if s["id"] != solicitud_id]
+
     return respuesta_bd

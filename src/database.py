@@ -6,7 +6,8 @@ DB_CONFIG = {
     'host' : 'localhost',
     'user' : 'root',
     'password' : 'root',
-    'database' : 'incarsa_ingresos'
+    'database' : 'incarsa_ingresos',
+    'charset' : 'utf8mb4'
 
 }
 

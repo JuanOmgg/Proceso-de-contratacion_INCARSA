@@ -1,0 +1,1 @@
+from .solicitudes_extractor import extraer_solicitud_desde_json

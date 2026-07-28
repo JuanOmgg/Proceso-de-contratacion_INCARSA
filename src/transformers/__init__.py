@@ -1,0 +1,2 @@
+
+from .solicitudes_transform import transformar_solicitud
