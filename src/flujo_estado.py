@@ -1,5 +1,6 @@
 from typing import TypedDict, List
 from config import settings
+from src.loaders import guardar_solicitud_bd
 
 LISTA_SOLICITUDES = []
 #========================================================
@@ -11,7 +12,7 @@ class equipoComputo(TypedDict):
 
 class personaIngreso(TypedDict):
     item:str
-    Ap_nombre: str
+    ap_nombre: str
     tipo_doc: str
     identificacion:int
     cargo: str
@@ -28,7 +29,8 @@ def crear_solicitud(
     
     empresa: str,
     planta_a_visitar:str,
-    fecha:str,
+    fechaInicio:str,
+    fechaFin: str,
     actividad:str,
     tipo_vehiculo:str,
     placa:str,
@@ -54,7 +56,8 @@ def crear_solicitud(
         "tipo_de_persona": tipo_de_persona,
         "empresa_contratista": empresa,
         "planta_a_visitar": planta_a_visitar,
-        "fecha_ingreso": fecha,
+        "fecha_inicio": fechaInicio,
+        "fecha_fin" : fechaFin,
         "actividad": actividad,
 
         "vehiculo": {
@@ -84,9 +87,6 @@ def crear_solicitud(
     print(f"   Personas registradas: {len(personas)} | Equipos: {len(eq_computo)}")
     print(f"==================================================")
 
-    return {
-        "exito"   : True,
-        "mensaje" : f"solicitud #{nuevo_id} fue creada con exito por {empresa}.", 
-        "data"    : nueva_solicitud
-    } 
+    respuesta_bd = guardar_solicitud_bd(nueva_solicitud)    
     
+    return respuesta_bd
