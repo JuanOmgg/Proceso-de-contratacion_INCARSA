@@ -39,3 +39,32 @@ CREATE TABLE IF NOT EXISTS equipos_solicitud (
     serie VARCHAR(100) NOT NULL,
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_rol VARCHAR(50) NOT NULL UNIQUE,
+    descripcion VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar los roles oficiales del sistema
+INSERT INTO roles (nombre_rol, descripcion) VALUES
+('Administrador', 'Control total del sistema, gestión de usuarios y configuraciones'),
+('Gestion_documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
+('SST', 'Seguridad y Salud en el Trabajo - Revisión en paralelo'),
+('GESCO', 'Gestión Comunal / Social - Revisión en paralelo'),
+('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
+ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    nombres VARCHAR(50) NOT NULL,
+    apellidos VARCHAR(50) NOT NULL,
+    tipo_documento VARCHAR(50) NOT NULL,
+    num_documento BIGINT NOT NULL UNIQUE,
+    num_telefono BIGINT NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE,
+    contrasena VARCHAR(250) NOT NULL,
+    id_rol INT  NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

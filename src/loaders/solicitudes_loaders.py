@@ -1,11 +1,11 @@
-from src.database import obtener_conexion
+from src.database import GET_conexion
 
-def guardar_solicitud_bd(solicitud: dict) -> dict:
+def SAVE_solicitud_bd(solicitud: dict) -> dict:
 
-    conexion = obtener_conexion()
+    conexion = GET_conexion()
 
     if not conexion:
-        return {"exito": False, "mensaje": "No se pudo establecer conexion con la base de datos"}
+        return {"exito": False, "mensaje": "No se pudo establecer conexión con la base de datos"}
 
     cursor = conexion.cursor()
 
@@ -68,7 +68,7 @@ def guardar_solicitud_bd(solicitud: dict) -> dict:
         # Confirmar la transacción completa en la Base de Datos
         conexion.commit() #Todo lo ejecutado en este bloque es correcto, se guarda permanentemente en el disco
         
-        print(f"✅ Solicitud #{solicitud_id} guardada con éxito en la Base de Datos MySQL.")
+        print(f"✅ La solicitud #{solicitud_id} guardada con éxito en la Base de Datos.")
         return {
             "exito": True,
             "mensaje": f"Solicitud #{solicitud_id} registrada exitosamente.",
@@ -88,7 +88,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
 
     """Obtiene una solicitud completa (con sus personas y equipos) por ID."""
 
-    conexion = obtener_conexion()
+    conexion = GET_conexion()
     if not conexion:
         return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
 
@@ -119,7 +119,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
 
 def UPDATE_solicitud_bd(solicitud_id: int, datos_nuevos: dict) -> dict:
 
-    conexion = obtener_conexion()
+    conexion = GET_conexion()
     if not conexion:
         return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
 
@@ -148,7 +148,7 @@ def UPDATE_solicitud_bd(solicitud_id: int, datos_nuevos: dict) -> dict:
     cursor = conexion.cursor()
 
     try:
-        # 1. Actualizar la tabla Padre (solicitudes)
+        
         sql_solicitud = """
             UPDATE solicitudes SET
                 empresa_origen = %s,
@@ -211,27 +211,23 @@ def UPDATE_solicitud_bd(solicitud_id: int, datos_nuevos: dict) -> dict:
         
         conexion.commit()
 
-        print(f"✅ Solicitud #{solicitud_id} actualizada con éxito en MySQL.")
-        return {"exito": True, "mensaje": f"Solicitud #{solicitud_id} actualizada correctamente."}
+        print(f"✅✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos. ✅✅")
+        return {"exito": True, "mensaje": f"✅✅ Solicitud #{solicitud_id} actualizada correctamente. ✅✅"}
 
     except Exception as e:
         conexion.rollback()
-        print(f"❌ Error al actualizar la solicitud #{solicitud_id}: {e}")
-        return {"exito": False, "mensaje": f"Error al actualizar en la base de datos: {e}"}
+        print(f"❌❌ Error al actualizar la solicitud #{solicitud_id}: {e} ❌❌")
+        return {"exito": False, "mensaje": f"❌❌ Error al actualizar en la base de datos: {e} ❌❌"}
 
     finally:
         cursor.close()
         conexion.close()
 
 def DELETE_solicitud_bd(solicitud_id: int) -> dict:
-    """
-    Elimina una solicitud por ID. 
-    Nota: Las tablas personas y equipos se eliminan automáticamente 
-    gracias al 'ON DELETE CASCADE' que configuramos en MySQL.
-    """
-    conexion = obtener_conexion()
+
+    conexion = GET_conexion()
     if not conexion:
-        return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
+        return {"exito": False, "mensaje": "❌❌ Sin conexión a la Base de Datos ❌❌"}
 
     cursor = conexion.cursor()
     try:
@@ -240,13 +236,16 @@ def DELETE_solicitud_bd(solicitud_id: int) -> dict:
         conexion.commit()
 
         if cursor.rowcount == 0:
-            return {"exito": False, "mensaje": f"No existe la solicitud #{solicitud_id} para eliminar."}
+            return {"exito": False, "mensaje": f"❌❌ No existe la solicitud #{solicitud_id} para eliminar. ❌❌"}
 
-        return {"exito": True, "mensaje": f"Solicitud #{solicitud_id} eliminada correctamente de MySQL."}
+        return {"exito": True, "mensaje": f"✅✅ Solicitud #{solicitud_id} eliminada correctamente de la base de datos. ✅✅"}
 
     except Exception as e:
+
         conexion.rollback()
-        return {"exito": False, "mensaje": f"Error al eliminar solicitud: {e}"}
+        return {"exito": False, "mensaje": f"❌❌ Error al eliminar solicitud: {e} ❌❌"}
+    
     finally:
+
         cursor.close()
         conexion.close()

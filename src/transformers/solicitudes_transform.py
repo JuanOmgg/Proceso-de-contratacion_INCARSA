@@ -2,11 +2,7 @@
 from datetime import datetime
 
 def transformar_solicitud(datos_raw: dict) -> dict:
-    """
-    Recibe los datos en sucio de la solicitud, los limpia,
-    los valida y entrega un diccionario listo para el loader.
-    """
-    
+        
     # Limpieza 
     solicitud_limpia = {
         "empresa_origen": datos_raw.get("empresa_origen", "").strip().upper(),

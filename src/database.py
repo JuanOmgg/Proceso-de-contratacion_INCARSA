@@ -11,7 +11,7 @@ DB_CONFIG = {
 
 }
 
-def obtener_conexion():
+def GET_conexion():
 
     try:
         conexion = mysql.connector.connect(**DB_CONFIG)

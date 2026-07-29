@@ -1,6 +1,18 @@
 from typing import TypedDict, List
 from config import settings
-from src.loaders.solicitudes_loaders import guardar_solicitud_bd, UPDATE_solicitud_bd, GET_solicitud_bd, DELETE_solicitud_bd
+from src.loaders.solicitudes_loaders import SAVE_solicitud_bd, UPDATE_solicitud_bd, GET_solicitud_bd, DELETE_solicitud_bd
+from config.settings import (
+
+    ESTADO_ENVIADO, 
+    ESTADO_EN_REVISION, 
+    ESTADO_LISTO_PARA_SEGURIDAD, 
+    ESTADO_APROBADO, 
+    ESTADO_RECHAZADO,
+
+    ROL_SST,
+    ROL_GESCO,
+    ROL_SEGURIDAD_CORP
+)
 
 LISTA_SOLICITUDES = []
 #========================================================
@@ -19,7 +31,7 @@ class personaIngreso(TypedDict):
 
 #========================================================
 
-def crear_solicitud(
+def CREATE_solicitud(
     
     empresa_orig:str, #Para que empresa va
     contratista: str, #nombre del solicitante
@@ -87,11 +99,11 @@ def crear_solicitud(
     print(f"   Personas registradas: {len(personas)} | Equipos: {len(eq_computo)}")
     print(f"==================================================")
 
-    respuesta_bd = guardar_solicitud_bd(nueva_solicitud)    
+    respuesta_bd = SAVE_solicitud_bd(nueva_solicitud)    
     
     return respuesta_bd
 
-def editar_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
+def EDIT_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
 
     """
     Permite editar la solicitud ÚNICAMENTE si su estado actual es 'ENVIADO'.
@@ -120,7 +132,7 @@ def editar_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
 
     return UPDATE_solicitud_bd(solicitud_id, datos_actualizados)
 
-def eliminar_solicitud(solicitud_id: int) -> dict:
+def DELETE_solicitud(solicitud_id: int) -> dict:
 
     """
     Permite eliminar una solicitud.
@@ -150,3 +162,26 @@ def eliminar_solicitud(solicitud_id: int) -> dict:
         LISTA_SOLICITUDES = [s for s in LISTA_SOLICITUDES if s["id"] != solicitud_id]
 
     return respuesta_bd
+
+
+def proceso_evaluo(estado_actual: str, usuario_rol: str, voto_aprobado: bool) -> dict:
+
+    if usuario_rol != ROL_SEGURIDAD_CORP:
+        return {
+            "permitido" : False,
+            "mensaje" : f"Acción denegada: El rol '{usuario_rol}' no corresponde con SEGURIDAD CORPORATIVA Y RIESO"
+        }
+
+    if estado_actual != ESTADO_LISTO_PARA_SEGURIDAD:
+        return{
+            "permmitido" : False,
+            "mensaje" : f"Acción bloqueada: No se puede dar el visto bueno en el estado {estado_actual}. Se reguiere que SST y GESCO aprueben primero."
+        }
+
+    nuevo_estado = ESTADO_APROBADO if voto_aprobado else ESTADO_RECHAZADO
+
+    return{
+        "permitdo" : True,
+        "nuevo_estado" : nuevo_estado,
+        "mensaje" : f"Solicitud {nuevo_estado} con éxito por seguridad corporativa y riesgo"
+    }
