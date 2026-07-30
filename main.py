@@ -13,7 +13,9 @@ def ejecutar_flujo(ruta_json: str = None):
         print(f"📂 Extrayendo datos desde archivo: {ruta_json}")
         datos_raw = extraer_solicitud_desde_json(ruta_json)
     else:
-        print("⚠️ No se proporcionó un archivo JSON válido. Usando datos de prueba (Mock Data)...")
+        print(
+            "⚠️ No se proporcionó un archivo JSON válido. Usando datos de prueba (Mock Data)..."
+        )
         # Diccionario de prueba con datos 'sucios' para probar el transformer
         datos_raw = {
             "empresa_origen": "INCARSA",
@@ -25,33 +27,26 @@ def ejecutar_flujo(ruta_json: str = None):
             "fecha_inicio": "01/08/2026",
             "fecha_fin": "24/08/2026",
             "actividad": "Mantenimiento preventivo en caldera principal",
-            "vehiculo": {
-                "tipo": "Camioneta",
-                "placa": "ABC-123"
-            },
+            "vehiculo": {"tipo": "Camioneta", "placa": "ABC-123"},
             "personas": [
                 {
                     "item": "1",
                     "ap_nombre": "Carlos Mendoza",
                     "tipo_doc": "CC",
                     "identificacion": 1012345678,
-                    "cargo": "Supervisora de Obra"
+                    "cargo": "Supervisora de Obra",
                 },
                 {
                     "item": "2",
                     "ap_nombre": "Ana María Gómez",
                     "tipo_doc": "CC",
                     "identificacion": "1.098.765.432",
-                    "cargo": "Técnico Electricista"
-                }
+                    "cargo": "Técnico Electricista",
+                },
             ],
             "eq_computo": [
-                {
-                    "marca": "Lenovo",
-                    "modelo": "ThinkPad E14",
-                    "serie": "SN-987654321"
-                }
-            ]
+                {"marca": "Lenovo", "modelo": "ThinkPad E14", "serie": "SN-987654321"}
+            ],
         }
 
     if not datos_raw:

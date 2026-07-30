@@ -20,7 +20,9 @@ def probar_conexion_roles():
     print("\n📋 Roles registrados en la Base de Datos:")
     print("=" * 70)
     for r in roles:
-        print(f"  - ID: {r['id_rol']:<2} | Rol: {r['nombre_rol']:<22} | {r['descripcion']}")
+        print(
+            f"  - ID: {r['id_rol']:<2} | Rol: {r['nombre_rol']:<22} | {r['descripcion']}"
+        )
     print("=" * 70)
     print(f"✅ ¡Prueba exitosa! Se consultaron {len(roles)} roles correctamente.")
 

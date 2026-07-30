@@ -2,7 +2,7 @@
 ROL_ADMIN = "Administrador"
 ROL_GESTOR_DOC = "Gestion_documental"
 ROL_SST = "SST"
-ROL_GESCO= "GESCO"
+ROL_GESCO = "GESCO"
 ROL_SEGURIDAD_CORP = "Seguridad corporativa y riesgo"
 
 ROLES_REVISORES_PARALELOS = [ROL_SST, ROL_GESCO]

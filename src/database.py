@@ -2,14 +2,13 @@ import mysql.connector
 from mysql.connector import Error
 
 DB_CONFIG = {
-
-    'host' : 'localhost',
-    'user' : 'root',
-    'password' : 'root',
-    'database' : 'incarsa_ingresos',
-    'charset' : 'utf8mb4'
-
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "incarsa_ingresos",
+    "charset": "utf8mb4",
 }
+
 
 def GET_conexion():
 
