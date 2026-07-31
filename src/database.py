@@ -1,21 +1,27 @@
-import mysql.connector
-from mysql.connector import Error
+import os
+from dbutils.pooled_db import PooledDB
+import pymysql
+from dotenv import load_dotenv
 
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "root",
-    "database": "incarsa_ingresos",
-    "charset": "utf8mb4",
-}
+# Cargar variables desde un archivo .env
+load_dotenv()
+
+# Crear el POOL de conexiones al arrancar la app
+POOL = PooledDB(
+    creator=pymysql,
+    maxconnections=10,  # Máximo de conexiones simultáneas en el pool
+    mincached=2,  # Conexiones mínimas siempre abiertas y listas
+    host=os.getenv("DB_HOST", "localhost"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME"),
+    cursorclass=pymysql.cursors.DictCursor,
+    autocommit=False,
+    blocking=True,  # Si el pool se llena, las nuevas peticiones esperan un instante en vez de fallar
+    ping=7,  # Verifica que la conexión esté viva antes de usarla
+)
 
 
 def GET_conexion():
-
-    try:
-        conexion = mysql.connector.connect(**DB_CONFIG)
-        if conexion.is_connected():
-            return conexion
-    except Error as e:
-        print(f"❌ Error al conectar a MySQL: {e}")
-        return None
+    
+    return POOL.connection()

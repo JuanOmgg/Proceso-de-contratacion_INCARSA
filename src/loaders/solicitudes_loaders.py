@@ -11,6 +11,7 @@ def SAVE_solicitud_bd(solicitud: dict) -> dict:
                 }
             with conexion:
                 with conexion.cursor() as cursor:
+
                     vehiculo = solicitud.get("vehiculo") or {}
                     tipo_vehiculo = vehiculo.get("tipo", "")
                     placa = vehiculo.get("placa", "")
@@ -80,6 +81,8 @@ def SAVE_solicitud_bd(solicitud: dict) -> dict:
                             for eq in equipos
                         ]
                         cursor.executemany(sql_equipo, valores_equipos)
+                        
+                    conexion.commit()
 
         print(f"✅ La solicitud #{solicitud_id} guardada con éxito en la Base de Datos.")
         return {
@@ -103,7 +106,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
             if not conexion:
                     return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
 
-            with conexion.cursor(dictionary=True) as cursor:
+            with conexion.cursor() as cursor:
             
                 # 1. Obtener la solicitud principal
                 cursor.execute("SELECT * FROM solicitudes WHERE id = %s", (solicitud_id,))
@@ -140,125 +143,86 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
     except Exception as e:
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
 
-def UPDATE_solicitud_bd(solicitud_id: int, new_data: dict) -> dict:
-
+def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
     try:
-
         with GET_conexion() as conexion:
             if not conexion:
                 return {
-                    "exito" : False,
-                    "mensaje" : "Sin conexión con la base de datos"
+                    "exito": False,
+                    "mensaje": "Sin conexión con la base de datos",
                 }
 
-            with conexion:
-                with conexion.cursor(dictionary=True) as cursor:  
+            with conexion.cursor() as cursor:
+                personas = campos.pop("personas", None)
+                eq_computo = campos.pop("eq_computo", None)
+                vehiculo = campos.pop("vehiculo", None)
 
-                    cursor.execute("SELECT * FROM solicitudes WHERE id = %s", (solicitud_id,)) # obetenr datos actuales en la misma conexion
-                    datos_actuales = cursor.fetchone()
+                if vehiculo and isinstance(vehiculo, dict):
+                    if "tipo" in vehiculo:
+                        campos["tipo_vehiculo"] = vehiculo["tipo"]
+                    if "placa" in vehiculo:
+                        campos["placa"] = vehiculo["placa"]
 
-                    if not datos_actuales:
-                        return {
-                            "exito": False,
-                            "mensaje": f"Solicitud #{solicitud_id} no encontrada.",
-                        }    
+                if campos:
+                    columnas = [f"{col} = %s" for col in campos.keys()]
+                    sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
+                    valores = list(campos.values()) + [solicitud_id]
+                    cursor.execute(sql_update, valores)
 
-                    # Combinación de datos recibidos con los ya existentes (fallback)
-                    empresa_origen = new_data.get("empresa_origen") or datos_actuales.get("empresa_origen", "")
-                    diligenciado_por = new_data.get("diligenciado_por") or datos_actuales.get("diligenciado_por", "")
-                    nivel_de_riesgo = new_data.get("nivel_de_riesgo") or datos_actuales.get("nivel_de_riesgo", "")
-                    tipo_de_persona = new_data.get("tipo_de_persona") or datos_actuales.get("tipo_de_persona", "")
-                    empresa_contratista = new_data.get("empresa_contratista") or datos_actuales.get("empresa_contratista", "")
-                    planta_a_visitar = new_data.get("planta_a_visitar") or datos_actuales.get("planta_a_visitar", "")
-                    fecha_inicio = new_data.get("fecha_inicio") or datos_actuales.get("fecha_inicio", "")
-                    fecha_fin = new_data.get("fecha_fin") or datos_actuales.get("fecha_fin", "")
-                    actividad = new_data.get("actividad") or datos_actuales.get("actividad", "")
-
-                    vehiculo_nuevo = new_data.get("vehiculo") or {}
-                    tipo_vehiculo = vehiculo_nuevo.get("tipo") or datos_actuales.get("tipo_vehiculo", "")
-                    placa = vehiculo_nuevo.get("placa") or datos_actuales.get("placa", "")
-
-                    sql_solicitud = """
-                        UPDATE solicitudes SET
-                            empresa_origen = %s,
-                            diligenciado_por = %s,
-                            nivel_de_riesgo = %s,
-                            tipo_de_persona = %s,
-                            empresa_contratista = %s,
-                            planta_a_visitar = %s,
-                            fecha_inicio = %s,
-                            fecha_fin = %s,
-                            actividad = %s,
-                            tipo_vehiculo = %s,
-                            placa = %s
-                        WHERE id = %s
-                    """
-                    valores_solicitud = (
-                        empresa_origen,
-                        diligenciado_por,
-                        nivel_de_riesgo,
-                        tipo_de_persona,
-                        empresa_contratista,
-                        planta_a_visitar,
-                        fecha_inicio,
-                        fecha_fin,
-                        actividad,
-                        tipo_vehiculo,
-                        placa,
-                        solicitud_id,
+                if personas is not None:
+                    cursor.execute(
+                        "DELETE FROM personas_solicitud WHERE solicitud_id = %s",
+                        (solicitud_id,),
                     )
-                    cursor.execute(sql_solicitud, valores_solicitud)
-
-                    nuevas_personas = (new_data.get("personas") or [])  # AGREGAR nuevas personas (sin borrar las anteriores)
-                    if nuevas_personas:
-                    # Obtener el último 'item' registrado para esta solicitud
-                        cursor.execute(
-                            "SELECT COALESCE(MAX(item), 0) FROM personas_solicitud WHERE solicitud_id = %s",
-                            (solicitud_id,),
-                        )
-                        ultimo_item = cursor.fetchone()[0]
-
-                        valores_personas = [
-                            (
-                                solicitud_id,
-                                ultimo_item + i,
-                                p.get("ap_nombre", ""),
-                                p.get("tipo_doc", ""),
-                                p.get("identificacion", 0),
-                                p.get("cargo", ""),
-                            )
-                            for i, p in enumerate(nuevas_personas, start=1)
-                        ]
-
-                        sql_persona = """
+                    if personas:
+                        sql_p = """
                             INSERT INTO personas_solicitud (solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo)
                             VALUES (%s, %s, %s, %s, %s, %s)
                         """
-                        cursor.executemany(sql_persona, valores_personas)
+                        valores_p = [
+                            (
+                                solicitud_id,
+                                idx,
+                                p.get("ap_nombre", ""),
+                                p.get("tipo_doc", ""),
+                                str(p.get("identificacion", "")),
+                                p.get("cargo", ""),
+                            )
+                            for idx, p in enumerate(personas, start=1)
+                        ]
+                        cursor.executemany(sql_p, valores_p)
 
-                    # AGREGAR nuevos equipos (sin borrar los anteriores)
-                    nuevos_equipos = new_data.get("eq_computo") or []
-                    if nuevos_equipos:
-                        sql_equipo = """
+                if eq_computo is not None:
+                    cursor.execute(
+                        "DELETE FROM equipos_solicitud WHERE solicitud_id = %s",
+                        (solicitud_id,),
+                    )
+                    if eq_computo:
+                        sql_eq = """
                             INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
                             VALUES (%s, %s, %s, %s)
                         """
-                        valores_equipos = [
+                        valores_eq = [
                             (
                                 solicitud_id,
                                 eq.get("marca", ""),
                                 eq.get("modelo", ""),
                                 eq.get("serie", ""),
                             )
-                            for eq in nuevos_equipos
+                            for eq in eq_computo
                         ]
-                        cursor.executemany(sql_equipo, valores_equipos)
+                        cursor.executemany(sql_eq, valores_eq)
 
-        print(f"✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos.")
-        return {
-            "exito": True,
-            "mensaje": f"Solicitud #{solicitud_id} actualizada correctamente.",
-        }
+            # 💡 El commit DEBE ir dentro del 'with GET_conexion()', antes de cerrar la conexión
+            conexion.commit()
+
+            print(
+                f"✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos."
+            )
+            return {
+                "exito": True,
+                "mensaje": f"Solicitud #{solicitud_id} actualizada correctamente.",
+            }
 
     except Exception as e:
         print(f"❌ Error al actualizar la solicitud #{solicitud_id}: {e}")
@@ -266,30 +230,34 @@ def UPDATE_solicitud_bd(solicitud_id: int, new_data: dict) -> dict:
             "exito": False,
             "mensaje": f"Error al actualizar en la base de datos: {e}",
         }
-
+    
 def DELETE_solicitud_bd(solicitud_id: int) -> dict:
     try:
-
         with GET_conexion() as conexion:
             if not conexion:
-                return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
+                return {
+                    "exito": False,
+                    "mensaje": "Sin conexión a la base de datos",
+                }
 
-            with conexion:
-                with conexion.cursor() as cursor:
+            with conexion.cursor() as cursor:
 
-                    sql = "DELETE FROM solicitudes WHERE id = %s"
-                    cursor.execute(sql, (solicitud_id,))
+                sql = "DELETE FROM solicitudes WHERE id = %s"
+                cursor.execute(sql, (solicitud_id,))
 
-                    if cursor.rowcount == 0:
-                        return {
-                            "exito": False,
-                            "mensaje": f"No existe la solicitud #{solicitud_id} para eliminar.",
-                        }
+                if cursor.rowcount == 0:
+                    return {
+                        "exito": False,
+                        "mensaje": f"No existe la solicitud #{solicitud_id} para eliminar.",
+                    }
+
+            conexion.commit()
 
             return {
                 "exito": True,
-                "mensaje": f"Solicitud #{solicitud_id} eliminada correctamente de la base de datos.",
+                "mensaje": f"Solicitud #{solicitud_id} eliminada correctamente.",
             }
 
     except Exception as e:
+        print(f"❌ Error al eliminar solicitud #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al eliminar solicitud: {e}"}
