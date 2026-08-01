@@ -2,11 +2,11 @@ from fastapi import APIRouter, HTTPException, status
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
     GET_solicitud_bd,
-    SAVE_solicitud_bd,
+    CREATE_solicitud_bd,
     UPDATE_solicitud_bd,
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals
-from src.transformers import transformar_solicitud
+from src.transformers import transformar_solicitud, transformar_solicitud_patch
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
 
@@ -19,7 +19,7 @@ def CREATE_solicitud(payload: SolicitudInput):
     datos_limpios = transformar_solicitud(datos_raw)
 
     print("🚀 [LOADER] Insertando solicitud en MySQL...")
-    resultado = SAVE_solicitud_bd(datos_limpios)
+    resultado = CREATE_solicitud_bd(datos_limpios)
 
     if not resultado.get("exito", False):
         print(f"❌ Error al crear solicitud: {resultado.get('mensaje')}")
@@ -64,12 +64,11 @@ def UPDATE_solicitud(solicitud_id: int, datos_in: UPDATE_Schema_Optionals):
             detail="No se enviaron campos para actualizar."
         )
 
-    if "fecha_inicio" in new_updates or "fecha_fin" in new_updates:
-        print("🗓️ [TRANSFORMER] Normalizando fechas enviadas en el PATCH...")
-        new_updates = transformar_solicitud(new_updates)
+    print(f"⚙️ [TRANSFORMER] Aplicando transformaciones de PATCH para la solicitud #{solicitud_id}...")
+    datos_transformados = transformar_solicitud_patch(new_updates)
 
-    print(f"⚙️ [LOADER] Aplicando cambios en MySQL para la solicitud #{solicitud_id}...")
-    resultado = UPDATE_solicitud_bd(solicitud_id, new_updates)
+    print(f"💾 [LOADER] Aplicando cambios en MySQL para la solicitud #{solicitud_id}...")
+    resultado = UPDATE_solicitud_bd(solicitud_id, datos_transformados)
 
     if not resultado.get("exito"):
         print(f"❌ Error al actualizar solicitud #{solicitud_id}: {resultado.get('mensaje')}")

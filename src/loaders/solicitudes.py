@@ -1,7 +1,7 @@
 from typing import TypedDict, List
 from config import settings
 from src.loaders.solicitudes_loaders import (
-    SAVE_solicitud_bd,
+    CREATE_solicitud_bd,
     UPDATE_solicitud_bd,
     GET_solicitud_bd,
     DELETE_solicitud_bd,
@@ -20,6 +20,9 @@ from config.settings import (
 LISTA_SOLICITUDES = []
 # ========================================================
 
+class vehiculoIngreso(TypedDict):
+    tipo: str
+    placa: str
 
 class equipoComputo(TypedDict):
     marca: str
@@ -48,8 +51,7 @@ def CREATE_solicitud(
     fechaInicio: str,
     fechaFin: str,
     actividad: str,
-    tipo_vehiculo: str,
-    placa: str,
+    vehiculo: List[vehiculoIngreso],
     eq_computo: List[equipoComputo],
     personas: List[personaIngreso],
     doc_adjuntos: List[str],
@@ -67,12 +69,7 @@ def CREATE_solicitud(
         "fecha_inicio": fechaInicio,
         "fecha_fin": fechaFin,
         "actividad": actividad,
-        "vehiculo": {
-            "tipo": tipo_vehiculo,
-            "placa": placa.upper()
-            if placa
-            else "",  # upper() para pasar el texto a mayuscula independientemente si se escribe en minuscula
-        },
+        "vehiculo": vehiculo,
         "eq_computo": eq_computo,
         "personas": personas,
         "doc_adjuntos": doc_adjuntos,
@@ -91,7 +88,7 @@ def CREATE_solicitud(
     print(f"   Personas registradas: {len(personas)} | Equipos: {len(eq_computo)}")
     print(f"==================================================")
 
-    respuesta_bd = SAVE_solicitud_bd(nueva_solicitud)
+    respuesta_bd = CREATE_solicitud_bd(nueva_solicitud)
 
     return respuesta_bd
 
@@ -117,12 +114,6 @@ def EDIT_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
             "mensaje": f"No se puede modificar la solicitud #{solicitud_id}. "
             f"Estado actual: '{estado_actual}'. Solo se permite editar cuando está en '{ESTADO_PERMITIDO}'.",
         }
-
-    # Formatear la placa a mayúsculas si viene en los datos
-    if "vehiculo" in datos_actualizados and "placa" in datos_actualizados["vehiculo"]:
-        datos_actualizados["vehiculo"]["placa"] = datos_actualizados["vehiculo"][
-            "placa"
-        ].upper()
 
     return UPDATE_solicitud_bd(solicitud_id, datos_actualizados)
 

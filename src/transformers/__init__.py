@@ -1,11 +1,18 @@
-from .solicitudes_transform import transformar_solicitud
+from .solicitudes_transform import (
+    transformar_solicitud, 
+    transformar_solicitud_patch
+    )
 from .usuario_transformer import (
-    transform_json_to_create_user_params,
-    transform_user_db_to_response,
+    TRANSFORM_USER,
+    TRANSFORM_USER_FOR_FRONT,
+
 )
+
 
 __all__ = [
     "transformar_solicitud",
-    "transform_json_to_create_user_params",
-    "transform_user_db_to_response",
+    "transformar_solicitud_patch",
+    "TRANSFORM_USER",
+    "TRANSFORM_USER_FOR_FRONT",
 ]
+

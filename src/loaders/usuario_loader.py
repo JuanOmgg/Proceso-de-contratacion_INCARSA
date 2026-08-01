@@ -1,7 +1,7 @@
 from src.database import GET_conexion
+import bcrypt
 
-
-def SAVE_user_db(usuario: dict) -> dict:
+def CREATE_user_db(usuario: dict) -> dict:
 
     try:
         with GET_conexion() as conexion:
@@ -35,6 +35,8 @@ def SAVE_user_db(usuario: dict) -> dict:
                     cursor.execute(sql_user, valores_user)
                     user_id = cursor.lastrowid
 
+                    conexion.commit()  # Confirmar los cambios en la base de datos
+
         print(f"✅✅ El usuario {user_id} fue registrado con éxito. ✅✅")
         return {
             "exito": True,
@@ -49,8 +51,6 @@ def SAVE_user_db(usuario: dict) -> dict:
             "mensaje": f"❌❌ Error en la base de datos : {us} ❌❌",
         }
 
-
-
 def GET_user_db(id_user: int) -> dict:
 
     try:
@@ -60,7 +60,7 @@ def GET_user_db(id_user: int) -> dict:
                     return {"exito": False, "mensaje": "❌❌ Sin conexión a la base de datos ❌❌"}
 
             
-            with conexion.cursor(dictionary=True) as cursor:
+            with conexion.cursor() as cursor:
 
                 sql = """
                     SELECT 
@@ -77,7 +77,7 @@ def GET_user_db(id_user: int) -> dict:
                         r.nombre_rol,
                         r.descripcion AS descripcion_rol
                     FROM usuarios u
-                    INNER JOIN roles r ON u.id_rol = r.id_rol
+                    INNER JOIN roles r ON u.id_rol = r.id
                     WHERE u.id = %s
                 """
 
@@ -99,67 +99,57 @@ def GET_user_db(id_user: int) -> dict:
             "mensaje": f"❌❌ No fue posible encontrar al usuario {e} ❌❌",
         }
 
-def UPDATE_user_db(id_user: int, new_data: dict) -> dict: 
+import bcrypt
+
+
+def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
 
     try:
+        if not new_updates:
+            return {
+                "exito": False,
+                "mensaje": "No hay campos para actualizar.",
+            }
+
+        # 1. Ciframos contraseña si viene en el PATCH
+        if "contrasena" in new_updates and new_updates["contrasena"]:
+            password_plana = str(new_updates["contrasena"])
+            salt = bcrypt.gensalt()
+            new_updates["contrasena"] = bcrypt.hashpw(
+                password_plana.encode("utf-8"), salt
+            ).decode("utf-8")
 
         with GET_conexion() as conexion:
-
             if not conexion:
-                return {"exito": False, "mensaje": "Sin conexión con la base de datos."}
+                return {
+                    "exito": False,
+                    "mensaje": "Sin conexión con la base de datos.",
+                }
 
-            with conexion:
+            with conexion.cursor() as cursor:
+                # 2. Verificar existencia
+                cursor.execute(
+                    "SELECT id FROM usuarios WHERE id = %s", (id_user,)
+                )
+                if not cursor.fetchone():
+                    return {
+                        "exito": False,
+                        "mensaje": f"Usuario {id_user} no encontrado.",
+                    }
 
-                with conexion.cursor(dictionary=True) as cursor:
+                # 3. SQL dinámico: Solo actualiza las columnas enviadas
+                campos_sql = [f"{campo} = %s" for campo in new_updates.keys()]
+                valores = list(new_updates.values())
+                valores.append(id_user)
 
-                    cursor.execute("SELECT * FROM usuarios WHERE id = %s", (id_user,)) # obetenr datos actuales en la misma conexion
-                    data_current = cursor.fetchone()
+                sql_user = (
+                    f"UPDATE usuarios SET {', '.join(campos_sql)} WHERE id = %s"
+                )
 
-                    if not data_current:
-                        return{
-                            "exito": False,
-                            "mensaje" : f"Usuario {id_user} no encontrado."                              
-                        }
+                cursor.execute(sql_user, valores)
 
-                    nombres = new_data.get("nombres") or data_current.get("nombres", "")
-                    apellidos = new_data.get("apellidos") or data_current.get("apellidos", "")
-                    tipo_documento = new_data.get("tipo_documento") or data_current.get("tipo_documento", "")
-                    num_documento = new_data.get("num_documento") or data_current.get("num_documento", 0)
-                    num_telefono = new_data.get("num_telefono") or data_current.get("num_telefono", 0)
-                    correo = new_data.get("correo") or data_current.get("correo", "")
-                    contrasena = new_data.get("contrasena") or data_current.get("contrasena", "")
-                    id_rol = new_data.get("id_rol") or data_current.get("id_rol", 0)
+            conexion.commit()
 
-                    sql_user = """
-
-                        UPDATE usuarios SET
-                            nombres = %s,
-                            apellidos = %s,
-                            tipo_documento  = %s,
-                            num_documento = %s,
-                            num_telefono = %s,
-                            correo = %s,
-                            contrasena = %s,
-                            id_rol = %s
-                        WHERE id = %s
-
-                    """
-
-                    valores_user = (
-                        nombres,
-                        apellidos,
-                        tipo_documento,
-                        num_documento,
-                        num_telefono,
-                        correo,
-                        contrasena,
-                        id_rol,
-                        id_user,
-                    )
-
-                    cursor.execute(sql_user, valores_user)
-
-        print(f"Usuario con id {id_user} fue actualizado con éxito.")
         return {
             "exito": True,
             "mensaje": f"El usuario con ID {id_user} fue actualizado correctamente.",
@@ -172,28 +162,36 @@ def UPDATE_user_db(id_user: int, new_data: dict) -> dict:
             "mensaje": f"Error al actualizar en la base de datos. {w}",
         }
 
+
 def DELETE_user_db(id_user: int) -> dict:
 
+    if id_user <= 0:
+        return {
+            "exito": False,
+            "mensaje": f"El ID {id_user} debe ser un entero positivo.",
+        }
     try:
         with GET_conexion() as conexion:
 
             if not conexion:
                 return {"exito": False, "mensaje": "Sin conexión con la base de datos."}
 
-            with conexion:
-                with conexion.cursor() as cursor:
-                    cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,))
-                    if cursor.rowcount == 0:
-                        return {
-                            "exito": False,
-                            "mensaje": f"Usuario con ID {id_user} no encontrado.",
-                        }
+            with conexion.cursor() as cursor:
+
+                cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
+
+                if cursor.rowcount == 0:
+                    return {
+                        "exito": False,
+                        "mensaje": f"El usuario con ID #{id_user} no existe.",
+                    }
+            conexion.commit()  # Confirmar los cambios en la base de datos
 
         print(f"Usuario con ID {id_user} eliminado con éxito.")
         return {
             "exito": True,
             "mensaje": f"Usuario con ID {id_user} eliminado correctamente.",
-        }
+        }            
 
     except Exception as e:
         print(f"Error al eliminar el usuario {id_user}: {e}.")

@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routes.solicitud_route import router as solicitud_router
+from src.routes.usuario_route import router as usuario_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -19,7 +20,7 @@ app.add_middleware(
 
 # Conectamos el router
 app.include_router(solicitud_router)
-
+app.include_router(usuario_router)
 
 @app.get("/", tags=["Healthcheck"])
 def verificacion_servidor():

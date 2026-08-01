@@ -1,6 +1,6 @@
 from src.database import GET_conexion
 
-def SAVE_solicitud_bd(solicitud: dict) -> dict:
+def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
     try:
         with GET_conexion() as conexion:
@@ -12,17 +12,12 @@ def SAVE_solicitud_bd(solicitud: dict) -> dict:
             with conexion:
                 with conexion.cursor() as cursor:
 
-                    vehiculo = solicitud.get("vehiculo") or {}
-                    tipo_vehiculo = vehiculo.get("tipo", "")
-                    placa = vehiculo.get("placa", "")
-
                     # Insertar en la Tabla Padre: solicitudes
                     sql_solicitud = """
                             INSERT INTO solicitudes (
                             empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_de_persona,
-                            empresa_contratista, planta_a_visitar, fecha_inicio, fecha_fin, actividad,
-                            tipo_vehiculo, placa, estado
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                            empresa_contratista, planta_a_visitar, fecha_inicio, fecha_fin, actividad, estado
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
                     """
 
                     valores_solicitud = (
@@ -35,13 +30,27 @@ def SAVE_solicitud_bd(solicitud: dict) -> dict:
                         solicitud.get("fecha_inicio", ""),
                         solicitud.get("fecha_fin", ""),
                         solicitud.get("actividad", ""),
-                        tipo_vehiculo,
-                        placa,
                         solicitud.get("estado", "ENVIADO"),
                     )
 
                     cursor.execute(sql_solicitud, valores_solicitud)
                     solicitud_id = cursor.lastrowid
+
+                    vehiculo = solicitud.get("vehiculo", [])
+                    if vehiculo:
+                        sql_vehiculo = """
+                            INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa) 
+                            VALUES (%s, %s, %s)
+                        """
+                        valores_vehiculo = [
+                            (
+                                solicitud_id,
+                                v.get("tipo", ""),
+                                v.get("placa", ""),
+                            )
+                            for v in vehiculo
+                        ]
+                        cursor.executemany(sql_vehiculo, valores_vehiculo)
 
                     # Insertar personas asociadas a la solicitud
                     personas = solicitud.get("personas", [])
@@ -118,10 +127,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         "mensaje": f"Solicitud #{solicitud_id} no encontrada.",
                     }
 
-                solicitud["vehiculo"] = {
-                    "tipo": solicitud.pop("tipo_vehiculo", ""),
-                    "placa": solicitud.pop("placa", ""),
-                }
+                cursor.execute(
+                    "SELECT tipo, placa FROM vehiculos_solicitud WHERE solicitud_id = %s",
+                    (solicitud_id,),
+                )
+                solicitud["vehiculo"] = cursor.fetchall()
 
                 # 2. Obtener las personas asociadas
                 cursor.execute(
@@ -157,17 +167,32 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                 eq_computo = campos.pop("eq_computo", None)
                 vehiculo = campos.pop("vehiculo", None)
 
-                if vehiculo and isinstance(vehiculo, dict):
-                    if "tipo" in vehiculo:
-                        campos["tipo_vehiculo"] = vehiculo["tipo"]
-                    if "placa" in vehiculo:
-                        campos["placa"] = vehiculo["placa"]
-
+                
                 if campos:
                     columnas = [f"{col} = %s" for col in campos.keys()]
                     sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
                     valores = list(campos.values()) + [solicitud_id]
                     cursor.execute(sql_update, valores)
+
+                if vehiculo is not None:
+                    cursor.execute(
+                        "DELETE FROM vehiculos_solicitud WHERE solicitud_id = %s",
+                        (solicitud_id,),
+                    )
+                    if vehiculo:
+                        sql_vehiculo = """
+                            INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa)
+                            VALUES (%s, %s, %s)
+                        """
+                        valores_vehiculo = [
+                            (
+                                solicitud_id,
+                                v.get("tipo", ""),
+                                v.get("placa", ""),
+                            )
+                            for v in vehiculo
+                        ]
+                        cursor.executemany(sql_vehiculo, valores_vehiculo)
 
                 if personas is not None:
                     cursor.execute(
