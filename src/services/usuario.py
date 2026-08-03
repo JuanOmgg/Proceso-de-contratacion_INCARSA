@@ -7,21 +7,18 @@ import bcrypt
 
 
 def CREATE_user(payload: UsuarioInput) -> dict:
-    # 1. Convertimos el modelo de Pydantic a diccionario
+
     data_raw = payload.model_dump()
 
-    # 2. Pasamos por tu transformador
     data_clean = TRANSFORM_USER(data_raw)
 
-    # 3. Encriptamos la contraseña limpia
     password_plana = data_clean.get("contrasena", "")
     password_bytes = password_plana.encode("utf-8")
     salt = bcrypt.gensalt()
     data_clean["contrasena"] = bcrypt.hashpw(password_bytes, salt).decode(
         "utf-8"
     )
-
-    # 4. Persistimos en MySQL
+    
     return CREATE_user_db(data_clean)
 
 

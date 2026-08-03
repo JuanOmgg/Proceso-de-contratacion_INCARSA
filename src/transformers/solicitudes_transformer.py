@@ -1,41 +1,55 @@
-from datetime import date, datetime
 import re
-from typing import Any, Dict, List, Optional
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional, Union
 
 
-def parsear_fecha(val_fecha: Optional[str]) -> Optional[str]:
-    if not val_fecha or not isinstance(val_fecha, str):
+# ========================================================
+# PARSEADORES Y FORMATEADORES DE FECHA Y PLACA
+# ========================================================
+
+
+def parsear_fecha(
+    val_fecha: Optional[Union[str, date, datetime]],
+) -> Optional[str]:
+    if not val_fecha:
         return None
 
-    # Si viene con hora (ISO 8601 o con espacio), tomar solo la parte de la fecha
-    val_fecha = val_fecha.strip().split("T")[0].split(" ")[0]
-    fecha_normalizada = val_fecha.replace("/", "-")
+    # 1. Si Pydantic o la BD nos entrega un objeto 'date' o 'datetime'
+    if isinstance(val_fecha, (date, datetime)):
+        return val_fecha.strftime("%Y-%m-%d")
 
-    # Formatos estrictos no ambiguos
-    formatos = [
-        "%Y-%m-%d",  # ISO / Estándar internacional (2026-08-24)
-        "%d-%m-%Y",  # Estándar Latino / Español (24-08-2026)
-    ]
+    # 2. Si viene como cadena de texto (str)
+    if isinstance(val_fecha, str):
+        val_limpia = val_fecha.strip().split("T")[0].split(" ")[0]
+        fecha_normalizada = val_limpia.replace("/", "-")
 
-    for fmt in formatos:
-        try:
-            return datetime.strptime(fecha_normalizada, fmt).strftime("%Y-%m-%d")
-        except ValueError:
-            continue
+        formatos = [
+            "%Y-%m-%d",  # ISO / Estándar internacional
+            "%d-%m-%Y",  # Estándar Latino / Español
+        ]
+
+        for fmt in formatos:
+            try:
+                return datetime.strptime(fecha_normalizada, fmt).strftime(
+                    "%Y-%m-%d"
+                )
+            except ValueError:
+                continue
 
     return None
 
 
 def FORMAT_FOR_FRONT(fecha_db: Any) -> str:
-    """Convierte una fecha de la BD a formato DD-MM-YYYY."""
+    """Convierte una fecha de la BD a formato DD-MM-YYYY para la respuesta del Frontend."""
     if not fecha_db:
         return ""
+
     if isinstance(fecha_db, (datetime, date)):
         return fecha_db.strftime("%d-%m-%Y")
+
     try:
-        return datetime.strptime(str(fecha_db), "%Y-%m-%d").strftime(
-            "%d-%m-%Y"
-        )
+        val_str = str(fecha_db).strip().split("T")[0].split(" ")[0]
+        return datetime.strptime(val_str, "%Y-%m-%d").strftime("%d-%m-%Y")
     except ValueError:
         return str(fecha_db)
 

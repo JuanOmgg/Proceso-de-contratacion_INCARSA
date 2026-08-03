@@ -188,7 +188,7 @@ def DELETE_user_db(id_user: int) -> dict:
 
         return {
             "exito": True,
-            "mensaje": f"❌❌ Usuario con ID {id_user} eliminado correctamente. ❌❌",
+            "mensaje": f"✅✅ Usuario con ID {id_user} eliminado correctamente. ✅✅",
         }            
 
     except Exception as e:

@@ -1,75 +1,127 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from datetime import date, datetime
+from typing import List, Optional, Union
+from pydantic import BaseModel, Field, field_validator
+
 
 class PersonaSchema(BaseModel):
-    ap_nombre: str = Field(..., example="Carlos Mendoza")
-    tipo_doc: str = Field(..., example="CC")
-    identificacion: int = Field(..., example=1012345678)
-    cargo: str = Field(..., example="Técnico Electricista")
+    ap_nombre: str
+    tipo_doc: str = Field(..., json_schema_extra={"example": "CC"})
+    identificacion: Union[str, int] = Field(
+        ..., json_schema_extra={"example": "1012345678"}
+    )  
+    cargo: str
+
+    @field_validator("identificacion", mode="before")
+    @classmethod
+    def normalizar_identificacion(cls, v):
+        return str(v) if v is not None else ""
+
 
 class VehiculoSchema(BaseModel):
-    tipo: str = Field(..., example="Camioneta")
-    placa: str = Field(..., example="ABC-123")
+    tipo: str
+    placa: str
+
 
 class EquipoComputoSchema(BaseModel):
-    marca: str = Field(..., example="Lenovo")
-    modelo: str = Field(..., example="ThinkPad E14")
-    serie: str = Field(..., example="SN-987654321")
+    marca: str
+    modelo: str
+    serie: str
 
-# Esquema Principal de Solicitud
-class SolicitudInput(BaseModel):
-    empresa_origen: str = Field(..., example="INCARSA")
-    diligenciado_por: int = Field(..., example=1)
-    nivel_de_riesgo: str = Field(..., example="Alto")
-    tipo_de_persona: str = Field(..., example="Contratista")
-    empresa_contratista: int = Field(..., example=1)
-    planta_a_visitar: str = Field(..., example="Planta Central")
-    fecha_inicio: str = Field(..., example="01/08/2026")
-    fecha_fin: str = Field(..., example="24/08/2026")
-    actividad: str = Field(..., example="Mantenimiento preventivo")
+
+class BaseSolicitudSchema(BaseModel):
+    fecha_inicio: Optional[Union[str, date]] = None
+    fecha_fin: Optional[Union[str, date]] = None
+
+    @field_validator("fecha_inicio", "fecha_fin", mode="before")
+    @classmethod
+    def normalizar_fechas_input(cls, val_fecha: Optional[Union[str, date]]):
+        if not val_fecha:
+            return None
+
+        # Si ya es un objeto date real, no lo toca
+        if isinstance(val_fecha, date):
+            return val_fecha
+
+        if isinstance(val_fecha, str):
+            val_limpia = val_fecha.strip().split("T")[0].split(" ")[0]
+            fecha_normalizada = val_limpia.replace("/", "-")
+            formatos = ["%Y-%m-%d", "%d-%m-%Y"]
+
+            for fmt in formatos:
+                try:
+                    return datetime.strptime(fecha_normalizada, fmt).date()
+                except ValueError:
+                    continue
+
+        raise ValueError(
+            f"Formato de fecha inválido: {val_fecha}. Use YYYY-MM-DD o DD/MM/YYYY."
+        )
+
+
+class SolicitudInput(BaseSolicitudSchema):
+    empresa_origen: str
+    diligenciado_por: int
+    nivel_de_riesgo: str
+    tipo_de_persona: str = Field(
+        ..., json_schema_extra={"example": "Contratista"}
+    )
+    empresa_contratista: int
+    planta_a_visitar: str
+    fecha_inicio: Union[str, date] = Field(
+        ..., json_schema_extra={"example": "14/08/2026"}
+    )
+    fecha_fin: Union[str, date] = Field(
+        ..., json_schema_extra={"example": "29/08/2026"}
+    )
+    actividad: str
+
     vehiculo: List[VehiculoSchema] = Field(
         default_factory=list,
-        example=[
-            {
-                "tipo": "Camioneta",
-                "placa": "ABC-123"
-            }
-        ]
-    )
-    personas: List[PersonaSchema] = Field(
-        default_factory=list,
-        example=[
-            {
-                "ap_nombre": "Carlos Mendoza",
-                "tipo_doc": "CC",
-                "identificacion": 1012345678,
-                "cargo": "Técnico Electricista"
-            }
-        ]
-    )
-    eq_computo: List[EquipoComputoSchema] = Field(
-        default_factory=list,
-        example=[
-            {
-                "marca": "Lenovo",
-                "modelo": "ThinkPad E14",
-                "serie": "SN-987654321"
-            }
-        ]
+        json_schema_extra={
+            "example": [{"tipo": "Camioneta", "placa": "ABC-123"}]
+        },
     )
 
-class UPDATE_Schema_Optionals(BaseModel):
+    personas: List[PersonaSchema] = Field(
+        default_factory=list,
+        json_schema_extra={
+            "example": [
+                {
+                    "ap_nombre": "Carlos Mendoza",
+                    "tipo_doc": "CC",
+                    "identificacion": "1012345678",
+                    "cargo": "Técnico Electricista",
+                }
+            ]
+        },
+    )
+
+    eq_computo: List[EquipoComputoSchema] = Field(
+        default_factory=list,
+        json_schema_extra={
+            "example": [
+                {
+                    "marca": "Lenovo",
+                    "modelo": "ThinkPad E14",
+                    "serie": "SN-987654321",
+                }
+            ]
+        },
+    )
+
+
+class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     empresa_origen: Optional[str] = None
     diligenciado_por: Optional[int] = None
     nivel_de_riesgo: Optional[str] = None
     tipo_de_persona: Optional[str] = None
     empresa_contratista: Optional[int] = None
     planta_a_visitar: Optional[str] = None
-    fecha_inicio: Optional[str] = None
-    fecha_fin: Optional[str] = None
+    fecha_inicio: Optional[Union[str, date]] = None
+    fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
     estado: Optional[str] = None
+
     vehiculo: Optional[List[VehiculoSchema]] = None
-    vehiculos: Optional[List[VehiculoSchema]] = None
     personas: Optional[List[PersonaSchema]] = None
     eq_computo: Optional[List[EquipoComputoSchema]] = None

@@ -5,8 +5,8 @@ def TRANSFORM_USER(data_json: dict) -> dict:
         "nombres": data_json.get("nombres", "").strip(),
         "apellidos": data_json.get("apellidos", "").strip(),
         "tipo_documento": data_json.get("tipo_documento", "").strip(),
-        "num_documento": int(data_json.get("num_documento", 0)),
-        "num_telefono": int(data_json.get("num_telefono", 0)),
+        "num_documento": int(data_json.get("num_documento", "")),
+        "num_telefono": int(data_json.get("num_telefono", "")),
         "correo": data_json.get("correo", "").strip().lower(),
         "contrasena": data_json.get("contrasena", ""),
         "id_rol": int(data_json.get("id_rol", 0)),  # 0 - garantiza que se conviertan a entero (int)

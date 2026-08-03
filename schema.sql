@@ -17,14 +17,13 @@ INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
--- 2. Usuarios (Depende de roles)
 CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombres VARCHAR(50) NOT NULL,
     apellidos VARCHAR(50) NOT NULL,
     tipo_documento VARCHAR(50) NOT NULL,
-    num_documento BIGINT NOT NULL UNIQUE,
-    num_telefono BIGINT NOT NULL,
+    num_documento VARCHAR(20) NOT NULL UNIQUE,
+    num_telefono VARCHAR(15) NOT NULL,
     correo VARCHAR(100) NOT NULL UNIQUE,
     contrasena VARCHAR(250) NOT NULL,
     id_rol INT NOT NULL,
@@ -65,19 +64,17 @@ CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4. Personas de la Solicitud (Depende de solicitudes)
 CREATE TABLE IF NOT EXISTS personas_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
     solicitud_id INT NOT NULL,
     item VARCHAR(25),
     ap_nombre VARCHAR(150) NOT NULL,
     tipo_doc VARCHAR(20) NOT NULL,
-    identificacion BIGINT NOT NULL,
+    identificacion VARCHAR(20) NOT NULL,
     cargo VARCHAR(100),
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Equipos de Cómputo (Depende de solicitudes)
 CREATE TABLE IF NOT EXISTS equipos_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
     solicitud_id INT NOT NULL,

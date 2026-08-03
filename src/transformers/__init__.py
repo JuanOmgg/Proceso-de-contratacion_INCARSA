@@ -17,5 +17,6 @@ __all__ = [
     "transformar_solicitud_patch",
     "TRANSFORM_USER",
     "TRANSFORM_USER_FOR_FRONT",
+    "TRANSFORM_EMPCONTRATISTA"
 ]
 
