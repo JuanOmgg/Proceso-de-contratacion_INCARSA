@@ -107,8 +107,6 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
 def GET_solicitud_bd(solicitud_id: int) -> dict:
 
-    # Obtiene una solicitud completa (con sus personas y equipos) por ID.
-
     try:
 
         with GET_conexion() as conexion:
@@ -238,22 +236,19 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                         ]
                         cursor.executemany(sql_eq, valores_eq)
 
-            # 💡 El commit DEBE ir dentro del 'with GET_conexion()', antes de cerrar la conexión
             conexion.commit()
 
-            print(
-                f"✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos."
-            )
+            print(f"✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos.")
             return {
                 "exito": True,
-                "mensaje": f"Solicitud #{solicitud_id} actualizada correctamente.",
+                "mensaje": f"✅✅ Solicitud #{solicitud_id} actualizada correctamente. ✅✅",
             }
 
     except Exception as e:
         print(f"❌ Error al actualizar la solicitud #{solicitud_id}: {e}")
         return {
             "exito": False,
-            "mensaje": f"Error al actualizar en la base de datos: {e}",
+            "mensaje": f"❌❌ Error al actualizar en la base de datos: {e} ❌❌",
         }
     
 def DELETE_solicitud_bd(solicitud_id: int) -> dict:
@@ -262,27 +257,28 @@ def DELETE_solicitud_bd(solicitud_id: int) -> dict:
             if not conexion:
                 return {
                     "exito": False,
-                    "mensaje": "Sin conexión a la base de datos",
+                    "mensaje": "❌❌ Sin conexión a la base de datos ❌❌",
                 }
 
             with conexion.cursor() as cursor:
 
-                sql = "DELETE FROM solicitudes WHERE id = %s"
-                cursor.execute(sql, (solicitud_id,))
+                cursor.execute("DELETE FROM solicitudes WHERE id = %s", (solicitud_id,))
 
                 if cursor.rowcount == 0:
                     return {
                         "exito": False,
-                        "mensaje": f"No existe la solicitud #{solicitud_id} para eliminar.",
+                        "mensaje": f"❌❌ No existe la solicitud #{solicitud_id} para eliminar. ❌❌",
                     }
 
             conexion.commit()
 
             return {
                 "exito": True,
-                "mensaje": f"Solicitud #{solicitud_id} eliminada correctamente.",
+                "mensaje": f"✅✅ Solicitud #{solicitud_id} eliminada correctamente. ✅✅",
             }
 
     except Exception as e:
-        print(f"❌ Error al eliminar solicitud #{solicitud_id}: {e}")
-        return {"exito": False, "mensaje": f"Error al eliminar solicitud: {e}"}
+        return {
+            "exito": False, 
+            "mensaje": f"❌❌ Error al eliminar solicitud: {e} ❌❌"
+        }

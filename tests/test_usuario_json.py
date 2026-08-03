@@ -5,7 +5,7 @@ import os
 # Asegurar que Python encuentre el módulo src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.loaders.usuario import CREATE_user  # O la ruta donde tengas tu entidad
+from src.services.usuario import CREATE_user  # O la ruta donde tengas tu entidad
 
 # 1. Este es el JSON tal cual como te llegaría desde Swagger o Postman
 peticion_json_swagger = """

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from src.schemas.usuario_schema import UsuarioInput, UsuarioResponse, UpdateUsuarioInput
-from src.loaders.usuario import CREATE_user, READ_user, DELETE_user
+from src.services.usuario import CREATE_user, READ_user, DELETE_user
 from src.loaders.usuario_loader import CREATE_user_db, DELETE_user_db, UPDATE_user_db
 from src.transformers.usuario_transformer import TRANSFORM_USER
 

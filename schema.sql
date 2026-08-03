@@ -39,14 +39,22 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     diligenciado_por INT NOT NULL,
     nivel_de_riesgo VARCHAR(20) NOT NULL,
     tipo_de_persona VARCHAR(30) NOT NULL,
-    empresa_contratista VARCHAR(150) NOT NULL,
+    empresa_contratista INT NOT NULL,
     planta_a_visitar VARCHAR(100) NOT NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
     estado VARCHAR(30) NOT NULL,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_contratista) REFERENCES emp_contratista(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (diligenciado_por) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS emp_contratista (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    observacion VARCHAR(250) NULL,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS vehiculos_solicitud (

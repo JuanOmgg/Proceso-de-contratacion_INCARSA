@@ -12,30 +12,30 @@ def CREATE_user_db(usuario: dict) -> dict:
                         "mensaje": "No se pudo establecer conexión con la base de datos",
                 }
             
-            with conexion:
-                with conexion.cursor() as cursor:            
+            
+            with conexion.cursor() as cursor:            
 
-                    sql_user = """
-                        INSERT INTO usuarios (
-                            nombres, apellidos, tipo_documento, num_documento, num_telefono,
-                            correo, contrasena, id_rol
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)        
-                    """
-                    valores_user = (
-                        usuario.get("nombres", ""),
-                        usuario.get("apellidos", ""),
-                        usuario.get("tipo_documento", ""),
-                        usuario.get("num_documento", 0),
-                        usuario.get("num_telefono", 0),
-                        usuario.get("correo", ""),
-                        usuario.get("contrasena", ""),
-                        usuario.get("id_rol", 0),
-                    )
+                sql_user = """
+                    INSERT INTO usuarios (
+                        nombres, apellidos, tipo_documento, num_documento, num_telefono,
+                        correo, contrasena, id_rol
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)        
+                """
+                valores_user = (
+                    usuario.get("nombres", ""),
+                    usuario.get("apellidos", ""),
+                    usuario.get("tipo_documento", ""),
+                    usuario.get("num_documento"),
+                    usuario.get("num_telefono"),
+                    usuario.get("correo", ""),
+                    usuario.get("contrasena", ""),
+                    usuario.get("id_rol"),
+                )
 
-                    cursor.execute(sql_user, valores_user)
-                    user_id = cursor.lastrowid
+                cursor.execute(sql_user, valores_user)
+                user_id = cursor.lastrowid
 
-                    conexion.commit()  # Confirmar los cambios en la base de datos
+            conexion.commit()  # Confirmar los cambios en la base de datos
 
         print(f"✅✅ El usuario {user_id} fue registrado con éxito. ✅✅")
         return {
@@ -56,6 +56,7 @@ def GET_user_db(id_user: int) -> dict:
     try:
 
         with GET_conexion() as conexion:
+
             if not conexion:
                     return {"exito": False, "mensaje": "❌❌ Sin conexión a la base de datos ❌❌"}
 
@@ -98,8 +99,6 @@ def GET_user_db(id_user: int) -> dict:
             "exito": False,
             "mensaje": f"❌❌ No fue posible encontrar al usuario {e} ❌❌",
         }
-
-import bcrypt
 
 
 def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
@@ -174,7 +173,7 @@ def DELETE_user_db(id_user: int) -> dict:
         with GET_conexion() as conexion:
 
             if not conexion:
-                return {"exito": False, "mensaje": "Sin conexión con la base de datos."}
+                return {"exito": False, "mensaje": "❌❌ Sin conexión con la base de datos. ❌❌"}
 
             with conexion.cursor() as cursor:
 
@@ -183,19 +182,18 @@ def DELETE_user_db(id_user: int) -> dict:
                 if cursor.rowcount == 0:
                     return {
                         "exito": False,
-                        "mensaje": f"El usuario con ID #{id_user} no existe.",
+                        "mensaje": f"❌❌ El usuario con ID #{id_user} no existe. ❌❌",
                     }
-            conexion.commit()  # Confirmar los cambios en la base de datos
+            conexion.commit()
 
-        print(f"Usuario con ID {id_user} eliminado con éxito.")
         return {
             "exito": True,
-            "mensaje": f"Usuario con ID {id_user} eliminado correctamente.",
+            "mensaje": f"❌❌ Usuario con ID {id_user} eliminado correctamente. ❌❌",
         }            
 
     except Exception as e:
-        print(f"Error al eliminar el usuario {id_user}: {e}.")
+        print(f"❌❌ Error al eliminar el usuario {id_user}: {e} ❌❌")
         return {
             "exito": False,
-            "mensaje": f"Error al eliminar en la base de datos. {e}",
+            "mensaje": f"❌❌ Error al eliminar en la base de datos. {e} ❌❌",
         }

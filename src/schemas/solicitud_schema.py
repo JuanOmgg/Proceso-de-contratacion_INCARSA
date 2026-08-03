@@ -22,7 +22,7 @@ class SolicitudInput(BaseModel):
     diligenciado_por: int = Field(..., example=1)
     nivel_de_riesgo: str = Field(..., example="Alto")
     tipo_de_persona: str = Field(..., example="Contratista")
-    empresa_contratista: Optional[str] = Field(default="", example="Soluciones Industriales SAS")
+    empresa_contratista: int = Field(..., example=1)
     planta_a_visitar: str = Field(..., example="Planta Central")
     fecha_inicio: str = Field(..., example="01/08/2026")
     fecha_fin: str = Field(..., example="24/08/2026")
@@ -63,7 +63,7 @@ class UPDATE_Schema_Optionals(BaseModel):
     diligenciado_por: Optional[int] = None
     nivel_de_riesgo: Optional[str] = None
     tipo_de_persona: Optional[str] = None
-    empresa_contratista: Optional[str] = None
+    empresa_contratista: Optional[int] = None
     planta_a_visitar: Optional[str] = None
     fecha_inicio: Optional[str] = None
     fecha_fin: Optional[str] = None

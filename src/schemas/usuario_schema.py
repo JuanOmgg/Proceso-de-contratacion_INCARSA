@@ -15,6 +15,7 @@ class UsuarioResponse(BaseModel):
     mensaje: str
 
 class UpdateUsuarioInput(BaseModel):
+    
     nombres: Optional[str] = None
     apellidos: Optional[str] = None
     tipo_documento: Optional[str] = None
