@@ -1,5 +1,6 @@
-from typing import TypedDict, List
 from config import settings
+from src.schemas.solicitud_schema import SolicitudInput
+from src.transformers.solicitudes_transformer import transformar_solicitud  
 from src.loaders.solicitudes_loaders import (
     CREATE_solicitud_bd,
     UPDATE_solicitud_bd,
@@ -7,99 +8,29 @@ from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
 )
 from config.settings import (
-    ESTADO_ENVIADO,
-    ESTADO_EN_REVISION,
     ESTADO_LISTO_PARA_SEGURIDAD,
     ESTADO_APROBADO,
     ESTADO_RECHAZADO,
-    ROL_SST,
-    ROL_GESCO,
+    ESTADO_ENVIADO,
     ROL_SEGURIDAD_CORP,
 )
 
 LISTA_SOLICITUDES = []
-# ========================================================
-
-class vehiculoIngreso(TypedDict):
-    tipo: str
-    placa: str
-
-class equipoComputo(TypedDict):
-    marca: str
-    modelo: str
-    serie: str
 
 
-class personaIngreso(TypedDict):
-    item: str
-    ap_nombre: str
-    tipo_doc: str
-    identificacion: int
-    cargo: str
+def CREATE_solicitud(payload: SolicitudInput) -> dict:
 
+    data_raw = payload.model_dump()
 
-# ========================================================
+    data_raw.setdefault("estado", settings.ESTADO_ENVIADO)
 
+    data_clean = transformar_solicitud(data_raw)
 
-def CREATE_solicitud(
-    empresa_orig: str,  # Para que empresa va
-    id_user: int,  # ID del solicitante
-    nivel_de_riesgo: str,
-    tipo_de_persona: str,
-    empresa: str,
-    planta_a_visitar: str,
-    fechaInicio: str,
-    fechaFin: str,
-    actividad: str,
-    vehiculo: List[vehiculoIngreso],
-    eq_computo: List[equipoComputo],
-    personas: List[personaIngreso],
-    doc_adjuntos: List[str],
-) -> dict:
-
-    # =====================================================
-
-    nueva_solicitud = {
-        "empresa_origen": empresa_orig,
-        "diligenciado_por": id_user,
-        "nivel_de_riesgo": nivel_de_riesgo,
-        "tipo_de_persona": tipo_de_persona,
-        "empresa_contratista": empresa,
-        "planta_a_visitar": planta_a_visitar,
-        "fecha_inicio": fechaInicio,
-        "fecha_fin": fechaFin,
-        "actividad": actividad,
-        "vehiculo": vehiculo,
-        "eq_computo": eq_computo,
-        "personas": personas,
-        "doc_adjuntos": doc_adjuntos,
-        # Estado Inicial del Flujo
-        "estado": settings.ESTADO_ENVIADO,
-        "aprobaciones": {
-            "SST": {"evaluado": False, "aprobado": False, "comentario": ""},
-            "GESCO": {"evaluado": False, "aprobado": False, "comentario": ""},
-            "SEGURIDAD_CORP": {"evaluado": False, "aprobado": False, "comentario": ""},
-        },
-    }
-
-    print(f"==================================================")
-    print(f"✅ [ÉXITO] Solicitud creada correctamente.")
-    print(f"   Destino: {planta_a_visitar} | Contratista: {empresa}")
-    print(f"   Personas registradas: {len(personas)} | Equipos: {len(eq_computo)}")
-    print(f"==================================================")
-
-    respuesta_bd = CREATE_solicitud_bd(nueva_solicitud)
-
-    return respuesta_bd
+    return CREATE_solicitud_bd(data_clean)
 
 
 def EDIT_solicitud(solicitud_id: int, datos_actualizados: dict) -> dict:
-    """
-    Permite editar la solicitud ÚNICAMENTE si su estado actual es 'ENVIADO'.
-    Si ya pasó a 'EN REVISION' o cualquier otro estado, bloquea la edición.
-    """
-
-    # 1. Consultar el estado actual en la base de datos
+   
     actual = GET_solicitud_bd(solicitud_id)
     if not actual["exito"]:
         return actual
