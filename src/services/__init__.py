@@ -12,6 +12,10 @@ from .usuario import (
     DELETE_user_db
     )
 
+from .planta import (
+    CREATE_planta
+    )
+
 __all__ = [
 
     "CREATE_solicitud",
@@ -20,6 +24,8 @@ __all__ = [
     "proceso_evaluo",
 
     "GET_user_db",
-    "DELETE_user_db"
+    "DELETE_user_db",
+
+    "CREATE_planta"
 
 ]

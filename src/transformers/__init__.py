@@ -12,11 +12,20 @@ from .empContr_transformer import (
     TRANSFORM_EMPCONTRATISTA
 )
 
+from .planta_transformer import (
+    TRANSFORM_PLANTA
+)
+
 __all__ = [
     "transformar_solicitud",
     "transformar_solicitud_patch",
+    
     "TRANSFORM_USER",
     "TRANSFORM_USER_FOR_FRONT",
-    "TRANSFORM_EMPCONTRATISTA"
+    
+    "TRANSFORM_EMPCONTRATISTA",
+
+    "TRANSFORM_PLANTA",
+
 ]
 

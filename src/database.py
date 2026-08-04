@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 from dbutils.pooled_db import PooledDB
 import pymysql
 from dotenv import load_dotenv
@@ -9,8 +10,8 @@ load_dotenv()
 # Crear el POOL de conexiones al arrancar la app
 POOL = PooledDB(
     creator=pymysql,
-    maxconnections=10,  # Máximo de conexiones simultáneas en el pool
-    mincached=2,  # Conexiones mínimas siempre abiertas y listas
+    maxconnections=15,
+    mincached=2, 
     host=os.getenv("DB_HOST", "localhost"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
@@ -21,7 +22,15 @@ POOL = PooledDB(
     ping=7,  # Verifica que la conexión esté viva antes de usarla
 )
 
-
+@contextmanager
 def GET_conexion():
-    
-    return POOL.connection()
+
+    conexion = POOL.connection()
+    try:
+        yield conexion
+    except Exception as e:
+        conexion.rollback()
+        print(f"❌❌ Error en la conexión a la base de datos desde database: {e} ❌❌")
+        raise e
+    finally:
+        conexion.close() #devuelve conecion al pool sin destruirla

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.routes.solicitud_route import router as solicitud_router
 from src.routes.usuario_route import router as usuario_router
 from src.routes.emContr_route import router as emp_contratista_router
+from src.routes.planta_route import router as planta_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -23,6 +24,7 @@ app.add_middleware(
 app.include_router(solicitud_router)
 app.include_router(usuario_router)
 app.include_router(emp_contratista_router)
+app.include_router(planta_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 def verificacion_servidor():

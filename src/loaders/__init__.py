@@ -28,6 +28,14 @@ from .emp_contratista_loader import (
     UPDATE_empCont_db
 )
 
+from .planta_loader import (
+
+    CREATE_planta_db,
+    GET_planta_db,
+    UPDATE_planta_db,
+    DELETE_planta_db
+)
+
 
 __all__ = [
 
@@ -47,5 +55,11 @@ __all__ = [
 
     "GETALL_roles",
     "GETROL_by_nombre",
-    "CREATEROL_IF_NoExiste"
+    "CREATEROL_IF_NoExiste",
+
+    "CREATE_planta_db",
+    "GET_planta_db",
+    "UPDATE_planta_db",
+    "DELETE_planta_db"
+    
 ]

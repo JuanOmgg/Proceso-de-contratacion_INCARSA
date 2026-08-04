@@ -23,6 +23,13 @@ from .emp_contratista_schema import (
     
     )
 
+from .planta_schema import (
+
+    PlantaInput,
+    UpdatePlantaInput
+
+)
+
 __all__ = [
 
     "SolicitudInput",
@@ -32,6 +39,14 @@ __all__ = [
     "EquipoComputoSchema",
 
     "EmpContratistaInput",
-    "UpdateEmpContratistainput"
+    "UpdateEmpContratistainput",
+
+    "UsuarioInput",
+    "UsuarioResponse",
+    "UpdateUsuarioInput",
+
+    "PlantaInput",
+    "UpdatePlantaInput"
+    
 
 ]

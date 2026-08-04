@@ -17,7 +17,19 @@ INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
+CREATE TABLE IF NOT EXISTS empresa(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_empresa VARCHAR(50) NOT NULL UNIQUE,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO empresa (nombre_empresa) VALUES
+('INCARSA S.A.S.'),
+('MILPA S.A.S.'),
+('CARBOINSA S.A.S.'),
+('UNIMINAS S.A.S.')
+
 CREATE TABLE IF NOT EXISTS usuarios (
+
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombres VARCHAR(50) NOT NULL,
     apellidos VARCHAR(50) NOT NULL,
@@ -34,7 +46,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- 3. Solicitudes (Depende de usuarios)
 CREATE TABLE IF NOT EXISTS solicitudes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    empresa_origen VARCHAR(100) NOT NULL,
+    empresa_origen_id INT NOT NULL,
     diligenciado_por INT NOT NULL,
     nivel_de_riesgo VARCHAR(20) NOT NULL,
     tipo_de_persona VARCHAR(30) NOT NULL,
@@ -45,6 +57,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     actividad TEXT NOT NULL,
     estado VARCHAR(30) NOT NULL,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_origen_id) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (empresa_contratista) REFERENCES emp_contratista(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (diligenciado_por) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -54,6 +67,14 @@ CREATE TABLE IF NOT EXISTS emp_contratista (
     nombre VARCHAR(100) NOT NULL UNIQUE,
     observacion VARCHAR(250) NULL,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS planta (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_empresa INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
