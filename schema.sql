@@ -17,19 +17,39 @@ INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
-CREATE TABLE IF NOT EXISTS empresa(
+-- 2. Empresa (Sin dependencias)
+CREATE TABLE IF NOT EXISTS empresa (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_empresa VARCHAR(50) NOT NULL UNIQUE,
+    nombre_empresa VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Insertar empresas base
 INSERT INTO empresa (nombre_empresa) VALUES
 ('INCARSA S.A.S.'),
 ('MILPA S.A.S.'),
 ('CARBOINSA S.A.S.'),
 ('UNIMINAS S.A.S.')
+ON DUPLICATE KEY UPDATE nombre_empresa = VALUES(nombre_empresa);
 
+-- 3. Empresa Contratista (Sin dependencias)
+CREATE TABLE IF NOT EXISTS emp_contratista (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    observacion VARCHAR(250) NULL,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Planta (Depende de empresa)
+CREATE TABLE IF NOT EXISTS planta (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_empresa INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Usuarios (Depende de roles)
 CREATE TABLE IF NOT EXISTS usuarios (
-
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombres VARCHAR(50) NOT NULL,
     apellidos VARCHAR(50) NOT NULL,
@@ -43,40 +63,35 @@ CREATE TABLE IF NOT EXISTS usuarios (
     FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Solicitudes (Depende de usuarios)
+-- 6. Solicitudes (Depende de empresa, emp_contratista y usuarios)
 CREATE TABLE IF NOT EXISTS solicitudes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    empresa_origen_id INT NOT NULL,
+    empresa_origen INT NOT NULL,
     diligenciado_por INT NOT NULL,
     nivel_de_riesgo VARCHAR(20) NOT NULL,
     tipo_de_persona VARCHAR(30) NOT NULL,
     empresa_contratista INT NOT NULL,
-    planta_a_visitar VARCHAR(100) NOT NULL,
+    plantas_ids VARCHAR(255) NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
-    estado VARCHAR(30) NOT NULL,
+    estado VARCHAR(30) NOT NULL DEFAULT 'ENVIADO',
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (empresa_origen_id) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (empresa_origen) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (empresa_contratista) REFERENCES emp_contratista(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (diligenciado_por) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS emp_contratista (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    observacion VARCHAR(250) NULL,
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+-- 7. Visita (Tabla intermedia: Depende de solicitudes y planta)
+CREATE TABLE IF NOT EXISTS visita (
+    id_solicitud INT NOT NULL,
+    id_planta INT NOT NULL,
+    PRIMARY KEY (id_solicitud, id_planta),
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_planta) REFERENCES planta(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS planta (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    id_empresa INT NOT NULL,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
+-- 8. Subtablas asociadas a Solicitudes (Vehículos, Personas, Equipos)
 CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
     solicitud_id INT NOT NULL,
@@ -88,7 +103,7 @@ CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
 CREATE TABLE IF NOT EXISTS personas_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
     solicitud_id INT NOT NULL,
-    item VARCHAR(25),
+    item INT NULL,
     ap_nombre VARCHAR(150) NOT NULL,
     tipo_doc VARCHAR(20) NOT NULL,
     identificacion VARCHAR(20) NOT NULL,

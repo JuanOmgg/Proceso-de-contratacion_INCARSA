@@ -4,94 +4,88 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
     try:
         with GET_conexion() as conexion:
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "No se pudo establecer conexión con la base de datos",
-                }
-            with conexion:
-                with conexion.cursor() as cursor:
+            with conexion.cursor() as cursor:
 
-                    # Insertar en la Tabla Padre: solicitudes
-                    sql_solicitud = """
-                            INSERT INTO solicitudes (
-                            empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_de_persona,
-                            empresa_contratista, planta_a_visitar, fecha_inicio, fecha_fin, actividad, estado
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                # Insertar en la Tabla Padre: solicitudes
+                sql_solicitud = """
+                        INSERT INTO solicitudes (
+                        empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_de_persona,
+                        empresa_contratista, plantas_ids, fecha_inicio, fecha_fin, actividad, estado
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                """
+
+                valores_solicitud = (
+                    solicitud.get("empresa_origen", ""),
+                    solicitud.get("diligenciado_por", ""),
+                    solicitud.get("nivel_de_riesgo", ""),
+                    solicitud.get("tipo_de_persona", ""),
+                    solicitud.get("empresa_contratista", ""),
+                    solicitud.get("plantas_ids", ""),
+                    solicitud.get("fecha_inicio", ""),
+                    solicitud.get("fecha_fin", ""),
+                    solicitud.get("actividad", ""),
+                    solicitud.get("estado", "ENVIADO"),
+                )
+
+                cursor.execute(sql_solicitud, valores_solicitud)
+                solicitud_id = cursor.lastrowid
+
+                vehiculo = solicitud.get("vehiculo", [])
+                if vehiculo:
+                    sql_vehiculo = """
+                        INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa) 
+                        VALUES (%s, %s, %s)
                     """
+                    valores_vehiculo = [
+                        (
+                            solicitud_id,
+                            v.get("tipo", ""),
+                            v.get("placa", ""),
+                        )
+                        for v in vehiculo
+                    ]
+                    cursor.executemany(sql_vehiculo, valores_vehiculo)
 
-                    valores_solicitud = (
-                        solicitud.get("empresa_origen", ""),
-                        solicitud.get("diligenciado_por", ""),
-                        solicitud.get("nivel_de_riesgo", ""),
-                        solicitud.get("tipo_de_persona", ""),
-                        solicitud.get("empresa_contratista", ""),
-                        solicitud.get("planta_a_visitar", ""),
-                        solicitud.get("fecha_inicio", ""),
-                        solicitud.get("fecha_fin", ""),
-                        solicitud.get("actividad", ""),
-                        solicitud.get("estado", "ENVIADO"),
-                    )
+                # Insertar personas asociadas a la solicitud
+                personas = solicitud.get("personas", [])
+                if personas:
+                    sql_persona = """
+                        INSERT INTO personas_solicitud (
+                            solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
+                        ) VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    valores_personas = [
+                        (
+                            solicitud_id,
+                            i,
+                            p.get("ap_nombre", ""),
+                            p.get("tipo_doc", ""),
+                            p.get("identificacion", 0),
+                            p.get("cargo", ""),
+                        )
+                        for i, p in enumerate(personas, start=1)
+                    ]
+                    cursor.executemany(sql_persona, valores_personas)
 
-                    cursor.execute(sql_solicitud, valores_solicitud)
-                    solicitud_id = cursor.lastrowid
-
-                    vehiculo = solicitud.get("vehiculo", [])
-                    if vehiculo:
-                        sql_vehiculo = """
-                            INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa) 
-                            VALUES (%s, %s, %s)
+                # Insertar equipos asociados a la solicitud
+                equipos = solicitud.get("eq_computo", [])
+                if equipos:
+                    sql_equipo = """
+                        INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
+                        VALUES (%s, %s, %s, %s)
                         """
-                        valores_vehiculo = [
-                            (
-                                solicitud_id,
-                                v.get("tipo", ""),
-                                v.get("placa", ""),
-                            )
-                            for v in vehiculo
-                        ]
-                        cursor.executemany(sql_vehiculo, valores_vehiculo)
-
-                    # Insertar personas asociadas a la solicitud
-                    personas = solicitud.get("personas", [])
-                    if personas:
-                        sql_persona = """
-                            INSERT INTO personas_solicitud (
-                                solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
-                            ) VALUES (%s, %s, %s, %s, %s, %s)
-                        """
-                        valores_personas = [
-                            (
-                                solicitud_id,
-                                i,
-                                p.get("ap_nombre", ""),
-                                p.get("tipo_doc", ""),
-                                p.get("identificacion", 0),
-                                p.get("cargo", ""),
-                            )
-                            for i, p in enumerate(personas, start=1)
-                        ]
-                        cursor.executemany(sql_persona, valores_personas)
-
-                    # Insertar equipos asociados a la solicitud
-                    equipos = solicitud.get("eq_computo", [])
-                    if equipos:
-                        sql_equipo = """
-                            INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
-                            VALUES (%s, %s, %s, %s)
-                            """
-                        valores_equipos = [
-                            (
-                                solicitud_id,
-                                eq.get("marca", ""),
-                                eq.get("modelo", ""),
-                                eq.get("serie", ""),
-                            )
-                            for eq in equipos
-                        ]
-                        cursor.executemany(sql_equipo, valores_equipos)
-                        
-                    conexion.commit()
+                    valores_equipos = [
+                        (
+                            solicitud_id,
+                            eq.get("marca", ""),
+                            eq.get("modelo", ""),
+                            eq.get("serie", ""),
+                        )
+                        for eq in equipos
+                    ]
+                    cursor.executemany(sql_equipo, valores_equipos)
+                    
+                conexion.commit()
 
         print(f"✅ La solicitud #{solicitud_id} guardada con éxito en la Base de Datos.")
         return {
@@ -108,11 +102,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 def GET_solicitud_bd(solicitud_id: int) -> dict:
 
     try:
-
         with GET_conexion() as conexion:
-            if not conexion:
-                    return {"exito": False, "mensaje": "Sin conexión a la Base de Datos"}
-
             with conexion.cursor() as cursor:
             
                 # 1. Obtener la solicitud principal
@@ -125,13 +115,26 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         "mensaje": f"Solicitud #{solicitud_id} no encontrada.",
                     }
 
+                # 2. Obtener las plantas asociadas (vía tabla intermedia 'visita')
+                cursor.execute(
+                    """
+                    SELECT p.id, p.nombre 
+                    FROM visita v
+                    INNER JOIN planta p ON v.id_planta = p.id
+                    WHERE v.id_solicitud = %s
+                    """,
+                    (solicitud_id,),
+                )
+                solicitud["plantas"] = cursor.fetchall()
+
+                # 3. Obtener los vehículos asociados
                 cursor.execute(
                     "SELECT tipo, placa FROM vehiculos_solicitud WHERE solicitud_id = %s",
                     (solicitud_id,),
                 )
                 solicitud["vehiculo"] = cursor.fetchall()
 
-                # 2. Obtener las personas asociadas
+                # 4. Obtener las personas asociadas
                 cursor.execute(
                     "SELECT item, ap_nombre, tipo_doc, identificacion, cargo "
                     "FROM personas_solicitud WHERE solicitud_id = %s ORDER BY item ASC",
@@ -139,7 +142,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 solicitud["personas"] = cursor.fetchall()
 
-                # 3. Obtener los equipos asociados
+                # 5. Obtener los equipos asociados
                 cursor.execute(
                     "SELECT marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
                     (solicitud_id,),
@@ -154,18 +157,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
 def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
     try:
         with GET_conexion() as conexion:
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "Sin conexión con la base de datos",
-                }
-
             with conexion.cursor() as cursor:
                 personas = campos.pop("personas", None)
                 eq_computo = campos.pop("eq_computo", None)
                 vehiculo = campos.pop("vehiculo", None)
 
-                
                 if campos:
                     columnas = [f"{col} = %s" for col in campos.keys()]
                     sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
@@ -236,7 +232,7 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                         ]
                         cursor.executemany(sql_eq, valores_eq)
 
-            conexion.commit()
+                conexion.commit()
 
             print(f"✅ Solicitud #{solicitud_id} actualizada con éxito en la base de datos.")
             return {
@@ -254,12 +250,6 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
 def DELETE_solicitud_bd(solicitud_id: int) -> dict:
     try:
         with GET_conexion() as conexion:
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "❌❌ Sin conexión a la base de datos ❌❌",
-                }
-
             with conexion.cursor() as cursor:
 
                 cursor.execute("DELETE FROM solicitudes WHERE id = %s", (solicitud_id,))
@@ -270,7 +260,7 @@ def DELETE_solicitud_bd(solicitud_id: int) -> dict:
                         "mensaje": f"❌❌ No existe la solicitud #{solicitud_id} para eliminar. ❌❌",
                     }
 
-            conexion.commit()
+                conexion.commit()
 
             return {
                 "exito": True,
@@ -281,4 +271,27 @@ def DELETE_solicitud_bd(solicitud_id: int) -> dict:
         return {
             "exito": False, 
             "mensaje": f"❌❌ Error al eliminar solicitud: {e} ❌❌"
+        }
+
+def VINCULAR_solicitud_plantas_db(id_solicitud: int, plantas_ids: list[int]) -> dict:
+    
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)"
+                valores = [(id_solicitud, p_id) for p_id in plantas_ids]
+
+                cursor.executemany(sql, valores)
+
+                conexion.commit()
+
+        return {
+            "exito": True,
+            "mensaje": f"✅ Plantas vinculadas a la solicitud #{id_solicitud}.",
+        }
+
+    except Exception as e:
+        return {
+            "exito": False,
+            "mensaje": f"❌❌ Error al relacionar plantas con la solicitud: {e} ❌❌",
         }

@@ -5,14 +5,6 @@ def CREATE_user_db(usuario: dict) -> dict:
 
     try:
         with GET_conexion() as conexion:
-
-            if not conexion:
-                return {
-                        "exito": False,
-                        "mensaje": "No se pudo establecer conexión con la base de datos",
-                }
-            
-            
             with conexion.cursor() as cursor:            
 
                 sql_user = """
@@ -35,7 +27,7 @@ def CREATE_user_db(usuario: dict) -> dict:
                 cursor.execute(sql_user, valores_user)
                 user_id = cursor.lastrowid
 
-            conexion.commit()  # Confirmar los cambios en la base de datos
+                conexion.commit()  # Confirmar los cambios en la base de datos
 
         print(f"✅✅ El usuario {user_id} fue registrado con éxito. ✅✅")
         return {
@@ -54,13 +46,7 @@ def CREATE_user_db(usuario: dict) -> dict:
 def GET_user_db(id_user: int) -> dict:
 
     try:
-
         with GET_conexion() as conexion:
-
-            if not conexion:
-                    return {"exito": False, "mensaje": "❌❌ Sin conexión a la base de datos ❌❌"}
-
-            
             with conexion.cursor() as cursor:
 
                 sql = """
@@ -119,12 +105,6 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
             ).decode("utf-8")
 
         with GET_conexion() as conexion:
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "Sin conexión con la base de datos.",
-                }
-
             with conexion.cursor() as cursor:
                 # 2. Verificar existencia
                 cursor.execute(
@@ -147,7 +127,7 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
 
                 cursor.execute(sql_user, valores)
 
-            conexion.commit()
+                conexion.commit()
 
         return {
             "exito": True,
@@ -171,10 +151,6 @@ def DELETE_user_db(id_user: int) -> dict:
         }
     try:
         with GET_conexion() as conexion:
-
-            if not conexion:
-                return {"exito": False, "mensaje": "❌❌ Sin conexión con la base de datos. ❌❌"}
-
             with conexion.cursor() as cursor:
 
                 cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
@@ -184,7 +160,7 @@ def DELETE_user_db(id_user: int) -> dict:
                         "exito": False,
                         "mensaje": f"❌❌ El usuario con ID #{id_user} no existe. ❌❌",
                     }
-            conexion.commit()
+                conexion.commit()
 
         return {
             "exito": True,

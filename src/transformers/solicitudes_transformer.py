@@ -40,7 +40,7 @@ def parsear_fecha(
 
 
 def FORMAT_FOR_FRONT(fecha_db: Any) -> str:
-    """Convierte una fecha de la BD a formato DD-MM-YYYY para la respuesta del Frontend."""
+
     if not fecha_db:
         return ""
 
@@ -129,9 +129,7 @@ def limpiar_equipos(raw_equipos: Any) -> List[Dict[str, str]]:
     return equipos_limpios
 
 
-# ========================================================
 # TRANSFORMADORES PRINCIPALES
-# ========================================================
 
 
 def transformar_solicitud(datos_raw: dict) -> dict:

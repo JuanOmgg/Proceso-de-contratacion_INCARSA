@@ -59,20 +59,17 @@ class BaseSolicitudSchema(BaseModel):
 
 
 class SolicitudInput(BaseSolicitudSchema):
-    empresa_origen: str
+
+    empresa_origen: int
     diligenciado_por: int
     nivel_de_riesgo: str
     tipo_de_persona: str = Field(
         ..., json_schema_extra={"example": "Contratista"}
     )
     empresa_contratista: int
-    planta_a_visitar: str
-    fecha_inicio: Union[str, date] = Field(
-        ..., json_schema_extra={"example": "14/08/2026"}
-    )
-    fecha_fin: Union[str, date] = Field(
-        ..., json_schema_extra={"example": "29/08/2026"}
-    )
+    plantas_ids: list[int]
+    fecha_inicio: Union[str, date]
+    fecha_fin: Union[str, date]
     actividad: str
 
     vehiculo: List[VehiculoSchema] = Field(
@@ -111,12 +108,12 @@ class SolicitudInput(BaseSolicitudSchema):
 
 
 class UPDATE_Schema_Optionals(BaseSolicitudSchema):
-    empresa_origen: Optional[str] = None
+    empresa_origen: Optional[int] = None
     diligenciado_por: Optional[int] = None
     nivel_de_riesgo: Optional[str] = None
     tipo_de_persona: Optional[str] = None
     empresa_contratista: Optional[int] = None
-    planta_a_visitar: Optional[str] = None
+    plantas_ids: Optional[list[int]] = None
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None

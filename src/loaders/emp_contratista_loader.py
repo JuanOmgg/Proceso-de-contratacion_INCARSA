@@ -3,15 +3,7 @@ from src.database import GET_conexion
 def CREATE_empCont_db(empContratista: dict) -> dict:
 
     try:
-
         with GET_conexion() as conexion:
-
-            if not conexion:
-                return{
-                    "exito": False,
-                    "mensaje": "No se pudo establecer conexion con la base de datos"
-                }           
-
             with conexion.cursor() as cursor:
 
                 sql_empContratista = """
@@ -20,7 +12,6 @@ def CREATE_empCont_db(empContratista: dict) -> dict:
                 ) VALUES (%s, %s)
                 """
                 valores_empContratista = (
-
                     empContratista.get("nombre", ""),
                     empContratista.get("observacion", ""),
                 )
@@ -28,17 +19,17 @@ def CREATE_empCont_db(empContratista: dict) -> dict:
                 cursor.execute(sql_empContratista, valores_empContratista)
                 empcont_id = cursor.lastrowid
 
-            conexion.commit()
+                conexion.commit()
 
         print(f"✅✅ [DB] Empresa contratista creada con éxito. ID: {empcont_id} ✅✅")
-        return{
+        return {
             "exito": True,
             "mensaje": "✅✅ Empresa contratista creada con éxito ✅✅",
             "empcont_id": empcont_id
         }
     except Exception as e:
         print(f"❌❌ [DB] Error al crear empresa contratista: {e} ❌❌")
-        return{
+        return {
             "exito": False,
             "mensaje": f"❌❌ Error al crear empresa contratista: {e} ❌❌"
         }
@@ -46,15 +37,7 @@ def CREATE_empCont_db(empContratista: dict) -> dict:
 def GET_empCont_db(empcont_id: int) -> dict:
 
     try:
-
         with GET_conexion() as conexion:
-
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "❌❌ No se pudo establecer conexión a la base de datos ❌❌"
-                }
-
             with conexion.cursor() as cursor:
 
                 sql_empContratista = """
@@ -89,7 +72,6 @@ def GET_empCont_db(empcont_id: int) -> dict:
 def UPDATE_empCont_db(empcont_id: int, new_updates: dict) -> dict:
 
     try:
-
         if not new_updates:
             return {
                 "exito": False,
@@ -97,13 +79,6 @@ def UPDATE_empCont_db(empcont_id: int, new_updates: dict) -> dict:
             }
 
         with GET_conexion() as conexion:
-            
-            if not conexion:
-                return{
-                    "exito": False,
-                    "mensaje": "❌❌ No se pudo establecer conexión con la base de datos ❌❌"
-                }
-
             with conexion.cursor() as cursor:
 
                 cursor.execute(      
@@ -117,7 +92,7 @@ def UPDATE_empCont_db(empcont_id: int, new_updates: dict) -> dict:
                     }
 
                 campos_sql = [f"{campo} = %s" for campo in new_updates.keys()]
-                valores = list (new_updates.values())
+                valores = list(new_updates.values())
                 valores.append(empcont_id)
 
                 sql = (
@@ -125,7 +100,7 @@ def UPDATE_empCont_db(empcont_id: int, new_updates: dict) -> dict:
                 )
 
                 cursor.execute(sql, valores)
-            conexion.commit()
+                conexion.commit()
 
         return {
             "exito": True,
@@ -147,15 +122,7 @@ def DELETE_empCont_db(empcont_id: int) -> dict:
         }
 
     try:
-        
         with GET_conexion() as conexion:
-
-            if not conexion:
-                return {
-                    "exito": False,
-                    "mensaje": "❌❌ No se pudo establecer conexión a la base de datos ❌❌"
-                }
-
             with conexion.cursor() as cursor:
 
                 cursor.execute("DELETE FROM emp_contratista WHERE id = %s", (empcont_id,))
@@ -166,7 +133,7 @@ def DELETE_empCont_db(empcont_id: int) -> dict:
                         "mensaje": f"❌❌ No se encontró la empresa contratista con ID {empcont_id} ❌❌",
                     }               
 
-            conexion.commit()
+                conexion.commit()
 
         return {
             "exito": True,
@@ -174,7 +141,7 @@ def DELETE_empCont_db(empcont_id: int) -> dict:
         }
     
     except Exception as e:
-        return{
+        return {
             "exito": False,
             "mensaje": f"❌❌ Error al eliminar empresa contratista: {e} ❌❌"
         }
