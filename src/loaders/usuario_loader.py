@@ -10,8 +10,8 @@ def CREATE_user_db(usuario: dict) -> dict:
                 sql_user = """
                     INSERT INTO usuarios (
                         nombres, apellidos, tipo_documento, num_documento, num_telefono,
-                        correo, contrasena, id_rol
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)        
+                        correo, contrasena, id_rol, is_active
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)        
                 """
                 valores_user = (
                     usuario.get("nombres", ""),
@@ -22,6 +22,7 @@ def CREATE_user_db(usuario: dict) -> dict:
                     usuario.get("correo", ""),
                     usuario.get("contrasena", ""),
                     usuario.get("id_rol"),
+                    usuario.get("is_active", True),
                 )
 
                 cursor.execute(sql_user, valores_user)
@@ -60,6 +61,7 @@ def GET_user_db(id_user: int) -> dict:
                         u.correo,
                         u.contrasena,
                         u.id_rol,
+                        u.is_active,
                         u.fecha_creacion,
                         r.nombre_rol,
                         r.descripcion AS descripcion_rol

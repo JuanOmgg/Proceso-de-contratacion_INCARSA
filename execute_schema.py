@@ -1,4 +1,8 @@
+import sys
 import pymysql
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # 1. Leer el archivo SQL
 with open("schema.sql", "r", encoding="utf-8") as archivo:
@@ -24,4 +28,4 @@ try:
     conexion.close()
 
 except Exception as e:
-    print(f"❌ Error al ejecutar el script SQL: {e}")
+        print(f"❌ Error al ejecutar el script SQL: {e}")

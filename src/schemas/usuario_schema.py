@@ -10,12 +10,13 @@ class UsuarioInput(BaseModel):
     correo: EmailStr
     contrasena: str
     id_rol: int
+    is_active: Optional[bool] = True
+
 class UsuarioResponse(BaseModel):
     exito: bool
     mensaje: str
 
 class UpdateUsuarioInput(BaseModel):
-    
     nombres: Optional[str] = None
     apellidos: Optional[str] = None
     tipo_documento: Optional[str] = None
@@ -24,3 +25,4 @@ class UpdateUsuarioInput(BaseModel):
     correo: Optional[EmailStr] = None
     contrasena: Optional[str] = None
     id_rol: Optional[int] = None
+    is_active: Optional[bool] = None
