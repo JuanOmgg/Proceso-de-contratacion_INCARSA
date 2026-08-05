@@ -9,13 +9,12 @@ def TRANSFORM_USER(data_json: dict) -> dict:
         "num_telefono": int(data_json.get("num_telefono", "")),
         "correo": data_json.get("correo", "").strip().lower(),
         "contrasena": data_json.get("contrasena", ""),
-        "id_rol": int(data_json.get("id_rol", 0)),  # 0 - garantiza que se conviertan a entero (int)
+        "id_rol": int(data_json.get("id_rol", 0)),
+        "is_active": bool(data_json.get("is_active", True)),
     }
 
 
 def TRANSFORM_USER_FOR_FRONT(usuario_db: dict) -> dict:
-
-    # No se permite campo de contrasena para evitar manipulaciones maliciosas desde ell frontend
 
     if not usuario_db:
         return {}
@@ -29,5 +28,6 @@ def TRANSFORM_USER_FOR_FRONT(usuario_db: dict) -> dict:
         "num_telefono": usuario_db.get("num_telefono"),
         "correo": usuario_db.get("correo"),
         "id_rol": usuario_db.get("id_rol"),
-        "nombre_rol": usuario_db.get("nombre_rol", None),  # Si se hace JOIN con roles
+        "is_active": bool(usuario_db.get("is_active", True)),
+        "nombre_rol": usuario_db.get("nombre_rol", None),
     }

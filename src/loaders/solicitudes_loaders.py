@@ -3,95 +3,154 @@ from src.database import GET_conexion
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
     try:
+        raw_plantas = solicitud.get("plantas_ids", [])
+        plantas_ids = []
+        if isinstance(raw_plantas, list):
+            plantas_ids = [int(p) for p in raw_plantas if str(p).isdigit()]
+        elif isinstance(raw_plantas, (int, str)):
+            for p in str(raw_plantas).split(","):
+                if p.strip().isdigit():
+                    plantas_ids.append(int(p.strip()))
+
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                # 1. Obtener la relación de cada planta con su id_empresa
+                empresa_plantas_map = {}
+                if plantas_ids:
+                    format_strings = ",".join(["%s"] * len(plantas_ids))
+                    cursor.execute(
+                        f"SELECT id, id_empresa FROM planta WHERE id IN ({format_strings})",
+                        tuple(plantas_ids),
+                    )
+                    plantas_db = cursor.fetchall()
+                    for p in plantas_db:
+                        emp_id = p["id_empresa"]
+                        p_id = p["id"]
+                        if emp_id not in empresa_plantas_map:
+                            empresa_plantas_map[emp_id] = []
+                        empresa_plantas_map[emp_id].append(p_id)
 
-                # Insertar en la Tabla Padre: solicitudes
-                sql_solicitud = """
+                # Si no se encontraron plantas en BD o no venían plantas, usar empresa_origen proporcionada
+                if not empresa_plantas_map:
+                    emp_origen_default = solicitud.get("empresa_origen", 0)
+                    empresa_plantas_map[emp_origen_default] = plantas_ids
+
+                ids_generados = []
+
+                # 2. Crear una solicitud independiente por cada empresa_origen
+                for emp_origen, sub_plantas in empresa_plantas_map.items():
+                    sql_solicitud = """
                         INSERT INTO solicitudes (
-                        empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_de_persona,
-                        empresa_contratista, plantas_ids, fecha_inicio, fecha_fin, actividad, estado
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
-                """
-
-                valores_solicitud = (
-                    solicitud.get("empresa_origen", ""),
-                    solicitud.get("diligenciado_por", ""),
-                    solicitud.get("nivel_de_riesgo", ""),
-                    solicitud.get("tipo_de_persona", ""),
-                    solicitud.get("empresa_contratista", ""),
-                    solicitud.get("plantas_ids", ""),
-                    solicitud.get("fecha_inicio", ""),
-                    solicitud.get("fecha_fin", ""),
-                    solicitud.get("actividad", ""),
-                    solicitud.get("estado", "ENVIADO"),
-                )
-
-                cursor.execute(sql_solicitud, valores_solicitud)
-                solicitud_id = cursor.lastrowid
-
-                vehiculo = solicitud.get("vehiculo", [])
-                if vehiculo:
-                    sql_vehiculo = """
-                        INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa) 
-                        VALUES (%s, %s, %s)
+                            empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_personal,
+                            empresa_contratista, plantas_ids, fecha_inicio, fecha_fin, actividad, estado, is_active
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
-                    valores_vehiculo = [
-                        (
-                            solicitud_id,
-                            v.get("tipo", ""),
-                            v.get("placa", ""),
-                        )
-                        for v in vehiculo
-                    ]
-                    cursor.executemany(sql_vehiculo, valores_vehiculo)
+                    str_plantas_ids = ",".join(map(str, sub_plantas)) if sub_plantas else ""
 
-                # Insertar personas asociadas a la solicitud
-                personas = solicitud.get("personas", [])
-                if personas:
-                    sql_persona = """
-                        INSERT INTO personas_solicitud (
-                            solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
-                        ) VALUES (%s, %s, %s, %s, %s, %s)
-                    """
-                    valores_personas = [
-                        (
-                            solicitud_id,
-                            i,
-                            p.get("ap_nombre", ""),
-                            p.get("tipo_doc", ""),
-                            p.get("identificacion", 0),
-                            p.get("cargo", ""),
-                        )
-                        for i, p in enumerate(personas, start=1)
-                    ]
-                    cursor.executemany(sql_persona, valores_personas)
+                    valores_solicitud = (
+                        emp_origen,
+                        solicitud.get("diligenciado_por", ""),
+                        solicitud.get("nivel_de_riesgo", ""),
+                        solicitud.get("tipo_personal", ""),
+                        solicitud.get("empresa_contratista", ""),
+                        str_plantas_ids,
+                        solicitud.get("fecha_inicio", ""),
+                        solicitud.get("fecha_fin", ""),
+                        solicitud.get("actividad", ""),
+                        solicitud.get("estado", "ENVIADO"),
+                        solicitud.get("is_active", True),
+                    )
 
-                # Insertar equipos asociados a la solicitud
-                equipos = solicitud.get("eq_computo", [])
-                if equipos:
-                    sql_equipo = """
-                        INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
-                        VALUES (%s, %s, %s, %s)
+                    cursor.execute(sql_solicitud, valores_solicitud)
+                    solicitud_id = cursor.lastrowid
+                    ids_generados.append(solicitud_id)
+
+                    # Registrar relaciones en tabla intermedia 'visita'
+                    if sub_plantas:
+                        sql_visita = "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)"
+                        valores_visita = [(solicitud_id, p_id) for p_id in sub_plantas]
+                        cursor.executemany(sql_visita, valores_visita)
+
+                    # Insertar vehículos
+                    vehiculo = solicitud.get("vehiculo", [])
+                    if vehiculo:
+                        sql_vehiculo = """
+                            INSERT INTO vehiculos_solicitud (solicitud_id, tipo, placa) 
+                            VALUES (%s, %s, %s)
                         """
-                    valores_equipos = [
-                        (
-                            solicitud_id,
-                            eq.get("marca", ""),
-                            eq.get("modelo", ""),
-                            eq.get("serie", ""),
-                        )
-                        for eq in equipos
-                    ]
-                    cursor.executemany(sql_equipo, valores_equipos)
-                    
+                        valores_vehiculo = [
+                            (
+                                solicitud_id,
+                                v.get("tipo", ""),
+                                v.get("placa", ""),
+                            )
+                            for v in vehiculo
+                        ]
+                        cursor.executemany(sql_vehiculo, valores_vehiculo)
+
+                    # Insertar personas y sus documentos asociados
+                    personas = solicitud.get("personas", [])
+                    if personas:
+                        sql_persona = """
+                            INSERT INTO personas_solicitud (
+                                solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
+                            ) VALUES (%s, %s, %s, %s, %s, %s)
+                        """
+                        sql_doc = """
+                            INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo)
+                            VALUES (%s, %s, %s)
+                        """
+                        for i, p in enumerate(personas, start=1):
+                            cursor.execute(
+                                sql_persona,
+                                (
+                                    solicitud_id,
+                                    i,
+                                    p.get("ap_nombre", ""),
+                                    p.get("tipo_doc", ""),
+                                    p.get("identificacion", 0),
+                                    p.get("cargo", ""),
+                                ),
+                            )
+                            persona_id = cursor.lastrowid
+                            docs = p.get("documentos", [])
+                            if docs:
+                                valores_docs = [
+                                    (
+                                        persona_id,
+                                        d.get("tipo_doc", "general"),
+                                        d.get("nombre_archivo") or d.get("url_doc", ""),
+                                    )
+                                    for d in docs
+                                ]
+                                cursor.executemany(sql_doc, valores_docs)
+
+                    # Insertar equipos asociados a la solicitud
+                    equipos = solicitud.get("eq_computo", [])
+                    if equipos:
+                        sql_equipo = """
+                            INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
+                            VALUES (%s, %s, %s, %s)
+                        """
+                        valores_equipos = [
+                            (
+                                solicitud_id,
+                                eq.get("marca", ""),
+                                eq.get("modelo", ""),
+                                eq.get("serie", ""),
+                            )
+                            for eq in equipos
+                        ]
+                        cursor.executemany(sql_equipo, valores_equipos)
+
                 conexion.commit()
 
-        print(f"✅ La solicitud #{solicitud_id} guardada con éxito en la Base de Datos.")
+        print(f"✅ Se registraron {len(ids_generados)} solicitud(es) con éxito: IDs {ids_generados}")
         return {
             "exito": True,
-            "mensaje": f"Solicitud #{solicitud_id} registrada exitosamente.",
-            "id_generado": solicitud_id,
+            "mensaje": f"Se registraron {len(ids_generados)} solicitud(es) exitosamente.",
+            "ids_generados": ids_generados,
+            "id_generado": ids_generados[0] if ids_generados else None,
         }
 
     except Exception as e:
@@ -134,13 +193,37 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 solicitud["vehiculo"] = cursor.fetchall()
 
-                # 4. Obtener las personas asociadas
+                # 4. Obtener personas y sus documentos asociados desde documentos_persona
+                mapeo_sub = {
+                    "cedula": "cedulas",
+                    "doc_identidad": "cedulas",
+                    "identificacion": "cedulas",
+                    "arl": "arl",
+                    "examen": "examenes_medicos",
+                    "examenes": "examenes_medicos",
+                    "examenes_medicos": "examenes_medicos",
+                    "medico": "examenes_medicos",
+                    "otros": "otros",
+                    "otro": "otros",
+                    "actividad": "otros",
+                }
                 cursor.execute(
-                    "SELECT item, ap_nombre, tipo_doc, identificacion, cargo "
+                    "SELECT id, item, ap_nombre, tipo_doc, identificacion, cargo "
                     "FROM personas_solicitud WHERE solicitud_id = %s ORDER BY item ASC",
                     (solicitud_id,),
                 )
-                solicitud["personas"] = cursor.fetchall()
+                personas = cursor.fetchall()
+                for p in personas:
+                    cursor.execute(
+                        "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
+                        (p["id"],),
+                    )
+                    docs = cursor.fetchall()
+                    for d in docs:
+                        sub = mapeo_sub.get(str(d["tipo_doc"]).lower(), "general")
+                        d["url_acceso"] = f"/uploads/documentos/{sub}/{d['nombre_archivo']}"
+                    p["documentos"] = docs
+                solicitud["personas"] = personas
 
                 # 5. Obtener los equipos asociados
                 cursor.execute(
@@ -148,6 +231,12 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     (solicitud_id,),
                 )
                 solicitud["eq_computo"] = cursor.fetchall()
+
+                # 6. Recalcular is_active dinámicamente según la fecha actual y el rango de la solicitud
+                from src.transformers.solicitudes_transformer import calcular_is_active
+                solicitud["is_active"] = calcular_is_active(
+                    solicitud.get("fecha_inicio"), solicitud.get("fecha_fin")
+                )
 
                 return {"exito": True, "datos": solicitud}
 
@@ -195,21 +284,38 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                     )
                     if personas:
                         sql_p = """
-                            INSERT INTO personas_solicitud (solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo)
-                            VALUES (%s, %s, %s, %s, %s, %s)
+                            INSERT INTO personas_solicitud (
+                                solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
+                            ) VALUES (%s, %s, %s, %s, %s, %s)
                         """
-                        valores_p = [
-                            (
-                                solicitud_id,
-                                idx,
-                                p.get("ap_nombre", ""),
-                                p.get("tipo_doc", ""),
-                                str(p.get("identificacion", "")),
-                                p.get("cargo", ""),
+                        sql_doc = """
+                            INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo)
+                            VALUES (%s, %s, %s)
+                        """
+                        for idx, p in enumerate(personas, start=1):
+                            cursor.execute(
+                                sql_p,
+                                (
+                                    solicitud_id,
+                                    idx,
+                                    p.get("ap_nombre", ""),
+                                    p.get("tipo_doc", ""),
+                                    str(p.get("identificacion", "")),
+                                    p.get("cargo", ""),
+                                ),
                             )
-                            for idx, p in enumerate(personas, start=1)
-                        ]
-                        cursor.executemany(sql_p, valores_p)
+                            persona_id = cursor.lastrowid
+                            docs = p.get("documentos", [])
+                            if docs:
+                                valores_docs = [
+                                    (
+                                        persona_id,
+                                        d.get("tipo_doc", "general"),
+                                        d.get("nombre_archivo") or d.get("url_doc", ""),
+                                    )
+                                    for d in docs
+                                ]
+                                cursor.executemany(sql_doc, valores_docs)
 
                 if eq_computo is not None:
                     cursor.execute(

@@ -39,6 +39,11 @@ CREATE TABLE IF NOT EXISTS emp_contratista (
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Insertar empresa contratista base
+INSERT INTO emp_contratista (id, nombre, observacion) VALUES
+(1, 'Contratista General S.A.S.', 'Empresa contratista base para pruebas')
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+
 -- 4. Planta (Depende de empresa)
 CREATE TABLE IF NOT EXISTS planta (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,9 +64,15 @@ CREATE TABLE IF NOT EXISTS usuarios (
     correo VARCHAR(100) NOT NULL UNIQUE,
     contrasena VARCHAR(250) NOT NULL,
     id_rol INT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar usuario base
+INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
+(1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
+ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
 
 -- 6. Solicitudes (Depende de empresa, emp_contratista y usuarios)
 CREATE TABLE IF NOT EXISTS solicitudes (
@@ -69,13 +80,14 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     empresa_origen INT NOT NULL,
     diligenciado_por INT NOT NULL,
     nivel_de_riesgo VARCHAR(20) NOT NULL,
-    tipo_de_persona VARCHAR(30) NOT NULL,
+    tipo_personal VARCHAR(30) NOT NULL,
     empresa_contratista INT NOT NULL,
     plantas_ids VARCHAR(255) NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
     estado VARCHAR(30) NOT NULL DEFAULT 'ENVIADO',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (empresa_origen) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (empresa_contratista) REFERENCES emp_contratista(id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -109,6 +121,14 @@ CREATE TABLE IF NOT EXISTS personas_solicitud (
     identificacion VARCHAR(20) NOT NULL,
     cargo VARCHAR(100),
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS documentos_persona (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    persona_id INT NOT NULL,
+    tipo_doc VARCHAR(50) NOT NULL,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    FOREIGN KEY (persona_id) REFERENCES personas_solicitud(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS equipos_solicitud (

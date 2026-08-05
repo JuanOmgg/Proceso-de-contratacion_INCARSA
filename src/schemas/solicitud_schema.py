@@ -3,6 +3,12 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
 
+class DocumentoPersonaSchema(BaseModel):
+    tipo_doc: str = Field(..., json_schema_extra={"example": "cedula"})
+    nombre_archivo: str = Field(..., json_schema_extra={"example": "a1b2c3d4.pdf"})
+    url_acceso: Optional[str] = Field(None, json_schema_extra={"example": "/uploads/documentos/cedulas/a1b2c3d4.pdf"})
+
+
 class PersonaSchema(BaseModel):
     ap_nombre: str
     tipo_doc: str = Field(..., json_schema_extra={"example": "CC"})
@@ -10,6 +16,7 @@ class PersonaSchema(BaseModel):
         ..., json_schema_extra={"example": "1012345678"}
     )  
     cargo: str
+    documentos: Optional[List[DocumentoPersonaSchema]] = []
 
     @field_validator("identificacion", mode="before")
     @classmethod
@@ -63,7 +70,7 @@ class SolicitudInput(BaseSolicitudSchema):
     empresa_origen: int
     diligenciado_por: int
     nivel_de_riesgo: str
-    tipo_de_persona: str = Field(
+    tipo_personal: str = Field(
         ..., json_schema_extra={"example": "Contratista"}
     )
     empresa_contratista: int
@@ -71,6 +78,7 @@ class SolicitudInput(BaseSolicitudSchema):
     fecha_inicio: Union[str, date]
     fecha_fin: Union[str, date]
     actividad: str
+    is_active: Optional[bool] = True
 
     vehiculo: List[VehiculoSchema] = Field(
         default_factory=list,
@@ -111,13 +119,14 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     empresa_origen: Optional[int] = None
     diligenciado_por: Optional[int] = None
     nivel_de_riesgo: Optional[str] = None
-    tipo_de_persona: Optional[str] = None
+    tipo_personal: Optional[str] = None
     empresa_contratista: Optional[int] = None
     plantas_ids: Optional[list[int]] = None
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
     estado: Optional[str] = None
+    is_active: Optional[bool] = None
 
     vehiculo: Optional[List[VehiculoSchema]] = None
     personas: Optional[List[PersonaSchema]] = None

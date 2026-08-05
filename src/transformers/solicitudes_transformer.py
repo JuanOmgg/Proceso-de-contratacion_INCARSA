@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
@@ -92,13 +93,28 @@ def limpiar_vehiculos(raw_vehiculos: Any) -> List[Dict[str, str]]:
     return vehiculos_limpios
 
 
-def limpiar_personas(raw_personas: Any) -> List[Dict[str, str]]:
+def limpiar_personas(raw_personas: Any) -> List[Dict[str, Any]]:
     if not raw_personas or not isinstance(raw_personas, list):
         return []
 
     personas_limpias = []
     for p in raw_personas:
         if isinstance(p, dict):
+            raw_docs = p.get("documentos", [])
+            docs_limpios = []
+            if isinstance(raw_docs, list):
+                for d in raw_docs:
+                    if isinstance(d, dict):
+                        nombre_arc = d.get("nombre_archivo") or d.get("url_doc") or ""
+                        nombre_limpio = os.path.basename(str(nombre_arc).strip())
+                        if nombre_limpio:
+                            docs_limpios.append(
+                                {
+                                    "tipo_doc": str(d.get("tipo_doc") or "general").strip().lower(),
+                                    "nombre_archivo": nombre_limpio,
+                                }
+                            )
+
             personas_limpias.append(
                 {
                     "ap_nombre": str(p.get("ap_nombre") or "").strip().title(),
@@ -107,6 +123,7 @@ def limpiar_personas(raw_personas: Any) -> List[Dict[str, str]]:
                     .replace(".", "")
                     .strip(),
                     "cargo": str(p.get("cargo") or "").strip().title(),
+                    "documentos": docs_limpios,
                 }
             )
     return personas_limpias
@@ -132,17 +149,46 @@ def limpiar_equipos(raw_equipos: Any) -> List[Dict[str, str]]:
 # TRANSFORMADORES PRINCIPALES
 
 
+def calcular_is_active(f_inicio: Any, f_fin: Any) -> bool:
+    """Calcula si una solicitud está activa hoy según si hoy está entre fecha_inicio y fecha_fin (inclusive)."""
+    today = date.today()
+
+    def to_date(v):
+        if isinstance(v, datetime):
+            return v.date()
+        if isinstance(v, date):
+            return v
+        if isinstance(v, str) and v.strip():
+            try:
+                val_limpia = v.strip().split("T")[0].split(" ")[0].replace("/", "-")
+                for fmt in ["%Y-%m-%d", "%d-%m-%Y"]:
+                    try:
+                        return datetime.strptime(val_limpia, fmt).date()
+                    except ValueError:
+                        continue
+            except Exception:
+                return None
+        return None
+
+    d_start = to_date(f_inicio)
+    d_end = to_date(f_fin)
+
+    if d_start and d_end:
+        return d_start <= today <= d_end
+    return False
+
+
 def transformar_solicitud(datos_raw: dict) -> dict:
-    """Transformador completo para peticiones POST (Creación)."""
+    """Valida, limpia y transforma una estructura JSON de solicitud."""
     solicitud_limpia = {
-        "empresa_origen": str(datos_raw.get("empresa_origen") or "")
-        .strip()
-        .upper(),
+        "empresa_origen": str(
+            datos_raw.get("empresa_origen") or ""
+        ).strip().upper(),
         "diligenciado_por": int(datos_raw.get("diligenciado_por") or 0),
         "nivel_de_riesgo": str(datos_raw.get("nivel_de_riesgo") or "BAJO")
         .strip()
         .upper(),
-        "tipo_de_persona": str(datos_raw.get("tipo_de_persona") or "").strip(),
+        "tipo_personal": str(datos_raw.get("tipo_personal") or "").strip(),
         "empresa_contratista": str(
             datos_raw.get("empresa_contratista") or ""
         )
@@ -155,12 +201,19 @@ def transformar_solicitud(datos_raw: dict) -> dict:
         "estado": str(datos_raw.get("estado") or "PENDIENTE")
         .strip()
         .upper(),
+        "plantas_ids": datos_raw.get("plantas_ids") or [],
     }
 
     # Conversión de fechas
     for campo_fecha in ["fecha_inicio", "fecha_fin"]:
         val_fecha = datos_raw.get(campo_fecha)
         solicitud_limpia[campo_fecha] = parsear_fecha(val_fecha)
+
+    # Calcular is_active dinámicamente según el rango [fecha_inicio, fecha_fin]
+    solicitud_limpia["is_active"] = calcular_is_active(
+        solicitud_limpia.get("fecha_inicio"),
+        solicitud_limpia.get("fecha_fin"),
+    )
 
     # Subtablas
     raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
@@ -183,7 +236,7 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
         "empresa_contratista",
         "estado",
     ]
-    mapeo_strings_normales = ["tipo_de_persona", "planta_a_visitar", "actividad"]
+    mapeo_strings_normales = ["tipo_personal", "planta_a_visitar", "actividad"]
 
     for k in mapeo_strings_upper:
         if k in datos_raw and datos_raw[k] is not None:
@@ -197,6 +250,9 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
         solicitud_limpia["diligenciado_por"] = int(
             datos_raw["diligenciado_por"] or 0
         )
+
+    if "is_active" in datos_raw and datos_raw["is_active"] is not None:
+        solicitud_limpia["is_active"] = bool(datos_raw["is_active"])
 
     for campo_fecha in ["fecha_inicio", "fecha_fin"]:
         if campo_fecha in datos_raw:
