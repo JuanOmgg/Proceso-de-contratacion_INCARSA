@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS roles (
 -- Insertar roles base
 INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Administrador', 'Control total del sistema, gestión de usuarios y configuraciones'),
-('Gestion_documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
+('Gestion documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
 ('SST', 'Seguridad y Salud en el Trabajo - Revisión en paralelo'),
 ('GESCO', 'Gestión Comunal / Social - Revisión en paralelo'),
-('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
+('Seguridad corporativa & riesgo', 'Visto bueno final y autorización estratégica de ingreso')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
 -- 2. Empresa (Sin dependencias)

@@ -12,7 +12,8 @@ from .usuario_schema import (
 
     UsuarioInput,
     UsuarioResponse,
-    UpdateUsuarioInput
+    UpdateUsuarioInput,
+    UsuarioData
 
     )
 
@@ -44,6 +45,7 @@ __all__ = [
     "UsuarioInput",
     "UsuarioResponse",
     "UpdateUsuarioInput",
+    "UsuarioData"
 
     "PlantaInput",
     "UpdatePlantaInput"

@@ -1,4 +1,4 @@
-from src.database import GET_conexion
+from database import GET_conexion
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
@@ -242,6 +242,56 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
 
     except Exception as e:
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
+
+def GET_ALL_solicitudes_bd():
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor: 
+
+                cursor.execute("""
+                    SELECT
+                        so.id,
+                        e.nombre_empresa,
+                        ec.nombre,
+                        CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
+                        so.fecha_inicio   AS fecha_ingreso,
+                        so.fecha_fin      AS fecha_salida,
+                        so.nivel_de_riesgo AS riesgo,
+                        so.actividad,
+                        so.fecha_creacion,
+                        
+                        GROUP_CONCAT(p.nombre SEPARATOR ', ') AS planta,
+                        so.estado
+                    FROM solicitudes so
+                    INNER JOIN usuarios u ON so.diligenciado_por = u.id
+                    INNER JOIN empresa e ON so.empresa_origen = e.id
+                    INNER JOIN emp_contratista ec ON so.empresa_contratista = ec.id
+                    LEFT JOIN visita v ON v.id_solicitud = so.id
+                    LEFT JOIN planta p ON v.id_planta = p.id
+                    GROUP BY so.id
+                    ORDER BY so.id DESC
+                """)
+
+                datos = cursor.fetchall()  
+
+                print(f"📦 [LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
+        
+                return {
+                    "exito": True,
+                    "datos": datos,
+                    "mensaje": "Solicitudes recuperadas exitosamente."
+                }
+
+    except Exception as e:
+        print(f"❌ [LOADER Error] Error consultando solicitudes: {e}")
+        return {
+            "exito": False,
+            "mensaje": f"Error al consultar la base de datos: {str(e)}",
+            "datos": []
+        }
 
 def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
     try:

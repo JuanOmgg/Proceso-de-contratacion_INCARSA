@@ -1,6 +1,6 @@
 # src/database_init.py
 import os
-from src.database import obtener_conexion
+from database import obtener_conexion
 
 
 def inicializar_base_de_datos():
