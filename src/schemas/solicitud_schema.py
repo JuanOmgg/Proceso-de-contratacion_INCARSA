@@ -2,28 +2,6 @@ from datetime import date, datetime
 from typing import List, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
-
-class DocumentoPersonaSchema(BaseModel):
-    tipo_doc: str = Field(..., json_schema_extra={"example": "cedula"})
-    nombre_archivo: str = Field(..., json_schema_extra={"example": "a1b2c3d4.pdf"})
-    url_acceso: Optional[str] = Field(None, json_schema_extra={"example": "/uploads/documentos/cedulas/a1b2c3d4.pdf"})
-
-
-class PersonaSchema(BaseModel):
-    ap_nombre: str
-    tipo_doc: str = Field(..., json_schema_extra={"example": "CC"})
-    identificacion: Union[str, int] = Field(
-        ..., json_schema_extra={"example": "1012345678"}
-    )  
-    cargo: str
-    documentos: Optional[List[DocumentoPersonaSchema]] = []
-
-    @field_validator("identificacion", mode="before")
-    @classmethod
-    def normalizar_identificacion(cls, v):
-        return str(v) if v is not None else ""
-
-
 class VehiculoSchema(BaseModel):
     tipo: str
     placa: str
@@ -75,6 +53,10 @@ class SolicitudInput(BaseSolicitudSchema):
     )
     empresa_contratista: int
     plantas_ids: list[int]
+    personas_ids: list[int] = Field(
+        default_factory=list,
+        json_schema_extra={"example": [1, 2, 3]},
+    )
     fecha_inicio: Union[str, date]
     fecha_fin: Union[str, date]
     actividad: str
@@ -84,20 +66,6 @@ class SolicitudInput(BaseSolicitudSchema):
         default_factory=list,
         json_schema_extra={
             "example": [{"tipo": "Camioneta", "placa": "ABC-123"}]
-        },
-    )
-
-    personas: List[PersonaSchema] = Field(
-        default_factory=list,
-        json_schema_extra={
-            "example": [
-                {
-                    "ap_nombre": "Carlos Mendoza",
-                    "tipo_doc": "CC",
-                    "identificacion": "1012345678",
-                    "cargo": "Técnico Electricista",
-                }
-            ]
         },
     )
 
@@ -122,6 +90,7 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     tipo_personal: Optional[str] = None
     empresa_contratista: Optional[int] = None
     plantas_ids: Optional[list[int]] = None
+    personas_ids: Optional[list[int]] = None
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
@@ -129,5 +98,4 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     is_active: Optional[bool] = None
 
     vehiculo: Optional[List[VehiculoSchema]] = None
-    personas: Optional[List[PersonaSchema]] = None
     eq_computo: Optional[List[EquipoComputoSchema]] = None

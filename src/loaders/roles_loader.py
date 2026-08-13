@@ -1,6 +1,6 @@
 # src/loaders/roles_loader.py
 from typing import List, Dict, Optional
-from src.database import GET_conexion
+from database import GET_conexion
 
 
 def GETALL_roles() -> List[Dict]:
@@ -16,6 +16,24 @@ def GETALL_roles() -> List[Dict]:
     except Exception as e:
         print(f"❌ Error al consultar roles: {e}")
         return []
+
+
+def GET_rol_by_id(id_rol: int) -> Dict:
+    """
+    Recupera un rol específico por su ID.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = "SELECT id, nombre_rol, descripcion FROM roles WHERE id = %s;"
+                cursor.execute(sql, (id_rol,))
+                resultado = cursor.fetchone()
+                if resultado:
+                    return {"exito": True, "data": resultado}
+                return {"exito": False, "mensaje": f"No se encontró el rol con ID {id_rol}."}
+    except Exception as e:
+        print(f"❌ Error al consultar rol por ID: {e}")
+        return {"exito": False, "mensaje": f"Error al consultar la base de datos: {e}"}
 
 
 def GETROL_by_nombre(nombre_rol: str) -> Optional[int]:

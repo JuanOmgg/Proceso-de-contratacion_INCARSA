@@ -1,4 +1,4 @@
-from src.database import GET_conexion
+from database import GET_conexion
 
 def CREATE_empCont_db(empContratista: dict) -> dict:
 

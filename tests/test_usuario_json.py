@@ -1,89 +1,95 @@
-import json
 import sys
 import os
-import random
 
 # Forzar salida utf-8 en consola de Windows
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-# Asegurar que Python encuentre el módulo src
+# Asegurar que Python encuentre el modulo src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.schemas.usuario_schema import UsuarioInput
-from src.services.usuario import CREATE_user, READ_user, DELETE_user
-from src.loaders.usuario_loader import UPDATE_user_db
+from src.services.usuario import CREATE_user
+
+# ─────────────────────────────────────────────────────────────────────
+# Roles disponibles en la BD:
+#   1 = Administrador
+#   2 = Gestion documental
+#   3 = SST
+#   4 = GESCO
+#   5 = Seguridad corporativa & riesgo
+# ─────────────────────────────────────────────────────────────────────
+
+USUARIOS_SEED = [
+    {"nombres": "Laura",    "apellidos": "Ramirez Perez",    "tipo_documento": "CC", "num_documento": "20000001", "num_telefono": "3100000001", "correo": "laura.ramirez@incarsa.com",    "contrasena": "Password123*", "id_rol": 1},
+    {"nombres": "Andres",   "apellidos": "Torres Gomez",     "tipo_documento": "CC", "num_documento": "20000002", "num_telefono": "3100000002", "correo": "andres.torres@incarsa.com",    "contrasena": "Password123*", "id_rol": 2},
+    {"nombres": "Sofia",    "apellidos": "Martinez Cruz",    "tipo_documento": "CC", "num_documento": "20000003", "num_telefono": "3100000003", "correo": "sofia.martinez@incarsa.com",   "contrasena": "Password123*", "id_rol": 3},
+    {"nombres": "Miguel",   "apellidos": "Hernandez Vega",   "tipo_documento": "CC", "num_documento": "20000004", "num_telefono": "3100000004", "correo": "miguel.hernandez@incarsa.com", "contrasena": "Password123*", "id_rol": 4},
+    {"nombres": "Valentina","apellidos": "Lopez Castillo",   "tipo_documento": "CC", "num_documento": "20000005", "num_telefono": "3100000005", "correo": "valentina.lopez@incarsa.com",  "contrasena": "Password123*", "id_rol": 5},
+    {"nombres": "Carlos",   "apellidos": "Sanchez Mora",     "tipo_documento": "CC", "num_documento": "20000006", "num_telefono": "3100000006", "correo": "carlos.sanchez@incarsa.com",   "contrasena": "Password123*", "id_rol": 2},
+    {"nombres": "Daniela",  "apellidos": "Vargas Rios",      "tipo_documento": "CC", "num_documento": "20000007", "num_telefono": "3100000007", "correo": "daniela.vargas@incarsa.com",   "contrasena": "Password123*", "id_rol": 3},
+    {"nombres": "Felipe",   "apellidos": "Jimenez Rueda",    "tipo_documento": "CC", "num_documento": "20000008", "num_telefono": "3100000008", "correo": "felipe.jimenez@incarsa.com",   "contrasena": "Password123*", "id_rol": 4},
+    {"nombres": "Natalia",  "apellidos": "Castro Benitez",   "tipo_documento": "CC", "num_documento": "20000009", "num_telefono": "3100000009", "correo": "natalia.castro@incarsa.com",   "contrasena": "Password123*", "id_rol": 5},
+    {"nombres": "Juan",     "apellidos": "Moreno Salcedo",   "tipo_documento": "CC", "num_documento": "20000010", "num_telefono": "3100000010", "correo": "juan.moreno@incarsa.com",      "contrasena": "Password123*", "id_rol": 2},
+    {"nombres": "Camila",   "apellidos": "Reyes Fuentes",    "tipo_documento": "CC", "num_documento": "20000011", "num_telefono": "3100000011", "correo": "camila.reyes@incarsa.com",     "contrasena": "Password123*", "id_rol": 3},
+    {"nombres": "Sergio",   "apellidos": "Guerrero Navas",   "tipo_documento": "CC", "num_documento": "20000012", "num_telefono": "3100000012", "correo": "sergio.guerrero@incarsa.com",  "contrasena": "Password123*", "id_rol": 1},
+    {"nombres": "Paola",    "apellidos": "Medina Acosta",    "tipo_documento": "CC", "num_documento": "20000013", "num_telefono": "3100000013", "correo": "paola.medina@incarsa.com",     "contrasena": "Password123*", "id_rol": 4},
+    {"nombres": "Ricardo",  "apellidos": "Perez Cardenas",   "tipo_documento": "CC", "num_documento": "20000014", "num_telefono": "3100000014", "correo": "ricardo.perez@incarsa.com",    "contrasena": "Password123*", "id_rol": 5},
+    {"nombres": "Mariana",  "apellidos": "Diaz Ospina",      "tipo_documento": "CC", "num_documento": "20000015", "num_telefono": "3100000015", "correo": "mariana.diaz@incarsa.com",     "contrasena": "Password123*", "id_rol": 2},
+    {"nombres": "Pablo",    "apellidos": "Rojas Quintero",   "tipo_documento": "CC", "num_documento": "20000016", "num_telefono": "3100000016", "correo": "pablo.rojas@incarsa.com",      "contrasena": "Password123*", "id_rol": 3},
+    {"nombres": "Alejandra","apellidos": "Florez Montoya",   "tipo_documento": "CC", "num_documento": "20000017", "num_telefono": "3100000017", "correo": "alejandra.florez@incarsa.com", "contrasena": "Password123*", "id_rol": 4},
+    {"nombres": "Esteban",  "apellidos": "Aguilar Pinto",    "tipo_documento": "CC", "num_documento": "20000018", "num_telefono": "3100000018", "correo": "esteban.aguilar@incarsa.com",  "contrasena": "Password123*", "id_rol": 5},
+    {"nombres": "Luisa",    "apellidos": "Suarez Valencia",  "tipo_documento": "CC", "num_documento": "20000019", "num_telefono": "3100000019", "correo": "luisa.suarez@incarsa.com",     "contrasena": "Password123*", "id_rol": 2},
+    {"nombres": "Mateo",    "apellidos": "Cano Bermudez",    "tipo_documento": "CC", "num_documento": "20000020", "num_telefono": "3100000020", "correo": "mateo.cano@incarsa.com",       "contrasena": "Password123*", "id_rol": 3},
+]
+
+ROLES_NOMBRE = {
+    1: "Administrador",
+    2: "Gestion documental",
+    3: "SST",
+    4: "GESCO",
+    5: "Seguridad corporativa & riesgo",
+}
 
 
-def probar_crud_usuario_json():
+def crear_20_usuarios():
     print("============================================================")
-    print("🧪 BATERÍA DE PRUEBAS PARA USUARIOS (SCHEMA + SERVICE + DB)")
+    print("  SEED - CREANDO 20 USUARIOS EN LA BASE DE DATOS")
     print("============================================================")
+    print("  NOTA: Estos registros SE QUEDAN en la BD.")
+    print("============================================================\n")
 
-    # 1. Generar datos dinámicos con documento y correo único para evitar colisiones
-    num_unico = random.randint(1000000, 9999999)
-    doc_prueba = f"10{num_unico}"
-    correo_prueba = f"usuario.{num_unico}@incarsa.com"
+    ids_creados = []
+    errores = []
 
-    peticion_json_swagger = f"""
-    {{
-        "nombres": "Carlos Esteban",
-        "apellidos": "Mendoza Lopez",
-        "tipo_documento": "CC",
-        "num_documento": "{doc_prueba}",
-        "num_telefono": "3109876543",
-        "correo": "{correo_prueba}",
-        "contrasena": "PasswordSegura123*",
-        "id_rol": 1
-    }}
-    """
+    for i, u_data in enumerate(USUARIOS_SEED, start=1):
+        try:
+            payload = UsuarioInput(**u_data)
+            resultado = CREATE_user(payload)
 
-    print("📩 1. Simulando Petición HTTP/Swagger (JSON Payload)...")
-    data_dict = json.loads(peticion_json_swagger)
-    print(json.dumps(data_dict, indent=4, ensure_ascii=False))
+            if resultado.get("exito"):
+                user_id = resultado.get("id_generado")
+                ids_creados.append(user_id)
+                rol_nombre = ROLES_NOMBRE.get(u_data["id_rol"], "?")
+                print(f"  [{i:02d}/20] OK  ID #{user_id:>3} - {u_data['nombres']} {u_data['apellidos']}"
+                      f" | Rol: {rol_nombre}")
+            else:
+                msg = resultado.get("mensaje", "Error desconocido")
+                errores.append((i, u_data["nombres"], msg))
+                print(f"  [{i:02d}/20] ERROR - {u_data['nombres']} {u_data['apellidos']}: {msg}")
 
-    # 2. Validación con Schema Pydantic
-    print("\n🧹 2. Validando Payload con Pydantic (UsuarioInput)...")
-    payload = UsuarioInput(**data_dict)
-    print("   ✅ Pydantic: Datos válidos.")
+        except Exception as e:
+            errores.append((i, u_data.get("nombres", "?"), str(e)))
+            print(f"  [{i:02d}/20] EXCEPCION - {u_data.get('nombres', '?')}: {e}")
 
-    # 3. Creación de Usuario vía Servicio (incluye hashing bcrypt)
-    print("\n🚀 3. Creando Usuario en Base de Datos (CREATE_user)...")
-    res_crear = CREATE_user(payload)
-    print(f"   - Respuesta: {res_crear}")
+    print(f"\n  Usuarios creados : {len(ids_creados)} / 20")
+    print(f"  Errores          : {len(errores)}")
+    print(f"  IDs generados    : {ids_creados}")
+    print("\n  Puedes usar estos IDs en USUARIOS_VALIDOS del test_multi_solicitud.py")
+    print("============================================================\n")
 
-    if not res_crear.get("exito"):
-        print(f"   ❌ Falló la creación: {res_crear.get('mensaje')}")
-        return
-
-    user_id = res_crear.get("id_generado")
-    print(f"   ✅ Usuario registrado con ID: #{user_id}")
-
-    # 4. Lectura / Consulta de Usuario
-    print(f"\n🔍 4. Consultando Usuario ID #{user_id} (READ_user)...")
-    res_lectura = READ_user(user_id)
-    if res_lectura.get("exito"):
-        user_data = res_lectura.get("data", {})
-        print(f"   • Nombre completo: {user_data.get('nombres')} {user_data.get('apellidos')}")
-        print(f"   • Documento: {user_data.get('tipo_documento')} {user_data.get('num_documento')}")
-        print(f"   • Correo: {user_data.get('correo')}")
-        print(f"   • Rol Asignado: {user_data.get('nombre_rol')} ({user_data.get('descripcion_rol')})")
-    else:
-        print(f"   ❌ Error al leer: {res_lectura.get('mensaje')}")
-
-    # 5. Actualización parcial (PATCH)
-    print(f"\n📝 5. Actualizando campos del Usuario ID #{user_id} (UPDATE_user_db)...")
-    cambios = {"num_telefono": "3150009988", "apellidos": "Mendoza Gómez"}
-    res_update = UPDATE_user_db(user_id, cambios)
-    print(f"   - Resultado: {res_update.get('mensaje')}")
-
-    # 6. Limpieza / Eliminación de Usuario de prueba
-    print(f"\n🗑️ 6. Eliminando Usuario ID #{user_id} (DELETE_user)...")
-    res_delete = DELETE_user(user_id)
-    print(f"   - Resultado: {res_delete.get('mensaje')}")
-
-    print("\n🏁 PRUEBA DE USUARIOS COMPLETADA CON ÉXITO")
+    return ids_creados
 
 
 if __name__ == "__main__":
-    probar_crud_usuario_json()
+    crear_20_usuarios()

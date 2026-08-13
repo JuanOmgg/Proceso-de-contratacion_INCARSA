@@ -5,6 +5,7 @@ from .solicitudes_loaders import (
     UPDATE_solicitud_bd,
     GET_solicitud_bd,
     DELETE_solicitud_bd,
+    GET_ALL_solicitudes_bd
 )
 
 from .usuario_loader import  (
@@ -12,7 +13,9 @@ from .usuario_loader import  (
     GET_user_db, 
     DELETE_user_db, 
     UPDATE_user_db, 
-    CREATE_user_db)
+    CREATE_user_db,
+    GET_BY_ROL_with_count_db
+)
 
 from .roles_loader import (
 
@@ -42,16 +45,20 @@ __all__ = [
     "CREATE_solicitud_bd",
     "UPDATE_solicitud_bd",
     "GET_solicitud_bd",
-    "DELETE_solicitud_bd",  
+    "DELETE_solicitud_bd",
+    "GET_ALL_solicitudes_bd",
 
     "CREATE_empCont_db",
     "GET_empCont_db",
     "UPDATE_empCont_db",
 
+
     "GET_user_db",
     "DELETE_user_db",
     "UPDATE_user_db",
     "CREATE_user_db",
+    "GET_ALL_users_db",
+    "GET_BY_ROL_with_count_db",
 
     "GETALL_roles",
     "GETROL_by_nombre",

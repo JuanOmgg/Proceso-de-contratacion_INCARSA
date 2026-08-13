@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS roles (
 -- Insertar roles base
 INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Administrador', 'Control total del sistema, gestión de usuarios y configuraciones'),
-('Gestion_documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
+('Gestion documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
 ('SST', 'Seguridad y Salud en el Trabajo - Revisión en paralelo'),
 ('GESCO', 'Gestión Comunal / Social - Revisión en paralelo'),
-('Seguridad corporativa', 'Visto bueno final y autorización estratégica de ingreso')
+('Seguridad corporativa & riesgo', 'Visto bueno final y autorización estratégica de ingreso')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
 -- 2. Empresa (Sin dependencias)
@@ -39,9 +39,14 @@ CREATE TABLE IF NOT EXISTS emp_contratista (
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insertar empresa contratista base
-INSERT INTO emp_contratista (id, nombre, observacion) VALUES
-(1, 'Contratista General S.A.S.', 'Empresa contratista base para pruebas')
+-- Insertar empresas contratistas base
+INSERT INTO emp_contratista (nombre, observacion) VALUES
+('Contratista General S.A.S.',     'Empresa contratista base para pruebas'),
+('Electricos del Norte S.A.S.',     'Especialistas en instalaciones electricas industriales'),
+('Construcciones Andes Ltda.',       'Obras civiles y mantenimiento de infraestructura'),
+('Servicios Tecnicos Omega S.A.S.',  'Mantenimiento mecanico y servicios tecnicos especializados'),
+('Logistica y Transporte Rio S.A.',  'Transporte de carga y logistica operacional'),
+('Seguridad Industrial Alpha Ltda.', 'Consultoria en SST y seguridad industrial')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- 4. Planta (Depende de empresa)
@@ -69,6 +74,17 @@ CREATE TABLE IF NOT EXISTS usuarios (
     FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS personas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    tipo_doc VARCHAR(70) NOT NULL,
+    identificacion INT NOT NULL,
+    cargo VARCHAR(30) NOT NULL,
+    observacion VARCHAR(250) NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Insertar usuario base
 INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
 (1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
@@ -83,6 +99,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     tipo_personal VARCHAR(30) NOT NULL,
     empresa_contratista INT NOT NULL,
     plantas_ids VARCHAR(255) NULL,
+    personas_ids VARCHAR(255) NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
@@ -112,23 +129,21 @@ CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS personas_solicitud (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    solicitud_id INT NOT NULL,
-    item INT NULL,
-    ap_nombre VARCHAR(150) NOT NULL,
-    tipo_doc VARCHAR(20) NOT NULL,
-    identificacion VARCHAR(20) NOT NULL,
-    cargo VARCHAR(100),
-    FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS documentos_persona (
     id INT AUTO_INCREMENT PRIMARY KEY,
     persona_id INT NOT NULL,
     tipo_doc VARCHAR(50) NOT NULL,
     nombre_archivo VARCHAR(255) NOT NULL,
-    FOREIGN KEY (persona_id) REFERENCES personas_solicitud(id) ON DELETE CASCADE
+    FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ingresantes (
+    id_solicitud INT NOT NULL,
+    id_persona INT NOT NULL,
+    autorizado BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS equipos_solicitud (
@@ -139,3 +154,12 @@ CREATE TABLE IF NOT EXISTS equipos_solicitud (
     serie VARCHAR(100) NOT NULL,
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS documentos_persona(
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    person_id INT NOT NULL,
+    tipo_doc VARCHAR(50) NOT NULL,
+    nom_documento VARCHAR (250) NOT NULL,
+    FOREIGN KEY (person_id) REFERENCES personas(id) ON DELETE CASCADE
+)

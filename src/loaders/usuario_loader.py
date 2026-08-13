@@ -1,5 +1,7 @@
-from src.database import GET_conexion
+from database import GET_conexion
 import bcrypt
+from typing import List, Dict, Any
+
 
 def CREATE_user_db(usuario: dict) -> dict:
 
@@ -87,6 +89,77 @@ def GET_user_db(id_user: int) -> dict:
             "exito": False,
             "mensaje": f"❌❌ No fue posible encontrar al usuario {e} ❌❌",
         }
+
+def GET_BY_ROL_with_count_db() -> List[Dict[str, Any]]:
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                sql_byRol = """
+                    SELECT 
+                        COALESCE(r.nombre_rol, 'Sin rol') AS rol,
+                        COUNT(u.id) AS total
+                    FROM usuarios u
+                    LEFT JOIN roles r ON u.id_rol = r.id
+                    WHERE u.is_active = 1
+                    GROUP BY r.id, r.nombre_rol
+                    ORDER BY total DESC
+                """
+                cursor.execute(sql_byRol)
+                return cursor.fetchall()
+
+    except Exception as e:
+        
+        print(f"❌ Error en GET_BY_ROL: {e}")
+        raise e
+
+
+def GET_ALL_users_db() -> dict:
+    
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                cursor.execute("""
+                    SELECT 
+                        u.id,
+                        CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo,
+                        u.nombres,
+                        u.apellidos,
+                        u.tipo_documento,
+                        u.num_documento,
+                        u.num_telefono,
+                        u.correo,
+                        r.nombre_rol AS rol,
+                        u.fecha_creacion
+                    FROM usuarios u
+                    INNER JOIN roles r ON u.id_rol = r.id
+                    ORDER BY u.id DESC
+                """)
+                datos_user = cursor.fetchall()
+
+                print(f"📦 [LOADER] Se recuperaron {len(datos_user)} usuarios de la base de datos.")
+
+                return{
+                    "exito": True,
+                    "mensaje": "Usuarios encontrados con éxito",
+                    "datos_user": datos_user
+                }
+
+    except Exception as e:
+        print(f"❌❌ Error al consultar usuarios en la BD: {e} ❌❌")
+        return {
+            "exito": False,
+            "mensaje": f"❌❌ No fue posible encontrar los usuarios {e} ❌❌",
+            "datos_user": []
+        }
+
+
 
 
 def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:

@@ -2,7 +2,6 @@ from .solicitud_schema import (
 
     SolicitudInput,
     UPDATE_Schema_Optionals,
-    PersonaSchema,
     VehiculoSchema,
     EquipoComputoSchema
 
@@ -12,7 +11,8 @@ from .usuario_schema import (
 
     UsuarioInput,
     UsuarioResponse,
-    UpdateUsuarioInput
+    UpdateUsuarioInput,
+    UsuarioData
 
     )
 
@@ -30,11 +30,16 @@ from .planta_schema import (
 
 )
 
+from .personas_schema import (
+
+    PersonInput,
+    PersonInputUpdate
+)
+
 __all__ = [
 
     "SolicitudInput",
     "UPDATE_Schema_Optionals",
-    "PersonaSchema",
     "VehiculoSchema",
     "EquipoComputoSchema",
 
@@ -44,9 +49,11 @@ __all__ = [
     "UsuarioInput",
     "UsuarioResponse",
     "UpdateUsuarioInput",
+    "UsuarioData"
 
     "PlantaInput",
     "UpdatePlantaInput"
-    
 
+    "PersonInput",
+    "PersonInputUpdate"
 ]

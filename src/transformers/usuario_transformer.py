@@ -2,8 +2,8 @@
 def TRANSFORM_USER(data_json: dict) -> dict:
 
     return {
-        "nombres": data_json.get("nombres", "").strip(),
-        "apellidos": data_json.get("apellidos", "").strip(),
+        "nombres": data_json.get("nombres", "").strip().capitalize(),
+        "apellidos": data_json.get("apellidos", "").strip().capitalize(),
         "tipo_documento": data_json.get("tipo_documento", "").strip(),
         "num_documento": int(data_json.get("num_documento", "")),
         "num_telefono": int(data_json.get("num_telefono", "")),
