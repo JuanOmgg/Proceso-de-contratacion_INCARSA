@@ -1,3 +1,4 @@
+import json
 from database import GET_conexion
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
@@ -42,10 +43,14 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     sql_solicitud = """
                         INSERT INTO solicitudes (
                             empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_personal,
-                            empresa_contratista, plantas_ids, fecha_inicio, fecha_fin, actividad, estado, is_active
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            empresa_contratista, plantas_ids, personas_ids, fecha_inicio, fecha_fin, actividad, estado, is_active
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     str_plantas_ids = ",".join(map(str, sub_plantas)) if sub_plantas else ""
+
+                    # Preparar IDs de personas como string CSV
+                    personas_ids = solicitud.get("personas_ids", [])
+                    str_personas_ids = ",".join(map(str, personas_ids)) if personas_ids else ""
 
                     valores_solicitud = (
                         emp_origen,
@@ -54,6 +59,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         solicitud.get("tipo_personal", ""),
                         solicitud.get("empresa_contratista", ""),
                         str_plantas_ids,
+                        str_personas_ids,
                         solicitud.get("fecha_inicio", ""),
                         solicitud.get("fecha_fin", ""),
                         solicitud.get("actividad", ""),
@@ -71,6 +77,12 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         valores_visita = [(solicitud_id, p_id) for p_id in sub_plantas]
                         cursor.executemany(sql_visita, valores_visita)
 
+                    # Registrar relaciones en tabla intermedia 'ingresantes'
+                    if personas_ids:
+                        sql_ingresantes = "INSERT INTO ingresantes (id_solicitud, id_persona) VALUES (%s, %s)"
+                        valores_ingresantes = [(solicitud_id, p_id) for p_id in personas_ids]
+                        cursor.executemany(sql_ingresantes, valores_ingresantes)
+
                     # Insertar vehículos
                     vehiculo = solicitud.get("vehiculo", [])
                     if vehiculo:
@@ -87,43 +99,6 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                             for v in vehiculo
                         ]
                         cursor.executemany(sql_vehiculo, valores_vehiculo)
-
-                    # Insertar personas y sus documentos asociados
-                    personas = solicitud.get("personas", [])
-                    if personas:
-                        sql_persona = """
-                            INSERT INTO personas_solicitud (
-                                solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
-                            ) VALUES (%s, %s, %s, %s, %s, %s)
-                        """
-                        sql_doc = """
-                            INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo)
-                            VALUES (%s, %s, %s)
-                        """
-                        for i, p in enumerate(personas, start=1):
-                            cursor.execute(
-                                sql_persona,
-                                (
-                                    solicitud_id,
-                                    i,
-                                    p.get("ap_nombre", ""),
-                                    p.get("tipo_doc", ""),
-                                    p.get("identificacion", 0),
-                                    p.get("cargo", ""),
-                                ),
-                            )
-                            persona_id = cursor.lastrowid
-                            docs = p.get("documentos", [])
-                            if docs:
-                                valores_docs = [
-                                    (
-                                        persona_id,
-                                        d.get("tipo_doc", "general"),
-                                        d.get("nombre_archivo") or d.get("url_doc", ""),
-                                    )
-                                    for d in docs
-                                ]
-                                cursor.executemany(sql_doc, valores_docs)
 
                     # Insertar equipos asociados a la solicitud
                     equipos = solicitud.get("eq_computo", [])
@@ -193,23 +168,14 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 solicitud["vehiculo"] = cursor.fetchall()
 
-                # 4. Obtener personas y sus documentos asociados desde documentos_persona
-                mapeo_sub = {
-                    "cedula": "cedulas",
-                    "doc_identidad": "cedulas",
-                    "identificacion": "cedulas",
-                    "arl": "arl",
-                    "examen": "examenes_medicos",
-                    "examenes": "examenes_medicos",
-                    "examenes_medicos": "examenes_medicos",
-                    "medico": "examenes_medicos",
-                    "otros": "otros",
-                    "otro": "otros",
-                    "actividad": "otros",
-                }
+                # 4. Obtener ingresantes (personas) via tabla intermedia 'ingresantes'
                 cursor.execute(
-                    "SELECT id, item, ap_nombre, tipo_doc, identificacion, cargo "
-                    "FROM personas_solicitud WHERE solicitud_id = %s ORDER BY item ASC",
+                    """
+                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo
+                    FROM ingresantes i
+                    INNER JOIN personas p ON i.id_persona = p.id
+                    WHERE i.id_solicitud = %s
+                    """,
                     (solicitud_id,),
                 )
                 personas = cursor.fetchall()
@@ -220,10 +186,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     )
                     docs = cursor.fetchall()
                     for d in docs:
-                        sub = mapeo_sub.get(str(d["tipo_doc"]).lower(), "general")
-                        d["url_acceso"] = f"/uploads/documentos/{sub}/{d['nombre_archivo']}"
+                        d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
                     p["documentos"] = docs
-                solicitud["personas"] = personas
+                solicitud["ingresantes"] = personas
 
                 # 5. Obtener los equipos asociados
                 cursor.execute(
@@ -255,28 +220,100 @@ def GET_ALL_solicitudes_bd():
                     SELECT
                         so.id,
                         e.nombre_empresa,
-                        ec.nombre,
+                        ec.nombre AS nombre_emContratista,
                         CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
                         so.fecha_inicio   AS fecha_ingreso,
                         so.fecha_fin      AS fecha_salida,
                         so.nivel_de_riesgo AS riesgo,
                         so.actividad,
                         so.fecha_creacion,
+                        so.estado,
+
+                        GROUP_CONCAT(DISTINCT p.nombre SEPARATOR ', ') AS planta,
+
+                        GROUP_CONCAT(DISTINCT
+                            CONCAT_WS('|||',
+                                per.id,
+                                CONCAT(per.apellido, ' ', per.nombre),
+                                per.tipo_doc,
+                                per.identificacion,
+                                per.cargo,
+                                IFNULL(ing.autorizado, '')
+                            )
+                            SEPARATOR '###'
+                        ) AS personas
                         
-                        GROUP_CONCAT(p.nombre SEPARATOR ', ') AS planta,
-                        so.estado
                     FROM solicitudes so
+
                     INNER JOIN usuarios u ON so.diligenciado_por = u.id
                     INNER JOIN empresa e ON so.empresa_origen = e.id
                     INNER JOIN emp_contratista ec ON so.empresa_contratista = ec.id
+                    
                     LEFT JOIN visita v ON v.id_solicitud = so.id
                     LEFT JOIN planta p ON v.id_planta = p.id
+                    
+                    LEFT JOIN ingresantes ing ON ing.id_solicitud = so.id
+                    LEFT JOIN personas per ON ing.id_persona = per.id
+
                     GROUP BY so.id
                     ORDER BY so.id DESC
                 """)
 
                 datos = cursor.fetchall()  
 
+                for row in datos:
+                    if isinstance(row, dict) and 'personas' in row:
+                        val_personas = row['personas']
+                        if isinstance(val_personas, str):
+                            if val_personas.strip() == "":
+                                val_personas = []
+                            else:
+                                personas_list = []
+                                for item in val_personas.split('###'):
+                                    if not item:
+                                        continue
+                                    partes = item.split('|||')
+                                    if len(partes) < 6:
+                                        continue
+                                    try:
+                                        persona_id = int(partes[0]) if partes[0].isdigit() else None
+                                    except Exception:
+                                        persona_id = None
+                                    personas_list.append({
+                                        'id': persona_id,
+                                        'ap_nombre': partes[1] or None,
+                                        'tipo_doc': partes[2] or None,
+                                        'identificacion': partes[3] or None,
+                                        'cargo': partes[4] or None,
+                                        'autorizado': partes[5] or None,
+                                    })
+                                val_personas = personas_list
+                        
+                        if isinstance(val_personas, list):
+                            row['personas'] = [p for p in val_personas if p is not None]
+                    
+                    if isinstance(row, dict) and 'eq_computo' in row:
+                        val_eq_computo = row['eq_computo']
+                        if isinstance(val_eq_computo, str):
+                            try:
+                                val_eq_computo = json.loads(val_eq_computo)
+                            except Exception:
+                                val_eq_computo = []
+                        
+                        if isinstance(val_eq_computo, list):
+                            row['eq_computo'] = [e for e in val_eq_computo if e is not None]
+                    
+                    if isinstance(row, dict) and 'vehiculo' in row:
+                        val_vehiculo = row['vehiculo']
+                        if isinstance(val_vehiculo, str):
+                            try:
+                                val_vehiculo = json.loads(val_vehiculo)
+                            except Exception:
+                                val_vehiculo = []
+                        
+                        if isinstance(val_vehiculo, list):
+                            row['vehiculo'] = [v for v in val_vehiculo if v is not None]
+                            
                 print(f"📦 [LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
         
                 return {
@@ -326,46 +363,6 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                             for v in vehiculo
                         ]
                         cursor.executemany(sql_vehiculo, valores_vehiculo)
-
-                if personas is not None:
-                    cursor.execute(
-                        "DELETE FROM personas_solicitud WHERE solicitud_id = %s",
-                        (solicitud_id,),
-                    )
-                    if personas:
-                        sql_p = """
-                            INSERT INTO personas_solicitud (
-                                solicitud_id, item, ap_nombre, tipo_doc, identificacion, cargo
-                            ) VALUES (%s, %s, %s, %s, %s, %s)
-                        """
-                        sql_doc = """
-                            INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo)
-                            VALUES (%s, %s, %s)
-                        """
-                        for idx, p in enumerate(personas, start=1):
-                            cursor.execute(
-                                sql_p,
-                                (
-                                    solicitud_id,
-                                    idx,
-                                    p.get("ap_nombre", ""),
-                                    p.get("tipo_doc", ""),
-                                    str(p.get("identificacion", "")),
-                                    p.get("cargo", ""),
-                                ),
-                            )
-                            persona_id = cursor.lastrowid
-                            docs = p.get("documentos", [])
-                            if docs:
-                                valores_docs = [
-                                    (
-                                        persona_id,
-                                        d.get("tipo_doc", "general"),
-                                        d.get("nombre_archivo") or d.get("url_doc", ""),
-                                    )
-                                    for d in docs
-                                ]
-                                cursor.executemany(sql_doc, valores_docs)
 
                 if eq_computo is not None:
                     cursor.execute(

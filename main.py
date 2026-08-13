@@ -9,6 +9,7 @@ from src.routes.usuario_route import router as usuario_router
 from src.routes.emContr_route import router as emp_contratista_router
 from src.routes.planta_route import router as planta_router
 from src.routes.roles_route import router as roles_router
+from src.routes.personas_route import router as personas_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -33,12 +34,20 @@ for sub in subcategorias:
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Conectamos los routers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(solicitud_router)
 app.include_router(usuario_router)
 app.include_router(emp_contratista_router)
 app.include_router(planta_router)
 app.include_router(roles_router)
-
+app.include_router(personas_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 def verificacion_servidor():
@@ -60,9 +69,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(solicitud_router)
-app.include_router(usuario_router)
-app.include_router(emp_contratista_router)
-app.include_router(planta_router)
-app.include_router(roles_router)

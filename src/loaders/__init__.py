@@ -13,7 +13,8 @@ from .usuario_loader import  (
     GET_user_db, 
     DELETE_user_db, 
     UPDATE_user_db, 
-    CREATE_user_db
+    CREATE_user_db,
+    GET_BY_ROL_with_count_db
 )
 
 from .roles_loader import (
@@ -57,6 +58,7 @@ __all__ = [
     "UPDATE_user_db",
     "CREATE_user_db",
     "GET_ALL_users_db",
+    "GET_BY_ROL_with_count_db",
 
     "GETALL_roles",
     "GETROL_by_nombre",

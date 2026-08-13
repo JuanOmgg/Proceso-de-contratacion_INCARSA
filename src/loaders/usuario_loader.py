@@ -1,5 +1,7 @@
 from database import GET_conexion
 import bcrypt
+from typing import List, Dict, Any
+
 
 def CREATE_user_db(usuario: dict) -> dict:
 
@@ -87,6 +89,33 @@ def GET_user_db(id_user: int) -> dict:
             "exito": False,
             "mensaje": f"❌❌ No fue posible encontrar al usuario {e} ❌❌",
         }
+
+def GET_BY_ROL_with_count_db() -> List[Dict[str, Any]]:
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                sql_byRol = """
+                    SELECT 
+                        COALESCE(r.nombre_rol, 'Sin rol') AS rol,
+                        COUNT(u.id) AS total
+                    FROM usuarios u
+                    LEFT JOIN roles r ON u.id_rol = r.id
+                    WHERE u.is_active = 1
+                    GROUP BY r.id, r.nombre_rol
+                    ORDER BY total DESC
+                """
+                cursor.execute(sql_byRol)
+                return cursor.fetchall()
+
+    except Exception as e:
+        
+        print(f"❌ Error en GET_BY_ROL: {e}")
+        raise e
+
 
 def GET_ALL_users_db() -> dict:
     

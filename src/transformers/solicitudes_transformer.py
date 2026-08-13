@@ -93,42 +93,6 @@ def limpiar_vehiculos(raw_vehiculos: Any) -> List[Dict[str, str]]:
     return vehiculos_limpios
 
 
-def limpiar_personas(raw_personas: Any) -> List[Dict[str, Any]]:
-    if not raw_personas or not isinstance(raw_personas, list):
-        return []
-
-    personas_limpias = []
-    for p in raw_personas:
-        if isinstance(p, dict):
-            raw_docs = p.get("documentos", [])
-            docs_limpios = []
-            if isinstance(raw_docs, list):
-                for d in raw_docs:
-                    if isinstance(d, dict):
-                        nombre_arc = d.get("nombre_archivo") or d.get("url_doc") or ""
-                        nombre_limpio = os.path.basename(str(nombre_arc).strip())
-                        if nombre_limpio:
-                            docs_limpios.append(
-                                {
-                                    "tipo_doc": str(d.get("tipo_doc") or "general").strip().lower(),
-                                    "nombre_archivo": nombre_limpio,
-                                }
-                            )
-
-            personas_limpias.append(
-                {
-                    "ap_nombre": str(p.get("ap_nombre") or "").strip().title(),
-                    "tipo_doc": str(p.get("tipo_doc") or "").strip().upper(),
-                    "identificacion": str(p.get("identificacion") or "")
-                    .replace(".", "")
-                    .strip(),
-                    "cargo": str(p.get("cargo") or "").strip().title(),
-                    "documentos": docs_limpios,
-                }
-            )
-    return personas_limpias
-
-
 def limpiar_equipos(raw_equipos: Any) -> List[Dict[str, str]]:
     if not raw_equipos or not isinstance(raw_equipos, list):
         return []
@@ -202,6 +166,9 @@ def transformar_solicitud(datos_raw: dict) -> dict:
         .strip()
         .upper(),
         "plantas_ids": datos_raw.get("plantas_ids") or [],
+        "personas_ids": [
+            int(p) for p in (datos_raw.get("personas_ids") or []) if str(p).isdigit()
+        ],
     }
 
     # Conversión de fechas
@@ -218,7 +185,6 @@ def transformar_solicitud(datos_raw: dict) -> dict:
     # Subtablas
     raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
     solicitud_limpia["vehiculo"] = limpiar_vehiculos(raw_v)
-    solicitud_limpia["personas"] = limpiar_personas(datos_raw.get("personas"))
     solicitud_limpia["eq_computo"] = limpiar_equipos(
         datos_raw.get("eq_computo")
     )
@@ -265,10 +231,12 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
         raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
         solicitud_limpia["vehiculo"] = limpiar_vehiculos(raw_v)
 
-    if "personas" in datos_raw:
-        solicitud_limpia["personas"] = limpiar_personas(datos_raw["personas"])
-
     if "eq_computo" in datos_raw:
         solicitud_limpia["eq_computo"] = limpiar_equipos(datos_raw["eq_computo"])
+
+    if "personas_ids" in datos_raw and datos_raw["personas_ids"] is not None:
+        solicitud_limpia["personas_ids"] = [
+            int(p) for p in datos_raw["personas_ids"] if str(p).isdigit()
+        ]
 
     return solicitud_limpia

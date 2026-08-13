@@ -131,6 +131,8 @@ def GET_ALL_solicitudes():
     resultado = GET_ALL_solicitudes_bd() 
 
     if not resultado.get("exito", True):
+        error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")
+        print(f"❌ Error interno en GET_ALL_solicitudes_bd: {error_msg}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje", "Error al obtener las solicitudes.")

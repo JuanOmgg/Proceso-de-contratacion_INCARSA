@@ -1,9 +1,10 @@
+from src.loaders.usuario_loader import GET_BY_ROL_with_count_db
 from fastapi import APIRouter, HTTPException, status
 from src.schemas.usuario_schema import UsuarioInput, UsuarioResponse, UpdateUsuarioInput, UsuarioData
 from src.services.usuario import CREATE_user, READ_user, DELETE_user
-from src.loaders.usuario_loader import CREATE_user_db, DELETE_user_db, UPDATE_user_db, GET_ALL_users_db
+from src.loaders.usuario_loader import DELETE_user_db, UPDATE_user_db, GET_ALL_users_db, GET_BY_ROL_with_count_db
 from src.transformers.usuario_transformer import TRANSFORM_USER
-from typing import List
+from typing import List, Dict, Any
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
@@ -19,6 +20,20 @@ def CREATE_user_rt(payload: UsuarioInput):
         )
 
     return resultado
+
+@router.get("/usuarios/conteo-por-rol", response_model=List[Dict[str, Any]])
+def get_conteo_roles():
+    try:
+        
+        conteos = GET_BY_ROL_with_count_db() 
+        
+        return conteos 
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al obtener métricas de roles: {str(e)}"
+        )
 
 @router.get("/{id_user}", status_code=status.HTTP_200_OK, response_model=UsuarioData)   
 def GET_user_rt(id_user:int):
@@ -49,6 +64,7 @@ def GET_ALL_users_rt():
     
     print(f"📦 [GET_ALL] Datos de los usuarios recuperados con éxito.")
     return resultado["datos_user"]
+
 
 @router.patch("/{id_user}", status_code=status.HTTP_200_OK)
 def UPDATE_user_rt(id_user: int, payload: UpdateUsuarioInput):
