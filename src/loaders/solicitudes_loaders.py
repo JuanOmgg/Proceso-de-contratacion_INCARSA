@@ -1,5 +1,6 @@
 import json
 from database import GET_conexion
+from typing import Dict, List, Any
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
@@ -241,10 +242,22 @@ def GET_ALL_solicitudes_bd():
                                 IFNULL(ing.autorizado, '')
                             )
                             SEPARATOR '###'
-                        ) AS personas
+                        ) AS personas,
+
+                        GROUP_CONCAT(DISTINCT
+                            CONCAT_WS('|||',
+                                es.id,
+                                es.marca,
+                                es.modelo,
+                                es.serie
+                            )
+                            SEPARATOR '###'
+                        ) AS computos
                         
                     FROM solicitudes so
 
+
+                    LEFT JOIN equipos_solicitud es ON es.solicitud_id = so.id
                     INNER JOIN usuarios u ON so.diligenciado_por = u.id
                     INNER JOIN empresa e ON so.empresa_origen = e.id
                     INNER JOIN emp_contratista ec ON so.empresa_contratista = ec.id
@@ -329,6 +342,31 @@ def GET_ALL_solicitudes_bd():
             "mensaje": f"Error al consultar la base de datos: {str(e)}",
             "datos": []
         }
+
+def GET_date_count_db() -> List[Dict[str, Any]]:
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                cursor.execute("SET lc_time_names = 'es_ES';")
+                cursor.execute("""
+                    SELECT 
+                        DATE_FORMAT(s.fecha_creacion, '%Y-%m') AS month_key,
+                        DATE_FORMAT(s.fecha_creacion, '%M') AS month,
+                        COUNT(s.id) AS total
+                    FROM solicitudes s
+                    GROUP BY month_key, month
+                    ORDER BY month_key ASC
+                """)
+
+                return cursor.fetchall()
+
+    except Exception as e:
+        print(f"❌ Error en GET_conteo_solicitudes_por_mes_db: {e}")
+        raise e 
 
 def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
     try:

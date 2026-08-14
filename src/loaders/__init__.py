@@ -5,7 +5,8 @@ from .solicitudes_loaders import (
     UPDATE_solicitud_bd,
     GET_solicitud_bd,
     DELETE_solicitud_bd,
-    GET_ALL_solicitudes_bd
+    GET_ALL_solicitudes_bd,
+    GET_date_count_db
 )
 
 from .usuario_loader import  (
@@ -47,6 +48,7 @@ __all__ = [
     "GET_solicitud_bd",
     "DELETE_solicitud_bd",
     "GET_ALL_solicitudes_bd",
+    "GET_date_count_db",
 
     "CREATE_empCont_db",
     "GET_empCont_db",

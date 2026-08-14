@@ -7,10 +7,12 @@ from src.loaders.solicitudes_loaders import (
     GET_solicitud_bd,
     CREATE_solicitud_bd,
     UPDATE_solicitud_bd,
-    GET_ALL_solicitudes_bd
+    GET_ALL_solicitudes_bd,
+    GET_date_count_db
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
+from typing import List, Dict, Any
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
 
@@ -105,6 +107,21 @@ def CREATE_solicitud(payload: SolicitudInput):
         "datos_guardados": resultado,
     }
 
+@router.get("/fechasCount", response_model=List[Dict[str, Any]])
+def GET_fechasCount_rt():
+
+    try:
+
+        Fcount = GET_date_count_db()
+
+        return Fcount
+
+    except Exception as e:
+        print(f"❌ Error al obtener fechas: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al obtener fechas: {e}"
+        )
 
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def GET_solicitud(solicitud_id: int):
