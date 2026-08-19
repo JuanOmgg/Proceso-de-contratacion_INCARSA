@@ -29,13 +29,16 @@ from .emp_contratista_loader import (
 
     CREATE_empCont_db,
     GET_empCont_db,
-    UPDATE_empCont_db
+    UPDATE_empCont_db,
+    GET_ALL_empCont_db
+
 )
 
 from .planta_loader import (
 
     CREATE_planta_db,
     GET_planta_db,
+    GET_ALL_planta_db,
     UPDATE_planta_db,
     DELETE_planta_db
 )
@@ -53,6 +56,7 @@ __all__ = [
     "CREATE_empCont_db",
     "GET_empCont_db",
     "UPDATE_empCont_db",
+    "GET_ALL_empCont_db",
 
 
     "GET_user_db",
@@ -69,6 +73,7 @@ __all__ = [
     "CREATE_planta_db",
     "GET_planta_db",
     "UPDATE_planta_db",
-    "DELETE_planta_db"
+    "DELETE_planta_db",
+    "GET_ALL_planta_db"
     
 ]

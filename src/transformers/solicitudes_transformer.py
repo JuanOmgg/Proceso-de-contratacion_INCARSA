@@ -2,6 +2,11 @@ import os
 import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
+from src.transformers.vehiculo_transformer import (
+    FORMATEAR_PLACA,
+    limpiar_lista_vehiculos as limpiar_vehiculos,
+)
+
 
 
 # ========================================================
@@ -55,42 +60,8 @@ def FORMAT_FOR_FRONT(fecha_db: Any) -> str:
         return str(fecha_db)
 
 
-def FORMATEAR_PLACA(placa_raw: Optional[str]) -> str:
-    if not placa_raw:
-        return ""
-
-    texto = str(placa_raw).strip().upper()
-    match = re.search(r"([A-Z]{3}).*?(\d{3})", texto)
-
-    if match:
-        letras, numeros = match.groups()
-        return f"{letras}-{numeros}"
-
-    return re.sub(r"\s+", "", texto)
 
 
-# ========================================================
-# LIMPIADORES DE SUBTABLAS (Reutilizables)
-# ========================================================
-
-
-def limpiar_vehiculos(raw_vehiculos: Any) -> List[Dict[str, str]]:
-    if not raw_vehiculos:
-        return []
-
-    if isinstance(raw_vehiculos, dict):
-        raw_vehiculos = [raw_vehiculos]
-
-    vehiculos_limpios = []
-    for v in raw_vehiculos:
-        if isinstance(v, dict):
-            vehiculos_limpios.append(
-                {
-                    "tipo": str(v.get("tipo") or "").strip().upper(),
-                    "placa": FORMATEAR_PLACA(v.get("placa")),
-                }
-            )
-    return vehiculos_limpios
 
 
 def limpiar_equipos(raw_equipos: Any) -> List[Dict[str, str]]:
@@ -142,6 +113,58 @@ def calcular_is_active(f_inicio: Any, f_fin: Any) -> bool:
     return False
 
 
+def limpiar_vehiculos_solicitud(
+    raw_v: Any, raw_ids: Any = None
+) -> List[Dict[str, Any]]:
+    """
+    Normaliza los vehículos a ingresar en la solicitud para la tabla Veh_ingreso.
+    Soporta IDs directos o datos de vehículo (tipo, placa).
+    """
+    vehiculos_limpios = []
+
+    if raw_ids and isinstance(raw_ids, list):
+        for vid in raw_ids:
+            if str(vid).isdigit():
+                vehiculos_limpios.append(
+                    {"id_vehiculo": int(vid), "licencia_doc": 0}
+                )
+
+    if not raw_v:
+        return vehiculos_limpios
+
+    if isinstance(raw_v, (dict, int, str)):
+        raw_v = [raw_v]
+
+    if isinstance(raw_v, list):
+        for v in raw_v:
+            if isinstance(v, int) or (isinstance(v, str) and v.isdigit()):
+                vehiculos_limpios.append(
+                    {"id_vehiculo": int(v), "licencia_doc": 0}
+                )
+            elif isinstance(v, dict):
+                lic_doc_val = v.get("licencia_doc")
+                lic_doc = str(lic_doc_val).strip() if lic_doc_val is not None else ""
+                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
+                    vehiculos_limpios.append(
+                        {
+                            "id_vehiculo": int(v["id_vehiculo"]),
+                            "licencia_doc": lic_doc,
+                            "documentos": v.get("documentos") or [],
+                        }
+                    )
+                elif v.get("placa"):
+                    vehiculos_limpios.append(
+                        {
+                            "tipo": str(v.get("tipo") or "").strip().upper(),
+                            "placa": FORMATEAR_PLACA(v.get("placa")),
+                            "licencia_doc": lic_doc,
+                            "documentos": v.get("documentos") or [],
+                        }
+                    )
+
+    return vehiculos_limpios
+
+
 def transformar_solicitud(datos_raw: dict) -> dict:
     """Valida, limpia y transforma una estructura JSON de solicitud."""
     solicitud_limpia = {
@@ -162,7 +185,7 @@ def transformar_solicitud(datos_raw: dict) -> dict:
             datos_raw.get("planta_a_visitar") or ""
         ).strip(),
         "actividad": str(datos_raw.get("actividad") or "").strip(),
-        "estado": str(datos_raw.get("estado") or "PENDIENTE")
+        "estado": str(datos_raw.get("estado") or "ENVIADO")
         .strip()
         .upper(),
         "plantas_ids": datos_raw.get("plantas_ids") or [],
@@ -182,9 +205,10 @@ def transformar_solicitud(datos_raw: dict) -> dict:
         solicitud_limpia.get("fecha_fin"),
     )
 
-    # Subtablas
+    # Subtablas (Veh_ingreso y equipos)
     raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
-    solicitud_limpia["vehiculo"] = limpiar_vehiculos(raw_v)
+    raw_v_ids = datos_raw.get("vehiculos_ids")
+    solicitud_limpia["vehiculos"] = limpiar_vehiculos_solicitud(raw_v, raw_v_ids)
     solicitud_limpia["eq_computo"] = limpiar_equipos(
         datos_raw.get("eq_computo")
     )
@@ -227,9 +251,16 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
             )
 
     # Procesamiento seguro de subtablas solo si vienen en el PATCH
-    if "vehiculo" in datos_raw or "vehiculos" in datos_raw:
+    if (
+        "vehiculo" in datos_raw
+        or "vehiculos" in datos_raw
+        or "vehiculos_ids" in datos_raw
+    ):
         raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
-        solicitud_limpia["vehiculo"] = limpiar_vehiculos(raw_v)
+        raw_v_ids = datos_raw.get("vehiculos_ids")
+        solicitud_limpia["vehiculos"] = limpiar_vehiculos_solicitud(
+            raw_v, raw_v_ids
+        )
 
     if "eq_computo" in datos_raw:
         solicitud_limpia["eq_computo"] = limpiar_equipos(datos_raw["eq_computo"])
@@ -238,5 +269,20 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
         solicitud_limpia["personas_ids"] = [
             int(p) for p in datos_raw["personas_ids"] if str(p).isdigit()
         ]
+
+    if "plantas_ids" in datos_raw and datos_raw["plantas_ids"] is not None:
+        solicitud_limpia["plantas_ids"] = [
+            int(p) for p in datos_raw["plantas_ids"] if str(p).isdigit()
+        ]
+
+    # Recalcular is_active si se envían ambas fechas y no se especificó is_active explícito
+    if (
+        "fecha_inicio" in solicitud_limpia
+        and "fecha_fin" in solicitud_limpia
+        and "is_active" not in solicitud_limpia
+    ):
+        solicitud_limpia["is_active"] = calcular_is_active(
+            solicitud_limpia["fecha_inicio"], solicitud_limpia["fecha_fin"]
+        )
 
     return solicitud_limpia

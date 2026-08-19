@@ -18,6 +18,9 @@ from tests.test_multi_solicitud import correr_todas_las_pruebas
 from tests.test_usuario_json   import crear_20_usuarios
 from tests.seed_personas       import seed_personas
 from tests.seed_contratistas   import seed_contratistas
+from tests.seed_vehiculos      import ejecutar_seed_vehiculos
+from tests.seed_solicitudes    import seed_solicitudes
+
 
 
 def seccion(numero: int, titulo: str):
@@ -86,8 +89,24 @@ def ejecutar_suite_completa():
     except Exception as e:
         resultados.append(("Test Personas", f"ERROR: {e}"))
 
-    # ── 7. SOLICITUDES ────────────────────────────────────────────────
-    seccion(7, "SOLICITUDES - MULTI-CREACION POR EMPRESA (6 casos)")
+    # ── 7. SEED VEHICULOS ─────────────────────────────────────────────
+    seccion(7, "SEED - 20 VEHICULOS CON DOCUMENTOS ANIDADOS")
+    try:
+        ejecutar_seed_vehiculos()
+        resultados.append(("Seed Vehículos", "OK"))
+    except Exception as e:
+        resultados.append(("Seed Vehículos", f"ERROR: {e}"))
+
+    # ── 8. SEED SOLICITUDES ───────────────────────────────────────────
+    seccion(8, "SEED - 15 SOLICITUDES (CON PLANTAS, PERSONAS Y VEHICULOS)")
+    try:
+        seed_solicitudes()
+        resultados.append(("Seed Solicitudes", "OK"))
+    except Exception as e:
+        resultados.append(("Seed Solicitudes", f"ERROR: {e}"))
+
+    # ── 9. TEST SOLICITUDES ───────────────────────────────────────────
+    seccion(9, "SOLICITUDES - MULTI-CREACION POR EMPRESA (6 casos)")
     try:
         correr_todas_las_pruebas()
         resultados.append(("Solicitudes", "OK"))

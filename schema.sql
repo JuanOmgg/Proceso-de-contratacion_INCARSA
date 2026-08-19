@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Insertar usuario base
+INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
+(1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
+ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
+
+-- 6. Personas
 CREATE TABLE IF NOT EXISTS personas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
@@ -83,14 +89,17 @@ CREATE TABLE IF NOT EXISTS personas (
     cargo VARCHAR(30) NOT NULL,
     observacion VARCHAR(250) NULL,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insertar usuario base
-INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
-(1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
-ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
+-- 7. Vehículos
+CREATE TABLE IF NOT EXISTS vehiculos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(25) NOT NULL,
+    placa VARCHAR(10) NOT NULL UNIQUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Solicitudes (Depende de empresa, emp_contratista y usuarios)
+-- 8. Solicitudes (Depende de empresa, emp_contratista y usuarios)
 CREATE TABLE IF NOT EXISTS solicitudes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     empresa_origen INT NOT NULL,
@@ -100,6 +109,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     empresa_contratista INT NOT NULL,
     plantas_ids VARCHAR(255) NULL,
     personas_ids VARCHAR(255) NULL,
+    vehiculos_ids VARCHAR(255) NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
@@ -111,7 +121,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     FOREIGN KEY (diligenciado_por) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Visita (Tabla intermedia: Depende de solicitudes y planta)
+-- 9. Visita (Tabla intermedia: Solicitudes y Planta)
 CREATE TABLE IF NOT EXISTS visita (
     id_solicitud INT NOT NULL,
     id_planta INT NOT NULL,
@@ -120,16 +130,27 @@ CREATE TABLE IF NOT EXISTS visita (
     FOREIGN KEY (id_planta) REFERENCES planta(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Subtablas asociadas a Solicitudes (Vehículos, Personas, Equipos)
-CREATE TABLE IF NOT EXISTS vehiculos_solicitud (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    solicitud_id INT NOT NULL,
-    tipo VARCHAR(50) NOT NULL,
-    placa VARCHAR(20) NOT NULL,
-    FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
+-- 10. Ingresantes (Tabla intermedia: Solicitudes y Personas)
+CREATE TABLE IF NOT EXISTS ingresantes (
+    id_solicitud INT NOT NULL,
+    id_persona INT NOT NULL,
+    autorizado BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY (id_solicitud, id_persona),
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 11. Veh_ingreso (Tabla intermedia: Solicitudes y Vehículos)
+CREATE TABLE IF NOT EXISTS Veh_ingreso (
+    id_solicitud INT NOT NULL,
+    id_vehiculo INT NOT NULL,
+    licencia_doc VARCHAR(255) NULL,
+    PRIMARY KEY (id_solicitud, id_vehiculo),
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 12. Documentos de Personas
 CREATE TABLE IF NOT EXISTS documentos_persona (
     id INT AUTO_INCREMENT PRIMARY KEY,
     persona_id INT NOT NULL,
@@ -138,14 +159,16 @@ CREATE TABLE IF NOT EXISTS documentos_persona (
     FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ingresantes (
-    id_solicitud INT NOT NULL,
-    id_persona INT NOT NULL,
-    autorizado BOOLEAN NOT NULL DEFAULT TRUE,
-    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE
+-- 13. Documentos de Vehículos
+CREATE TABLE IF NOT EXISTS documentos_vehiculo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_vehiculo INT NOT NULL,
+    tipo_doc VARCHAR(50) NOT NULL,
+    nom_documento VARCHAR(250) NOT NULL,
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 14. Equipos de Solicitud
 CREATE TABLE IF NOT EXISTS equipos_solicitud (
     id INT AUTO_INCREMENT PRIMARY KEY,
     solicitud_id INT NOT NULL,
@@ -154,12 +177,3 @@ CREATE TABLE IF NOT EXISTS equipos_solicitud (
     serie VARCHAR(100) NOT NULL,
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS documentos_persona(
-
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    person_id INT NOT NULL,
-    tipo_doc VARCHAR(50) NOT NULL,
-    nom_documento VARCHAR (250) NOT NULL,
-    FOREIGN KEY (person_id) REFERENCES personas(id) ON DELETE CASCADE
-)

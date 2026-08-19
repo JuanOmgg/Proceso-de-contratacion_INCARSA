@@ -16,6 +16,13 @@ from .planta_transformer import (
     TRANSFORM_PLANTA
 )
 
+from .vehiculo_transformer import (
+    FORMATEAR_PLACA,
+    TRANSFORMER_vehiculo,
+    TRANSFORMER_vehiculo_patch,
+    limpiar_lista_vehiculos,
+)
+
 __all__ = [
     "transformar_solicitud",
     "transformar_solicitud_patch",
@@ -27,5 +34,9 @@ __all__ = [
 
     "TRANSFORM_PLANTA",
 
+    "FORMATEAR_PLACA",
+    "TRANSFORMER_vehiculo",
+    "TRANSFORMER_vehiculo_patch",
+    "limpiar_lista_vehiculos",
 ]
 

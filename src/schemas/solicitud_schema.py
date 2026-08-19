@@ -1,16 +1,21 @@
 from datetime import date, datetime
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
+
 class VehiculoSchema(BaseModel):
-    tipo: str
-    placa: str
+    id_vehiculo: Optional[Union[int, str]] = None
+    tipo: Optional[str] = None
+    placa: Optional[str] = None
+    conductor: Optional[str] = None
+    licencia_doc: Optional[Union[str, int]] = None
+    documentos: Optional[List[Any]] = None
 
 
 class EquipoComputoSchema(BaseModel):
-    marca: str
-    modelo: str
-    serie: str
+    marca: Optional[str] = "Genérica"
+    modelo: Optional[str] = "General"
+    serie: Optional[str] = "S/N"
 
 
 class BaseSolicitudSchema(BaseModel):
@@ -44,42 +49,26 @@ class BaseSolicitudSchema(BaseModel):
 
 
 class SolicitudInput(BaseSolicitudSchema):
-
-    empresa_origen: int
-    diligenciado_por: int
-    nivel_de_riesgo: str
-    tipo_personal: str = Field(
-        ..., json_schema_extra={"example": "Contratista"}
-    )
-    empresa_contratista: int
-    plantas_ids: list[int]
-    personas_ids: list[int] = Field(
-        default_factory=list,
-        json_schema_extra={"example": [1, 2, 3]},
-    )
+    empresa_origen: Union[int, str]
+    diligenciado_por: Optional[Union[int, str]] = 1
+    nivel_de_riesgo: Optional[str] = "Bajo"
+    tipo_personal: Optional[str] = "Contratista"
+    empresa_contratista: Union[int, str]
+    plantas_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
+    personas_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
+    vehiculos_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
     fecha_inicio: Union[str, date]
     fecha_fin: Union[str, date]
     actividad: str
     is_active: Optional[bool] = True
 
-    vehiculo: List[VehiculoSchema] = Field(
-        default_factory=list,
-        json_schema_extra={
-            "example": [{"tipo": "Camioneta", "placa": "ABC-123"}]
-        },
+    vehiculo: Optional[List[Union[Dict[str, Any], VehiculoSchema, int, str]]] = Field(
+        default_factory=list
     )
+    vehiculos: Optional[List[Union[Dict[str, Any], VehiculoSchema, int, str]]] = None
 
-    eq_computo: List[EquipoComputoSchema] = Field(
-        default_factory=list,
-        json_schema_extra={
-            "example": [
-                {
-                    "marca": "Lenovo",
-                    "modelo": "ThinkPad E14",
-                    "serie": "SN-987654321",
-                }
-            ]
-        },
+    eq_computo: Optional[List[Union[Dict[str, Any], EquipoComputoSchema]]] = Field(
+        default_factory=list
     )
 
 
@@ -91,11 +80,12 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     empresa_contratista: Optional[int] = None
     plantas_ids: Optional[list[int]] = None
     personas_ids: Optional[list[int]] = None
+    vehiculos_ids: Optional[list[int]] = None
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
     estado: Optional[str] = None
     is_active: Optional[bool] = None
 
-    vehiculo: Optional[List[VehiculoSchema]] = None
+    vehiculo: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
     eq_computo: Optional[List[EquipoComputoSchema]] = None

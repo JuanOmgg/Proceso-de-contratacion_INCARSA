@@ -69,6 +69,38 @@ def GET_empCont_db(empcont_id: int) -> dict:
             "mensaje": f"❌❌ Error al obtener empresa contratista: {e} ❌❌"
         }
 
+def GET_ALL_empCont_db():
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                cursor.execute("""
+                    SELECT 
+                        ec.id,
+                        ec.nombre,
+                        ec.observacion
+                    FROM emp_contratista ec
+                """)
+
+                datos = cursor.fetchall()
+
+                print(f"📦 [LOADER] Se recuperaron {len(datos)} contratistas de la base de datos.")
+
+                return{
+                    "exito": True,
+                    "data": datos,
+                    "mensaje": "Contratistas recuperados con exito."
+                }
+    except Exception as e:
+        return{
+            "exito": False,
+            "mensaje": "Error al consultar la base de datos: {e}",
+            "datos": []
+        }
+
 def UPDATE_empCont_db(empcont_id: int, new_updates: dict) -> dict:
 
     try:
