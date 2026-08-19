@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/post", status_code=status.HTTP_201_CREATED)
 def CREATE_user_rt(payload: UsuarioInput):
 
     resultado = CREATE_user(payload)

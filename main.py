@@ -10,6 +10,8 @@ from src.routes.emContr_route import router as emp_contratista_router
 from src.routes.planta_route import router as planta_router
 from src.routes.roles_route import router as roles_router
 from src.routes.personas_route import router as personas_router
+from src.routes.vehiculo_router import router as vehiculo_router
+from src.routes.empresa_route import router as empresa_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -27,7 +29,7 @@ BASE_DIR = os.path.dirname(__file__)
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 DOCUMENTOS_DIR = os.path.join(UPLOAD_DIR, "documentos")
 
-subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general"]
+subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general", "vehiculos"]
 for sub in subcategorias:
     os.makedirs(os.path.join(DOCUMENTOS_DIR, sub), exist_ok=True)
 
@@ -48,6 +50,8 @@ app.include_router(emp_contratista_router)
 app.include_router(planta_router)
 app.include_router(roles_router)
 app.include_router(personas_router)
+app.include_router(vehiculo_router)
+app.include_router(empresa_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 def verificacion_servidor():

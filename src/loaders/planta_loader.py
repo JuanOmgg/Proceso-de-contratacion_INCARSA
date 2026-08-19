@@ -66,6 +66,39 @@ def GET_planta_db(id_planta: int) -> dict:
             "mensaje": f"❌❌ Error al obtener la planta: {e} ❌❌"
         }
 
+def GET_ALL_planta_db():
+
+    try:
+
+        with GET_conexion() as conexion:
+
+            with conexion.cursor() as cursor:
+
+                cursor.execute("""
+                    SELECT 
+                        p.id,
+                        e.nombre_empresa AS N_empresa,
+                        p.nombre
+
+                    FROM planta p
+
+                    INNER JOIN empresa e ON p.id_empresa = e.id
+                """)
+
+                plantas = cursor.fetchall()
+
+                return {
+                    "exito": True,
+                    "datos": plantas,
+                    "mensaje": f"Plantas traidas con exito: {plantas}"
+                }
+    except Exception as e:
+        return{
+            "exito": False,
+            "mensaje": "No se pudo recuperar plantas de la base de datos",
+        }
+
+
 def UPDATE_planta_db(id_planta: int, new_updates: dict) -> dict:
 
     try:

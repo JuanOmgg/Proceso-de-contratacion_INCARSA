@@ -2,11 +2,16 @@ from fastapi import APIRouter, HTTPException, status
 from src.schemas.emp_contratista_schema import EmpContratistaInput, UpdateEmpContratistainput
 from src.services.emp_contratista import CREATE_emp_contratista
 from src.transformers.empContr_transformer import TRANSFORM_EMPCONTRATISTA
-from src.loaders.emp_contratista_loader import (GET_empCont_db, UPDATE_empCont_db, DELETE_empCont_db)
+from src.loaders.emp_contratista_loader import (
+    GET_empCont_db, 
+    UPDATE_empCont_db, 
+    DELETE_empCont_db, 
+    GET_ALL_empCont_db
+    )
 
 router = APIRouter(prefix = "/emp_contratista", tags = ["Empresas Contratistas"])
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def CREATE_empContratista_rt(payload: EmpContratistaInput):
 
     resultado = CREATE_emp_contratista(payload)
@@ -34,6 +39,22 @@ def GET_empContratista_rt(empcont_id: int):
     print(f"📦 [GET] Datos de la empresa #{empcont_id} recuperados con éxito.")
     return resultado
 
+@router.get("/", status_code=status.HTTP_200_OK)
+def GET_ALL_empCont_rt():
+
+    print("🔍 [GET] Consultando todas las empresas contratistas en la base de datos...")
+
+    resultado = GET_ALL_empCont_db()
+
+    if not resultado.get("exito", True):
+        error_msg = resultado.get("mensaje", "Error desconocido en la consulta de empresas contratistas.")
+        print(f"❌ Error interno en GET_ALL_empCont_db: {error_msg}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al obtener las emrpesas contratistas.")
+        )
+
+    return resultado.get("data", resultado)
 @router.patch("/{empcont_id}", status_code=status.HTTP_200_OK)
 def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput):
 

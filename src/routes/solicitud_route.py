@@ -1,7 +1,7 @@
 import os
 import shutil
 import uuid
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
     GET_solicitud_bd,
@@ -83,6 +83,7 @@ async def SUBIR_documento_persona(
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def CREATE_solicitud(payload: SolicitudInput):
     datos_raw = payload.model_dump()
 
@@ -140,12 +141,13 @@ def GET_solicitud(solicitud_id: int):
 
 # Agrega esta ruta para listar todas las solicitudes
 @router.get("/", status_code=status.HTTP_200_OK)
-def GET_ALL_solicitudes():
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
+def GET_ALL_solicitudes(active: bool = Query(True, description="Filtrar solo solicitudes activas. Por defecto: True")):
     
-    print("🔍 [GET] Consultando todas las solicitudes en la base de datos...")
+    print(f"🔍 [GET] Consultando solicitudes (activas={active})...")
     
     # Llama a tu función loader que hace el SELECT * FROM solicitudes
-    resultado = GET_ALL_solicitudes_bd() 
+    resultado = GET_ALL_solicitudes_bd(only_active=active) 
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")

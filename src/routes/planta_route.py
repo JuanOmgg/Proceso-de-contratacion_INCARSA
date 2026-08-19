@@ -4,7 +4,8 @@ from src.services.planta import CREATE_planta
 from src.loaders.planta_loader import (
     GET_planta_db, 
     UPDATE_planta_db, 
-    DELETE_planta_db
+    DELETE_planta_db,
+    GET_ALL_planta_db
     )
 from src.transformers.planta_transformer import TRANSFORM_PLANTA
 
@@ -37,6 +38,19 @@ def GET_planta_rt(id_planta: int):
 
     print(f"📦 [GET] Datos de la planta/zona #{id_planta} recuperados con éxito.")
     return resultado
+
+@router.get("/", status_code=status.HTTP_200_OK)
+def GET_ALL_planta_rt():
+
+    allPlantas = GET_ALL_planta_db()
+
+    if not allPlantas.get("exito", True):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=allPlantas.get("mensaje")
+        )
+
+    return allPlantas.get("mensaje", allPlantas)
 
 @router.patch("/{id_planta}", status_code=status.HTTP_200_OK)
 def UPDATE_planta_rt(id_planta: int, payload: UpdatePlantaInput):
