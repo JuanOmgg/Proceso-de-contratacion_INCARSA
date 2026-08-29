@@ -24,6 +24,23 @@ def CREATE_planta_rt(payload: PlantaInput):
 
     return resultado
 
+@router.get("/getAll", status_code=status.HTTP_200_OK)
+@router.get("/getall", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
+def GET_ALL_planta_rt():
+
+    allPlantas = GET_ALL_planta_db()
+
+    if not allPlantas.get("exito", True):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=allPlantas.get("mensaje")
+        )
+
+    return allPlantas.get("datos", allPlantas)
+
+
 @router.get("/{id_planta}", status_code=status.HTTP_200_OK)
 def GET_planta_rt(id_planta: int):
 
@@ -38,19 +55,6 @@ def GET_planta_rt(id_planta: int):
 
     print(f"📦 [GET] Datos de la planta/zona #{id_planta} recuperados con éxito.")
     return resultado
-
-@router.get("/", status_code=status.HTTP_200_OK)
-def GET_ALL_planta_rt():
-
-    allPlantas = GET_ALL_planta_db()
-
-    if not allPlantas.get("exito", True):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=allPlantas.get("mensaje")
-        )
-
-    return allPlantas.get("mensaje", allPlantas)
 
 @router.patch("/{id_planta}", status_code=status.HTTP_200_OK)
 def UPDATE_planta_rt(id_planta: int, payload: UpdatePlantaInput):

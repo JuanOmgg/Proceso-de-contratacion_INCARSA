@@ -135,19 +135,30 @@ def GET_ALL_users_db() -> dict:
                         u.num_documento,
                         u.num_telefono,
                         u.correo,
-                        r.nombre_rol AS rol,
+                        u.id_rol,
+                        COALESCE(r.nombre_rol, 'Sin Rol') AS rol,
+                        COALESCE(u.is_active, TRUE) AS is_active,
                         u.fecha_creacion
                     FROM usuarios u
-                    INNER JOIN roles r ON u.id_rol = r.id
+                    LEFT JOIN roles r ON u.id_rol = r.id
                     ORDER BY u.id DESC
                 """)
-                datos_user = cursor.fetchall()
+                datos_user = cursor.fetchall() or []
+
+                for row in datos_user:
+                    if row.get("fecha_creacion"):
+                        row["fecha_creacion"] = str(row["fecha_creacion"])
+                    if row.get("num_documento"):
+                        row["num_documento"] = str(row["num_documento"])
+                    if row.get("num_telefono"):
+                        row["num_telefono"] = str(row["num_telefono"])
 
                 print(f"📦 [LOADER] Se recuperaron {len(datos_user)} usuarios de la base de datos.")
 
-                return{
+                return {
                     "exito": True,
                     "mensaje": "Usuarios encontrados con éxito",
+                    "datos": datos_user,
                     "datos_user": datos_user
                 }
 
@@ -156,6 +167,7 @@ def GET_ALL_users_db() -> dict:
         return {
             "exito": False,
             "mensaje": f"❌❌ No fue posible encontrar los usuarios {e} ❌❌",
+            "datos": [],
             "datos_user": []
         }
 
@@ -191,18 +203,22 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                         "mensaje": f"Usuario {id_user} no encontrado.",
                     }
 
-                # 3. SQL dinámico: Solo actualiza las columnas enviadas
-                campos_sql = [f"{campo} = %s" for campo in new_updates.keys()]
-                valores = list(new_updates.values())
-                valores.append(id_user)
+                # 3. SQL dinámico: Solo actualiza las columnas válidas existentes
+                cursor.execute("SHOW COLUMNS FROM usuarios")
+                existing_cols = {row["Field"] for row in cursor.fetchall()}
+                campos_validos = {k: v for k, v in new_updates.items() if k in existing_cols}
 
-                sql_user = (
-                    f"UPDATE usuarios SET {', '.join(campos_sql)} WHERE id = %s"
-                )
+                if campos_validos:
+                    campos_sql = [f"{campo} = %s" for campo in campos_validos.keys()]
+                    valores = list(campos_validos.values())
+                    valores.append(id_user)
 
-                cursor.execute(sql_user, valores)
+                    sql_user = (
+                        f"UPDATE usuarios SET {', '.join(campos_sql)} WHERE id = %s"
+                    )
 
-                conexion.commit()
+                    cursor.execute(sql_user, valores)
+                    conexion.commit()
 
         return {
             "exito": True,

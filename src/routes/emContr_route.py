@@ -24,22 +24,10 @@ def CREATE_empContratista_rt(payload: EmpContratistaInput):
 
     return resultado
 
-@router.get("/{empcont_id}", status_code=status.HTTP_200_OK)
-def GET_empContratista_rt(empcont_id: int):
-
-    print(f"🔍 [GET] Buscando empresa contratista con ID #{empcont_id} en la base de datos")
-    resultado = GET_empCont_db(empcont_id)
-
-    if not resultado.get("exito", False):
-        raise   HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=resultado.get("mensaje"),
-        )
-    
-    print(f"📦 [GET] Datos de la empresa #{empcont_id} recuperados con éxito.")
-    return resultado
-
+@router.get("/getAll", status_code=status.HTTP_200_OK)
+@router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_ALL_empCont_rt():
 
     print("🔍 [GET] Consultando todas las empresas contratistas en la base de datos...")
@@ -55,6 +43,22 @@ def GET_ALL_empCont_rt():
         )
 
     return resultado.get("data", resultado)
+
+
+@router.get("/{empcont_id}", status_code=status.HTTP_200_OK)
+def GET_empContratista_rt(empcont_id: int):
+
+    print(f"🔍 [GET] Buscando empresa contratista con ID #{empcont_id} en la base de datos")
+    resultado = GET_empCont_db(empcont_id)
+
+    if not resultado.get("exito", False):
+        raise   HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=resultado.get("mensaje"),
+        )
+    
+    print(f"📦 [GET] Datos de la empresa #{empcont_id} recuperados con éxito.")
+    return resultado
 @router.patch("/{empcont_id}", status_code=status.HTTP_200_OK)
 def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput):
 

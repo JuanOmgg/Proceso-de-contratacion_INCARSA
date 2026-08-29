@@ -49,6 +49,7 @@ class BaseSolicitudSchema(BaseModel):
 
 
 class SolicitudInput(BaseSolicitudSchema):
+    codigo: Optional[str] = None
     empresa_origen: Union[int, str]
     diligenciado_por: Optional[Union[int, str]] = 1
     nivel_de_riesgo: Optional[str] = "Bajo"
@@ -60,7 +61,13 @@ class SolicitudInput(BaseSolicitudSchema):
     fecha_inicio: Union[str, date]
     fecha_fin: Union[str, date]
     actividad: str
+    observaciones: Optional[str] = None
+    observacion: Optional[str] = None
+    estado: Optional[str] = "ENVIADO"
     is_active: Optional[bool] = True
+
+    personas: Optional[List[Any]] = None
+    ingresantes: Optional[List[Any]] = None
 
     vehiculo: Optional[List[Union[Dict[str, Any], VehiculoSchema, int, str]]] = Field(
         default_factory=list
@@ -73,6 +80,7 @@ class SolicitudInput(BaseSolicitudSchema):
 
 
 class UPDATE_Schema_Optionals(BaseSolicitudSchema):
+    codigo: Optional[str] = None
     empresa_origen: Optional[int] = None
     diligenciado_por: Optional[int] = None
     nivel_de_riesgo: Optional[str] = None
@@ -84,8 +92,14 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
+    observaciones: Optional[str] = None
+    observacion: Optional[str] = None
     estado: Optional[str] = None
     is_active: Optional[bool] = None
 
+    personas: Optional[List[Any]] = None
+    ingresantes: Optional[List[Any]] = None
+
     vehiculo: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
+    vehiculos: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
     eq_computo: Optional[List[EquipoComputoSchema]] = None

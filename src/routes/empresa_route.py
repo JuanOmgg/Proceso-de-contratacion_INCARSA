@@ -3,7 +3,10 @@ from src.loaders.empresa_loader import GET_empresas_con_plantas_bd
 
 router = APIRouter(prefix="/api/v1/empresas", tags=["Empresas"])
 
+@router.get("/getall", status_code=status.HTTP_200_OK)
+@router.get("/getAll", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_empresas():
     """
     Retorna todas las empresas con sus plantas anidadas.

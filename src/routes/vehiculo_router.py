@@ -31,7 +31,10 @@ def CREATE_vehiculo_endpoint(payload: VehiculoInput):
     return resultado
 
 
+@router.get("/getAll", status_code=status.HTTP_200_OK)
+@router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_ALL_vehiculos_endpoint():
     print("🔍 [GET] Consultando lista de vehículos...")
     resultado = service_get_all_vehiculos()
