@@ -10,11 +10,11 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- Insertar roles base
 INSERT INTO roles (nombre_rol, descripcion) VALUES
-('Administrador', 'Control total del sistema, gestión de usuarios y configuraciones'),
-('Gestion documental', 'Encargado de radicar y gestionar solicitudes de ingreso'),
-('SST', 'Seguridad y Salud en el Trabajo - Revisión en paralelo'),
-('GESCO', 'Gestión Comunal / Social - Revisión en paralelo'),
-('Seguridad corporativa & riesgo', 'Visto bueno final y autorización estratégica de ingreso')
+('Administrador', ''),
+('Gestion documental', ''),
+('SST', 'Seguridad y Salud en el Trabajo'),
+('GESCO', 'Gestión del conocimiento'),
+('SCR', 'Segurdad corporativa y riesgo')
 ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
 -- 2. Empresa (Sin dependencias)
@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS vehiculos (
 -- 8. Solicitudes (Depende de empresa, emp_contratista y usuarios)
 CREATE TABLE IF NOT EXISTS solicitudes (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NULL UNIQUE,
     empresa_origen INT NOT NULL,
     diligenciado_por INT NOT NULL,
     nivel_de_riesgo VARCHAR(20) NOT NULL,
@@ -113,6 +114,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     actividad TEXT NOT NULL,
+    observaciones TEXT NULL,
     estado VARCHAR(30) NOT NULL DEFAULT 'ENVIADO',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -135,6 +137,7 @@ CREATE TABLE IF NOT EXISTS ingresantes (
     id_solicitud INT NOT NULL,
     id_persona INT NOT NULL,
     autorizado BOOLEAN NOT NULL DEFAULT TRUE,
+    motivo VARCHAR(255) NULL,
     PRIMARY KEY (id_solicitud, id_persona),
     FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
     FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE
@@ -176,4 +179,31 @@ CREATE TABLE IF NOT EXISTS equipos_solicitud (
     modelo VARCHAR(50) NOT NULL,
     serie VARCHAR(100) NOT NULL,
     FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 15. Antecedentes (1 a 1 por Persona)
+CREATE TABLE IF NOT EXISTS antecedentes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL UNIQUE,
+    responsable VARCHAR(100) NULL,
+    anotaciones TEXT NULL,
+    id_empresa INT NULL,
+    ultima_revision DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    fecha_consulta DATE NULL,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 16. Historial de Solicitudes / Entradas de Antecedentes (1 a Muchos)
+CREATE TABLE IF NOT EXISTS antecedentes_historial_solicitudes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_antecedente INT NOT NULL,
+    id_solicitud INT NULL,
+    id_empresa INT NOT NULL,
+    fecha_solicitud DATETIME DEFAULT CURRENT_TIMESTAMP,
+    observacion VARCHAR(255) NULL,
+    FOREIGN KEY (id_antecedente) REFERENCES antecedentes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -85,7 +85,15 @@ def GET_all_vehiculos_db() -> dict:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
                 sql = """
-                SELECT v.id, v.tipo, v.placa
+                SELECT 
+                    v.id, 
+                    v.tipo, 
+                    v.placa,
+                    COALESCE(
+                        (SELECT vi.licencia_doc FROM Veh_ingreso vi WHERE vi.id_vehiculo = v.id AND vi.licencia_doc IS NOT NULL AND vi.licencia_doc != '' ORDER BY vi.id_solicitud DESC LIMIT 1),
+                        (SELECT dv.nom_documento FROM documentos_vehiculo dv WHERE dv.id_vehiculo = v.id AND (dv.tipo_doc LIKE '%licencia%' OR dv.tipo_doc = 'general') ORDER BY dv.id DESC LIMIT 1),
+                        ''
+                    ) AS licencia_doc
                 FROM vehiculos v
                 ORDER BY v.id DESC
                 """
@@ -126,7 +134,19 @@ def GET_vehiculo_by_id_db(vehiculo_id: int) -> dict:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
                 cursor.execute(
-                    "SELECT id, tipo, placa FROM vehiculos WHERE id = %s",
+                    """
+                    SELECT 
+                        v.id, 
+                        v.tipo, 
+                        v.placa,
+                        COALESCE(
+                            (SELECT vi.licencia_doc FROM Veh_ingreso vi WHERE vi.id_vehiculo = v.id AND vi.licencia_doc IS NOT NULL AND vi.licencia_doc != '' ORDER BY vi.id_solicitud DESC LIMIT 1),
+                            (SELECT dv.nom_documento FROM documentos_vehiculo dv WHERE dv.id_vehiculo = v.id AND (dv.tipo_doc LIKE '%licencia%' OR dv.tipo_doc = 'general') ORDER BY dv.id DESC LIMIT 1),
+                            ''
+                        ) AS licencia_doc
+                    FROM vehiculos v 
+                    WHERE v.id = %s
+                    """,
                     (vehiculo_id,),
                 )
                 vehiculo = cursor.fetchone()
@@ -149,12 +169,9 @@ def GET_vehiculo_by_id_db(vehiculo_id: int) -> dict:
                 docs = cursor.fetchall() or []
                 for d in docs:
                     d["url_acceso"] = f"/uploads/documentos/vehiculos/{d['nom_documento']}"
-
                 vehiculo["documentos"] = docs
-                return {
-                    "exito": True,
-                    "datos": vehiculo,
-                }
+
+                return {"exito": True, "datos": vehiculo}
     except Exception as e:
         print(f"❌ Error al consultar vehículo #{vehiculo_id}: {e}")
         return {

@@ -35,6 +35,24 @@ def get_conteo_roles():
             detail=f"Error al obtener métricas de roles: {str(e)}"
         )
 
+@router.get("/getAll", status_code=status.HTTP_200_OK, response_model=List[UsuarioData])
+@router.get("/getall", status_code=status.HTTP_200_OK, response_model=List[UsuarioData])
+@router.get("/", status_code=status.HTTP_200_OK, response_model=List[UsuarioData])
+@router.get("", status_code=status.HTTP_200_OK, response_model=List[UsuarioData], include_in_schema=False)
+def GET_ALL_users_rt():
+    
+    print(f"🔍 [GET_ALL] Buscando todos los usuarios en la base de datos... ")
+    resultado = GET_ALL_users_db()
+
+    if not resultado.get("exito", False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al obtener los usuarios."),
+        )
+    
+    print(f"📦 [GET_ALL] Datos de los usuarios recuperados con éxito.")
+    return resultado.get("datos", resultado.get("datos_user", []))
+
 @router.get("/{id_user}", status_code=status.HTTP_200_OK, response_model=UsuarioData)   
 def GET_user_rt(id_user:int):
 
@@ -49,21 +67,6 @@ def GET_user_rt(id_user:int):
     
     print(f"📦 [GET] Datos del usuario #{id_user} recuperados con éxito.")
     return resultado
-
-@router.get("/", status_code=status.HTTP_200_OK, response_model=List[UsuarioData])
-def GET_ALL_users_rt():
-    
-    print(f"🔍 [GET_ALL] Buscando todos los usuarios en la base de datos... ")
-    resultado = GET_ALL_users_db()
-
-    if not resultado.get("exito", False):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=resultado.get("mensaje"),
-        )
-    
-    print(f"📦 [GET_ALL] Datos de los usuarios recuperados con éxito.")
-    return resultado["datos_user"]
 
 
 @router.patch("/{id_user}", status_code=status.HTTP_200_OK)

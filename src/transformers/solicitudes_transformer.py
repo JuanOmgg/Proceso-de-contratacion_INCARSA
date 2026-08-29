@@ -168,6 +168,7 @@ def limpiar_vehiculos_solicitud(
 def transformar_solicitud(datos_raw: dict) -> dict:
     """Valida, limpia y transforma una estructura JSON de solicitud."""
     solicitud_limpia = {
+        "codigo": str(datos_raw.get("codigo") or datos_raw.get("codigo_radicado") or "").strip().upper() or None,
         "empresa_origen": str(
             datos_raw.get("empresa_origen") or ""
         ).strip().upper(),
@@ -185,6 +186,7 @@ def transformar_solicitud(datos_raw: dict) -> dict:
             datos_raw.get("planta_a_visitar") or ""
         ).strip(),
         "actividad": str(datos_raw.get("actividad") or "").strip(),
+        "observaciones": str(datos_raw.get("observaciones") or datos_raw.get("observacion") or "").strip(),
         "estado": str(datos_raw.get("estado") or "ENVIADO")
         .strip()
         .upper(),
@@ -192,6 +194,7 @@ def transformar_solicitud(datos_raw: dict) -> dict:
         "personas_ids": [
             int(p) for p in (datos_raw.get("personas_ids") or []) if str(p).isdigit()
         ],
+        "personas": datos_raw.get("personas") or datos_raw.get("ingresantes"),
     }
 
     # Conversión de fechas
@@ -219,6 +222,15 @@ def transformar_solicitud(datos_raw: dict) -> dict:
 def transformar_solicitud_patch(datos_raw: dict) -> dict:
     """Transformador parcial para peticiones PATCH (Actualización)."""
     solicitud_limpia = {}
+
+    if "codigo" in datos_raw and datos_raw["codigo"] is not None:
+        solicitud_limpia["codigo"] = str(datos_raw["codigo"]).strip().upper()
+
+    if "observaciones" in datos_raw or "observacion" in datos_raw:
+        solicitud_limpia["observaciones"] = str(datos_raw.get("observaciones") or datos_raw.get("observacion") or "").strip()
+
+    if "personas" in datos_raw or "ingresantes" in datos_raw:
+        solicitud_limpia["personas"] = datos_raw.get("personas") or datos_raw.get("ingresantes")
 
     mapeo_strings_upper = [
         "empresa_origen",

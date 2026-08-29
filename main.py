@@ -12,6 +12,7 @@ from src.routes.roles_route import router as roles_router
 from src.routes.personas_route import router as personas_router
 from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
+from src.routes.antecedentes_route import router as antecedentes_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -52,6 +53,7 @@ app.include_router(roles_router)
 app.include_router(personas_router)
 app.include_router(vehiculo_router)
 app.include_router(empresa_router)
+app.include_router(antecedentes_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 def verificacion_servidor():

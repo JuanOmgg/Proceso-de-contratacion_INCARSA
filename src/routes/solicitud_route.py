@@ -12,7 +12,7 @@ from src.loaders.solicitudes_loaders import (
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
 
@@ -124,6 +124,26 @@ def GET_fechasCount_rt():
             detail=f"Error interno al obtener fechas: {e}"
         )
 
+@router.get("/getall", status_code=status.HTTP_200_OK)
+@router.get("/getAll", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
+def GET_ALL_solicitudes(active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None")):
+    
+    print(f"🔍 [GET] Consultando solicitudes (activas={active})...")
+    
+    resultado = GET_ALL_solicitudes_bd(only_active=active) 
+
+    if not resultado.get("exito", True):
+        error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")
+        print(f"❌ Error interno en GET_ALL_solicitudes_bd: {error_msg}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al obtener las solicitudes.")
+        )
+
+    return resultado.get("datos", resultado)
+
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def GET_solicitud(solicitud_id: int):
     print(f"🔍 [GET] Buscando solicitud #{solicitud_id} en la base de datos...")
@@ -138,27 +158,6 @@ def GET_solicitud(solicitud_id: int):
 
     print(f"📦 [GET] Datos de la solicitud #{solicitud_id} recuperados con éxito.")
     return resultado["datos"]
-
-# Agrega esta ruta para listar todas las solicitudes
-@router.get("/", status_code=status.HTTP_200_OK)
-@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_solicitudes(active: bool = Query(True, description="Filtrar solo solicitudes activas. Por defecto: True")):
-    
-    print(f"🔍 [GET] Consultando solicitudes (activas={active})...")
-    
-    # Llama a tu función loader que hace el SELECT * FROM solicitudes
-    resultado = GET_ALL_solicitudes_bd(only_active=active) 
-
-    if not resultado.get("exito", True):
-        error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")
-        print(f"❌ Error interno en GET_ALL_solicitudes_bd: {error_msg}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=resultado.get("mensaje", "Error al obtener las solicitudes.")
-        )
-
-    # Devuelve el formato que maneje tu loader (por ejemplo resultado["datos"] o lista directa)
-    return resultado.get("datos", resultado)
 
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def UPDATE_solicitud(solicitud_id: int, datos_in: UPDATE_Schema_Optionals):

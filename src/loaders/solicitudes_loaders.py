@@ -1,6 +1,6 @@
 import json
 from database import GET_conexion
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
@@ -124,15 +124,20 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         else ""
                     )
 
+                    # Determinar código radicado
+                    raw_codigo = solicitud.get("codigo")
+                    cod_val = str(raw_codigo).strip().upper() if raw_codigo and str(raw_codigo).strip() else None
+
                     sql_solicitud = """
                         INSERT INTO solicitudes (
-                            empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_personal,
+                            codigo, empresa_origen, diligenciado_por, nivel_de_riesgo, tipo_personal,
                             empresa_contratista, plantas_ids, personas_ids, vehiculos_ids,
                             fecha_inicio, fecha_fin, actividad, estado, is_active
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
 
                     valores_solicitud = (
+                        cod_val,
                         emp_origen,
                         id_diligenciado,
                         solicitud.get("nivel_de_riesgo", "BAJO"),
@@ -151,6 +156,11 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     cursor.execute(sql_solicitud, valores_solicitud)
                     solicitud_id = cursor.lastrowid
                     ids_generados.append(solicitud_id)
+
+                    # Si no venía código radicado específico, asignarle radicado estándar
+                    if not cod_val:
+                        codigo_generado = f"RAD-{str(solicitud_id).zfill(4)}"
+                        cursor.execute("UPDATE solicitudes SET codigo = %s WHERE id = %s", (codigo_generado, solicitud_id))
 
                     # Registrar relaciones en tabla intermedia 'visita' validando FKs existentes
                     if sub_plantas:
@@ -175,6 +185,28 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 sql_ingresantes = "INSERT INTO ingresantes (id_solicitud, id_persona) VALUES (%s, %s)"
                                 valores_ingresantes = [(solicitud_id, p_id) for p_id in valid_personas]
                                 cursor.executemany(sql_ingresantes, valores_ingresantes)
+
+                                # Sincronizar automáticamente antecedentes y antecedentes_historial_solicitudes
+                                for p_id in valid_personas:
+                                    try:
+                                        cursor.execute("SELECT id FROM antecedentes WHERE id_persona = %s", (p_id,))
+                                        ant_row = cursor.fetchone()
+                                        if not ant_row:
+                                            cursor.execute("""
+                                                INSERT INTO antecedentes (id_persona, id_empresa, ultima_revision, fecha_consulta, fecha_creacion)
+                                                VALUES (%s, %s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW())
+                                            """, (p_id, emp_origen))
+                                            ant_id = cursor.lastrowid
+                                        else:
+                                            ant_id = ant_row["id"]
+                                            cursor.execute("UPDATE antecedentes SET id_empresa = %s WHERE id = %s", (emp_origen, ant_id))
+
+                                        cursor.execute("""
+                                            INSERT INTO antecedentes_historial_solicitudes (id_antecedente, id_solicitud, id_empresa, fecha_solicitud)
+                                            VALUES (%s, %s, %s, NOW())
+                                        """, (ant_id, solicitud_id, emp_origen))
+                                    except Exception as e_ant:
+                                        print(f"⚠️ Aviso al sincronizar antecedentes para persona {p_id}: {e_ant}")
                         except Exception as e_ing:
                             print(f"⚠️ Aviso al registrar en ingresantes: {e_ing}")
 
@@ -187,6 +219,16 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                             """
                             for id_v, lic_doc in resolved_vehiculos:
                                 cursor.execute(sql_vehingreso, (solicitud_id, id_v, lic_doc))
+                                if lic_doc:
+                                    cursor.execute(
+                                        "SELECT id FROM documentos_vehiculo WHERE id_vehiculo = %s AND nom_documento = %s",
+                                        (id_v, str(lic_doc)),
+                                    )
+                                    if not cursor.fetchone():
+                                        cursor.execute(
+                                            "INSERT INTO documentos_vehiculo (id_vehiculo, tipo_doc, nom_documento) VALUES (%s, %s, %s)",
+                                            (id_v, "licencia", str(lic_doc)),
+                                        )
 
                             # Insertar documentos del vehículo si vienen adjuntos
                             for v_item in vehiculos_in:
@@ -253,9 +295,29 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                # 1. Detectar columnas reales existentes en solicitudes
+                cursor.execute("SHOW COLUMNS FROM solicitudes")
+                cols = {r["Field"] for r in cursor.fetchall()}
+                codigo_expr = "s.codigo" if "codigo" in cols else "CONCAT('RAD-', LPAD(s.id, 4, '0'))"
+                obs_expr = "s.observaciones" if "observaciones" in cols else "''"
             
-                # 1. Obtener la solicitud principal
-                cursor.execute("SELECT * FROM solicitudes WHERE id = %s", (solicitud_id,))
+                # 2. Obtener la solicitud principal uniendo nombres de empresa, contratista y diligenciador
+                sql_main = f"""
+                    SELECT 
+                        s.*,
+                        COALESCE({codigo_expr}, CONCAT('RAD-', LPAD(s.id, 4, '0'))) AS codigo,
+                        COALESCE({obs_expr}, '') AS observaciones,
+                        e.nombre_empresa,
+                        ec.nombre AS nombre_emContratista,
+                        CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
+                        u.correo AS diligenciador_correo
+                    FROM solicitudes s
+                    LEFT JOIN empresa e ON s.empresa_origen = e.id
+                    LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                    LEFT JOIN usuarios u ON s.diligenciado_por = u.id
+                    WHERE s.id = %s
+                """
+                cursor.execute(sql_main, (solicitud_id,))
                 solicitud = cursor.fetchone()
 
                 if not solicitud:
@@ -264,7 +326,15 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         "mensaje": f"Solicitud #{solicitud_id} no encontrada.",
                     }
 
-                # 2. Obtener las plantas asociadas (vía tabla intermedia 'visita')
+                # Formatear fechas a texto
+                if solicitud.get("fecha_inicio"):
+                    solicitud["fecha_inicio"] = str(solicitud["fecha_inicio"])
+                if solicitud.get("fecha_fin"):
+                    solicitud["fecha_fin"] = str(solicitud["fecha_fin"])
+                if solicitud.get("fecha_creacion"):
+                    solicitud["fecha_creacion"] = str(solicitud["fecha_creacion"])
+
+                # 3. Obtener las plantas asociadas (vía tabla intermedia 'visita')
                 cursor.execute(
                     """
                     SELECT p.id, p.nombre 
@@ -274,9 +344,21 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     """,
                     (solicitud_id,),
                 )
-                solicitud["plantas"] = cursor.fetchall()
+                solicitud["plantas"] = cursor.fetchall() or []
 
-                # 3. Obtener los vehículos asociados (vía tabla de rompimiento 'Veh_ingreso')
+                # Fallback de plantas vía plantas_ids
+                if not solicitud["plantas"] and solicitud.get("plantas_ids"):
+                    try:
+                        raw_ids = str(solicitud["plantas_ids"]).replace("[", "").replace("]", "").split(",")
+                        p_ids = [int(x.strip()) for x in raw_ids if x.strip().isdigit()]
+                        if p_ids:
+                            fmt = ",".join(["%s"] * len(p_ids))
+                            cursor.execute(f"SELECT id, nombre FROM planta WHERE id IN ({fmt})", tuple(p_ids))
+                            solicitud["plantas"] = cursor.fetchall() or []
+                    except Exception as e_p:
+                        print(f"⚠️ Error al resolver plantas_ids de respaldo: {e_p}")
+
+                # 4. Obtener los vehículos asociados (vía tabla de rompimiento 'Veh_ingreso')
                 cursor.execute(
                     """
                     SELECT v.id, v.tipo, v.placa, vi.licencia_doc
@@ -306,61 +388,83 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 solicitud["vehiculo"] = vehiculos
                 solicitud["vehiculos"] = vehiculos
 
-                # 4. Obtener ingresantes (personas) via tabla intermedia 'ingresantes'
+                # 5. Obtener ingresantes (personas) via tabla intermedia 'ingresantes'
                 cursor.execute(
                     """
-                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo
+                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
                     WHERE i.id_solicitud = %s
                     """,
                     (solicitud_id,),
                 )
-                personas = cursor.fetchall()
+                personas = cursor.fetchall() or []
+
+                # Fallback de personas vía personas_ids
+                if not personas and solicitud.get("personas_ids"):
+                    try:
+                        raw_pids = str(solicitud["personas_ids"]).replace("[", "").replace("]", "").split(",")
+                        p_ids = [int(x.strip()) for x in raw_pids if x.strip().isdigit()]
+                        if p_ids:
+                            fmt = ",".join(["%s"] * len(p_ids))
+                            cursor.execute(f"SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, 1 AS autorizado, NULL AS motivo FROM personas p WHERE p.id IN ({fmt})", tuple(p_ids))
+                            personas = cursor.fetchall() or []
+                    except Exception as e_pers:
+                        print(f"⚠️ Error al resolver personas_ids de respaldo: {e_pers}")
+
                 for p in personas:
+                    p["autorizado"] = bool(p.get("autorizado", True))
+                    p["motivo"] = p.get("motivo") or ""
                     cursor.execute(
                         "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
                         (p["id"],),
                     )
-                    docs = cursor.fetchall()
+                    docs = cursor.fetchall() or []
                     for d in docs:
                         d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
                     p["documentos"] = docs
                 solicitud["ingresantes"] = personas
 
-                # 5. Obtener los equipos asociados
+                # 6. Obtener los equipos asociados
                 cursor.execute(
                     "SELECT marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
                     (solicitud_id,),
                 )
-                solicitud["eq_computo"] = cursor.fetchall()
-
-                # 6. Recalcular is_active dinámicamente según la fecha actual y el rango de la solicitud
-                from src.transformers.solicitudes_transformer import calcular_is_active
-                solicitud["is_active"] = calcular_is_active(
-                    solicitud.get("fecha_inicio"), solicitud.get("fecha_fin")
-                )
+                solicitud["eq_computo"] = cursor.fetchall() or []
 
                 return {"exito": True, "datos": solicitud}
 
     except Exception as e:
+        print(f"❌ Error en GET_solicitud_bd #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
 
-def GET_ALL_solicitudes_bd(only_active: bool = True):
+def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None):
 
     try:
 
         with GET_conexion() as conexion:
 
             with conexion.cursor() as cursor:
+                # Detectar columnas dinámicas
+                cursor.execute("SHOW COLUMNS FROM solicitudes")
+                cols = {r["Field"] for r in cursor.fetchall()}
+                is_active_expr = "COALESCE(so.is_active, 1)" if "is_active" in cols else "IF(CURDATE() BETWEEN so.fecha_inicio AND so.fecha_fin, 1, 0)"
+                codigo_expr = "so.codigo" if "codigo" in cols else "CONCAT('RAD-', LPAD(so.id, 4, '0'))"
+                obs_expr = "so.observaciones" if "observaciones" in cols else "''"
+
                 # Construir la query con filtro opcional de activos
                 where_clause = ""
-                if only_active:
-                    where_clause = "WHERE CURDATE() BETWEEN so.fecha_inicio AND so.fecha_fin"
+                if only_active is True:
+                    where_clause = f"WHERE {is_active_expr} = 1"
+                elif only_active is False:
+                    where_clause = f"WHERE {is_active_expr} = 0"
 
                 query = f"""
                     SELECT
                         so.id,
+                        COALESCE({codigo_expr}, CONCAT('RAD-', LPAD(so.id, 4, '0'))) AS codigo,
+                        COALESCE({obs_expr}, '') AS observaciones,
                         e.nombre_empresa,
                         ec.nombre AS nombre_emContratista,
                         CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
@@ -370,7 +474,7 @@ def GET_ALL_solicitudes_bd(only_active: bool = True):
                         so.actividad,
                         so.fecha_creacion,
                         so.estado,
-                        IF(CURDATE() BETWEEN so.fecha_inicio AND so.fecha_fin, TRUE, FALSE) AS is_active,
+                        {is_active_expr} AS is_active,
 
                         GROUP_CONCAT(DISTINCT p.nombre SEPARATOR ', ') AS planta,
 
@@ -570,24 +674,48 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
                 personas = campos.pop("personas", None)
+                if personas is None:
+                    personas = campos.pop("ingresantes", None)
                 eq_computo = campos.pop("eq_computo", None)
                 vehiculo = campos.pop("vehiculo", None)
                 if vehiculo is None:
                     vehiculo = campos.pop("vehiculos", None)
 
-                # Sincronizar personas_ids y tabla intermedia ingresantes si vienen en el payload
-                if "personas_ids" in campos:
-                    raw_pids = campos["personas_ids"]
-                    if isinstance(raw_pids, list):
-                        campos["personas_ids"] = ",".join(map(str, raw_pids))
+                # Sincronizar personas e ingresantes (con estado autorizado y motivo)
+                if personas is not None or "personas_ids" in campos:
+                    lista_p = personas
+                    if lista_p is None and "personas_ids" in campos:
+                        raw_pids = campos["personas_ids"]
+                        if isinstance(raw_pids, list):
+                            campos["personas_ids"] = ",".join(map(str, raw_pids))
+                            lista_p = [{"id": pid, "autorizado": True, "motivo": None} for pid in raw_pids]
+                        elif isinstance(raw_pids, str):
+                            lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_pids.split(",") if x.strip().isdigit()]
+
+                    if isinstance(lista_p, list):
                         cursor.execute(
                             "DELETE FROM ingresantes WHERE id_solicitud = %s",
                             (solicitud_id,),
                         )
-                        if raw_pids:
+                        valores_ing = []
+                        for item_p in lista_p:
+                            if isinstance(item_p, dict):
+                                p_id = item_p.get("id") or item_p.get("id_persona")
+                                aut = item_p.get("autorizado", True)
+                                if aut is False or aut == 0 or aut == "0" or aut == "false":
+                                    aut_val = False
+                                else:
+                                    aut_val = True
+                                mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
+                                if p_id:
+                                    valores_ing.append((solicitud_id, int(p_id), aut_val, mot))
+                            elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
+                                valores_ing.append((solicitud_id, int(item_p), True, None))
+
+                        if valores_ing:
                             cursor.executemany(
-                                "INSERT INTO ingresantes (id_solicitud, id_persona) VALUES (%s, %s)",
-                                [(solicitud_id, p_id) for p_id in raw_pids],
+                                "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
+                                valores_ing,
                             )
 
                 # Sincronizar plantas_ids y tabla intermedia visita si vienen en el payload

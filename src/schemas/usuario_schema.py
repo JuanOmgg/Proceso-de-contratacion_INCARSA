@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import datetime
 
 class UsuarioInput(BaseModel):
@@ -22,15 +22,17 @@ class UsuarioData(BaseModel):
     num_documento: str
     num_telefono: str
     correo: EmailStr
+    id_rol: Optional[int] = None
     rol: Optional[str] = None
-    fecha_creacion: Optional[datetime] = None
+    is_active: Optional[bool] = True
+    fecha_creacion: Optional[Any] = None
 
     # Formatea datetime a string solo con la fecha 'DD-MM-YY'
     @field_serializer('fecha_creacion')
-    def serialize_fecha(self, fecha: Optional[datetime], _info) -> Optional[str]:
-        if fecha:
+    def serialize_fecha(self, fecha: Optional[Any], _info) -> Optional[str]:
+        if isinstance(fecha, datetime):
             return fecha.strftime('%d-%m-%Y')
-        return None
+        return str(fecha) if fecha else None
 
     model_config = ConfigDict(from_attributes=True)
     

@@ -19,6 +19,9 @@ def CREATE_person_rt(payload: PersonInput):
     return resultado
 
 @router.get("/getAll", status_code=status.HTTP_200_OK)
+@router.get("/getall", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_ALL_person_rt():
 
     print("🔍 [GETALL] Consultando todas las personas en la base de datos...")
