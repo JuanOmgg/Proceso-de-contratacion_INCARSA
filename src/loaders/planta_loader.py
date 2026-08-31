@@ -90,7 +90,7 @@ def GET_ALL_planta_db():
                 return {
                     "exito": True,
                     "datos": plantas,
-                    "mensaje": f"Plantas traidas con exito: {plantas}"
+                    "mensaje": "Plantas recuperadas con éxito."
                 }
     except Exception as e:
         return{
