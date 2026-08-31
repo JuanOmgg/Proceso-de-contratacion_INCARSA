@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>503 · Mantenimiento del sistema · INCARSA</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/error-pages.css">
+</head>
+
+<body class="antialiased">
+
+<div id="page-transition-overlay" class="page-transition-overlay">
+  <div class="loader"></div>
+</div>
+
+<div class="error-page" style="--error-color: #f5c400; --error-color-bg: #fef9c3;">
+  <div class="error-hazard-bg"></div>
+
+  <div class="error-brand-mark">
+    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#f5c400;">
+      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    </div>
+    <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
+  </div>
+
+  <p class="error-code-hero">503</p>
+
+  <p class="error-code">Servicio 503</p>
+  <h1 class="error-title">En mantenimiento</h1>
+  <p class="error-description">
+    Estamos realizando mejoras al sistema. El servicio estará disponible nuevamente en unos minutos.
+  </p>
+
+  <div class="error-actions">
+    <button type="button" onclick="location.reload()" class="w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2 text-gray-900" style="background:#f5c400;">
+      <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
+    </button>
+    <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+      <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
+    </button>
+  </div>
+
+  <div class="error-info-card p-4 flex items-center gap-3 text-left">
+    <div class="error-info-icon w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
+      <i class="fa-regular fa-clock text-sm"></i>
+    </div>
+    <div>
+      <p class="text-xs">Tiempo estimado</p>
+      <p class="text-sm font-medium">Disponible en aproximadamente 30 minutos</p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/page-transition.js"></script>
+</body>
+</html>

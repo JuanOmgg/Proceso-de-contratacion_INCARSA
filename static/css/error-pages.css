@@ -1,0 +1,282 @@
+/**
+ * INCARSA — Error Pages Styles
+ * Estilos exclusivos para las páginas de error (403, 404, 500, 503).
+ * Importa las variables de la paleta desde styles.css (ya debe estar cargado antes).
+ *
+ * Color de acento por página → definir en el HTML con:
+ *   style="--error-color: #valor; --error-color-bg: #valor;"
+ */
+
+/* =========================================================
+   LAYOUT BASE
+   ========================================================= */
+.error-page {
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  background-color: var(--ink-950);
+  background-image: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-950) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   FRANJAS DIAGONALES DE FONDO — estáticas
+   ========================================================= */
+.error-hazard-bg,
+.error-hazard-bg::before,
+.error-hazard-bg::after,
+.error-hazard-stripe,
+.error-hazard-stripe::before,
+.error-hazard-stripe::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.error-hazard-bg,
+.error-hazard-stripe {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--error-color, var(--signal-500)) 0px,
+    var(--error-color, var(--signal-500)) 2px,
+    transparent 2px,
+    transparent 34px
+  );
+}
+
+.error-hazard-bg::before,
+.error-hazard-stripe::before {
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    transparent  0px,  transparent 11px,
+    var(--error-color, var(--signal-500)) 11px,
+    var(--error-color, var(--signal-500)) 13px,
+    transparent 13px,  transparent 34px
+  );
+}
+
+.error-hazard-bg::after,
+.error-hazard-stripe::after {
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    transparent  0px,  transparent 22px,
+    var(--error-color, var(--signal-500)) 22px,
+    var(--error-color, var(--signal-500)) 24px,
+    transparent 24px,  transparent 34px
+  );
+}
+
+
+
+
+
+/* =========================================================
+   MARCA CORPORATIVA (esquina superior izquierda)
+   ========================================================= */
+.error-brand-mark {
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .error-brand-mark {
+    top: 16px;
+    left: 16px;
+  }
+}
+
+/* =========================================================
+   NÚMERO HERO (ej: "404", "500")
+   ========================================================= */
+.error-code-hero {
+  position: relative;
+  z-index: 10;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(96px, 19vh, 200px);
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--error-color, var(--signal-500)) 0px,
+    var(--error-color, var(--signal-500)) 18px,
+    #ffffff 18px,
+    #ffffff 36px
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.4));
+  animation: fadeInUp 0.5s var(--ease-standard);
+}
+
+/* =========================================================
+   TEXTOS (código, título, descripción)
+   ========================================================= */
+.error-code {
+  position: relative;
+  z-index: 10;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(20px, 3.2vh, 28px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--error-color, var(--signal-500));
+  margin-top: clamp(10px, 2vh, 20px);
+}
+
+.error-title {
+  position: relative;
+  z-index: 10;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(19px, 3vh, 26px);
+  color: #ffffff;
+  margin-top: 6px;
+}
+
+.error-description {
+  position: relative;
+  z-index: 10;
+  font-size: clamp(13.5px, 1.8vh, 15px);
+  color: #9FADC9;
+  max-width: 480px;
+  margin: 8px auto 0;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   ACCIONES (botones CTA)
+   ========================================================= */
+.error-actions {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  margin: clamp(16px, 2.6vh, 26px) auto 0;
+}
+
+.error-actions a,
+.error-actions button {
+  padding: 10px 18px !important;
+  font-size: 14px !important;
+}
+
+/* =========================================================
+   TARJETA INFORMATIVA (ej: tiempo estimado en 503)
+   ========================================================= */
+.error-info-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  width: 100%;
+  max-width: 380px;
+  margin: clamp(12px, 2vh, 20px) auto 0;
+  padding: 10px 16px !important;
+}
+
+.error-info-card .error-info-icon {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--error-color, var(--signal-500));
+}
+
+.error-info-card p:first-child {
+  color: #9FADC9;
+}
+
+/* =========================================================
+   CHIP DE REFERENCIA
+   ========================================================= */
+.error-ref-chip {
+  position: relative;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9FADC9;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  margin-top: clamp(14px, 2.4vh, 24px);
+}
+
+/* =========================================================
+   ACCESOS RÁPIDOS (grid de 3 enlaces)
+   ========================================================= */
+.error-quick-link {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  transition: background-color 0.2s ease, transform 0.2s var(--ease-standard), box-shadow 0.2s ease;
+}
+
+.error-quick-link:hover {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   BOTÓN OUTLINE CLARO (sobre fondos oscuros)
+   ========================================================= */
+.btn-outline-light {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s var(--ease-standard);
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-outline-light:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* =========================================================
+   RESPONSIVE — pantallas muy bajas
+   ========================================================= */
+@media (max-height: 650px) {
+  .error-code-hero { font-size: 180px; }
+  .error-brand-mark { margin-bottom: 6px; }
+  .error-code { margin-top: 4px; font-size: 16px; }
+  .error-actions { margin-top: 8px; }
+  .error-info-card { margin-top: 6px; }
+  .error-ref-chip { margin-top: 6px; }
+}

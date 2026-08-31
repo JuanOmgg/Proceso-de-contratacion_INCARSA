@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva solicitud · INCARSA</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Flatpickr (Calendario personalizado) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Estilos custom -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="assets/css/dark-mode.css">
+  <!-- Datos + lógica (deben ir antes de Alpine) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/mockData.js"></script>
+  <script src="assets/js/wizard.js"></script>
+  <script src="assets/js/plantas.js"></script>
+  <script src="assets/js/contratistas.js"></script>
+  <script src="assets/js/vehiculos.js"></script>
+  <!-- Alpine.js (plugin collapse debe cargar ANTES que el core; ambos con defer) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased">
+
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- ============================================================
+       SIDEBAR
+  ============================================================= -->
+    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
+
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+          </div>
+          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
+        </div>
+        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+
+        <!-- Módulo desplegable: Formularios (abierto por defecto en esta página) -->
+        <div>
+          <button @click="openModules.formularios = !openModules.formularios"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
+              <span class="sidebar-label">Formularios</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.formularios ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.formularios" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-formulario.html" class="sidebar-sublink is-active block py-2 text-[13px]">Nueva
+              solicitud</a>
+            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Solicitudes guardadas</a>
+            <a href="usuario-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nuevo usuario</a>
+          </div>
+        </div>
+
+        <!-- Módulo desplegable: Tablas / consultas -->
+        <div>
+          <button @click="openModules.tablas = !openModules.tablas"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-table-list w-4 text-center"></i>
+              <span class="sidebar-label">Consultas</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.tablas ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.tablas" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-listado.html" class="sidebar-sublink block py-2 text-[13px]">Solicitudes</a>
+            <a href="usuarios-listado.html" class="sidebar-sublink block py-2 text-[13px]">Usuarios</a>
+            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Plantas y zonas</a>
+            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Contratistas</a>
+            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Vehículos</a>
+            <a href="personas-listado.html" class="sidebar-sublink block py-2 text-[13px]">Personas</a>
+          </div>
+        </div>
+
+        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
+          <span class="sidebar-label">Procesamiento</span>
+        </a>
+      </nav>
+
+      <button @click="sidebarCollapsed = !sidebarCollapsed"
+        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
+        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+        <span class="sidebar-label text-xs">Contraer</span>
+      </button>
+    </aside>
+
+    <!-- ============================================================
+       MAIN COLUMN
+  ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="solicitudWizard()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      <header
+        class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <h1 class="font-display font-semibold text-lg text-white" x-text="isEdit ? ('Editar solicitud ' + (editId ? '· ' + editId : '')) : 'Nueva solicitud'"></h1>
+          <span
+            class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--signal-500)]">
+            <span x-text="activeRole"></span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Notificaciones -->
+          <div class="relative" @click.outside="notificationsOpen = false">
+            <button @click="notificationsOpen = !notificationsOpen"
+              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white">
+              <i class="fa-regular fa-bell text-base"></i>
+              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1"
+                x-text="notifications.length"></span>
+            </button>
+            <div x-show="notificationsOpen" x-transition x-cloak
+              class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <div class="px-4 py-3 border-b border-[var(--border-subtle)] font-semibold text-sm">Notificaciones</div>
+              <template x-for="n in notifications" :key="n.id">
+                <div
+                  class="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--steel-100)] text-sm">
+                  <p class="text-[var(--text-primary)]" x-text="n.texto"></p>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5" x-text="n.tiempo"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Perfil -->
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full">
+              <div
+                class="w-8 h-8 rounded-full bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
+                x-text="userInitials"><b>LG</b>></div>
+              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)]"></i>
+            </button>
+            <div x-show="open" x-transition x-cloak
+              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <button @click="$dispatch('open-profile'); open = false"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2">
+                <i class="fa-regular fa-user w-4"></i> Ver perfil
+              </button>
+              <a href="login.html"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-6">
+        <div class="max-w-4xl mx-auto space-y-6">
+
+          <!-- ===== Stepper ===== -->
+          <div class="flex items-center" x-cloak>
+            <template x-for="(step, idx) in steps" :key="idx">
+              <div class="flex items-center" :class="idx < steps.length - 1 ? 'flex-1' : ''">
+                <div class="flex flex-col items-center gap-2 cursor-pointer" @click="goToStep(idx + 1)">
+                  <div class="step-circle" :class="stepStatus(idx + 1)">
+                    <i class="fa-solid fa-check text-xs" x-show="currentStep > idx + 1"></i>
+                    <span x-show="currentStep <= idx + 1" x-text="idx + 1"></span>
+                  </div>
+                  <span class="step-label whitespace-nowrap" :class="currentStep === idx + 1 ? 'is-current' : ''"
+                    x-text="step"></span>
+                </div>
+                <div class="step-connector flex-1 mx-2" :class="currentStep > idx + 1 ? 'is-complete' : ''"
+                  x-show="idx < steps.length - 1"></div>
+              </div>
+            </template>
+          </div>
+
+          <!-- ===== Pantalla de éxito ===== -->
+          <div x-show="submitted" x-cloak x-transition:enter="transition ease-out duration-[400ms]"
+            x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+            class="wizard-card p-10 text-center">
+            <div
+              class="success-icon-pop w-14 h-14 rounded-full bg-[var(--state-aprobado-bg)] text-[var(--state-aprobado)] flex items-center justify-center mx-auto mb-4">
+              <i class="fa-solid fa-check text-2xl"></i>
+            </div>
+            <h2 class="font-display font-semibold text-xl mb-1"
+              x-text="isEdit ? 'Solicitud actualizada' : 'Solicitud enviada'"></h2>
+            <p class="text-sm text-[var(--text-muted)]">Redirigiendo al dashboard…</p>
+          </div>
+
+          <!-- ===== Formulario ===== -->
+          <form @submit.prevent x-show="!submitted" x-cloak class="wizard-card p-6 sm:p-8">
+
+            <!-- ---------- PASO 1: Datos generales ---------- -->
+            <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-[350ms]"
+              x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+              <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1"><b>Datos generales</b></h2>
+              <p class="text-sm text-[var(--text-muted)] mb-6">Información de la empresa contratista y la visita.</p>
+
+              <!-- Barra de búsqueda -->
+              <div class="flex flex-col sm:flex-row gap-2 mt-4">
+                <div class="relative flex-1">
+                  <i
+                    class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
+                  <input type="text" x-model="contratistaSearchQuery" placeholder="Buscar empresa contratista"
+                    class="input-field w-full rounded-lg pl-9 pr-3 py-2.5 text-sm">
+                </div>
+                <button type="button" @click="openContratistaModal()"
+                  class="btn-signal rounded-lg px-3.5 py-2.5 text-xs font-semibold flex-shrink-0">
+                  <i class="fa-solid fa-user-plus text-[10px]"></i> Registrar nueva empresa
+                </button>
+              </div>
+
+              <!--Resultados de la busqueda-->
+              <div class="mt-2" x-show="contratistaSearchQuery.trim() !== ''" x-cloak>
+                <div class="space-y-2 mt-2" x-show="contratistasFiltrados().length > 0">
+                  <template x-for="empresa in contratistasFiltrados()"
+                    :key="empresa.id || empresa.nombre || empresa.N_empresa">
+                    <div class="entry-card p-3 flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium truncate" x-text="empresa.nombre || empresa.N_empresa || empresa">
+                        </p>
+                      </div>
+                      <button type="button" @click="agregarContratistaDesdeBusqueda(empresa)"
+                        x-show="!contratistaYaSeleccionada(empresa)"
+                        class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+                        Agregar
+                      </button>
+                      <span x-show="contratistaYaSeleccionada(empresa)"
+                        class="text-xs font-medium text-[var(--text-muted)] flex-shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Seleccionada
+                      </span>
+                    </div>
+                  </template>
+                </div>
+
+                <p class="text-sm text-[var(--text-muted)] py-4 text-center"
+                  x-show="contratistasFiltrados().length === 0">
+                  No se encontró una empresa contratista con esas características.
+                  <button type="button" @click="openContratistaModal()"
+                    class="font-semibold text-[var(--signal-500)] hover:underline">Regístrala aquí.</button>
+                </p>
+              </div>
+
+              <!--Empresa seleccionada-->
+              <div class="space-y-3 mt-6">
+                <div class="entry-card p-4" x-show="form.contratista"
+                  x-transition:enter="transition ease-out duration-[300ms]"
+                  x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+                  x-transition:leave="transition ease-in duration-[220ms]"
+                  x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-xs text-[var(--text-muted)] font-medium mb-0.5">Empresa contratista seleccionada:
+                      </p>
+                      <p class="text-sm font-semibold truncate" x-text="form.contratista"></p>
+                    </div>
+                    <button type="button" @click="removeContratista()" class="action-icon-btn danger flex-shrink-0"
+                      title="Eliminar">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <p class="text-sm text-[var(--text-muted)] text-center py-6" x-show="!form.contratista">No se ha
+                  seleccionado ninguna empresa contratista.</p>
+                <p class="form-error" x-show="errors.contratista" x-text="errors.contratista"></p>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-5 mt-6">
+                <div class="sm:col-span-2">
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="form-label mb-0">Empresas a visitar</label>
+                    <span class="text-xs text-[var(--text-muted)]"><span x-text="form.empresas.length"></span>
+                      seleccionada<span x-show="form.empresas.length !== 1">s</span></span>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="em in empresas" :key="em.id">
+                      <button type="button" @click="toggleEmpresa(em.id)" class="chip-select"
+                        :class="isEmpresaSelected(em.id) ? 'is-selected' : ''" x-text="em.nombre"></button>
+                    </template>
+                  </div>
+
+                  <p class="text-xs text-red-500 mt-1" x-show="errors.empresas" x-text="errors.empresas"></p>
+
+                  <!-- Plantas anidadas por cada empresa seleccionada -->
+                  <div class="space-y-3 mt-4" x-show="form.empresas.length > 0"
+                    x-transition:enter="transition ease-out duration-[3000ms]"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-[220ms]" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0">
+                    <template x-for="empresaId in form.empresas" :key="empresaId">
+                      <div class="empresa-plantas-group p-3 rounded-lg"
+                        x-transition:enter="transition ease-out duration-[300ms]"
+                        x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-[220ms]"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                        <p class="text-xs font-semibold text-[var(--ink-800)] mb-2"
+                          x-text="'Plantas de ' + empresaNombre(empresaId)"></p>
+
+                        <div class="flex flex-wrap gap-2">
+                          <template x-for="planta in plantasDeEmpresa(empresaId)" :key="planta.id || planta">
+                            <button type="button" @click="togglePlanta(empresaId, planta.nombre || planta)"
+                              class="chip-select"
+                              :class="isPlantaSelected(empresaId, planta.nombre || planta) ? 'is-selected' : ''"
+                              x-text="planta.nombre || planta"></button>
+                          </template>
+                        </div>
+
+                      </div>
+                    </template>
+                  </div>
+                  <p class="form-error" x-show="errors.plantas" x-text="errors.plantas"></p>
+                </div>
+
+                <div>
+                  <label class="form-label">Fecha de ingreso</label>
+                  <div class="relative">
+                    <input type="text" x-ref="fechaIngresoInput" x-init="initFlatpickr($el, 'fechaIngreso')"
+                      placeholder="Seleccionar fecha de ingreso"
+                      class="input-field w-full rounded-lg pl-3.5 pr-10 py-2.5 text-sm cursor-pointer bg-white"
+                      :class="errors.fechaIngreso ? 'has-error' : ''">
+                    <i
+                      class="fa-regular fa-calendar absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--text-muted)] pointer-events-none"></i>
+                  </div>
+                  <p class="form-error" x-show="errors.fechaIngreso" x-text="errors.fechaIngreso"></p>
+                </div>
+                <div>
+                  <label class="form-label">Fecha de salida</label>
+                  <div class="relative">
+                    <input type="text" x-ref="fechaSalidaInput" x-init="initFlatpickr($el, 'fechaSalida')"
+                      placeholder="Seleccionar fecha de salida"
+                      class="input-field w-full rounded-lg pl-3.5 pr-10 py-2.5 text-sm cursor-pointer bg-white"
+                      :class="errors.fechaSalida ? 'has-error' : ''">
+                    <i
+                      class="fa-regular fa-calendar absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--text-muted)] pointer-events-none"></i>
+                  </div>
+                  <p class="form-error" x-show="errors.fechaSalida" x-text="errors.fechaSalida"></p>
+                </div>
+
+                <div>
+                  <label class="form-label">Nivel de riesgo</label>
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="nivel in nivelesRiesgo" :key="nivel">
+                      <button type="button" @click="form.nivelRiesgo = nivel" class="chip-select"
+                        :class="form.nivelRiesgo === nivel ? getRiesgoBadgeClass(nivel) : 'bg-[var(--steel-100)] text-gray-600 border-gray-200 hover:bg-gray-300' "
+                        x-text="nivel">
+                      </button>
+                    </template>
+                  </div>
+                  <p class="form-error" x-show="errors.nivelRiesgo" x-text="errors.nivelRiesgo"></p>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="form-label">Actividad a realizar</label>
+                  <textarea x-model="form.actividad" rows="3" placeholder="Describe brevemente la actividad"
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm resize-none"
+                    :class="errors.actividad ? 'has-error' : ''"></textarea>
+                  <p class="form-error" x-show="errors.actividad" x-text="errors.actividad"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---------- PASO 2: Personas ---------- -->
+            <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-[350ms]"
+              x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+              <div class="flex items-center justify-between mb-1">
+                <div>
+                  <h2 class="font-display font-semibold text-lg text-[var(--ink-900)]">Personas</h2>
+                  <p class="text-sm text-[var(--text-muted)]">Busca a la persona por nombre o número de identificación.
+                  </p>
+                </div>
+              </div>
+              <p class="form-error mb-3" x-show="errors.personas" x-text="errors.personas"></p>
+
+              <!-- Barra de búsqueda + registrar nueva persona -->
+              <div class="flex flex-col sm:flex-row gap-2 mt-4">
+                <div class="relative flex-1">
+                  <i
+                    class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
+                  <input type="text" x-model="personaSearchQuery"
+                    placeholder="Buscar por nombre o número de identificación…"
+                    class="input-field w-full rounded-lg pl-9 pr-3 py-2.5 text-sm">
+                </div>
+                <button type="button" @click="openPersonaModal()"
+                  class="btn-primary rounded-lg px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 flex-shrink-0 justify-center">
+                  <i class="fa-solid fa-user-plus text-[10px]"></i> Registrar nueva persona
+                </button>
+              </div>
+
+              <!-- Resultados de búsqueda -->
+              <div class="mt-2" x-show="personaSearchQuery.trim() !== ''" x-cloak>
+                <div class="space-y-2 mt-2" x-show="personasFiltradas().length > 0">
+                  <template x-for="persona in personasFiltradas()"
+                    :key="persona.id || persona.numDoc || persona.identificacion">
+                    <div class="entry-card p-3 flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium truncate" x-text="persona.nombres"></p>
+                        <p class="text-xs text-[var(--text-muted)]"
+                          x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo"></p>
+                      </div>
+                      <button type="button" @click="agregarPersonaDesdeBusqueda(persona)"
+                        x-show="!personaYaAgregada(persona.numDoc)"
+                        class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+                        Agregar
+                      </button>
+                      <span x-show="personaYaAgregada(persona.numDoc)"
+                        class="text-xs font-medium text-[var(--text-muted)] flex-shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Ya agregada
+                      </span>
+                    </div>
+                  </template>
+                </div>
+                <p class="text-sm text-[var(--text-muted)] py-4 text-center" x-show="personasFiltradas().length === 0">
+                  No se encontró persona con esas características.
+                  <button type="button" @click="openPersonaModal()"
+                    class="font-semibold text-[var(--signal-500)] hover:underline">Regístrala aquí.</button>
+                </p>
+              </div>
+
+              <!-- Personas agregadas a la solicitud -->
+              <div class="space-y-3 mt-6">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                  x-show="personas.length > 0">
+                  Personas agregadas (<span x-text="personas.length"></span>)
+                </h3>
+                <template x-for="(persona, idx) in personas" :key="idx">
+                  <div class="entry-card p-4" x-transition:enter="transition ease-out duration-[300ms]"
+                    x-transition:enter-start="opacity-0 -translate-y-2"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-[220ms]"
+                    x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium truncate" x-text="persona.nombres"></p>
+                        <p class="text-xs text-[var(--text-muted)]"
+                          x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo"></p>
+                        <div class="mt-2 flex flex-wrap gap-1.5"
+                          x-show="persona.documentos && persona.documentos.length > 0">
+                          <template x-for="(doc, dIdx) in persona.documentos" :key="dIdx">
+                            <span
+                              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--steel-100)] text-[var(--ink-800)] border border-[var(--border-subtle)]">
+                              <i class="fa-solid fa-file-pdf text-red-500 text-[10px]"></i>
+                              <span class="font-semibold text-[var(--ink-900)]" x-text="doc.tipo_doc + ':'"></span>
+                              <span class="truncate max-w-[150px]" x-text="doc.nombre_archivo"></span>
+                            </span>
+                          </template>
+                        </div>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1"
+                          x-show="persona.documento && (!persona.documentos || persona.documentos.length === 0)"
+                          x-text="'Documento: ' + persona.documento"></p>
+                      </div>
+                      <button type="button" @click="removePersona(idx)" class="action-icon-btn danger flex-shrink-0"
+                        title="Quitar">
+                        <i class="fa-regular fa-trash-can text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+                <p class="text-sm text-[var(--text-muted)] text-center py-6" x-show="personas.length === 0">Aún no has
+                  agregado personas a esta solicitud.</p>
+              </div>
+            </div>
+
+            <!-- ---------- PASO 3: Vehículos y equipos ---------- -->
+            <div x-show="currentStep === 3" x-transition:enter="transition ease-out duration-[350ms]"
+              x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+              <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1">Vehículos y equipos</h2>
+              <p class="text-sm text-[var(--text-muted)] mb-6">Opcional — solo si aplica para esta visita.</p>
+
+              <div class="grid lg:grid-cols-2 gap-6">
+                <!-- Vehículos -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <div>
+                      <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Vehículos</h3>
+                      <p class="text-[11px] text-[var(--text-muted)]">Busca un vehículo por placa o registra uno nuevo.</p>
+                    </div>
+                  </div>
+
+                  <!-- Buscador de Vehículos y Botón Registrar Nuevo -->
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div class="search-input-wrapper flex-1">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <input type="text" x-model="vehiculoSearchQuery"
+                        placeholder="Buscar por placa, tipo o conductor..."
+                        class="input-field w-full rounded-lg px-3 py-2 text-xs">
+                    </div>
+                    <button type="button" @click="openVehiculoModal()"
+                      class="btn-primary rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 justify-center">
+                      <i class="fa-solid fa-car-side text-[11px]"></i> Registrar nuevo vehículo
+                    </button>
+                  </div>
+
+                  <!-- Resultados de búsqueda de Vehículos -->
+                  <div class="mt-2" x-show="vehiculoSearchQuery.trim() !== ''" x-cloak>
+                    <div class="space-y-2 mt-2" x-show="vehiculosFiltrados().length > 0">
+                      <template x-for="v in vehiculosFiltrados()" :key="v.id || v.placa">
+                        <div class="entry-card p-3 flex items-center justify-between gap-3">
+                          <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                              <span class="font-mono font-bold text-sm text-[var(--ink-900)] uppercase" x-text="v.placa"></span>
+                              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700" x-text="v.tipo"></span>
+                            </div>
+                            <p class="text-xs text-[var(--text-muted)] mt-0.5"
+                              x-text="v.conductor ? ('Conductor: ' + v.conductor) : 'Sin conductor asignado'"></p>
+                          </div>
+                          <button type="button" @click="agregarVehiculoDesdeBusqueda(v)"
+                            x-show="!vehiculoYaAgregado(v.placa)"
+                            class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0">
+                            Agregar
+                          </button>
+                          <span x-show="vehiculoYaAgregado(v.placa)"
+                            class="text-xs font-medium text-[var(--text-muted)] flex-shrink-0 flex items-center gap-1.5">
+                            <i class="fa-solid fa-check"></i> Ya agregado
+                          </span>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)] py-4 text-center" x-show="vehiculosFiltrados().length === 0">
+                      No se encontró vehículo con esa placa.
+                      <button type="button" @click="openVehiculoModal()"
+                        class="font-semibold text-[var(--signal-500)] hover:underline">Regístralo aquí.</button>
+                    </p>
+                  </div>
+
+                  <!-- Vehículos agregados a la solicitud -->
+                  <div class="space-y-3 mt-4">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                      x-show="vehiculos.length > 0">
+                      Vehículos agregados (<span x-text="vehiculos.length"></span>)
+                    </h4>
+                    <template x-for="(v, idx) in vehiculos" :key="idx">
+                      <div class="entry-card p-3.5 rounded-xl border border-[var(--border-subtle)] bg-white"
+                        x-transition:enter="transition ease-out duration-[300ms]"
+                        x-transition:enter-start="opacity-0 -translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-[200ms]"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                              <span class="font-mono font-bold text-sm text-[var(--ink-900)] uppercase" x-text="v.placa"></span>
+                              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700" x-text="v.tipo"></span>
+                            </div>
+
+                            <div class="mt-2 flex flex-wrap gap-1.5" x-show="v.documentos && v.documentos.length > 0">
+                              <template x-for="(doc, dIdx) in v.documentos" :key="dIdx">
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--steel-100)] text-[var(--ink-800)] border border-[var(--border-subtle)]"
+                                  x-show="doc.nombre_archivo">
+                                  <i class="fa-solid fa-file-pdf text-red-500 text-[10px]"></i>
+                                  <span class="font-semibold text-[var(--ink-900)]" x-text="(doc.tipo_doc || doc.tipo || 'DOC') + ':'"></span>
+                                  <span class="truncate max-w-[120px]" x-text="doc.nombre_archivo || doc.nom_documento"></span>
+                                </span>
+                              </template>
+                            </div>
+
+                            <!-- Asignar Conductor y Licencia para esta solicitud -->
+                            <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] space-y-2.5">
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div>
+                                  <label class="block text-[11px] font-semibold text-[var(--ink-800)] mb-1">
+                                    <i class="fa-solid fa-user-tie text-[var(--signal-500)] text-[10px] mr-1"></i>
+                                    Conductor asignado
+                                  </label>
+                                  <template x-if="personas.length > 0">
+                                    <select x-model="v.conductor" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                      <option value="">-- Seleccionar conductor --</option>
+                                      <template x-for="p in personas" :key="p.numDoc || p.identificacion">
+                                        <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
+                                      </template>
+                                      <option value="Otro conductor externo">Otro conductor externo</option>
+                                    </select>
+                                  </template>
+                                  <template x-if="personas.length === 0">
+                                    <input type="text" x-model="v.conductor" placeholder="Nombre del conductor..."
+                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                  </template>
+                                </div>
+
+                                <div>
+                                  <label class="block text-[11px] font-semibold text-[var(--ink-800)] mb-1">
+                                    <i class="fa-solid fa-id-card text-[var(--signal-500)] text-[10px] mr-1"></i>
+                                    Licencia de conducción
+                                  </label>
+                                  <template x-if="!v.licencia_doc">
+                                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-2.5 py-1.5 text-xs bg-white transition group">
+                                      <span class="truncate text-[var(--text-muted)] group-hover:text-[var(--ink-800)]">Adjuntar licencia (PDF/Foto)...</span>
+                                      <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                                      <input type="file" accept="application/pdf,.pdf,image/*" @change="handleLicenciaVehiculoFile($event, idx)" class="hidden">
+                                    </label>
+                                  </template>
+                                  <template x-if="v.licencia_doc">
+                                    <div class="w-full flex items-center justify-between bg-white border border-emerald-200 rounded-lg px-2.5 py-1 text-xs">
+                                      <span class="truncate text-emerald-800 font-medium flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-circle-check text-emerald-600 text-xs"></i>
+                                        <span class="truncate" x-text="v.licencia_doc"></span>
+                                      </span>
+                                      <button type="button" @click="removeLicenciaVehiculo(idx)" class="text-red-500 hover:text-red-700 ml-1 flex-shrink-0 text-xs" title="Quitar licencia">
+                                        <i class="fa-solid fa-xmark"></i>
+                                      </button>
+                                    </div>
+                                  </template>
+                                </div>
+                              </div>
+                            </div>
+
+                          </div>
+                          <button type="button" @click="removeVehiculo(idx)" class="action-icon-btn danger flex-shrink-0"
+                            title="Quitar vehículo">
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    <p class="text-sm text-[var(--text-muted)] text-center py-5" x-show="vehiculos.length === 0">
+                      Aún no has agregado vehículos a esta solicitud.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Equipos -->
+                <div>
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Equipos de
+                        cómputo</h3>
+                      <p class="text-[11px] text-[var(--text-muted)]">Laptops, tablets u otros equipos a ingresar</p>
+                    </div>
+                    <button type="button" @click="addEquipo()"
+                      class="btn-primary rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
+                      title="Agregar equipo">
+                      <i class="fa-solid fa-plus text-[10px]"></i> Agregar equipo
+                    </button>
+                  </div>
+                  <div class="space-y-2">
+                    <template x-for="(e, idx) in equipos" :key="idx">
+                      <div class="entry-card p-3 flex items-center gap-2"
+                        x-transition:enter="transition ease-out duration-[300ms]"
+                        x-transition:enter-start="opacity-0 -translate-x-2"
+                        x-transition:enter-end="opacity-100 translate-x-0"
+                        x-transition:leave="transition ease-in duration-[220ms]"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                        <input type="text" x-model="e.marca" placeholder="Marca"
+                          class="input-field w-full rounded-lg px-2 py-2 text-xs">
+                        <input type="text" x-model="e.modelo" placeholder="Modelo"
+                          class="input-field w-full rounded-lg px-2 py-2 text-xs">
+                        <input type="text" x-model="e.serie" placeholder="N° serie"
+                          class="input-field w-full rounded-lg px-2 py-2 text-xs">
+                        <button type="button" @click="removeEquipo(idx)" class="action-icon-btn danger flex-shrink-0"
+                          title="Quitar"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                      </div>
+                    </template>
+                    <p class="text-sm text-[var(--text-muted)] text-center py-4" x-show="equipos.length === 0">No se
+                      registraron equipos.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---------- PASO 4: Revisión ---------- -->
+            <div x-show="currentStep === 4" x-transition:enter="transition ease-out duration-[350ms]"
+              x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+              <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1">Revisión</h2>
+              <p class="text-sm text-[var(--text-muted)] mb-6">Verifica la información antes de enviar la solicitud.</p>
+
+              <div class="space-y-6">
+                <div>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-2">Datos
+                    generales</h4>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p class="text-[var(--text-muted)] text-xs">Contratista</p>
+                      <p class="font-medium" x-text="form.contratista || '—'"></p>
+                    </div>
+                    <div>
+                      <p class="text-[var(--text-muted)] text-xs">Nivel de riesgo</p>
+                      <p class="font-medium" x-text="form.nivelRiesgo || '—'"></p>
+                    </div>
+                    <div>
+                      <p class="text-[var(--text-muted)] text-xs">Fecha ingreso</p>
+                      <p class="font-medium" x-text="form.fechaIngreso || '—'"></p>
+                    </div>
+                    <div>
+                      <p class="text-[var(--text-muted)] text-xs">Fecha salida</p>
+                      <p class="font-medium" x-text="form.fechaSalida || '—'"></p>
+                    </div>
+                    <div class="col-span-2 md:col-span-3">
+                      <p class="text-[var(--text-muted)] text-xs">Actividad</p>
+                      <p class="font-medium" x-text="form.actividad || '—'"></p>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <p class="text-[var(--text-muted)] text-xs mb-1.5">Empresas y plantas a visitar</p>
+                    <div class="space-y-1.5" x-show="form.empresas.length > 0">
+                      <template x-for="empresaId in form.empresas" :key="empresaId">
+                        <p class="text-sm"><span class="font-medium" x-text="empresaNombre(empresaId)"></span><span
+                            class="text-[var(--text-muted)]"
+                            x-text="': ' + ((form.plantasPorEmpresa[empresaId] || []).join(', ') || '—')"></span></p>
+                      </template>
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)]" x-show="form.empresas.length === 0">—</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-2">Personas
+                    (<span x-text="personas.length"></span>)</h4>
+                  <div class="overflow-x-auto rounded-lg border border-[var(--border-subtle)]">
+                    <table class="w-full text-sm data-table">
+                      <thead>
+                        <tr>
+                          <th class="px-3 py-2 text-center">Ítem</th>
+                          <th class="px-3 py-2 text-center">Nombres</th>
+                          <th class="px-3 py-2 text-center">Identificación</th>
+                          <th class="px-3 py-2 text-center">Cargo</th>
+                          <th class="px-3 py-2 text-center">Documentos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="(p, idx) in personas" :key="idx">
+                          <tr>
+                            <td class="px-3 py-2 text-center" x-text="idx + 1"></td>
+                            <td class="px-3 py-2 text-center font-medium" x-text="p.nombres || '—'"></td>
+                            <td class="px-3 py-2 text-center" x-text="p.tipoDoc + ' ' + (p.numDoc || '—')"></td>
+                            <td class="px-3 py-2 text-center" x-text="p.cargo || '—'"></td>
+                            <td class="px-3 py-2 text-center">
+                              <div class="flex flex-col gap-1 items-center"
+                                x-show="p.documentos && p.documentos.length > 0">
+                                <template x-for="(doc, dIdx) in p.documentos" :key="dIdx">
+                                  <span class="text-xs text-[var(--ink-700)] flex items-center gap-1">
+                                    <i class="fa-solid fa-file-pdf text-red-500 text-[10px]"></i>
+                                    <span class="font-medium" x-text="doc.tipo_doc + ':'"></span>
+                                    <span class="text-[var(--text-muted)]" x-text="doc.nombre_archivo"></span>
+                                  </span>
+                                </template>
+                              </div>
+                              <span x-show="!p.documentos || p.documentos.length === 0"
+                                class="text-xs text-[var(--text-muted)]">—</span>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-2">Vehículos
+                    (<span x-text="vehiculos.length"></span>)</h4>
+                  <div class="overflow-x-auto rounded-lg border border-[var(--border-subtle)]"
+                    x-show="vehiculos.length > 0">
+                    <table class="w-full text-sm data-table">
+                      <thead>
+                        <tr>
+                          <th class="px-3 py-2 text-center">Tipo & Placa</th>
+                          <th class="px-3 py-2 text-center">Licencia Conductor</th>
+                          <th class="px-3 py-2 text-center">Documentos del Vehículo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="(v, idx) in vehiculos" :key="idx">
+                          <tr>
+                            <td class="px-3 py-2 text-center font-medium">
+                              <span class="font-bold text-[var(--ink-900)]" x-text="v.placa || 'Sin placa'"></span>
+                              <span class="text-xs text-[var(--text-muted)] block" x-text="v.tipo"></span>
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                              <div class="flex flex-col items-center gap-0.5">
+                                <span class="text-xs font-medium text-[var(--ink-800)]"
+                                  x-text="v.conductor || 'Conductor no asignado'" x-show="v.conductor"></span>
+                                <span class="text-xs text-green-700 flex items-center gap-1" x-show="v.licencia_doc">
+                                  <i class="fa-solid fa-id-card text-green-600 text-[11px]"></i>
+                                  <span x-text="v.licencia_doc"></span>
+                                </span>
+                                <span class="text-xs text-[var(--text-muted)]" x-show="!v.licencia_doc">Sin licencia
+                                  adjunta</span>
+                              </div>
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                              <div class="flex flex-col gap-1 items-center"
+                                x-show="v.documentos && v.documentos.some(d => d.nombre_archivo)">
+                                <template x-for="(doc, dIdx) in (v.documentos || [])" :key="dIdx">
+                                  <span class="text-xs text-[var(--ink-700)] flex items-center gap-1"
+                                    x-show="doc.nombre_archivo">
+                                    <i class="fa-solid fa-file-pdf text-red-500 text-[10px]"></i>
+                                    <span class="font-medium" x-text="doc.tipo_doc + ':'"></span>
+                                    <span class="text-[var(--text-muted)]" x-text="doc.nombre_archivo"></span>
+                                  </span>
+                                </template>
+                              </div>
+                              <span x-show="!v.documentos || !v.documentos.some(d => d.nombre_archivo)"
+                                class="text-xs text-[var(--text-muted)]">Sin documentos</span>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="text-sm text-[var(--text-muted)]" x-show="vehiculos.length === 0">No se registraron
+                    vehículos.</p>
+                </div>
+
+                <div>
+                  <h4 class="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-2">Equipos de
+                    cómputo (<span x-text="equipos.length"></span>)</h4>
+                  <ul class="space-y-1 text-sm" x-show="equipos.length > 0">
+                    <template x-for="(e, idx) in equipos" :key="idx">
+                      <li class="flex justify-between border-b border-[var(--border-subtle)] py-1.5">
+                        <span x-text="(e.marca || '—') + ' ' + (e.modelo || '')"></span><span
+                          class="font-medium font-mono text-xs" x-text="e.serie || '—'"></span>
+                      </li>
+                    </template>
+                  </ul>
+                  <p class="text-sm text-[var(--text-muted)]" x-show="equipos.length === 0">No se registraron equipos.
+                  </p>
+                </div>
+
+                <div class="border-t border-[var(--border-subtle)] pt-4">
+                  <label class="flex items-start gap-2.5 text-sm cursor-pointer">
+                    <input type="checkbox" x-model="aceptaVeracidad" class="mt-0.5">
+                    <span>Confirmo que la información registrada en esta solicitud es veraz y completa.</span>
+                  </label>
+                  <p class="form-error" x-show="errors.veracidad" x-text="errors.veracidad"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---------- Navegación ---------- -->
+            <div class="flex items-center justify-between mt-8 pt-6 border-t border-[var(--border-subtle)]">
+              <button type="button" @click="prevStep()" x-show="currentStep > 1"
+                class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)]">
+                <i class="fa-solid fa-arrow-left mr-1.5 text-xs"></i> Atrás
+              </button>
+              <span x-show="currentStep === 1"></span>
+
+              <button type="button" @click="nextStep()" x-show="currentStep < 4"
+                class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium">
+                Siguiente <i class="fa-solid fa-arrow-right ml-1.5 text-xs"></i>
+              </button>
+              <button type="button" @click="submitForm()" x-show="currentStep === 4" :disabled="submitting"
+                class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2"
+                :class="submitting ? 'opacity-70 cursor-not-allowed' : ''">
+                <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
+                <span x-text="submitting ? 'Enviando…' : (isEdit ? 'Guardar cambios' : 'Enviar solicitud')"></span>
+              </button>
+            </div>
+
+          </form>
+
+          <!-- ===== Modal: Registrar nueva persona ===== -->
+          <div x-show="showPersonaModal" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @keydown.escape.window="closePersonaModal()">
+            <div class="modal-panel w-full max-w-xl p-6" @click.outside="closePersonaModal()">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nueva persona</h3>
+                  <p class="text-xs text-[var(--text-muted)]">Información personal y documentos requeridos</p>
+                </div>
+                <button type="button" @click="closePersonaModal()" class="action-icon-btn" title="Cerrar">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div>
+                  <label class="form-label">Apellidos</label>
+                  <input type="text" x-model="nuevaPersona.apellidos" placeholder="Ej: Gómez Pérez"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    :class="personaModalErrors.apellidos ? 'has-error' : ''">
+                  <p class="form-error" x-show="personaModalErrors.apellidos" x-text="personaModalErrors.apellidos"></p>
+                </div>
+                <div>
+                  <label class="form-label">Nombres</label>
+                  <input type="text" x-model="nuevaPersona.nombres" placeholder="Ej: Carlos Andrés"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    :class="personaModalErrors.nombres ? 'has-error' : ''">
+                  <p class="form-error" x-show="personaModalErrors.nombres" x-text="personaModalErrors.nombres"></p>
+                </div>
+                <div>
+                  <label class="form-label">Tipo doc.</label>
+                  <select x-model="nuevaPersona.tipoDoc"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                    <template x-for="tipo in tiposDocPersona" :key="tipo">
+                      <option :value="tipo" x-text="tipo"></option>
+                    </template>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">N° documento</label>
+                  <input type="text" x-model="nuevaPersona.numDoc" placeholder="Ej: 1032456789"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    :class="personaModalErrors.numDoc ? 'has-error' : ''">
+                  <p class="form-error" x-show="personaModalErrors.numDoc" x-text="personaModalErrors.numDoc"></p>
+                </div>
+                <div>
+                  <label class="form-label">Cargo / Función</label>
+                  <input type="text" x-model="nuevaPersona.cargo" placeholder="Ej: Técnico eléctrico"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    :class="personaModalErrors.cargo ? 'has-error' : ''">
+                  <p class="form-error" x-show="personaModalErrors.cargo" x-text="personaModalErrors.cargo"></p>
+                </div>
+                <div>
+                  <label class="form-label">Observación (Opcional)</label>
+                  <input type="text" x-model="nuevaPersona.observacion" placeholder="Detalle o nota adicional"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm">
+                </div>
+
+                <!-- Sección: Documentos adjuntos (Relación 1 a N) -->
+                <div class="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border-subtle)]">
+                  <div class="flex items-center justify-between mb-2">
+                    <div>
+                      <label class="form-label mb-0 font-semibold text-[var(--ink-800)]">Documentos adjuntos</label>
+                      <p class="text-[11px] text-[var(--text-muted)]">Adjunta los certificados y documentos necesarios
+                        (PDF/Imágenes)</p>
+                    </div>
+                    <button type="button" @click="addDocumentoPersona()"
+                      class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                      <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
+                    </button>
+                  </div>
+
+                  <div class="space-y-2.5 mt-2">
+                    <template x-for="(doc, dIdx) in nuevaPersona.documentos" :key="dIdx">
+                      <div
+                        class="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--steel-100)] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <!-- Tipo de documento -->
+                        <div class="w-full sm:w-1/2">
+                          <select x-model="doc.tipo_doc"
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                            <template x-for="t in tiposDocAdjuntoPersona" :key="t">
+                              <option :value="t" x-text="t"></option>
+                            </template>
+                          </select>
+                        </div>
+
+                        <!-- Subir Archivo -->
+                        <div class="flex-1 relative flex items-center min-w-0">
+                          <label
+                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                            <span class="truncate text-[var(--ink-800)]"
+                              x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
+                            <i
+                              class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                            <input type="file" accept="application/pdf,.pdf,image/*"
+                              @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
+                          </label>
+                        </div>
+
+                        <!-- Botón eliminar fila -->
+                        <button type="button" @click="removeDocumentoPersona(dIdx)"
+                          class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
+                          <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                <button type="button" @click="closePersonaModal()" :disabled="guardandoPersona"
+                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button type="button" @click="guardarNuevaPersona()" :disabled="guardandoPersona"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoPersona"></i>
+                  <span x-text="guardandoPersona ? 'Guardando...' : 'Guardar persona'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Modal: Registrar nueva empresa ===== -->
+          <div x-show="showContratistaModal" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @keydown.escape.window="closeContratistaModal()">
+            <div class="modal-panel w-full max-w-lg p-6" @click.outside="closeContratistaModal()">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nueva empresa contratista
+                </h3>
+                <button type="button" @click="closeContratistaModal()" class="action-icon-btn" title="Cerrar">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="form-label">Nombre de la empresa</label>
+                  <input type="text" x-model="nuevaEmpresa.nombre"
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
+                    :class="nuevaEmpresaErrors.nombre ? 'has-error' : ''"
+                    placeholder="Ingrese el nombre de la empresa...">
+                  <p class="form-error" x-show="nuevaEmpresaErrors.nombre" x-text="nuevaEmpresaErrors.nombre"></p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="form-label">Observación (Opcional)</label>
+                  <input type="text" x-model="nuevaEmpresa.observacion" placeholder="Ingrese una observación..."
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                <button type="button" @click="closeContratistaModal()" :disabled="guardandoEmpresa"
+                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button type="button" @click="guardarNuevaEmpresa()" :disabled="guardandoEmpresa"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoEmpresa"></i>
+                  <span x-text="guardandoEmpresa ? 'Guardando...' : 'Guardar empresa'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Modal: Registrar nuevo vehículo ===== -->
+          <div x-show="showVehiculoModal" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @keydown.escape.window="closeVehiculoModal()">
+            <div class="modal-panel w-full max-w-lg p-6" @click.outside="closeVehiculoModal()">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nuevo vehículo</h3>
+                  <p class="text-xs text-[var(--text-muted)]">Datos del automotor, conductor y documentación</p>
+                </div>
+                <button type="button" @click="closeVehiculoModal()" class="action-icon-btn" title="Cerrar">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div>
+                  <label class="form-label">Tipo de vehículo</label>
+                  <select x-model="nuevoVehiculo.tipo"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white"
+                    :class="vehiculoModalErrors.tipo ? 'has-error' : ''">
+                    <template x-for="tipo in tiposVehiculo" :key="tipo">
+                      <option :value="tipo" x-text="tipo"></option>
+                    </template>
+                  </select>
+                  <p class="form-error" x-show="vehiculoModalErrors.tipo" x-text="vehiculoModalErrors.tipo"></p>
+                </div>
+
+                <div>
+                  <label class="form-label">Placa</label>
+                  <input type="text" x-model="nuevoVehiculo.placa"
+                    @input="nuevoVehiculo.placa = nuevoVehiculo.placa.toUpperCase()"
+                    placeholder="Ej: ABC-123"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm font-mono font-semibold uppercase"
+                    :class="vehiculoModalErrors.placa ? 'has-error' : ''">
+                  <p class="form-error" x-show="vehiculoModalErrors.placa" x-text="vehiculoModalErrors.placa"></p>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="form-label">Conductor asignado (Opcional)</label>
+                  <template x-if="personas.length > 0">
+                    <select x-model="nuevoVehiculo.conductor"
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                      <option value="">-- Seleccionar de personas de la solicitud --</option>
+                      <template x-for="p in personas" :key="p.numDoc || p.identificacion">
+                        <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
+                      </template>
+                      <option value="Otro conductor externo">Otro conductor externo</option>
+                    </select>
+                  </template>
+                  <template x-if="personas.length === 0">
+                    <input type="text" x-model="nuevoVehiculo.conductor" placeholder="Nombre completo del conductor..."
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                  </template>
+                </div>
+
+                <!-- Licencia de conducción del conductor -->
+                <div class="sm:col-span-2 p-3 rounded-lg bg-[var(--steel-100)] border border-[var(--border-subtle)] space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="form-label mb-0 text-xs font-semibold text-[var(--ink-800)] flex items-center gap-1.5">
+                      <i class="fa-solid fa-id-card text-[var(--signal-500)] text-xs"></i>
+                      Licencia de conducción del conductor
+                    </label>
+                    <span class="text-[10px] text-[var(--text-muted)]">Opcional</span>
+                  </div>
+
+                  <template x-if="!nuevoVehiculo.licencia_doc">
+                    <label
+                      class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-2 text-xs bg-white transition group">
+                      <span class="truncate text-[var(--text-muted)] group-hover:text-[var(--ink-800)]">Adjuntar licencia (PDF/Foto)...</span>
+                      <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                      <input type="file" accept="application/pdf,.pdf,image/*"
+                        @change="handleLicenciaNuevoVehiculoFile($event)" class="hidden">
+                    </label>
+                  </template>
+
+                  <template x-if="nuevoVehiculo.licencia_doc">
+                    <div class="w-full flex items-center justify-between bg-white border border-green-200 rounded-lg px-3 py-2 text-xs">
+                      <span class="truncate text-green-800 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-circle-check text-green-600 text-xs"></i>
+                        <span class="truncate" x-text="nuevoVehiculo.licencia_doc"></span>
+                      </span>
+                      <button type="button" @click="removeLicenciaNuevoVehiculo()"
+                        class="text-red-500 hover:text-red-700 ml-1 flex-shrink-0 text-xs" title="Quitar archivo">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Documentos del vehículo (SOAT, Tecnomecánica, etc.) -->
+                <div class="sm:col-span-2 pt-2 border-t border-[var(--border-subtle)]">
+                  <div class="flex items-center justify-between mb-2">
+                    <div>
+                      <label class="form-label mb-0 font-semibold text-[var(--ink-800)]">Documentos del vehículo</label>
+                      <p class="text-[11px] text-[var(--text-muted)]">SOAT, Tecnomecánica, Tarjeta de Propiedad, etc.</p>
+                    </div>
+                    <button type="button" @click="addDocumentoNuevoVehiculo()"
+                      class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                      <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
+                    </button>
+                  </div>
+
+                  <div class="space-y-2.5 mt-2">
+                    <template x-for="(doc, dIdx) in nuevoVehiculo.documentos" :key="dIdx">
+                      <div class="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--steel-100)] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <!-- Tipo de documento -->
+                        <div class="w-full sm:w-1/2">
+                          <select x-model="doc.tipo_doc"
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                            <template x-for="t in tiposDocAdjuntoVehiculo" :key="t">
+                              <option :value="t" x-text="t"></option>
+                            </template>
+                          </select>
+                        </div>
+
+                        <!-- Subir Archivo -->
+                        <div class="flex-1 relative flex items-center min-w-0">
+                          <label
+                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                            <span class="truncate text-[var(--ink-800)]"
+                              x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
+                            <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                            <input type="file" accept="application/pdf,.pdf,image/*"
+                              @change="handleDocumentoNuevoVehiculoFile($event, dIdx)" class="hidden">
+                          </label>
+                        </div>
+
+                        <!-- Botón eliminar fila -->
+                        <button type="button" @click="removeDocumentoNuevoVehiculo(dIdx)"
+                          class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
+                          <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                <button type="button" @click="closeVehiculoModal()" :disabled="guardandoVehiculo"
+                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button type="button" @click="guardarNuevoVehiculo()" :disabled="guardandoVehiculo"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoVehiculo"></i>
+                  <span x-text="guardandoVehiculo ? 'Guardando...' : 'Guardar vehículo'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ============================================================
+         FOOTER
+    ============================================================= -->
+      <footer
+        class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
+        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
+        <span>Desarrollado por el equipo de Tecnología INCARSA</span>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================
+      MODAL PLANTAS Y ZONAS
+  =============================================================-->
+  <div x-data="plantaManager()" x-cloak>
+    <div x-show="isOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border-0 flex flex-col max-h-[90vh] overflow-hidden transform">
+
+        <div class="px-6 py-4 border-0 flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[var(--signal-500)] text-lg">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-semibold text-lg text-white">Gestión de Plantas y Zonas</h2>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-app)]">
+          <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExito" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeError" class="font-medium"></span>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border-0 shadow-sm" :class="editandoId ? 'ring-2 ring-blue-500/50 bg-blue-50/20' : ''">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-600' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Planta (ID #' + editandoId + ')') : 'Registrar Nueva Planta'"></span>
+              </h3>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-slate-500 hover:text-slate-800 font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar edición
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarPlanta()" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div class="sm:col-span-4">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Empresa</label>
+                <select x-model="form.empresa" required class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--border-subtle)]">
+                  <option value="">Selecciona una empresa...</option>
+                  <template x-for="e in empresas" :key="e.id">
+                    <option :value="e.nombre" x-text="e.nombre"></option>
+                  </template>
+                </select>
+              </div>
+
+              <div class="sm:col-span-5">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Nombre de la Planta / Zona</label>
+                <input type="text" id="inputNombrePlanta" x-model="form.nombre" placeholder="Ej: Planta Samacá, Molienda Central..." required
+                  class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+              </div>
+
+              <div class="sm:col-span-3 flex gap-2">
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal flex-1 rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2 shadow-sm"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Guardar')"></span>
+                </button>
+                <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                  class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-2xl border-0 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-[var(--border-subtle)] flex flex-col sm:flex-row items-center gap-3 bg-slate-50/50">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="Buscar planta o empresa..."
+                  class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--border-subtle)]">
+              </div>
+              <div class="w-full sm:w-56">
+                <select x-model="filtroEmpresa" class="input-field w-full py-2 px-3 text-sm rounded-lg border border-[var(--border-subtle)]">
+                  <option value="">Todas las empresas</option>
+                  <template x-for="e in empresas" :key="e.id">
+                    <option :value="e.nombre" x-text="e.nombre"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+
+            <div class="w-full">
+              <table class="w-full text-sm data-table text-center table-auto">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3 w-12 text-center">#</th>
+                    <th class="px-4 py-3 text-left">Empresa</th>
+                    <th class="px-4 py-3 text-left">Planta / Zona</th>
+                    <th class="px-4 py-3 w-28 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  <template x-for="(p, index) in plantasPagina" :key="p.id">
+                    <tr class="hover:bg-slate-50/70 transition-colors" :class="editandoId === p.id ? 'bg-blue-50/40' : ''">
+                      <td class="px-4 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      <td class="px-4 py-2.5 font-medium text-[var(--text-primary)]">
+                        <span class="inline-flex items-center gap-1.5">
+                          <i class="fa-solid fa-building text-slate-400 text-xs"></i>
+                          <span x-text="p.N_empresa"></span>
+                        </span>
+                      </td>
+                      <td class="px-4 py-2.5 font-semibold text-[var(--text-primary)]" x-text="p.nombre"></td>
+                      <td class="px-4 py-2.5 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" @click="iniciarEdicion(p)"
+                            class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                            title="Editar planta">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                          </button>
+                          <button type="button" @click="eliminarPlanta(p.id, p.nombre)"
+                            class="action-icon-btn danger w-8 h-8 rounded-lg inline-flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors"
+                            title="Eliminar planta">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="plantasPagina.length === 0">
+                    <td colspan="4" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      <i class="fa-solid fa-triangle-exclamation text-slate-400 mb-1 text-lg"></i>
+                      <p>No se encontraron plantas con los filtros seleccionados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="px-4 py-3 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] bg-slate-50/30">
+              <div class="flex items-center gap-2">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <span>por página (<span x-text="rangoMostrado"></span>)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong x-text="currentPage" class="text-[var(--text-primary)]"></strong> de <span x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="px-6 py-3 border-0 bg-white flex justify-end">
+          <button type="button" @click="cerrarModal()" class="px-4 py-2 rounded-lg border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-slate-100 transition-colors">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+      MODAL CONTRATISTAS
+  =============================================================-->
+  <div x-data="contratistaManager()" x-cloak>
+    <div x-show="isOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border-0 flex flex-col max-h-[90vh] overflow-hidden transform">
+
+        <div class="px-6 py-4 border-0 flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[var(--signal-500)] text-lg">
+              <i class="fa-solid fa-handshake"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-semibold text-lg text-white">Gestión de Empresas Contratistas</h2>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-app)]">
+          <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExito" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeError" class="font-medium"></span>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border-0 shadow-sm" :class="editandoId ? 'ring-2 ring-blue-500/50 bg-blue-50/20' : ''">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-600' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Empresa Contratista (ID #' + editandoId + ')') : 'Registrar Nueva Empresa Contratista'"></span>
+              </h3>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-slate-500 hover:text-slate-800 font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar edición
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarContratista()" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div class="sm:col-span-5">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Nombre de empresa contratista</label>
+                <input type="text" id="inputNombreContratista" x-model="form.nombre" placeholder="Ej: Maderos Samacá, Servicios SAS..." required
+                  class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+              </div>
+
+              <div class="sm:col-span-4">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Observación (opcional)</label>
+                <input type="text" id="inputObservacionContratista" x-model="form.observacion" placeholder="Escriba una observación..."
+                  class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+              </div>
+
+              <div class="sm:col-span-3 flex gap-2">
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal flex-1 rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2 shadow-sm"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Guardar empresa')"></span>
+                </button>
+                <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                  class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-2xl border-0 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-[var(--border-subtle)] flex items-center gap-3 bg-slate-50/50">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="Buscar por nombre u observación..."
+                  class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--border-subtle)]">
+              </div>
+              <div class="text-xs text-[var(--text-muted)] font-medium">
+                <span>Total: </span><strong x-text="totalContratistas" class="text-[var(--text-primary)]"></strong>
+              </div>
+            </div>
+
+            <div class="w-full">
+              <table class="w-full text-sm data-table table-auto">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3 w-12 text-center">#</th>
+                    <th class="px-4 py-3 text-left">Empresa contratista</th>
+                    <th class="px-4 py-3 text-left">Observación</th>
+                    <th class="px-4 py-3 w-28 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y border-[var(--border-subtle)]">
+                  <template x-for="(c, index) in contratistasPagina" :key="c.id">
+                    <tr class="hover:bg-slate-50/70 transition-colors" :class="editandoId === c.id ? 'bg-blue-50/40' : ''">
+                      <td class="px-4 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      <td class="px-4 py-2.5 font-semibold text-[var(--text-primary)]" x-text="c.nombre"></td>
+                      <td class="px-4 py-2.5 text-xs text-[var(--text-muted)]" x-text="c.observacion || '—'"></td>
+                      <td class="px-4 py-2.5 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" @click="iniciarEdicion(c)"
+                            class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-yellow-500 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                            title="Editar contratista">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                          </button>
+                          <button type="button" @click="eliminarContratista(c.id, c.nombre)"
+                            class="action-icon-btn danger w-8 h-8 rounded-lg inline-flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            title="Eliminar contratista">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="contratistasPagina.length === 0">
+                    <td colspan="4" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      <i class="fa-solid fa-triangle-exclamation text-slate-400 mb-1 text-lg"></i>
+                      <p>No se encontraron empresas contratistas con los filtros seleccionados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="px-4 py-3 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] bg-slate-50/30">
+              <div class="flex items-center gap-2">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <span>por página (<span x-text="rangoMostrado"></span>)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong x-text="currentPage" class="text-[var(--text-primary)]"></strong> de <span x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="px-6 py-3 border-0 bg-white flex justify-end">
+          <button type="button" @click="cerrarModal()" class="px-4 py-2 rounded-lg border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-slate-100 transition-colors">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+      MODAL VEHÍCULOS REGISTRADOS
+  =============================================================-->
+  <div x-data="vehiculoManager()" x-cloak>
+    <div x-show="isOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border-0 flex flex-col max-h-[90vh] overflow-hidden transform">
+
+        <div class="px-6 py-4 border-0 flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[var(--signal-500)] text-lg">
+              <i class="fa-solid fa-car-side"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-semibold text-lg text-white">Gestión de Vehículos Registrados</h2>
+              <p class="text-xs text-slate-300">Catálogo general de vehículos y automotores autorizados</p>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-app)]">
+          <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExito" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeError" class="font-medium"></span>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border-0 shadow-sm" :class="editandoId ? 'ring-2 ring-blue-500/50 bg-blue-50/20' : ''">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-600' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Vehículo #' + editandoId) : 'Registrar Nuevo Vehículo'"></span>
+              </h3>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-slate-500 hover:text-slate-800 font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar edición
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarVehiculo()" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Tipo de vehículo</label>
+                  <select x-model="form.tipo" class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--border-subtle)]">
+                    <template x-for="tipo in tiposVehiculo" :key="tipo">
+                      <option :value="tipo" x-text="tipo"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Placa del vehículo</label>
+                  <input type="text" id="inputPlacaVehiculoModal" x-model="form.placa"
+                    @input="form.placa = form.placa.toUpperCase()"
+                    placeholder="Ej: ABC-123" required
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm font-mono font-semibold uppercase border border-[var(--border-subtle)]">
+                </div>
+
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Conductor habitual (Opcional)</label>
+                  <input type="text" x-model="form.conductor" placeholder="Nombre del conductor..."
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-slate-100">
+                <div class="sm:col-span-6 p-3 rounded-xl bg-slate-50 border border-[var(--border-subtle)]">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-id-card text-[var(--signal-500)] text-xs"></i>
+                    Licencia de conducción
+                  </label>
+                  <template x-if="!form.licencia_doc">
+                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-300 hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition group">
+                      <span class="truncate text-slate-500 group-hover:text-slate-800">Adjuntar licencia (PDF/Foto)...</span>
+                      <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-xs"></i>
+                      <input type="file" accept="application/pdf,.pdf,image/*" @change="handleLicenciaFile($event)" class="hidden">
+                    </label>
+                  </template>
+                  <template x-if="form.licencia_doc">
+                    <div class="flex items-center justify-between bg-white border border-emerald-200 rounded-lg px-3 py-1 text-xs">
+                      <span class="truncate text-emerald-800 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-circle-check text-emerald-600 text-xs"></i>
+                        <span class="truncate" x-text="form.licencia_doc"></span>
+                      </span>
+                      <button type="button" @click="removeLicencia()" class="text-red-500 hover:text-red-700 ml-1 text-xs" title="Quitar licencia">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="sm:col-span-6 p-3 rounded-xl bg-slate-50 border border-[var(--border-subtle)] space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <i class="fa-solid fa-file-shield text-slate-500 text-xs"></i>
+                      Documentos adjuntos
+                    </label>
+                    <button type="button" @click="addDocumento()" class="text-xs font-semibold text-[var(--signal-500)] hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-plus text-[10px]"></i> Otro
+                    </button>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <template x-for="(doc, dIdx) in form.documentos" :key="dIdx">
+                      <div class="flex items-center gap-1.5">
+                        <select x-model="doc.tipo_doc" class="input-field w-5/12 rounded-lg px-2 py-1 text-xs bg-white border border-slate-300">
+                          <template x-for="td in tiposDocAdjuntoVehiculo" :key="td">
+                            <option :value="td" x-text="td"></option>
+                          </template>
+                        </select>
+                        <div class="flex-1 relative flex items-center min-w-0">
+                          <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-300 hover:border-[var(--signal-500)] rounded-lg px-2 py-1 text-xs bg-white transition">
+                            <span class="truncate text-slate-600" x-text="doc.nombre_archivo || 'Subir PDF...'"></span>
+                            <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-[10px] ml-1"></i>
+                            <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoFile($event, dIdx)" class="hidden">
+                          </label>
+                        </div>
+                        <button type="button" @click="removeDocumento(dIdx)" class="action-icon-btn danger text-xs" title="Quitar">
+                          <i class="fa-solid fa-trash text-[10px]"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center justify-center gap-2 shadow-sm"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar vehículo' : 'Guardar vehículo')"></span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-2xl border-0 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-[var(--border-subtle)] flex items-center gap-3 bg-slate-50/50">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="Buscar por placa, tipo o conductor..."
+                  class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--border-subtle)]">
+              </div>
+              <div class="text-xs text-[var(--text-muted)] font-medium">
+                <span>Total: </span><strong x-text="totalVehiculos" class="text-[var(--text-primary)]"></strong>
+              </div>
+            </div>
+
+            <div class="w-full">
+              <table class="w-full text-sm data-table table-auto">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3 w-12 text-center">#</th>
+                    <th class="px-4 py-3 text-left">Vehículo / Placa</th>
+                    <th class="px-4 py-3 text-left">Conductor & Licencia</th>
+                    <th class="px-4 py-3 text-center">Documentos</th>
+                    <th class="px-4 py-3 w-28 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  <template x-for="(v, index) in vehiculosPagina" :key="v.id">
+                    <tr class="hover:bg-slate-50/70 transition-colors" :class="editandoId === v.id ? 'bg-blue-50/40' : ''">
+                      <td class="px-4 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono font-bold text-sm text-[var(--ink-900)] uppercase" x-text="v.placa"></span>
+                          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700" x-text="v.tipo"></span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-2.5 text-xs text-[var(--text-muted)]">
+                        <p class="font-medium text-slate-800" x-text="v.conductor || 'Sin conductor asignado'"></p>
+                        <template x-if="v.licencia_doc">
+                          <button type="button" @click="abrirDocumento(v.licencia_doc)" class="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline mt-0.5">
+                            <i class="fa-solid fa-id-card text-emerald-600 text-[10px]"></i>
+                            <span class="truncate max-w-[140px]" x-text="v.licencia_doc"></span>
+                          </button>
+                        </template>
+                      </td>
+                      <td class="px-4 py-2.5 text-center">
+                        <template x-if="v.documentos && v.documentos.length > 0">
+                          <div class="inline-flex flex-wrap gap-1 justify-center">
+                            <template x-for="(doc, dIdx) in v.documentos" :key="dIdx">
+                              <button type="button" @click="abrirDocumento(doc)"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                :title="'Clic para abrir: ' + (doc.nombre_archivo || doc.nom_documento)">
+                                <i class="fa-solid fa-file-circle-check text-emerald-600 text-[10px]"></i>
+                                <span x-text="doc.tipo_doc || doc.tipo || 'Doc'"></span>
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                        <template x-if="!v.documentos || v.documentos.length === 0">
+                          <span class="text-xs text-slate-400">Sin documentos</span>
+                        </template>
+                      </td>
+                      <td class="px-4 py-2.5 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" @click="iniciarEdicion(v)"
+                            class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-yellow-500 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                            data-tooltip="Editar vehículo">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                          </button>
+                          <button type="button" @click="eliminarVehiculo(v.id, v.placa)"
+                            class="action-icon-btn danger w-8 h-8 rounded-lg inline-flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            data-tooltip="Eliminar vehículo">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="vehiculosPagina.length === 0">
+                    <td colspan="5" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      <i class="fa-solid fa-car-tunnel text-slate-400 mb-1 text-lg"></i>
+                      <p>No se encontraron vehículos registrados con los filtros seleccionados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="px-4 py-3 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] bg-slate-50/30">
+              <div class="flex items-center gap-2">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <span>por página (<span x-text="rangoMostrado"></span>)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong x-text="currentPage" class="text-[var(--text-primary)]"></strong> de <span x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="px-6 py-3 border-0 bg-white flex justify-end">
+          <button type="button" @click="cerrarModal()" class="px-4 py-2 rounded-lg border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-slate-100 transition-colors">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

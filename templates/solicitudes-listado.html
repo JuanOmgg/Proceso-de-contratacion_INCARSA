@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitudes · INCARSA</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Estilos custom -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="assets/css/dark-mode.css">
+  <link rel="stylesheet" href="assets/css/stylesAlerts.css">
+  <!-- Datos + lógica (deben ir antes de Alpine) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/solicitudes-listados.js"></script>
+  <script src="assets/js/plantas.js"></script>
+  <script src="assets/js/contratistas.js"></script>
+  <script src="assets/js/vehiculos.js"></script>
+  <!-- Alpine.js (plugin collapse debe cargar ANTES que el core; ambos con defer) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased">
+
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- ============================================================
+       SIDEBAR
+  ============================================================= -->
+    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
+
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+          </div>
+          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
+        </div>
+        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+
+        <!-- Módulo desplegable: Formularios -->
+        <div>
+          <button @click="openModules.formularios = !openModules.formularios"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
+              <span class="sidebar-label">Formularios</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.formularios ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.formularios" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nueva
+              solicitud</a>
+            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Solicitudes guardadas</a>
+            <a href="usuario-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nuevo usuario</a>
+          </div>
+        </div>
+
+        <!-- Módulo desplegable: Tablas / consultas (abierto por defecto en esta página) -->
+        <div>
+          <button @click="openModules.tablas = !openModules.tablas"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-table-list w-4 text-center"></i>
+              <span class="sidebar-label">Consultas</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.tablas ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.tablas" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-listado.html" class="sidebar-sublink is-active block py-2 text-[13px]">Solicitudes</a>
+            <a href="usuarios-listado.html" class="sidebar-sublink block py-2 text-[13px]">Usuarios</a>
+            <a href="personas-listado.html" class="sidebar-sublink block py-2 text-[13px]">Personas</a>
+            <a href="antecedentes.html" class="sidebar-sublink block py-2 text-[13px]">Antecedentes</a>
+            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Plantas y zonas</a>
+            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Contratistas</a>
+            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Vehículos</a>
+          </div>
+        </div>
+
+        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
+          <span class="sidebar-label">Procesamiento</span>
+        </a>
+      </nav>
+
+      <button @click="sidebarCollapsed = !sidebarCollapsed"
+        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
+        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+        <span class="sidebar-label text-xs">Contraer</span>
+      </button>
+    </aside>
+
+    <!-- ============================================================
+       MAIN COLUMN
+  ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="solicitudesTable()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      <header
+        class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <a href="dashboard.html" class="action-icon-btn hidden sm:inline-flex" title="Volver al dashboard"><i
+              class="fa-solid fa-arrow-left"></i></a>
+          <h1 class="font-display font-semibold text-lg text-white">Solicitudes</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <!-- Notificaciones -->
+          <div class="relative" @click.outside="notificationsOpen = false">
+            <button @click="notificationsOpen = !notificationsOpen"
+              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white">
+              <i class="fa-regular fa-bell text-base"></i>
+              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1"
+                x-text="notifications.length"></span>
+            </button>
+            <div x-show="notificationsOpen" x-transition x-cloak
+              class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <div class="px-4 py-3 border-b border-[var(--border-subtle)] font-semibold text-sm">Notificaciones</div>
+              <template x-for="n in notifications" :key="n.id">
+                <div
+                  class="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--steel-100)] text-sm">
+                  <p class="text-[var(--text-primary)]" x-text="n.texto"></p>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5" x-text="n.tiempo"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Perfil -->
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full">
+              <div
+                class="w-8 h-8 rounded-full bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
+                x-text="userInitials"><b>LG</b>></div>
+              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)]"></i>
+            </button>
+            <div x-show="open" x-transition x-cloak
+              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <button @click="$dispatch('open-profile'); open = false"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2">
+                <i class="fa-regular fa-user w-4"></i> Ver perfil
+              </button>
+              <a href="login.html"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-6">
+        <div class="max-w-6xl mx-auto space-y-6">
+
+          <!-- ===== Contadores ===== -->
+          <section x-data="solicitudesCards()" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--state-aprobado); --gauge-color-bg: var(--state-aprobado-bg);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
+                  class="fa-solid fa-user-check"></i></div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Activas</p>
+                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : solActivas"></p>
+              </div>
+            </div>
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--state-rechazado); --gauge-color-bg: var(--state-rechazado-bg);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
+                  class="fa-solid fa-user-xmark"></i></div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Inactivas</p>
+                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : solInactivas"></p>
+              </div>
+            </div>
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--ink-800); --gauge-color-bg: var(--steel-100);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
+                  class="fa-solid fa-users"></i></div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Total solicitudes</p>
+                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : totalSolicitudes"></p>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- Aviso informativo de plantas asignadas para SST / GESCO -->
+          <div x-show="esRolConPlantas" x-cloak class="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 shadow-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-industry text-xs"></i>
+              </div>
+              <div>
+                <strong class="font-semibold text-amber-950">Filtrado por zonas autorizadas:</strong>
+                <span class="text-amber-800 ml-1" x-text="plantasUsuarioNombres ? ('Mostrando solicitudes vinculadas a: ' + plantasUsuarioNombres) : 'No tienes plantas asignadas actualmente.'"></span>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold text-[11px]" x-text="sesionUsuario?.rol || 'Auditor'"></span>
+          </div>
+
+          <!-- ===== Filtros / buscador ===== -->
+          <div class="filter-bar p-4 flex flex-col lg:flex-row lg:items-center gap-3">
+            <div class="search-input-wrapper flex-1">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" x-model="search" placeholder="Buscar..."
+                class="input-field w-full rounded-lg py-2.5 text-sm">
+            </div>
+
+            <!-- Custom Dropdown para Empresas (God-tier) -->
+            <div class="relative w-full lg:w-60 text-left" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open"
+                class="w-full flex items-center justify-between px-3.5 py-2.5 bg-white border border-[var(--border-subtle)] rounded-lg text-sm font-medium hover:border-[var(--steel-300)] shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--signal-500)]/20">
+                <span class="truncate flex items-center gap-2 text-[var(--text-primary)]">
+                  <i class="fa-solid fa-building text-xs text-[var(--text-muted)]"></i>
+                  <span x-text="filtroEmpresa ? filtroEmpresa : 'Todas las empresas'"></span>
+                </span>
+                <i class="fa-solid fa-chevron-down text-xs text-[var(--text-muted)] transition-transform duration-200"
+                  :class="open ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+              </button>
+
+              <!-- Menú Flotante -->
+              <div x-show="open" x-cloak
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                class="absolute z-40 mt-1.5 w-full bg-white rounded-xl shadow-xl border border-[var(--border-subtle)] py-1.5 overflow-hidden max-h-60 overflow-y-auto">
+                
+                <!-- Opción: Todas las empresas -->
+                <div @click="filtroEmpresa = ''; open = false"
+                  class="mx-1.5 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                  :class="!filtroEmpresa ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] hover:bg-orange-50 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                  <span>Todas las empresas</span>
+                  <i x-show="!filtroEmpresa" class="fa-solid fa-check text-xs"></i>
+                </div>
+
+                <div class="h-px bg-[var(--border-subtle)] my-1 mx-2"></div>
+
+                <!-- Lista de empresas -->
+                <template x-for="e in empresas" :key="e.id">
+                  <div @click="filtroEmpresa = e.nombre; open = false"
+                    class="mx-1.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                    :class="filtroEmpresa === e.nombre ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] hover:bg-orange-50 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                    <span x-text="e.nombre"></span>
+                    <i x-show="filtroEmpresa === e.nombre" class="fa-solid fa-check text-xs"></i>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Chips de Filtro Estado -->
+            <div class="flex gap-2">
+              <button type="button" @click="filtroEstado = 'todos'" class="chip-select"
+                :class="filtroEstado === 'todos' ? 'bg-[var(--ink-800)] text-white border-[var(--ink-800)] hover:bg-gray-600' : ''">Todos</button>
+              <button type="button" @click="filtroEstado = 'activos'" class="chip-select"
+                :class="filtroEstado === 'activos' ? 'bg-green-600 text-white border-green-600 hover:bg-green-700' : ''">Activos</button>
+              <button type="button" @click="filtroEstado = 'inactivos'" class="chip-select"
+                :class="filtroEstado === 'inactivos' ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : ''">Inactivos</button>
+            </div>
+            <button type="button" @click="limpiarFiltros()" class="action-icon-btn" data-tooltip="Limpiar filtros">
+              <i class="fa-solid fa-filter-circle-xmark"></i>
+            </button>
+            <a href="solicitudes-formulario.html"
+              class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2">
+              <i class="fa fa-plus text-xs"></i> Nueva solicitud
+            </a>
+          </div>
+
+          <!-- ===== Tabla ===== -->
+          <div class="wizard-card overflow-hidden">
+            <div class="w-full overflow-x-auto xl:overflow-x-visible">
+              <table class="w-full text-sm data-table text-center">
+                <thead>
+                  <tr>
+                    <th class="w-12 px-3 py-3 text-center">#</th>
+                    <th class="px-4 py-3 text-center">Empresa origen</th>
+                    <th class="px-4 py-3 text-center">Contratista</th>
+                    <th class="px-3 py-3 text-center">Estado</th>
+                    <th class="px-4 py-3 text-center">Diligenciador</th>
+                    <th class="px-4 py-3 text-center">Observaciones</th>
+                    <th class="px-3 py-3 text-center">Modo</th>
+                    <th class="px-4 py-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="(s, index) in solicitudesPagina" :key="s.id">
+                    <tr x-transition:enter="transition ease-out duration-[200ms]" x-transition:enter-start="opacity-0"
+                      x-transition:enter-end="opacity-100">
+                      
+                      <!-- Columna Contador de Fila -->
+                      <td class="px-3 py-3 text-center font-medium text-xs text-[var(--text-muted)]"
+                        x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                      <td class="px-4 py-3 font-medium text-[var(--text-primary)]" x-text="s.nombre_empresa || s.empresa_origen || s.nombre || '—'"></td>
+                      <td class="px-4 py-3 text-[var(--text-muted)]" x-text="s.nombre_emContratista || s.empresa_contratista || '—'"></td>
+                      <td class="px-3 py-3">
+                        <span class="status-pill select-none"
+                          :class="{
+                            'status-enviado': (s.estado || '').toUpperCase() === 'ENVIADO',
+                            'status-revision': (s.estado || '').toUpperCase().includes('REVISI'),
+                            'status-aprobar': (s.estado || '').toUpperCase() === 'POR APROBAR',
+                            'status-aprobado': (s.estado || '').toUpperCase() === 'APROBADO',
+                            'status-rechazado': (s.estado || '').toUpperCase() === 'RECHAZADO'
+                          }"
+                          x-text="s.estado || 'ENVIADO'"></span>
+                      </td>
+                      <td class="px-4 py-3 text-[var(--text-muted)]" x-text="s.diligenciador || '—'"></td>
+
+                      <!-- Columna Observaciones -->
+                      <td class="px-4 py-3 text-center">
+                        <template x-if="s.observaciones && s.observaciones.trim() !== ''">
+                          <button type="button" @click="openObservacionModal(s)" 
+                            class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-all text-left"
+                            :data-tooltip="'Editar: ' + s.observaciones">
+                            <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
+                            <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
+                          </button>
+                        </template>
+                        <template x-if="!s.observaciones || s.observaciones.trim() === ''">
+                          <button type="button" @click="openObservacionModal(s)" 
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-[var(--signal-500)] hover:bg-slate-100 border border-dashed border-slate-300 transition-colors"
+                            data-tooltip="Agregar observación">
+                            <i class="fa-solid fa-plus text-[9px]"></i>
+                            <span>Observación</span>
+                          </button>
+                        </template>
+                      </td>
+
+                      <td class="px-3 py-3 text-center">
+                        <button type="button" @click="toggleActivo(s)"
+                          class="status-pill cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 shadow-sm"
+                          :class="s.is_active ? 'status-usuario-activo' : 'status-usuario-inactivo bg-red-100 text-red-600'"
+                          :data-tooltip="s.is_active ? 'Clic para desactivar' : 'Clic para activar'">
+                          <span x-text="s.is_active ? 'Activo' : 'Inactivo'"></span>
+                        </button>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <div class="flex items-center justify-center gap-1">
+                          <a :href="'revision-solicitud.html?id=' + s.id" class="action-icon-btn text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
+                            data-tooltip="Revisar expediente">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                          </a>
+                          <button type="button" @click="openView(s)" class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            data-tooltip="Ver">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+                          <a :href="'solicitudes-formulario.html?edit=' + s.id" class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                            data-tooltip="Editar">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                          </a>
+                          
+                          <button type="button" @click="confirmarEliminar(s)" class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            data-tooltip="Eliminar">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="text-sm text-[var(--text-muted)] text-center py-10" x-show="solicitudesPagina.length === 0">
+              No se encontraron solicitudes con los filtros seleccionados.
+            </p>
+
+            <!-- ===== Paginación ===== -->
+            <div
+              class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm">
+              <div class="flex items-center gap-2 text-[var(--text-muted)]">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()"
+                  class="input-field rounded-md px-2 py-1 text-sm">
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                </select>
+                <span>registros</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span class="text-[var(--text-muted)]">Página <span x-text="currentPage"
+                    class="font-semibold text-[var(--text-primary)]"></span> de <span
+                    x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn" :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================
+             MODAL: Ver solicitud (Detalle completo - Estilo SweetAlert / Ticket Limpio)
+          ============================================================= -->
+          <div x-show="viewModalOpen" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @keydown.escape.window="closeView()">
+            <div x-show="viewModalOpen" x-transition @click.outside="closeView()"
+              class="modal-panel w-full max-w-2xl pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
+              
+              <!-- Botón cerrar superior derecho -->
+              <button type="button" @click="closeView()"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                title="Cerrar modal">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+
+              <template x-if="selected">
+                <div class="text-left">
+                  <!-- Cabecera estilo SweetAlert (Fija) -->
+                  <div class="text-center mb-3">
+                    <div class="modal-stamp info mb-2.5">
+                      <i class="fa-solid fa-file-contract text-2xl text-[var(--paper-info)]"></i>
+                    </div>
+                    <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1" x-text="selected.empresaOrigen || 'Detalle de Solicitud'"></h2>
+                    <div class="flex items-center justify-center gap-2 mt-1">
+                      <span class="status-pill inline-flex select-none shadow-xs font-semibold" :class="estadoClass(selected.estado)"
+                        x-text="selected.estado"></span>
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-bold text-xs bg-[#efe9dc] text-[var(--paper-ink)] border border-[var(--paper-shadow)] group">
+                        <i class="fa-solid fa-hashtag text-[10px] text-[var(--paper-muted)]"></i>
+                        <span x-text="selected.codigo || ('RAD-' + selected.id)"></span>
+                        <button type="button" @click="copiarTexto(selected.codigo)" 
+                          class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] ml-0.5 opacity-70 hover:opacity-100 transition-opacity" 
+                          data-tooltip="Copiar código" title="Copiar código">
+                          <i class="fa-regular fa-copy text-[11px]"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Contenedor scrollable para contenido largo -->
+                  <div class="max-h-[50vh] overflow-y-auto custom-scroll pr-1 space-y-3">
+                    <!-- 1. Datos generales estilo Ticket con líneas punteadas -->
+                    <div class="border-y border-dashed border-[var(--paper-shadow)] py-2 space-y-0">
+                      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Empresa origen</span>
+                          <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="selected.empresaOrigen || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Contratista</span>
+                          <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="selected.nombre_emContratista || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Nivel de riesgo</span>
+                          <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="selected.riesgo || '—'"></span>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Fecha ingreso</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.fechaIngreso || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Fecha salida</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.fechaSalida || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Fecha registro</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.fecha_creacion || '—'"></span>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 py-2">
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Plantas a visitar</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.planta || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Actividad</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.actividad || '—'"></span>
+                        </div>
+                      </div>
+
+                      <div class="pt-2 border-t border-dashed border-[var(--paper-shadow)]" x-show="selected.observaciones">
+                        <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1">Observaciones registradas:</span>
+                        <p class="text-xs text-[var(--paper-text)] leading-relaxed" x-text="selected.observaciones"></p>
+                      </div>
+                    </div>
+
+                    <!-- 2. Personas / Ingresantes -->
+                    <div class="py-2 border-b border-dashed border-[var(--paper-shadow)]">
+                      <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-2">
+                        Personas registradas
+                      </span>
+
+                      <template x-if="!selected?.personas || selected?.personas?.length === 0">
+                        <p class="text-xs text-[var(--paper-muted)] italic py-1 text-center">Sin personas registradas.</p>
+                      </template>
+
+                      <template x-if="selected?.personas && selected?.personas?.length > 0">
+                        <div class="overflow-x-auto rounded-lg border border-[var(--paper-shadow)] bg-[#faf7f0]">
+                          <table class="w-full text-xs data-table">
+                            <thead>
+                              <tr class="bg-[#efe9dc] text-[var(--paper-ink)] font-bold border-b border-[var(--paper-shadow)]">
+                                <th class="px-2.5 py-2 text-center">#</th>
+                                <th class="px-2.5 py-2 text-center">Apellidos y nombres</th>
+                                <th class="px-2.5 py-2 text-center">Doc.</th>
+                                <th class="px-2.5 py-2 text-center">Identificación</th>
+                                <th class="px-2.5 py-2 text-center">Cargo</th>
+                                <th class="px-2.5 py-2 text-center">Autorizado</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-dashed divide-[var(--paper-shadow)]">
+                              <template x-for="(p, index) in (selected?.personas || [])" :key="p.id || index">
+                                <tr class="hover:bg-[#efe9dc]/50 transition-colors">
+                                  <td class="px-2.5 py-2 text-center font-medium text-[var(--paper-muted)]" x-text="index + 1"></td>
+                                  <td class="px-2.5 py-2 text-center font-semibold text-[var(--paper-ink)]" x-text="p.ap_nombre || p.nombre || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center" x-text="p.tipo_doc || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center font-mono" x-text="p.identificacion || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center" x-text="p.cargo || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center">
+                                    <template x-if="p.autorizado == 1 || p.autorizado === true || p.autorizado === '1'">
+                                      <span class="inline-flex items-center justify-center text-[#2f8f5b]" title="Autorizado">
+                                        <i class="fa-solid fa-circle-check text-base"></i>
+                                      </span>
+                                    </template>
+                                    <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1')">
+                                      <span class="inline-flex items-center justify-center text-[#c1443c] cursor-help"
+                                        :title="p.motivo ? ('No Autorizado: ' + p.motivo) : 'No autorizado'">
+                                        <i class="fa-solid fa-circle-xmark text-base"></i>
+                                      </span>
+                                    </template>
+                                  </td>
+                                </tr>
+                              </template>
+                            </tbody>
+                          </table>
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- 3. Vehículos y Equipos de cómputo -->
+                    <div class="grid md:grid-cols-2 gap-4 py-2">
+                      <!-- Vehículos -->
+                      <div>
+                        <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
+                          Vehículos
+                        </span>
+                        <template x-if="!selected?.vehiculos || selected?.vehiculos?.length === 0">
+                          <p class="text-xs text-[var(--paper-muted)] italic py-1">No se registraron vehículos.</p>
+                        </template>
+                        <ul class="space-y-1.5 text-xs" x-show="selected?.vehiculos && selected?.vehiculos?.length > 0">
+                          <template x-for="(v, i) in (selected?.vehiculos || [])" :key="v.id || i">
+                            <li class="border border-[var(--paper-shadow)] rounded-lg p-2 bg-[#efe9dc]/50 space-y-1">
+                              <div class="flex items-center justify-between">
+                                <span class="font-bold font-mono text-[11px] uppercase px-1.5 py-0.5 rounded bg-white border border-[var(--paper-shadow)]"
+                                  x-text="v.placa || 'Sin placa'"></span>
+                                <span class="text-[11px] font-semibold text-[var(--paper-ink)]" x-text="v.tipo || 'Vehículo'"></span>
+                              </div>
+                              <div x-show="v.conductor || v.licencia_doc || v.licencia" class="text-[11px] text-[var(--paper-muted)] flex items-center gap-1">
+                                <i class="fa-solid fa-id-card text-[#2f8f5b] text-[10px]"></i>
+                                <span x-text="v.conductor ? v.conductor + ':' : 'Lic:'"></span>
+                                <span class="truncate font-medium text-[var(--paper-ink)]" x-text="v.licencia_doc || v.licencia || 'Asignado'"></span>
+                              </div>
+                            </li>
+                          </template>
+                        </ul>
+                      </div>
+
+                      <!-- Equipos de Cómputo -->
+                      <div>
+                        <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
+                          Equipos de cómputo
+                        </span>
+                        <template x-if="!selected?.computos || selected?.computos?.length === 0">
+                          <p class="text-xs text-[var(--paper-muted)] italic py-1">No se declararon equipos.</p>
+                        </template>
+                        <ul class="space-y-1.5 text-xs" x-show="selected?.computos && selected?.computos?.length > 0">
+                          <template x-for="(e, index) in (selected?.computos || [])" :key="e.id || index">
+                            <li class="flex items-center justify-between p-2 rounded-lg bg-[#efe9dc]/50 border border-[var(--paper-shadow)]">
+                              <span class="font-semibold text-[var(--paper-ink)]" x-text="(e.marca || '') + ' ' + (e.modelo || '')"></span>
+                              <span class="font-mono text-[var(--paper-muted)]" x-text="'S/N: ' + (e.serie || '—')"></span>
+                            </li>
+                          </template>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botones de Acción SweetAlert Style (Fijos en la parte inferior) -->
+                  <div class="flex items-center justify-center gap-3 pt-3.5 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
+                    <button type="button" @click="closeView()" class="modal-btn-cancel px-6 py-2.5">
+                      Cerrar
+                    </button>
+                    <a :href="'solicitudes-formulario.html?edit=' + selected.id"
+                      class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
+                      <i class="fa-solid fa-pen-to-square text-xs"></i>
+                      <span>Editar solicitud</span>
+                    </a>
+                  </div>
+
+                </div>
+              </template>
+
+              <!-- Borde dentado fijo al pie de la tarjeta -->
+              <div class="modal-serrated"></div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- ============================================================
+         FOOTER
+    ============================================================= -->
+      <footer
+        class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
+        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
+        <span>Desarrollado por el equipo de Seguridad y salud en el trabajo.</span>
+      </footer>
+    <!-- ============================================================
+       MODAL: Observaciones de la Solicitud (Estilo Ticket / SweetAlert)
+    ============================================================= -->
+    <div x-show="observacionesModalOpen" x-cloak
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+      @keydown.escape.window="closeObservacionModal()">
+      <div class="modal-panel w-full max-w-md pt-7 px-6 sm:px-8 pb-9 relative text-center" @click.outside="closeObservacionModal()">
+        <!-- Botón cerrar superior derecho -->
+        <button type="button" @click="closeObservacionModal()"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          title="Cerrar modal">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <div class="text-center mb-4">
+          <div class="modal-stamp warning mb-3">
+            <i class="fa-solid fa-note-sticky text-2xl text-[var(--paper-warn)]"></i>
+          </div>
+          <h3 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">Observaciones</h3>
+          <p class="text-xs text-[var(--paper-muted)] font-mono font-semibold" x-text="solicitudObservacion ? ((solicitudObservacion.codigo || '') + ' · ' + (solicitudObservacion.nombre_empresa || '')) : ''"></p>
+        </div>
+
+        <div class="space-y-2 text-left border-y border-dashed border-[var(--paper-shadow)] py-3 my-3">
+          <label class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">
+            Escribe o actualiza las notas / observaciones:
+          </label>
+          <textarea x-model="textoObservacion" rows="4" maxlength="500"
+            placeholder="Ej: Personal cuenta con inducción vigente. Requiere acceso con acompañamiento..."
+            class="w-full rounded-xl p-3 text-xs leading-relaxed resize-none bg-[#faf7f0] border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:outline-none focus:border-[var(--paper-ink)] focus:ring-1 focus:ring-[var(--paper-ink)]"></textarea>
+          <div class="flex justify-between text-[10px] text-[var(--paper-muted)]">
+            <span>Visible en la tabla para control rápido.</span>
+            <span class="font-mono" x-text="(textoObservacion || '').length + ' / 500'"></span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-3 pt-2">
+          <button type="button" @click="closeObservacionModal()" :disabled="guardandoObservacion"
+            class="modal-btn-cancel px-6 py-2.5">
+            Cancelar
+          </button>
+          <button type="button" @click="guardarObservacion()" :disabled="guardandoObservacion"
+            class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2"
+            style="background: var(--paper-err); color: var(--paper);">
+            <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoObservacion"></i>
+            <i class="fa-solid fa-floppy-disk text-xs" x-show="!guardandoObservacion"></i>
+            <span x-text="guardandoObservacion ? 'Guardando...' : 'Guardar'"></span>
+          </button>
+        </div>
+        <div class="modal-serrated"></div>
+      </div>
+    </div>
+
+    <!-- Toast flotante de copiado -->
+    <div x-show="copiadoToast" x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 scale-100"
+      x-transition:leave-end="opacity-0 scale-95"
+      class="fixed bottom-6 right-6 z-50 bg-[var(--ink-900)] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl border border-white/10 flex items-center gap-2.5 pointer-events-none"
+      x-cloak>
+      <i class="fa-solid fa-check text-emerald-400"></i>
+      <span>¡Código copiado al portapapeles!</span>
+    </div>
+
+    <!-- ============================================================
+       MODAL: Confirmar eliminación (Estilo Alertas Ticket)
+  ============================================================= -->
+    <div x-show="showDeleteModal" x-cloak
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+      @keydown.escape.window="cancelarEliminar()">
+      <div class="modal-panel w-full max-w-sm p-7 text-center" @click.outside="cancelarEliminar()">
+        <div class="modal-stamp warning">
+          <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+        </div>
+        <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar solicitud?</h3>
+        <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+          ¿Seguro que deseas eliminar esta solicitud? </br>
+          Esta acción no se puede deshacer.
+        </p>
+        <div class="flex items-center justify-center gap-3">
+          <button type="button" @click="cancelarEliminar()" class="modal-btn-cancel flex-1">
+            Cancelar
+          </button>
+          <button type="button" @click="eliminarSolicitud()" class="modal-btn-confirm flex-1">
+            Eliminar
+          </button>
+        </div>
+        <div class="modal-serrated"></div>
+      </div>
+    </div>
+
+    <!-- Toast de Copiado al Portapapeles -->
+    <div x-show="copiadoToast" x-cloak
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+      x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+      class="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white shadow-2xl text-xs font-semibold border border-slate-700 pointer-events-none">
+      <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+      <span>Código copiado al portapapeles</span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+     MODAL: Gestión de Plantas y Zonas
+============================================================= -->
+  <div x-data="plantasManager()" x-cloak>
+    <!-- Backdrop oscuro -->
+    <div x-show="isOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <!-- Panel del Modal con animación propia -->
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="w-full max-w-5xl bg-white rounded-2xl shadow-2xl border-0 flex flex-col max-h-[90vh] overflow-hidden transform">
+
+        <!-- Header del Modal -->
+        <div class="px-6 py-4 border-0 flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[var(--signal-500)] text-lg">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-semibold text-lg text-white">Gestión de Plantas y Zonas</h2>
+              <p class="text-xs text-slate-300">Consulta contadores, registra nuevas sedes y gestiona las plantas por empresa.</p>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Cuerpo del Modal con Scroll -->
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-app)]">
+
+          <!-- Alertas / Feedback -->
+          <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExito" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeError" class="font-medium"></span>
+          </div>
+
+          <!-- 1. CARDS / CONTADORES DE PLANTAS -->
+          <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <!-- INCARSA -->
+            <div class="gauge-card p-3.5 flex items-center gap-3 bg-white rounded-xl border-0 shadow-sm"
+              style="--gauge-color: #2563eb; --gauge-color-bg: #eff6ff;">
+              <div class="gauge-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-600">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-[var(--text-muted)] truncate font-medium">INCARSA</p>
+                <p class="gauge-value text-xl font-bold text-[var(--text-primary)]" x-text="cargando ? '...' : incarsa"></p>
+              </div>
+            </div>
+
+            <!-- UNIMINAS -->
+            <div class="gauge-card p-3.5 flex items-center gap-3 bg-white rounded-xl border-0 shadow-sm"
+              style="--gauge-color: #059669; --gauge-color-bg: #ecfdf5;">
+              <div class="gauge-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50 text-emerald-600">
+                <i class="fa-solid fa-mountain"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-[var(--text-muted)] truncate font-medium">UNIMINAS</p>
+                <p class="gauge-value text-xl font-bold text-[var(--text-primary)]" x-text="cargando ? '...' : uniminas"></p>
+              </div>
+            </div>
+
+            <!-- CARBOINSA -->
+            <div class="gauge-card p-3.5 flex items-center gap-3 bg-white rounded-xl border-0 shadow-sm"
+              style="--gauge-color: #d97706; --gauge-color-bg: #fffbeb;">
+              <div class="gauge-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
+                <i class="fa-solid fa-fire-flame-simple"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-[var(--text-muted)] truncate font-medium">CARBOINSA</p>
+                <p class="gauge-value text-xl font-bold text-[var(--text-primary)]" x-text="cargando ? '...' : carboinsa"></p>
+              </div>
+            </div>
+
+            <!-- MILPA -->
+            <div class="gauge-card p-3.5 flex items-center gap-3 bg-white rounded-xl border-0 shadow-sm"
+              style="--gauge-color: #7c3aed; --gauge-color-bg: #f5f3ff;">
+              <div class="gauge-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+                <i class="fa-solid fa-wheat-awn"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-[var(--text-muted)] truncate font-medium">MILPA</p>
+                <p class="gauge-value text-xl font-bold text-[var(--text-primary)]" x-text="cargando ? '...' : milpa"></p>
+              </div>
+            </div>
+
+            <!-- TOTAL -->
+            <div class="gauge-card p-3.5 flex items-center gap-3 bg-white rounded-xl border-0 shadow-sm col-span-2 sm:col-span-1"
+              style="--gauge-color: var(--ink-900); --gauge-color-bg: var(--steel-100);">
+              <div class="gauge-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-slate-100 text-slate-700">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-[var(--text-muted)] truncate font-medium">Total Plantas</p>
+                <p class="gauge-value text-xl font-bold text-[var(--text-primary)]" x-text="cargando ? '...' : totalPlantas"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. FORMULARIO REGISTRAR / EDITAR PLANTA -->
+          <div class="bg-white p-5 rounded-2xl border-0 shadow-sm" :class="editandoId ? 'ring-2 ring-blue-500/50 bg-blue-50/20' : ''">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-600' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Planta / Zona (ID #' + editandoId + ')') : 'Registrar Nueva Planta o Zona'"></span>
+              </h3>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-slate-500 hover:text-slate-800 font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar edición
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarPlanta()" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <!-- Select Empresa -->
+              <div class="sm:col-span-4">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Empresa</label>
+                <select x-model="nuevaPlanta.id_empresa" required class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+                  <option value="">Selecciona una empresa...</option>
+                  <template x-for="e in empresas" :key="e.id">
+                    <option :value="e.id" x-text="e.nombre"></option>
+                  </template>
+                </select>
+              </div>
+
+              <!-- Input Nombre Planta -->
+              <div class="sm:col-span-5">
+                <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Nombre de Planta / Zona</label>
+                <input type="text" id="inputNombrePlanta" x-model="nuevaPlanta.nombre" placeholder="Ej: Planta Samacá, Molienda..." required
+                  class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="sm:col-span-3 flex gap-2">
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal flex-1 rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2 shadow-sm"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Guardar Planta')"></span>
+                </button>
+                <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                  class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                  title="Cancelar edición">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 3. TABLA DE PLANTAS Y FILTROS -->
+          <div class="bg-white rounded-2xl border-0 shadow-sm overflow-hidden">
+            <!-- Barra de Filtros -->
+            <div class="p-4 border-b border-[var(--border-subtle)] flex flex-col sm:flex-row items-center gap-3 bg-slate-50/50">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="Buscar planta o empresa..."
+                  class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--border-subtle)]">
+              </div>
+              <div class="w-full sm:w-56">
+                <select x-model="filtroEmpresa" class="input-field w-full py-2 px-3 text-sm rounded-lg border border-[var(--border-subtle)]">
+                  <option value="">Todas las empresas</option>
+                  <template x-for="e in empresas" :key="e.id">
+                    <option :value="e.nombre" x-text="e.nombre"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm data-table text-center">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3 w-14 text-center">#</th>
+                    <th class="px-4 py-3">Empresa</th>
+                    <th class="px-4 py-3">Planta / Zona</th>
+                    <th class="px-4 py-3 text-center w-28">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  <template x-for="(p, index) in plantasPagina" :key="p.id">
+                    <tr class="hover:bg-slate-50/70 transition-colors" :class="editandoId === p.id ? 'bg-blue-50/40' : ''">
+                      <td class="px-4 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      <td class="px-4 py-2.5 font-medium text-[var(--text-primary)]">
+                        <span class="inline-flex items-center gap-1.5">
+                          <i class="fa-solid fa-building text-slate-400 text-xs"></i>
+                          <span x-text="p.N_empresa"></span>
+                        </span>
+                      </td>
+                      <td class="px-4 py-2.5 font-semibold text-[var(--text-primary)]" x-text="p.nombre"></td>
+                      <td class="px-4 py-2.5 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" @click="iniciarEdicion(p)"
+                            class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                            title="Editar planta">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                          </button>
+                          <button type="button" @click="eliminarPlanta(p.id, p.nombre)"
+                            class="action-icon-btn danger w-8 h-8 rounded-lg inline-flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors"
+                            title="Eliminar planta">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="plantasPagina.length === 0">
+                    <td colspan="4" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      <i class="fa-solid fa-triangle-exclamation text-slate-400 mb-1 text-lg"></i>
+                      <p>No se encontraron plantas con los filtros seleccionados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación de la Tabla -->
+            <div class="px-4 py-3 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] bg-slate-50/30">
+              <div class="flex items-center gap-2">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <span>por página (<span x-text="rangoMostrado"></span>)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong x-text="currentPage" class="text-[var(--text-primary)]"></strong> de <span x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer del Modal -->
+        <div class="px-6 py-3 border-0 bg-white flex justify-end">
+          <button type="button" @click="cerrarModal()" class="px-4 py-2 rounded-lg border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-slate-100 transition-colors">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+      MODAL VEHÍCULOS REGISTRADOS
+  =============================================================-->
+  <div x-data="vehiculoManager()" x-cloak>
+    <!-- Backdrop oscuro -->
+    <div x-show="isOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <!-- Panel del Modal -->
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border-0 flex flex-col max-h-[90vh] overflow-hidden transform">
+
+        <!-- Header del Modal -->
+        <div class="px-6 py-4 border-0 flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[var(--signal-500)] text-lg">
+              <i class="fa-solid fa-car-side"></i>
+            </div>
+            <div>
+              <h2 class="font-display font-semibold text-lg text-white">Gestión de Vehículos Registrados</h2>
+              <p class="text-xs text-slate-300">Catálogo general de vehículos y automotores autorizados</p>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Cuerpo del Modal con Scroll -->
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-app)]">
+
+          <!-- Alertas / Feedback -->
+          <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExito" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeError" class="font-medium"></span>
+          </div>
+
+          <!-- 1. FORMULARIO REGISTRAR / EDITAR VEHÍCULO -->
+          <div class="bg-white p-5 rounded-2xl border-0 shadow-sm" :class="editandoId ? 'ring-2 ring-blue-500/50 bg-blue-50/20' : ''">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-600' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Vehículo #' + editandoId) : 'Registrar Nuevo Vehículo'"></span>
+              </h3>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-slate-500 hover:text-slate-800 font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar edición
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarVehiculo()" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <!-- Tipo de vehículo -->
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Tipo de vehículo</label>
+                  <select x-model="form.tipo" class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--border-subtle)]">
+                    <template x-for="tipo in tiposVehiculo" :key="tipo">
+                      <option :value="tipo" x-text="tipo"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <!-- Placa -->
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Placa del vehículo</label>
+                  <input type="text" id="inputPlacaVehiculoModal" x-model="form.placa"
+                    @input="form.placa = form.placa.toUpperCase()"
+                    placeholder="Ej: ABC-123" required
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm font-mono font-semibold uppercase border border-[var(--border-subtle)]">
+                </div>
+
+                <!-- Conductor frecuente -->
+                <div class="sm:col-span-4">
+                  <label class="block text-xs font-medium text-[var(--text-muted)] mb-1">Conductor habitual (Opcional)</label>
+                  <input type="text" x-model="form.conductor" placeholder="Nombre del conductor..."
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm border border-[var(--border-subtle)]">
+                </div>
+              </div>
+
+              <!-- Licencia y Documentos dinámicos -->
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-slate-100">
+                <!-- Licencia de conducción -->
+                <div class="sm:col-span-6 p-3 rounded-xl bg-slate-50 border border-[var(--border-subtle)]">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-id-card text-[var(--signal-500)] text-xs"></i>
+                    Licencia de conducción
+                  </label>
+                  <template x-if="!form.licencia_doc">
+                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-300 hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition group">
+                      <span class="truncate text-slate-500 group-hover:text-slate-800">Adjuntar licencia (PDF/Foto)...</span>
+                      <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-xs"></i>
+                      <input type="file" accept="application/pdf,.pdf,image/*" @change="handleLicenciaFile($event)" class="hidden">
+                    </label>
+                  </template>
+                  <template x-if="form.licencia_doc">
+                    <div class="flex items-center justify-between bg-white border border-emerald-200 rounded-lg px-3 py-1 text-xs">
+                      <span class="truncate text-emerald-800 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-circle-check text-emerald-600 text-xs"></i>
+                        <span class="truncate" x-text="form.licencia_doc"></span>
+                      </span>
+                      <button type="button" @click="removeLicencia()" class="text-red-500 hover:text-red-700 ml-1 text-xs" title="Quitar licencia">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Documentos del vehículo -->
+                <div class="sm:col-span-6 p-3 rounded-xl bg-slate-50 border border-[var(--border-subtle)] space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <i class="fa-solid fa-file-shield text-slate-500 text-xs"></i>
+                      Documentos adjuntos
+                    </label>
+                    <button type="button" @click="addDocumento()" class="text-xs font-semibold text-[var(--signal-500)] hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-plus text-[10px]"></i> Otro
+                    </button>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <template x-for="(doc, dIdx) in form.documentos" :key="dIdx">
+                      <div class="flex items-center gap-1.5">
+                        <select x-model="doc.tipo_doc" class="input-field w-5/12 rounded-lg px-2 py-1 text-xs bg-white border border-slate-300">
+                          <template x-for="td in tiposDocAdjuntoVehiculo" :key="td">
+                            <option :value="td" x-text="td"></option>
+                          </template>
+                        </select>
+                        <div class="flex-1 relative flex items-center min-w-0">
+                          <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-300 hover:border-[var(--signal-500)] rounded-lg px-2 py-1 text-xs bg-white transition">
+                            <span class="truncate text-slate-600" x-text="doc.nombre_archivo || 'Subir PDF...'"></span>
+                            <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-[10px] ml-1"></i>
+                            <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoFile($event, dIdx)" class="hidden">
+                          </label>
+                        </div>
+                        <button type="button" @click="removeDocumento(dIdx)" class="action-icon-btn danger text-xs" title="Quitar">
+                          <i class="fa-solid fa-trash text-[10px]"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón Submit -->
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center justify-center gap-2 shadow-sm"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar vehículo' : 'Guardar vehículo')"></span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 2. TABLA DE VEHÍCULOS Y FILTROS -->
+          <div class="bg-white rounded-2xl border-0 shadow-sm overflow-hidden">
+            <!-- Barra de Filtros -->
+            <div class="p-4 border-b border-[var(--border-subtle)] flex items-center gap-3 bg-slate-50/50">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="Buscar por placa, tipo o conductor..."
+                  class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--border-subtle)]">
+              </div>
+              <div class="text-xs text-[var(--text-muted)] font-medium">
+                <span>Total: </span><strong x-text="totalVehiculos" class="text-[var(--text-primary)]"></strong>
+              </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="w-full">
+              <table class="w-full text-sm data-table table-auto">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3 w-12 text-center">#</th>
+                    <th class="px-4 py-3 text-left">Vehículo / Placa</th>
+                    <th class="px-4 py-3 text-left">Conductor & Licencia</th>
+                    <th class="px-4 py-3 text-center">Documentos</th>
+                    <th class="px-4 py-3 w-28 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  <template x-for="(v, index) in vehiculosPagina" :key="v.id">
+                    <tr class="hover:bg-slate-50/70 transition-colors" :class="editandoId === v.id ? 'bg-blue-50/40' : ''">
+                      <td class="px-4 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      
+                      <!-- Placa y Tipo -->
+                      <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono font-bold text-sm text-[var(--ink-900)] uppercase" x-text="v.placa"></span>
+                          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700" x-text="v.tipo"></span>
+                        </div>
+                      </td>
+
+                      <!-- Conductor & Licencia -->
+                      <td class="px-4 py-2.5 text-xs text-[var(--text-muted)]">
+                        <p class="font-medium text-slate-800" x-text="v.conductor || 'Sin conductor asignado'"></p>
+                        <template x-if="v.licencia_doc">
+                          <button type="button" @click="abrirDocumento(v.licencia_doc)" class="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline mt-0.5">
+                            <i class="fa-solid fa-id-card text-emerald-600 text-[10px]"></i>
+                            <span class="truncate max-w-[140px]" x-text="v.licencia_doc"></span>
+                          </button>
+                        </template>
+                      </td>
+
+                      <!-- Documentos -->
+                      <td class="px-4 py-2.5 text-center">
+                        <template x-if="v.documentos && v.documentos.length > 0">
+                          <div class="inline-flex flex-wrap gap-1 justify-center">
+                            <template x-for="(doc, dIdx) in v.documentos" :key="dIdx">
+                              <button type="button" @click="abrirDocumento(doc)"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                :title="'Clic para abrir: ' + (doc.nombre_archivo || doc.nom_documento)">
+                                <i class="fa-solid fa-file-circle-check text-emerald-600 text-[10px]"></i>
+                                <span x-text="doc.tipo_doc || doc.tipo || 'Doc'"></span>
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                        <template x-if="!v.documentos || v.documentos.length === 0">
+                          <span class="text-xs text-slate-400">Sin documentos</span>
+                        </template>
+                      </td>
+
+                      <!-- Acciones -->
+                      <td class="px-4 py-2.5 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" @click="iniciarEdicion(v)"
+                            class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-yellow-500 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                            data-tooltip="Editar vehículo">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                          </button>
+                          <button type="button" @click="eliminarVehiculo(v.id, v.placa)"
+                            class="action-icon-btn danger w-8 h-8 rounded-lg inline-flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            data-tooltip="Eliminar vehículo">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="vehiculosPagina.length === 0">
+                    <td colspan="5" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      <i class="fa-solid fa-car-tunnel text-slate-400 mb-1 text-lg"></i>
+                      <p>No se encontraron vehículos registrados con los filtros seleccionados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación de la Tabla -->
+            <div class="px-4 py-3 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)] bg-slate-50/30">
+              <div class="flex items-center gap-2">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+                <span>por página (<span x-text="rangoMostrado"></span>)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong x-text="currentPage" class="text-[var(--text-primary)]"></strong> de <span x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-1 rounded-md border border-[var(--border-subtle)] hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer del Modal -->
+        <div class="px-6 py-3 border-0 bg-white flex justify-end">
+          <button type="button" @click="cerrarModal()" class="px-4 py-2 rounded-lg border border-[var(--border-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-slate-100 transition-colors">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

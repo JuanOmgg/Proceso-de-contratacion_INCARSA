@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargando · INCARSA</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body class="antialiased">
+
+<div class="splash-screen login-brand">
+  <div>
+    <div class="loader"></div>
+
+    <h1 class="font-display font-semibold text-white text-lg mt-8 tracking-wide">INCARSA</h1>
+    <p class="text-[#9FADC9] text-xs mt-1">Sistema de Gestión de Solicitudes de Acceso</p>
+
+    <div class="splash-progress-track">
+      <div class="splash-progress-fill"></div>
+    </div>
+
+    <p class="text-[#C7D0E4] text-xs mt-4">
+      Cargando tu sesión<span class="splash-dot">.</span><span class="splash-dot">.</span><span class="splash-dot">.</span>
+    </p>
+  </div>
+</div>
+
+<script>
+  // Simula el tiempo de carga inicial (verificar sesión, cargar catálogos, etc.)
+  // TODO: reemplazar por la espera real de las llamadas de arranque (auth, catálogos)
+  // y redirigir solo cuando resuelvan, o mostrar un error si fallan.
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+  }, 2200);
+</script>
+
+</body>
+</html>

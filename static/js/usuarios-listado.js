@@ -1,0 +1,328 @@
+/**
+ * usuarios-listado.js
+ * Componente Alpine.js de la tabla de Usuarios: búsqueda, filtros,
+ * paginación y acciones (editar / activar-desactivar / eliminar).
+ * Depende de mock-usuarios.js (debe cargarse antes que este archivo).
+ * Sustituir las mutaciones sobre MOCK_USUARIOS por llamadas al
+ * backend cuando exista (GET con query params, PATCH, DELETE).
+ */ 
+
+function usuariosCards() {
+  return {
+    totalActivos: 0,
+    totalInactivos: 0,
+    cargando: true,
+
+    init() {
+      window.addEventListener("usuarios-updated", (e) => {
+        const list = e.detail || [];
+        this.actualizarConteo(list);
+      });
+      this.cargarInicial();
+    },
+
+    actualizarConteo(lista) {
+      this.totalActivos = lista.filter(u => u.is_active === 1 || u.is_active === true || u.is_active === "1").length;
+      this.totalInactivos = lista.filter(u => u.is_active === 0 || u.is_active === false || u.is_active === "0").length;
+      this.cargando = false;
+    },
+
+    async cargarInicial() {
+      this.cargando = true;
+
+      try {
+        const res = await fetch(`${API.usuarios}/getall`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        const usuarios = Array.isArray(data) ? data : (data.datos || data.data || []);
+        this.actualizarConteo(usuarios);
+
+      } catch (error) {
+        console.warn("Backend no disponible para tarjetas, cargando desde MOCK:", error.message);
+        const mock = typeof MOCK_USUARIOS !== 'undefined' ? MOCK_USUARIOS : [];
+        this.actualizarConteo(mock);
+      } finally {
+        this.cargando = false;
+      }
+    },
+
+    get totalUsuarios() {
+      return this.totalActivos + this.totalInactivos;
+    }
+  };
+}
+
+function usuariosTable() {
+  return {
+    // ---------------------------------------------------
+    // Datos
+    // ---------------------------------------------------
+    usuarios: [],
+    roles: [],
+
+    // ---------------------------------------------------
+    // Filtros / búsqueda
+    // ---------------------------------------------------
+    search: "",
+    filtroRol: "",
+    filtroEstado: "todos", // todos | activos | inactivos
+
+    // ---------------------------------------------------
+    // Paginación
+    // ---------------------------------------------------
+    currentPage: 1,
+    pageSize: 5,
+
+    // ---------------------------------------------------
+    // Detalle de usuario
+    // ---------------------------------------------------
+    showDetailModal: false,
+    usuarioDetalle: null,
+
+    // ---------------------------------------------------
+    // Eliminación
+    // ---------------------------------------------------
+    showDeleteModal: false,
+    usuarioAEliminar: null,
+
+    // ---------------------------------------------------
+    // Inicialización
+    // ---------------------------------------------------
+    async init() {
+
+      await Promise.allSettled([
+        this.getUsers(),
+        this.getRoles(),        
+      ]);
+      
+      this.$watch("search", () => (this.currentPage = 1));
+      this.$watch("filtroRol", () => (this.currentPage = 1));
+      this.$watch("filtroEstado", () => (this.currentPage = 1));
+    },
+
+    // ---------------------------------------------------
+    // Datos derivados
+    // ---------------------------------------------------
+
+    notificarCambio() {
+      window.dispatchEvent(new CustomEvent("usuarios-updated", { detail: this.usuarios }));
+    },
+
+    async getUsers() {
+      try {
+        const user = await fetch(`${API.usuarios}/getall`);
+        if(!user.ok) throw new Error(`HTTP ${user.status}`);
+        const data = await user.json();
+        this.usuarios = Array.isArray(data) ? data : (data.datos || data.data || []);
+        this.notificarCambio();
+      } catch (error) {
+        console.error("Error al cargar usuarios: ", error);
+      }
+    },
+
+    async getRoles(){
+      try {
+        const response = await fetch(`${API.roles}/getall`);
+        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        this.roles = Array.isArray(data) ? data : (data.data || []);
+      } catch (error) {
+        console.error("Error al cargar roles: ", error);
+      }
+    },
+
+
+    get usuariosFiltrados() {
+      const texto = this.search.trim().toLowerCase();
+      return this.usuarios.filter(u => {
+        if (!u) return false;
+        const nombreCompleto = `${u.nombres || ''} ${u.apellidos || ''}`.toLowerCase();
+        const numDoc = String(u.num_documento || '').toLowerCase();
+        const correo = String(u.correo || '').toLowerCase();
+        const telefono = String(u.num_telefono || '').toLowerCase();
+        const rol = String(u.rol || u.nombre_rol || '').toLowerCase();
+
+        const matchTexto =
+          !texto ||
+          nombreCompleto.includes(texto) ||
+          numDoc.includes(texto) ||
+          correo.includes(texto) ||
+          telefono.includes(texto) ||
+          rol.includes(texto);
+
+        const matchRol = !this.filtroRol || String(u.id_rol) === String(this.filtroRol);
+        const isActive = u.is_active === 1 || u.is_active === true || u.is_active === "1";
+        const matchEstado =
+          this.filtroEstado === "todos" ||
+          (this.filtroEstado === "activos" && isActive) ||
+          (this.filtroEstado === "inactivos" && !isActive);
+
+        return matchTexto && matchRol && matchEstado;
+      });
+    },
+
+    get totalUsuarios() {
+      return this.usuarios.length;
+    },
+    get totalActivos() {
+      return this.usuarios.filter(u => u.is_active === 1 || u.is_active === true || u.is_active === "1").length;
+    },
+    get totalInactivos() {
+      return this.usuarios.filter(u => u.is_active === 0 || u.is_active === false || u.is_active === "0").length;
+    },
+
+    get totalPaginas() {
+      return Math.max(1, Math.ceil(this.usuariosFiltrados.length / this.pageSize));
+    },
+    get usuariosPagina() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return this.usuariosFiltrados.slice(start, start + this.pageSize);
+    },
+    get rangoMostrado() {
+      if (this.usuariosFiltrados.length === 0) return "0 de 0";
+      const start = (this.currentPage - 1) * this.pageSize + 1;
+      const end = Math.min(this.currentPage * this.pageSize, this.usuariosFiltrados.length);
+      return `${start}–${end} de ${this.usuariosFiltrados.length}`;
+    },
+    get paginasVisibles() {
+      const total = this.totalPaginas;
+      let startP = Math.max(1, this.currentPage - 2);
+      let endP = Math.min(total, startP + 4);
+      startP = Math.max(1, endP - 4);
+      const pages = [];
+      for (let i = startP; i <= endP; i++) pages.push(i);
+      return pages;
+    },
+
+    // ---------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------
+    rolNombre(idRol) {
+      const rol = this.roles.find(r => r.id === Number(idRol));
+      return rol ? rol.nombre_rol : "—";
+    },
+    rolDescripcion(idRolONombre) {
+      if (!idRolONombre && idRolONombre !== 0) return "—";
+      const rol = this.roles.find(r => 
+        r.id === Number(idRolONombre) || 
+        (r.nombre_rol && r.nombre_rol.toLowerCase() === String(idRolONombre).toLowerCase())
+      );
+      return rol && rol.descripcion ? rol.descripcion : (rol ? rol.nombre_rol : idRolONombre);
+    },
+    esRolSSToGESCO(usuario) {
+      if (!usuario) return false;
+      const rolId = Number(usuario.id_rol);
+      if (rolId === 3 || rolId === 4) return true;
+      const rolTexto = String(usuario.rol || usuario.nombre_rol || "").toUpperCase();
+      return rolTexto.includes("SST") || rolTexto.includes("GESCO");
+    },
+    formatearFecha(fechaStr) {
+      if (!fechaStr) return "No registrada";
+      try {
+        const fecha = new Date(fechaStr);
+        if (isNaN(fecha.getTime())) return fechaStr;
+        return fecha.toLocaleDateString("es-CO", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch {
+        return fechaStr;
+      }
+    },
+
+    // ---------------------------------------------------
+    // Paginación
+    // ---------------------------------------------------
+    resetPage() {
+      this.currentPage = 1;
+    },
+    goToPage(n) {
+      if (n >= 1 && n <= this.totalPaginas) this.currentPage = n;
+    },
+    prevPage() {
+      this.goToPage(this.currentPage - 1);
+    },
+    nextPage() {
+      this.goToPage(this.currentPage + 1);
+    },
+
+    // ---------------------------------------------------
+    // Filtros
+    // ---------------------------------------------------
+    limpiarFiltros() {
+      this.search = "";
+      this.filtroRol = "";
+      this.filtroEstado = "todos";
+      this.currentPage = 1;
+    },
+
+    // ---------------------------------------------------
+    // Acciones
+    // ---------------------------------------------------
+    async toggleActivo(usuario) {
+      const nuevoEstado = !(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === "1");
+      usuario.is_active = nuevoEstado;
+      const idx = this.usuarios.findIndex(u => u.id === usuario.id);
+      if (idx > -1) this.usuarios[idx].is_active = nuevoEstado;
+
+      this.notificarCambio();
+
+      try {
+        const res = await fetch(`${API.usuarios}/${usuario.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: nuevoEstado })
+        });
+        if (!res.ok) {
+          console.warn(`Error al actualizar estado en backend (HTTP ${res.status})`);
+        }
+      } catch (err) {
+        console.error("Error en PATCH de usuario:", err);
+      }
+    },
+
+    verUsuario(usuario) {
+      this.usuarioDetalle = usuario;
+      this.showDetailModal = true;
+    },
+    cerrarDetalle() {
+      this.showDetailModal = false;
+      this.usuarioDetalle = null;
+    },
+
+    confirmarEliminar(usuario) {
+      this.usuarioAEliminar = usuario;
+      this.showDeleteModal = true;
+    },
+    cancelarEliminar() {
+      this.usuarioAEliminar = null;
+      this.showDeleteModal = false;
+    },
+    async eliminarUsuario() {
+      if (!this.usuarioAEliminar) return;
+      const id = this.usuarioAEliminar.id;
+      
+      // Eliminación optimista local
+      this.usuarios = this.usuarios.filter(u => u.id !== id);
+      this.notificarCambio();
+      this.showDeleteModal = false;
+      this.usuarioAEliminar = null;
+      if (this.currentPage > this.totalPaginas) this.currentPage = Math.max(1, this.totalPaginas);
+
+      try {
+        const res = await fetch(`${API.usuarios}/${id}`, {
+          method: "DELETE"
+        });
+        if (!res.ok) {
+          console.warn(`Error al eliminar usuario en backend (HTTP ${res.status})`);
+        }
+      } catch (err) {
+        console.error("Error en DELETE de usuario:", err);
+      }
+    }
+  };
+}

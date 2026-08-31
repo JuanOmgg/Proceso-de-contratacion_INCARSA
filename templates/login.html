@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión · INCARSA</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Estilos custom -->
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/login.css">
+<!-- Datos + lógica (deben ir antes de Alpine) -->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/mockData.js"></script>
+<script src="assets/js/auth.js"></script>
+<!-- Alpine.js (defer, se ejecuta último) -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased">
+
+<div class="login-page">
+  <div class="login-page-stripes"></div>
+
+  <div class="error-brand-mark">
+    <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    </div>
+    <span class="font-display font-semibold tracking-wide">INCARSA</span>
+  </div>
+
+  <div class="login-glow-wrap anim-fade-up" x-data="loginForm()">
+    <div class="login-glow-border">
+      <div class="login-form-card p-6 sm:p-8" x-data="{
+             vista: 'login',
+             contacto: { asunto: 'Problemas para iniciar sesión', presentacion: '', mensaje: '', enviando: false, enviado: false },
+             enviarContacto() {
+               this.contacto.enviando = true;
+               setTimeout(() => {
+                 this.contacto.enviando = false;
+                 this.contacto.enviado = true;
+                 setTimeout(() => {
+                   this.vista = 'login';
+                   this.contacto.enviado = false;
+                   this.contacto.presentacion = '';
+                   this.contacto.mensaje = '';
+                 }, 1800);
+               }, 600);
+             },
+             olvide: { correo: '', enviando: false, enviado: false },
+             enviarOlvide() {
+               this.olvide.enviando = true;
+               setTimeout(() => {
+                 this.olvide.enviando = false;
+                 this.olvide.enviado = true;
+               }, 600);
+             }
+           }">
+
+        <!-- ============ Vista: Iniciar sesión ============ -->
+        <template x-if="vista === 'login'">
+          <div x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-350"
+               x-transition:enter-start="opacity-0 -translate-x-4 scale-[0.98]"
+               x-transition:enter-end="opacity-100 translate-x-0 scale-100"
+               x-transition:leave="transition ease-in duration-200"
+               x-transition:leave-start="opacity-100 translate-x-0 scale-100"
+               x-transition:leave-end="opacity-0 translate-x-4 scale-[0.98]">
+            <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Iniciar sesión</h2>
+            <p class="text-sm text-center text-[var(--text-muted)] mb-8">Ingresa con tu correo corporativo para continuar.</p>
+
+            <form @submit.prevent="submit()" class="space-y-4">
+
+              <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                   x-show="error" x-cloak>
+                <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+                <span x-text="error" class="font-medium leading-snug"></span>
+              </div>
+
+              <div>
+                <label class="form-label">Correo corporativo</label>
+                <input type="email" x-model="correo" autocomplete="username" placeholder="nombre.apellido@incarsa.com"
+                       class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="form-label !mb-0">Contraseña</label>
+                  <button type="button" @click="vista = 'olvide'" class="text-xs font-medium text-[var(--ink-700)] hover:text-[var(--signal-500)] transition-colors">¿Olvidaste tu contraseña?</button>
+                </div>
+                <div class="relative">
+                  <input :type="showPassword ? 'text' : 'password'" x-model="contrasena" autocomplete="current-password" placeholder="••••••••"
+                         class="input-field w-full rounded-lg px-3 py-2.5 pr-10 text-sm">
+                  <button type="button" @click="togglePassword()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--ink-800)] transition-colors">
+                    <i class="fa-regular" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+              </div>
+
+              <label class="flex items-center gap-2 text-sm cursor-pointer pt-1">
+                <input type="checkbox" x-model="recordarme">
+                <span class="text-[var(--text-muted)]">Recordar sesión en este dispositivo</span>
+              </label>
+
+              <button type="submit" :disabled="submitting"
+                      class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-2"
+                      :class="submitting ? 'is-submitting cursor-wait' : ''">
+                <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
+                <span x-text="submitting ? 'Verificando…' : 'Iniciar sesión'"></span>
+              </button>
+            </form>
+
+            <p class="text-xs text-[var(--text-muted)] text-center mt-6">
+              ¿Problemas para ingresar? </br>
+              <button type="button" @click="vista = 'contacto'" class="font-medium text-[var(--ink-800)] hover:text-[var(--signal-500)] underline underline-offset-2 transition-colors">
+                Contacta a tu administrador
+              </button>
+            </p>
+          </div>
+        </template>
+
+        <!-- ============ Vista: Contactar administrador ============ -->
+        <template x-if="vista === 'contacto'">
+          <div x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-350"
+               x-transition:enter-start="opacity-0 translate-x-4 scale-[0.98]"
+               x-transition:enter-end="opacity-100 translate-x-0 scale-100"
+               x-transition:leave="transition ease-in duration-200"
+               x-transition:leave-start="opacity-100 translate-x-0 scale-100"
+               x-transition:leave-end="opacity-0 -translate-x-4 scale-[0.98]">
+
+            <!-- Estado: formulario -->
+            <template x-if="!contacto.enviado">
+              <div>
+                <button type="button" @click="vista = 'login'" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--signal-500)] transition-colors inline-flex items-center gap-1.5 mb-4">
+                  <i class="fa-solid fa-arrow-left text-[10px]"></i> Volver a iniciar sesión
+                </button>
+
+                <h2 class="font-display font-semibold text-2xl text-[var(--ink-900)] mb-1">Contactar administrador</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-6">Cuéntanos qué pasó y te ayudaremos a recuperar el acceso.</p>
+
+                <div class="space-y-4">
+                  <div>
+                    <label class="form-label">Asunto</label>
+                    <select x-model="contacto.asunto" class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                      <option>Problemas para iniciar sesión</option>
+                      <option>Solicitar acceso a una planta</option>
+                      <option>Reportar un error del sistema</option>
+                      <option>Otro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label">Preséntate</label>
+                    <input type="text" x-model="contacto.presentacion" placeholder="Tu nombre, cargo y empresa"
+                           class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                  </div>
+
+                  <div>
+                    <label class="form-label">Mensaje</label>
+                    <textarea x-model="contacto.mensaje" rows="4" placeholder="Describe tu problema o solicitud…"
+                              class="input-field w-full rounded-lg px-3 py-2.5 text-sm resize-none"></textarea>
+                  </div>
+
+                  <button type="button" @click="enviarContacto()" :disabled="contacto.enviando || !contacto.presentacion.trim() || !contacto.mensaje.trim()"
+                          class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-2"
+                          :class="(contacto.enviando || !contacto.presentacion.trim() || !contacto.mensaje.trim()) ? (contacto.enviando ? 'is-submitting cursor-wait' : 'opacity-70 cursor-not-allowed') : ''">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="contacto.enviando"></i>
+                    <span x-text="contacto.enviando ? 'Enviando…' : 'Enviar mensaje'"></span>
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Estado: enviado -->
+            <template x-if="contacto.enviado">
+              <div class="text-center py-6">
+                <div class="success-icon-pop w-14 h-14 rounded-full bg-[var(--state-aprobado-bg)] text-[var(--state-aprobado)] flex items-center justify-center mx-auto mb-4">
+                  <i class="fa-solid fa-check text-2xl"></i>
+                </div>
+                <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1">Mensaje enviado</h2>
+                <p class="text-sm text-[var(--text-muted)]">Un administrador te contactará pronto.</p>
+              </div>
+            </template>
+
+          </div>
+        </template>
+
+        <!-- ============ Vista: Olvidé mi contraseña ============ -->
+        <template x-if="vista === 'olvide'">
+          <div x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-350"
+               x-transition:enter-start="opacity-0 translate-x-4 scale-[0.98]"
+               x-transition:enter-end="opacity-100 translate-x-0 scale-100"
+               x-transition:leave="transition ease-in duration-200"
+               x-transition:leave-start="opacity-100 translate-x-0 scale-100"
+               x-transition:leave-end="opacity-0 -translate-x-4 scale-[0.98]">
+
+            <!-- Estado: formulario -->
+            <template x-if="!olvide.enviado">
+              <div>
+                <button type="button" @click="vista = 'login'" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--signal-500)] transition-colors inline-flex items-center gap-1.5 mb-4">
+                  <i class="fa-solid fa-arrow-left text-[10px]"></i> Volver a iniciar sesión
+                </button>
+
+                <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Recuperar contraseña</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-6 text-center">Ingresa tu correo corporativo y te enviaremos un enlace para restablecerla.</p>
+
+                <form @submit.prevent="enviarOlvide()" class="space-y-4">
+                  <div>
+                    <label class="form-label">Correo corporativo</label>
+                    <input type="email" x-model="olvide.correo" autocomplete="username" placeholder="nombre.apellido@incarsa.com"
+                           class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                  </div>
+
+                  <button type="submit" :disabled="olvide.enviando || !olvide.correo.trim()"
+                          class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-2"
+                          :class="(olvide.enviando || !olvide.correo.trim()) ? (olvide.enviando ? 'is-submitting cursor-wait' : 'opacity-70 cursor-not-allowed') : ''">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="olvide.enviando"></i>
+                    <span x-text="olvide.enviando ? 'Enviando…' : 'Enviar enlace'"></span>
+                  </button>
+                </form>
+              </div>
+            </template>
+
+            <!-- Estado: enviado -->
+            <template x-if="olvide.enviado">
+              <div class="text-center py-6">
+                <div class="success-icon-pop w-14 h-14 rounded-full bg-[var(--state-enviado-bg)] text-[var(--state-enviado)] flex items-center justify-center mx-auto mb-4">
+                  <i class="fa-solid fa-envelope-circle-check text-2xl"></i>
+                </div>
+                <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1">Revisa tu correo</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-6">
+                  Te enviamos un enlace para restablecer tu contraseña a <span class="font-medium text-[var(--ink-800)]" x-text="olvide.correo"></span>.
+                </p>
+                <button type="button" @click="vista = 'login'; olvide.enviado = false; olvide.correo = '';"
+                        class="text-xs font-medium text-[var(--ink-800)] hover:text-[var(--signal-500)] underline underline-offset-2 transition-colors">
+                  Volver a iniciar sesión
+                </button>
+              </div>
+            </template>
+
+          </div>
+        </template>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

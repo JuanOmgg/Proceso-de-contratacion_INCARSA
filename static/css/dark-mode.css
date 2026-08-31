@@ -1,0 +1,1066 @@
+/**
+ * INCARSA — Dark Mode Styles
+ * Se activa añadiendo la clase .dark al elemento <html>.
+ * Este archivo NO afecta el modo claro bajo ninguna circunstancia.
+ * Requiere que styles.css esté cargado antes (define las variables base).
+ */
+
+/* =========================================================
+   TOKENS — redefinición de variables en modo oscuro
+   Los colores de estado (signal, rechazado, enviado…) no cambian.
+   ========================================================= */
+:root.dark {
+  --bg-app:        #252525;
+  --surface:       #1c1c1c;
+  --text-primary:  #e2e2e2;
+  --text-muted:    #8a8a8a;
+  --border-subtle: #2d2d2d;
+  --steel-100:     #1e1e1e;
+  --steel-200:     #262626;
+  --steel-300:     #333333;
+  --signal-500: #ac020a;
+  --shadow-card:   0 1px 3px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.5);
+  --shadow-panel:  0 4px 20px rgba(0,0,0,0.6);
+  --shadow-modal:  0 20px 48px rgba(0,0,0,0.8);
+
+  --state-enviado: #0C767D;
+  --state-enviado-bg: #d9f7f8;
+  --state-revision: #A722C1;
+  --state-revision-bg: #eee6f1;
+  --state-aprobar: #a88a05;
+  --state-aprobar-bg: #f6f8d3;
+  --state-aprobado: #027E02;
+  --state-aprobado-bg: #e1f8e2;
+}
+
+/*Estados en tablas */
+:root.dark .status-enviado {
+  background-color: rgba(6, 182, 212, 0.2) !important;
+  color: #22d3ee !important;
+  border-color: rgba(6, 182, 212, 0.4) !important;
+}
+
+:root.dark .status-revision {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #cec003 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+:root.dark .status-aprobar {
+  background-color: rgba(126, 9, 236, 0.2) !important;
+  color: #d105fa !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+:root.dark .status-aprobado {
+  background-color: rgba(16, 185, 16, 0.2) !important;
+  color: #01ce3e !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+:root.dark .status-rechazado {
+  background-color: rgba(236, 14, 51, 0.2) !important;
+  color: #f1455f !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+/* =========================================================
+   BODY
+   ========================================================= */
+:root.dark body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+/* =========================================================
+   SUPERFICIES BLANCAS
+   Tailwind bg-white y clases arbitrarias de superficie
+   ========================================================= */
+:root.dark .bg-white,
+:root.dark [class*="bg-white"],
+:root.dark .bg-\[var\(--surface\)\] {
+  background-color: var(--surface) !important;
+}
+
+/* =========================================================
+   TEXTOS TAILWIND HARDCODEADOS
+   ========================================================= */
+:root.dark .text-gray-900,
+:root.dark .text-gray-800,
+:root.dark .text-gray-700,
+:root.dark .text-gray-600 {
+  color: #d4d4d4 !important;
+}
+
+:root.dark .text-gray-500,
+:root.dark .text-gray-400 {
+  color: #8a8a8a !important;
+}
+
+:root.dark .text-gray-300,
+:root.dark .text-gray-200 {
+  color: #5a5a5a !important;
+}
+
+/* =========================================================
+   BORDES TAILWIND
+   ========================================================= */
+:root.dark .border-gray-200,
+:root.dark .border-gray-300,
+:root.dark [class*="border-gray"] {
+  border-color: var(--border-subtle) !important;
+}
+
+/* =========================================================
+   INPUTS, SELECTS Y TEXTAREAS
+   ========================================================= */
+:root.dark input,
+:root.dark select,
+:root.dark textarea {
+  background-color: #1e1e1e !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+:root.dark input::placeholder,
+:root.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* =========================================================
+   TABLAS
+   ========================================================= */
+:root.dark table {
+  color: var(--text-primary);
+}
+
+:root.dark th {
+  background-color: #292828 !important;
+  color: #888787 !important;
+  border-color: var(--border-subtle) !important;
+}
+
+:root.dark td {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark h2, h3 {
+  border-color: #2b2a2a !important;
+  color:  #a7a4a4 !important;
+}
+
+:root.dark span{
+  border-color: #5a5a5a !important;
+  color:  #c5c3c3 !important;
+}
+
+:root.dark tbody tr:hover {
+  background-color: #302f2f !important;
+}
+
+/* =========================================================
+   HOVERS TAILWIND
+   ========================================================= */
+:root.dark .hover\:bg-gray-50:hover,
+:root.dark .hover\:bg-gray-100:hover {
+  background-color: #242424 !important;
+}
+
+/* =========================================================
+   DROPDOWNS Y PANELES FLOTANTES
+   Solo aplicar a paneles que NO son botones ni links
+   ========================================================= */
+:root.dark .rounded-xl.shadow-\[var\(--shadow-panel\)\],
+:root.dark .rounded-xl.shadow-md,
+:root.dark .rounded-xl.shadow-lg,
+:root.dark .rounded-lg.shadow-md,
+:root.dark .rounded-lg.shadow-lg {
+  background-color: var(--surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+/* =========================================================
+   NAVBAR (TOPBAR)
+   ========================================================= */
+:root.dark .topbar {
+  background: #2b2a2a !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: 
+    0 -35px 0 0 var(--bg-app),
+    0 4px 12px -2px rgba(0, 0, 0, 0.35),
+    0 10px 24px -4px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* =========================================================
+   CARDS DE CONTENIDO
+   ========================================================= */
+:root.dark .wizard-card {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 4px 10px -3px rgba(0, 0, 0, 0.5) !important;
+}
+
+@keyframes cardShimmer {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  /* Pasa el destello y espera unos segundos */
+  80%, 100% { transform: translateX(250%) skewX(-20deg); }
+}
+:root.dark .gauge-card {
+  position: relative;
+  overflow: hidden;
+}
+
+:root.dark .gauge-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  /* Usa la variable del color de cada tarjeta con degradado a transparente */
+  background: linear-gradient(
+    90deg, 
+    transparent 0%, 
+    var(--shimmer-color, rgba(255, 255, 255, 0.15)) 50%, 
+    transparent 100%
+  );
+  animation: cardShimmer 11s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 5;
+}
+
+:root.dark .enviado-card p{
+  color: #48c5f7;
+}
+:root.dark .enviado-card {
+  --gauge-color: var(--state-enviado-bg) !important;
+  --gauge-color-bg: #05a6f0 !important;
+  --shimmer-color: rgba(5, 173, 240, 0.25);
+  background-color: #2c4e4e;
+  color: #05a6f0;
+  border-color:  #05adf0;
+  box-shadow: 0 0 12px -2px rgba(6, 182, 212, 0.25);
+}
+
+:root.dark .enRevision-card p {
+  color: #d754f1;
+}
+
+:root.dark .enRevision-card {
+  --gauge-color: var(--state-revision-bg) !important;
+  --gauge-color-bg: var(--state-revision)!important;
+  --shimmer-color: rgba(240, 1, 240, 0.35);
+  background-color: #5c104b;
+  border-color: var(--state-revision);
+  box-shadow: 0 0 12px -2px rgba(240, 1, 240, 0.65);
+}
+
+:root.dark .aprobar-card p {
+  color:  #cec003;
+}
+
+:root.dark .aprobar-card {
+  --gauge-color: var(--state-aprobar-bg) !important;
+  --gauge-color-bg: #a19705 !important;
+  --shimmer-color: rgba(211, 197, 5, 0.25);
+  background-color: #4b500c;
+  border-color: #d3c505;
+  box-shadow: 0 0 12px -2px rgba(163, 221, 4, 0.25);
+}
+
+:root.dark .aprobado-card p {
+  color:  #59cc7c;
+}
+
+:root.dark .aprobado-card {
+  --gauge-color: var(--state-aprobado-bg) !important; 
+  --gauge-color-bg: #01ce3e !important;
+  --shimmer-color: rgba(2, 238, 41, 0.3);
+  background-color: #14641f;
+  border-color: #02c03b;
+  box-shadow: 0 0 12px -2px rgba(2, 238, 41, 0.25);
+}
+:root.dark .total-card p {
+  color: rgb(185, 171, 171);
+}
+:root.dark .total-card {
+  --gauge-color: #4e4d4d !important; 
+  --gauge-color-bg: #c0baba !important;
+  --shimmer-color: rgba(236, 238, 238, 0.2);
+  background-color: #443d3d;
+  border-color: #c0baba;
+  box-shadow: 0 0 12px -2px rgba(236, 238, 238, 0.25);
+}
+
+
+/* =========================================================
+   DIVISORES
+   ========================================================= */
+:root.dark hr,
+:root.dark .divide-y > * + * {
+  border-color: var(--border-subtle) !important;
+}
+
+/* =========================================================
+   BOTONES OUTLINE
+   ========================================================= */
+:root.dark .btn-outline-light {
+  border-color: #3a3a3a;
+  color: #cccccc;
+}
+
+:root.dark .btn-outline-light:hover {
+  background-color: #2a2a2a;
+}
+
+:root.dark .status-pill.is-revision {
+  background-color: rgba(245, 158, 11) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+:root.dark .status-pill.is-aprobar {
+  background-color: rgba(168, 85, 247, 0.2) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+:root.dark .status-pill.is-aprobado {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* :root.dark .chart-card {
+  background: #2b2a2a;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+} */
+
+
+:root.dark .inicialesUser {
+  background-color: #888181;
+  color: var(--text-primary);
+  justify-content: center;
+  align-items: center;
+}
+
+:root.dark .inicialesUser:hover {
+  background-color: #e90909;
+  color: var(--text-primary);
+  justify-content: center;
+  align-items: center;
+}
+
+:root.dark .section-users:hover {
+  text-align: left;
+  align-items: center;
+  border-color: var(--border-subtle);
+  background-color: #1c1c1c;
+   
+}
+
+/*Tabla solicitudes activas*/
+
+:root.dark .tabla-solicitudes-activas,
+:root.dark section:has(.solicitudesActivas) {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+:root.dark .solicitudesActivas {
+  border-color: #2b2a2a;
+  display: flex;
+  justify-content: space-between;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+:root.dark .usuariosSistema {
+  background-color: #383838 !important;
+  color: var(--text-primary) !important;
+  align-items: center;
+  justify-content: center;
+}
+
+:root.dark .usuariosSistema:hover {
+  background-color: var(--signal-500) !important;
+  color: #fff !important;
+}
+
+/* =========================================================
+   CARDS DE GRÁFICAS Y USUARIOS EN MODO OSCURO (SHIMMER)
+   El shimmer solo se activa cuando .dark está presente en <html>
+   ========================================================= */
+:root.dark .chart-card {
+  background-color: #1e1e1e !important;
+  border-color: var(--border-subtle) !important;
+  position: relative; 
+  overflow: hidden;
+}
+
+/* :root.dark .chart-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+:root.dark .chart-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.04) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(255, 255, 255, 0) 70%,
+    transparent 100%
+  );
+  transform: translateX(-150%) skewX(-20deg);
+  animation: cardShimmerSlow 7.5s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+} */
+
+:root.dark .buttonUserSistem {
+  background-color: #262626 !important;
+  border: 1px solid #333333 !important;
+  color: var(--text-primary) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+:root.dark .buttonUserSistem > * {
+  position: relative;
+  z-index: 2;
+}
+
+:root.dark .buttonUserSistem:hover {
+  background-color: #303030 !important;
+  border-color: #484848 !important;
+  color: #ffffff !important;
+}
+
+:root.dark .buttonUserSistem::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 25%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
+    rgba(255, 255, 255, 0) 75%,
+    transparent 100%
+  );
+  transform: translateX(-150%) skewX(-20deg);
+  animation: cardShimmerSlow 12s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+:root.dark .buttonUserSistem:hover::after {
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 35%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.02) 65%,
+    transparent 100%
+  );
+  animation: cardShimmer 3.5s infinite ease-in-out;
+}
+
+/* =========================================================
+   BOTONES PRINCIPALES (.btn-signal) EN MODO OSCURO
+   Estilo Aurora Flama (Gamas de Rojo y Naranja)
+   con resplandor difuso exterior y texto oscuro de alto contraste
+   ========================================================= */
+@keyframes flameGradientShift {
+  0% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2);
+  }
+  33% {
+    box-shadow: 0 0 16px -2px rgba(234, 88, 12, 0.4), 0 0 32px rgba(249, 115, 22, 0.2);
+  }
+  66% {
+    box-shadow: 0 0 16px -2px rgba(255, 107, 53, 0.42), 0 0 32px rgba(220, 38, 38, 0.22);
+  }
+  100% {
+    background-position: 200% 50%;
+    box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* =========================================================
+   ESTILO AURORA FLAMA EN ELEMENTOS ROJOS (MODO OSCURO)
+   Botones principales (.btn-signal), enlace activo del sidebar,
+   logo de la empresa y chip de rol (.role-chip)
+   ========================================================= */
+:root.dark .btn-signal,
+:root.dark .sidebar-link.is-active,
+:root.dark .role-chip,
+:root.dark .sidebar div:has(> .fa-shield-halved),
+:root.dark .sidebar .bg-\[var\(--signal-500\)\],
+:root.dark .badge-count {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  border: none !important;
+}
+
+:root.dark .btn-signal *,
+:root.dark .btn-signal i,
+:root.dark .btn-signal span,
+:root.dark .sidebar-link.is-active *,
+:root.dark .sidebar-link.is-active i,
+:root.dark .sidebar-link.is-active span,
+:root.dark .role-chip *,
+:root.dark .role-chip span,
+:root.dark .sidebar div:has(> .fa-shield-halved) i,
+:root.dark .sidebar .bg-\[var\(--signal-500\)\] i {
+  color: #ffffff !important;
+}
+
+/* 1. Botones principales (.btn-signal) con hover interactivo */
+:root.dark .btn-signal {
+  border-radius: 12px !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+
+:root.dark .btn-signal:hover {
+  animation: flameGradientShift 1.2s linear infinite !important;
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px 2px rgba(249, 115, 22, 0.75), 0 0 54px 6px rgba(220, 38, 38, 0.5) !important;
+}
+
+:root.dark .btn-signal:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con hover interactivo */
+:root.dark .sidebar-link.is-active {
+  border-radius: 10px !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+
+:root.dark .sidebar-link.is-active:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.12);
+  transform: translateX(4px);
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.65), 0 0 44px 4px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* 3. Logo del sidebar (estable, sin hover interactivo) */
+:root.dark .sidebar div:has(> .fa-shield-halved),
+:root.dark .sidebar .bg-\[var\(--signal-500\)\] {
+  cursor: default;
+  transition: none !important;
+}
+
+:root.dark .sidebar div:has(> .fa-shield-halved):hover,
+:root.dark .sidebar .bg-\[var\(--signal-500\)\]:hover {
+  transform: none !important;
+  filter: none !important;
+  animation-duration: 6s !important;
+}
+
+/* 4. CHIP DEL ROL (Sin hover: se mantiene estático y sin cambios al pasar el cursor) */
+:root.dark .role-chip,
+:root.dark .role-chip:hover,
+:root.dark .role-chip:active,
+:root.dark .role-chip:focus {
+  cursor: default !important;
+  pointer-events: none !important;
+  transform: none !important;
+  filter: none !important;
+  animation-duration: 6s !important;
+  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+}
+
+/*estilos para modal en dashboard*/
+
+/* =========================================================
+   ESTILOS COMPLETOS DEL MODAL EN MODO OSCURO (ESTILO TICKET)
+   ========================================================= */
+
+/* 1. Panel principal del modal */
+:root.dark .modal-panel,
+:root.dark .al-card,
+:root.dark .modal-ticket {
+  position: relative !important;
+  background: #242424 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 2. Línea punteada superior (estilo cupón) */
+:root.dark .modal-panel::before,
+:root.dark .al-card::before,
+:root.dark .modal-ticket::before { 
+  border-top: 2px dashed rgba(255, 255, 255, 0.15) !important;
+  z-index: 2;
+}
+
+/* 3. Agujero de troquel central (orificio superior realista) */
+:root.dark .modal-panel::after,
+:root.dark .al-card::after,
+:root.dark .modal-ticket::after {
+  background: #111111 !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  z-index: 3;
+}
+
+/* 4. Dientes inferiores de sierra (.modal-serrated) */
+:root.dark .al-serrated,
+:root.dark .modal-serrated {
+  background:
+    linear-gradient(135deg, #242424 50%, transparent 50%) 0 0/16px 16px,
+    linear-gradient(-135deg, #242424 50%, transparent 50%) 0 0/16px 16px !important;
+  background-repeat: repeat-x !important;
+}
+
+/* 5. Títulos y textos del modal */
+:root.dark .modal-panel h2,
+:root.dark .modal-panel h3 {
+  color: #f8fafc !important;
+}
+
+:root.dark .subtitles-modal {
+  color: #94a3b8 !important;
+}
+
+:root.dark .correomodal {
+  color: #38bdf8 !important;
+}
+
+:root.dark .modal-panel p,
+:root.dark .modal-panel p.italic {
+  color: #94a3b8 !important;
+}
+
+:root.dark .modal-panel span.text-sm.font-semibold,
+:root.dark .modal-panel span.text-xs.font-semibold {
+  color: #f8fafc !important;
+}
+
+/* 6. Líneas divisorias internas punteadas */
+:root.dark .modal-panel .border-dashed {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 7. Pill del código RAD */
+:root.dark .modal-panel span.bg-\[\#efe9dc\],
+:root.dark .modal-panel span[x-text*="codigo"] {
+  background: #333333 !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 8. TABLA DE PERSONAS REGISTRADAS DENTRO DEL MODAL */
+:root.dark .modal-panel .border-modal-table,
+:root.dark .modal-panel .bg-\[\#faf7f0\],
+:root.dark .modal-panel div:has(> table) {
+  background: #1a1a1a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark .modal-panel table {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark .modal-panel thead tr,
+:root.dark .modal-panel tr.bg-\[\#efe9dc\] {
+  background: #141414 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark .modal-panel thead th {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+:root.dark .modal-panel tbody tr,
+:root.dark .modal-panel tr.bodySt {
+  background: #1e1e1e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #e2e8f0 !important;
+}
+
+:root.dark .modal-panel tbody tr:hover,
+:root.dark .modal-panel tr.bodySt:hover {
+  background: #282828 !important;
+}
+
+:root.dark .modal-panel tbody td {
+  color: #cbd5e1 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+:root.dark .modal-panel tbody td.font-semibold,
+:root.dark .modal-panel tbody td:nth-child(2) {
+  color: #ffffff !important;
+}
+
+:root.dark .modal-panel tbody td.font-mono {
+  color: #93c5fd !important;
+}
+
+/* Iconos de Autorizado / No autorizado fosforescentes (Modo Oscuro) */
+:root.dark .modal-panel .fa-circle-check,
+:root.dark .modal-panel span[title="Autorizado"] i,
+:root.dark .modal-panel span:has(> .fa-circle-check) i,
+:root.dark td .fa-circle-check,
+:root.dark .text-\[\#2f8f5b\] i {
+  color: #00ff88 !important;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.9)) drop-shadow(0 0 12px rgba(0, 255, 136, 0.5)) !important;
+}
+
+:root.dark .modal-panel .fa-circle-xmark,
+:root.dark .modal-panel span[title*="No"] i,
+:root.dark .modal-panel span:has(> .fa-circle-xmark) i,
+:root.dark td .fa-circle-xmark,
+:root.dark .text-\[\#c1443c\] i {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 5px rgba(255, 42, 85, 0.9)) drop-shadow(0 0 12px rgba(255, 42, 85, 0.5)) !important;
+}
+
+/* 9. Elementos de lista (Vehículos y Equipos de cómputo) */
+:root.dark .modal-panel li,
+:root.dark .modal-panel li.bg-\[\#efe9dc\]\/50 {
+  background: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark .modal-panel li span {
+  color: #f1f5f9 !important;
+}
+
+:root.dark .modal-panel li span.bg-white,
+:root.dark .modal-panel li span[x-text*="placa"] {
+  background: #2a2a2a !important;
+  color: #38bdf8 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 10. Botón de cerrar superior derecho (X) */
+:root.dark .modal-panel button:has(> .fa-xmark),
+:root.dark .modal-panel button[title="Cerrar modal"] {
+  color: #94a3b8 !important;
+}
+
+:root.dark .modal-panel button:has(> .fa-xmark):hover,
+:root.dark .modal-panel button[title="Cerrar modal"]:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 11. Scrollbar interna personalizada del modal */
+:root.dark .modal-panel .custom-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+:root.dark .modal-panel .custom-scroll::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+:root.dark .modal-panel .custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* =========================================================
+   ESTILO AURORA FLAMA EN MODALES (DANGER / ERROR / RECHAZADO)
+   Botón de confirmación (.modal-btn-confirm) y estampa (.modal-stamp)
+   ========================================================= */
+:root.dark .modal-btn-confirm,
+:root.dark .al-btn-confirm,
+:root.dark .modal-stamp.danger,
+:root.dark .modal-stamp.error,
+:root.dark .modal-stamp.rechazado,
+:root.dark .al-stamp.danger,
+:root.dark .al-stamp.error {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #db5f06 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f04507 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  border: none !important;
+}
+
+:root.dark .modal-btn-confirm *,
+:root.dark .al-btn-confirm *,
+:root.dark .modal-stamp.danger *,
+:root.dark .modal-stamp.danger i,
+:root.dark .modal-stamp.error *,
+:root.dark .modal-stamp.error i,
+:root.dark .modal-stamp.rechazado *,
+:root.dark .modal-stamp.rechazado i,
+:root.dark .al-stamp.danger *,
+:root.dark .al-stamp.danger i,
+:root.dark .al-stamp.error *,
+:root.dark .al-stamp.error i {
+  color: #ffffff !important;
+}
+
+/* Botón de confirmación interactivo en el modal */
+:root.dark .modal-btn-confirm,
+:root.dark .al-btn-confirm {
+  border-radius: 10px !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root.dark .modal-btn-confirm:hover,
+:root.dark .al-btn-confirm:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.12) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.65), 0 0 44px 4px rgba(220, 38, 38, 0.4) !important;
+  opacity: 1 !important;
+}
+
+:root.dark .modal-btn-confirm:active,
+:root.dark .al-btn-confirm:active {
+  transform: translateX(2px) scale(0.98) !important;
+}
+
+/* Botón de cancelar en modales (modo oscuro) */
+:root.dark .modal-btn-cancel,
+:root.dark .al-btn-cancel {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 10px !important;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease !important;
+}
+
+:root.dark .modal-btn-cancel:hover,
+:root.dark .al-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  transform: translateX(4px) !important;
+}
+
+/* La estampa de modal (icono centrado informativo) sin hover interactivo */
+:root.dark .modal-stamp.danger,
+:root.dark .modal-stamp.error,
+:root.dark .modal-stamp.rechazado,
+:root.dark .al-stamp.danger,
+:root.dark .al-stamp.error {
+  cursor: default !important;
+  pointer-events: none !important;
+  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root.dark .modal-stamp.danger:hover,
+:root.dark .modal-stamp.error:hover,
+:root.dark .modal-stamp.rechazado:hover,
+:root.dark .al-stamp.danger:hover,
+:root.dark .al-stamp.error:hover {
+  transform: none !important;
+  filter: none !important;
+  animation-duration: 6s !important;
+}
+
+/* =========================================================
+   BOTONES DE ACCIÓN FOSFORECENTES EN TABLAS (MODO OSCURO)
+   Ver (Cian neón), Editar (Oro/Amarillo neón), Eliminar (Rojo neón)
+   ========================================================= */
+
+/* Transición base y bordes en botones de acción */
+:root.dark .action-icon-btn {
+  border-radius: 8px !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, background-color 0.2s ease, color 0.2s ease !important;
+}
+
+/* 1. Botón VER (Ojo - Azul eléctrico / Cian fosforescente) */
+:root.dark .action-icon-btn.text-blue-600,
+:root.dark .action-icon-btn.text-blue-500,
+:root.dark .action-icon-btn:has(> .fa-eye),
+:root.dark .action-icon-btn:has(> .fa-eye-slash) {
+  color: #00e5ff !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600 i,
+:root.dark .action-icon-btn.text-blue-500 i,
+:root.dark .action-icon-btn:has(> .fa-eye) i {
+  color: #00e5ff !important;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 12px rgba(0, 229, 255, 0.45)) !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600:hover,
+:root.dark .action-icon-btn.text-blue-500:hover,
+:root.dark .action-icon-btn:has(> .fa-eye):hover {
+  background: rgba(0, 229, 255, 0.16) !important;
+  transform: scale(1.18) !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600:hover i,
+:root.dark .action-icon-btn.text-blue-500:hover i,
+:root.dark .action-icon-btn:has(> .fa-eye):hover i {
+  color: #38f8ff !important;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 1)) drop-shadow(0 0 16px rgba(0, 229, 255, 0.7)) !important;
+}
+
+/* 2. Botón EDITAR (Lápiz - Amarillo eléctrico / Oro fosforescente) */
+:root.dark .action-icon-btn.text-yellow-400,
+:root.dark .action-icon-btn.text-yellow-500,
+:root.dark .action-icon-btn.text-amber-500,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square),
+:root.dark .action-icon-btn:has(> .fa-pencil) {
+  color: #ffea00 !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400 i,
+:root.dark .action-icon-btn.text-yellow-500 i,
+:root.dark .action-icon-btn.text-amber-500 i,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square) i,
+:root.dark .action-icon-btn:has(> .fa-pencil) i {
+  color: #ffea00 !important;
+  filter: drop-shadow(0 0 5px rgba(255, 234, 0, 0.85)) drop-shadow(0 0 12px rgba(255, 234, 0, 0.45)) !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400:hover,
+:root.dark .action-icon-btn.text-yellow-500:hover,
+:root.dark .action-icon-btn.text-amber-500:hover,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square):hover,
+:root.dark .action-icon-btn:has(> .fa-pencil):hover {
+  background: rgba(255, 234, 0, 0.16) !important;
+  transform: scale(1.18) !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400:hover i,
+:root.dark .action-icon-btn.text-yellow-500:hover i,
+:root.dark .action-icon-btn.text-amber-500:hover i,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square):hover i,
+:root.dark .action-icon-btn:has(> .fa-pencil):hover i {
+  color: #fff777 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 234, 0, 1)) drop-shadow(0 0 16px rgba(255, 234, 0, 0.7)) !important;
+}
+
+/* 3. Botón ELIMINAR (Papelera - Rojo neón / Rubí fosforescente) */
+:root.dark .action-icon-btn.text-red-500,
+:root.dark .action-icon-btn.text-red-600,
+:root.dark .action-icon-btn.danger,
+:root.dark .action-icon-btn:has(> .fa-trash-can),
+:root.dark .action-icon-btn:has(> .fa-trash) {
+  color: #ff2a55 !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-red-500 i,
+:root.dark .action-icon-btn.text-red-600 i,
+:root.dark .action-icon-btn.danger i,
+:root.dark .action-icon-btn:has(> .fa-trash-can) i,
+:root.dark .action-icon-btn:has(> .fa-trash) i {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 5px rgba(255, 42, 85, 0.85)) drop-shadow(0 0 12px rgba(255, 42, 85, 0.45)) !important;
+}
+
+:root.dark .action-icon-btn.text-red-500:hover,
+:root.dark .action-icon-btn.text-red-600:hover,
+:root.dark .action-icon-btn.danger:hover,
+:root.dark .action-icon-btn:has(> .fa-trash-can):hover,
+:root.dark .action-icon-btn:has(> .fa-trash):hover {
+  background: rgba(255, 42, 85, 0.16) !important;
+  transform: scale(1.18) !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-red-500:hover i,
+:root.dark .action-icon-btn.text-red-600:hover i,
+:root.dark .action-icon-btn.danger:hover i,
+:root.dark .action-icon-btn:has(> .fa-trash-can):hover i,
+:root.dark .action-icon-btn:has(> .fa-trash):hover i {
+  color: #ff5e80 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 42, 85, 1)) drop-shadow(0 0 16px rgba(255, 42, 85, 0.7)) !important;
+}
+
+/* 4. Botón REVISAR EXPEDIENTE (Portapapeles - Púrpura neón fosforescente) */
+:root.dark .action-icon-btn.text-indigo-600,
+:root.dark .action-icon-btn:has(> .fa-clipboard-check) {
+  color: #c084fc !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-indigo-600 i,
+:root.dark .action-icon-btn:has(> .fa-clipboard-check) i {
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 5px rgba(192, 132, 252, 0.85)) drop-shadow(0 0 12px rgba(192, 132, 252, 0.45)) !important;
+}
+
+:root.dark .action-icon-btn.text-indigo-600:hover,
+:root.dark .action-icon-btn:has(> .fa-clipboard-check):hover {
+  background: rgba(192, 132, 252, 0.16) !important;
+  transform: scale(1.18) !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.text-indigo-600:hover i,
+:root.dark .action-icon-btn:has(> .fa-clipboard-check):hover i {
+  color: #e9d5ff !important;
+  filter: drop-shadow(0 0 8px rgba(192, 132, 252, 1)) drop-shadow(0 0 16px rgba(192, 132, 252, 0.7)) !important;
+}
+
+/* 5. Tooltips (title / data-tooltip) 100% limpios sin brillo ni resplandor */
+[data-tooltip]::before,
+[data-tooltip]::after,
+:root.dark [data-tooltip]::before,
+:root.dark [data-tooltip]::after,
+.action-icon-btn[data-tooltip]::before,
+.action-icon-btn[data-tooltip]::after {
+  filter: none !important;
+  text-shadow: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 6. Títulos de página y modales limpios y nítidos (sin brillo ni sombra) */
+:root.dark h1,
+:root.dark h2,
+:root.dark h3,
+:root.dark .font-display,
+:root.dark .topbar h1,
+:root.dark .modal-panel h2 {
+  text-shadow: none !important;
+  filter: none !important;
+}
+

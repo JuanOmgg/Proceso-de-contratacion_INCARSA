@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>403 · Acceso no autorizado · INCARSA</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/error-pages.css">
+</head>
+
+<body class="antialiased">
+
+<div id="page-transition-overlay" class="page-transition-overlay">
+  <div class="loader"></div>
+</div>
+
+<div class="error-page" style="--error-color: var(--state-rechazado); --error-color-bg: var(--state-rechazado-bg);">
+  <div class="error-hazard-bg"></div>
+
+  <div class="error-brand-mark">
+    <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    </div>
+    <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
+  </div>
+
+  <p class="error-code-hero">403</p>
+
+  <p class="error-code">Error 403</p>
+  <h1 class="error-title">Acceso no autorizado</h1>
+  <p class="error-description">
+    Tu rol actual no tiene permisos para ver esta sección. Si crees que es un error, contacta a un administrador.
+  </p>
+
+  <div class="error-actions">
+    <a href="mailto:soporte@incarsa.com" class="btn-signal w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+      <i class="fa-solid fa-envelope text-xs"></i> Contactar administrador
+    </a>
+    <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+      <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
+    </button>
+  </div>
+</div>
+
+<script src="assets/js/page-transition.js"></script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+/**
+ * INCARSA — Login Page Styles
+ * Estilos exclusivos de la pantalla de inicio de sesión.
+ * Requiere que styles.css esté cargado antes (variables CSS).
+ */
+
+/* =========================================================
+   LAYOUT BASE
+   ========================================================= */
+.login-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ink-950);
+  background-image: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-950) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* =========================================================
+   RAYAS DIAGONALES DE FONDO — 3 grupos intercalados
+   Con timing linear y delays de exactamente 1/3 del ciclo,
+   en cualquier instante una está apagada, otra a mitad de
+   brillo y la tercera en su pico — efecto de ola continua.
+   ========================================================= */
+@keyframes stripeBlink {
+  0%   { opacity: 0.06; }
+  50%  { opacity: 0.6;  }
+  100% { opacity: 0.06; }
+}
+
+.login-page-stripes,
+.login-page-stripes::before,
+.login-page-stripes::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: stripeBlink 3.6s linear infinite;
+}
+
+/* Grupo 1 — color rojo señal */
+.login-page-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--alt0) 0px, var(--alt0) 2px, transparent 2px, transparent 102px
+  );
+  animation-delay: 0s;
+}
+
+/* Grupo 2 — color violeta revisión, offset 1/3 del periodo */
+.login-page-stripes::before {
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0px, transparent 34px,
+    color-mix(in srgb, var(--alt) 15%, white) 34px,
+    color-mix(in srgb, var(--alt) 55%, white) 36px,
+    transparent 36px, transparent 102px
+  );
+  animation-delay: 1.3s;
+}
+
+/* Grupo 3 — color teal enviado, offset 2/3 del periodo */
+.login-page-stripes::after {
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0px, transparent 68px,
+    color-mix(in srgb, var(--alt2) 55%, white) 68px,
+    color-mix(in srgb, var(--alt2) 55%, white) 70px,
+    transparent 70px, transparent 102px
+  );
+  animation-delay: 2.8s;
+}
+
+/* =========================================================
+   LOGO DE MARCA (compartido con páginas de error)
+   ========================================================= */
+.error-brand-mark {
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .error-brand-mark {
+    top: 16px;
+    left: 16px;
+  }
+}
+
+/* =========================================================
+   BORDE CON GRADIENTE CÓNICO (glow-wrap + glow-border)
+   ========================================================= */
+.login-glow-wrap {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Halo difuminado detrás del recuadro */
+.login-glow-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  border-radius: 30px;
+  background: conic-gradient(
+    from 0deg,
+    var(--signal-500),
+    var(--state-revision),
+    var(--state-enviado),
+    var(--signal-500)
+  );
+  filter: blur(28px);
+  opacity: 0.55;
+  z-index: 0;
+}
+
+/* Anillo nítido con gradiente giratorio */
+.login-glow-border {
+  position: relative;
+  z-index: 1;
+  padding: 2.5px;
+  border-radius: 20px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.login-glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--signal-500),
+    var(--state-revision),
+    var(--state-enviado),
+    var(--signal-500)
+  );
+  z-index: -1;
+}
+
+/* =========================================================
+   TARJETA DEL FORMULARIO
+   ========================================================= */
+.login-form-card {
+  position: relative;
+  background: #2F2F2F;
+  border-radius: 18px;
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  /* Tema oscuro local — redefinimos tokens dentro de la tarjeta */
+  --ink-900: #F3F3F3;
+  --ink-800: #D8D8D8;
+  --ink-700: #BDBDBD;
+  --text-primary: #EDEDED;
+  --text-muted: #A7A7A7;
+  --border-subtle: rgba(255, 255, 255, 0.14);
+  --surface: #3B3B3B;
+}
+
+.login-form-card input,
+.login-form-card select,
+.login-form-card textarea {
+  color: #F0F0F0;
+}
+
+.login-form-card input::placeholder,
+.login-form-card textarea::placeholder {
+  color: #8A8A8A;
+}
+
+/* Shimmer suave continuo sobre la tarjeta */
+.login-form-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.06) 48%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 52%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: cardShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes cardShimmer {
+  0%   { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}
+
+/* =========================================================
+   UTILIDADES DE ANIMACIÓN
+   ========================================================= */
+.anim-fade-up {
+  animation: fadeInUp 0.6s var(--ease-standard) both;
+}
+
+/* Brillo al hacer hover sobre el botón principal */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s var(--ease-standard);
+  pointer-events: none;
+}
+
+.btn-shimmer:hover::after {
+  left: 130%;
+}
+
+/* =========================================================
+   BOTÓN LOGIN: Animación de colores del entorno en hover
+   Colores: Rojo señal (var(--signal-500)),
+            Violeta revisión (var(--state-revision)),
+            Cian/Teal enviado (var(--state-enviado))
+   ========================================================= */
+@keyframes loginGlowFlow {
+  0% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 22px -2px rgba(255, 59, 78, 0.65), 0 0 42px rgba(167, 34, 193, 0.35);
+  }
+  33% {
+    box-shadow: 0 0 22px -2px rgba(167, 34, 193, 0.65), 0 0 42px rgba(6, 182, 212, 0.35);
+  }
+  66% {
+    box-shadow: 0 0 22px -2px rgba(6, 182, 212, 0.65), 0 0 42px rgba(255, 59, 78, 0.35);
+  }
+  100% {
+    background-position: 200% 50%;
+    box-shadow: 0 0 22px -2px rgba(255, 59, 78, 0.65), 0 0 42px rgba(167, 34, 193, 0.35);
+  }
+}
+
+.login-page .btn-signal {
+  background-color: var(--signal-500);
+  color: #ffffff !important;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease;
+}
+
+.login-page .btn-signal:hover,
+.login-page .btn-signal.is-submitting,
+.login-page .btn-signal:disabled:has(.fa-spinner) {
+  background-image: linear-gradient(
+    90deg,
+    #ff3b4e 0%,
+    #d946ef 20%,
+    var(--state-revision) 40%,
+    #06b6d4 65%,
+    var(--state-enviado) 80%,
+    #ff3b4e 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: loginGlowFlow 2.4s linear infinite !important;
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+.login-page .btn-signal.is-submitting {
+  transform: none !important;
+}
+
+.login-page .btn-signal:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* =========================================================
+   ALERTAS EN LOGIN (Dark Glass)
+   Integradas con el fondo oscuro y resplandores de la tarjeta
+   ========================================================= */
+.login-alert-error,
+.login-form-card [class*="bg-\[var\(--state-rechazado-bg\)\]"] {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border: 1px solid rgba(248, 113, 113, 0.28) !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.login-alert-error i,
+.login-form-card [class*="bg-\[var\(--state-rechazado-bg\)\]"] i {
+  color: #f87171 !important;
+}
+
+.login-form-card [class*="bg-\[var\(--state-aprobado-bg\)\]"] {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(74, 222, 128, 0.3) !important;
+}
+
+.login-form-card [class*="bg-\[var\(--state-enviado-bg\)\]"] {
+  background: rgba(6, 182, 212, 0.15) !important;
+  color: #22d3ee !important;
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+}

@@ -1,0 +1,433 @@
+/* =========================================================
+   INCARSA · Sistema de Gestión de Solicitudes de Acceso
+   Estilos de Navegación: Sidebar (Menú Lateral) y Navbar (Topbar)
+   ========================================================= */
+
+/* --- Variables de Dimensiones de Layout --- */
+:root {
+  --shell-gap: 20px;
+  --sidebar-w: 264px;
+  --sidebar-collapsed-w: 76px;
+}
+
+/* =========================================================
+   APP SHELL (Estructura general)
+   El sidebar es fixed — siempre visible sin depender del scroll.
+   El padding-left del shell compensa su ancho para que el contenido
+   no quede debajo de él. :has() actualiza el padding automáticamente
+   cuando el sidebar se colapsa.
+   ========================================================= */
+.app-shell {
+  min-height: 100vh;
+  padding: var(--shell-gap) var(--shell-gap) var(--shell-gap)
+           calc(var(--sidebar-w) + var(--shell-gap));
+  background: var(--bg-app);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar colapsado → ajustar padding izquierdo */
+.app-shell:has(.sidebar.is-collapsed) {
+  padding-left: calc(var(--sidebar-collapsed-w) + var(--shell-gap));
+}
+
+/* ---------- Columna principal (topbar + contenido) ---------- */
+.main-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================================
+   SIDEBAR (Menú Lateral)
+   ========================================================= */
+.sidebar {
+  background: var(--ink-900);
+  background-image: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-950) 100%);
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  border-radius: 0 20px 20px 0;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+  transition: width 0.4s var(--ease-standard), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 20%,
+    rgba(255, 255, 255, 0.02) 42%,
+    rgba(255, 255, 255, 0.055) 50%,
+    rgba(255, 255, 255, 0.02) 58%,
+    transparent 80%,
+    transparent 100%
+  );
+  transform: translateX(-220%) skewX(-15deg);
+  animation: sidebarShimmer 12s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes sidebarShimmer {
+  0% {
+    transform: translateX(-220%) skewX(-15deg);
+  }
+  42%, 100% {
+    transform: translateX(300%) skewX(-15deg);
+  }
+}
+
+.sidebar.is-collapsed {
+  width: var(--sidebar-collapsed-w);
+}
+
+/* Pausar shimmer cuando el sidebar está contraído */
+.sidebar.is-collapsed::after {
+  animation-play-state: paused;
+  opacity: 0;
+}
+
+/* Textos, logos y chevrones con transición al colapsar */
+.sidebar-label,
+.sidebar-brand-text,
+.sidebar-chevron {
+  opacity: 1;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.25s ease, max-width 0.4s var(--ease-standard), margin 0.4s var(--ease-standard);
+}
+
+.sidebar.is-collapsed .sidebar-label,
+.sidebar.is-collapsed .sidebar-brand-text,
+.sidebar.is-collapsed .sidebar-chevron {
+  opacity: 0;
+  max-width: 0;
+  margin-left: 0 !important;
+  transition: opacity 0.15s ease, max-width 0.3s var(--ease-standard), margin 0.3s var(--ease-standard);
+}
+
+/* Enlaces principales del sidebar */
+.sidebar-link {
+  color: #C7D0E4;
+  border-radius: 10px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s var(--ease-standard);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.sidebar-link.is-active {
+  background: var(--signal-500);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(232, 128, 76, 0.35);
+}
+
+/* Sub-enlaces de módulos desplegables */
+.sidebar-sublink {
+  color: #9FADC9;
+  border-left: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease-standard);
+}
+
+.sidebar-sublink:hover {
+  color: #fff;
+  border-left-color: var(--signal-500);
+  transform: translateX(4px);
+}
+
+.sidebar-sublink.is-active {
+  color: #fff;
+  border-left-color: var(--signal-500);
+}
+
+/* Botón inferior para contraer/expandir */
+.sidebar-collapse-btn {
+  cursor: pointer;
+}
+
+/* ---------- Drawer móvil y controles ---------- */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(10, 15, 29, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-standard);
+}
+
+.sidebar-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--signal-500);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+.mobile-sidebar-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9FADC9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* =========================================================
+   NAVBAR / TOPBAR (Barra Superior)
+   ========================================================= */
+.topbar {
+  background: var(--surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 16px;
+  box-shadow: 
+    0 -35px 0 0 var(--bg-app),
+    0 4px 10px -1px rgba(0, 0, 0, 0.06),
+    0 12px 24px -4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: var(--shell-gap);
+  z-index: 30;
+  margin-bottom: var(--shell-gap);
+  min-height: 64px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* =========================================================
+   TOPBAR EN MODO CLARO
+   Garantiza contraste óptimo y textos 100% legibles
+   ========================================================= */
+:root:not(.dark) .topbar {
+  background: #ffffff !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+:root:not(.dark) .topbar h1,
+:root:not(.dark) .topbar .font-display,
+:root:not(.dark) .topbar .text-white:not(.role-chip):not(.role-chip *):not(.badge-count) {
+  color: var(--ink-900) !important;
+}
+
+:root:not(.dark) .topbar button,
+:root:not(.dark) .topbar .fa-bell,
+:root:not(.dark) .topbar .fa-moon,
+:root:not(.dark) .topbar .fa-sun,
+:root:not(.dark) .topbar .action-icon-btn,
+:root:not(.dark) .topbar .fa-chevron-down {
+  color: var(--ink-700) !important;
+}
+
+:root:not(.dark) .topbar button:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+:root:not(.dark) .topbar .mobile-menu-btn {
+  background: var(--steel-100) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--ink-900) !important;
+}
+
+:root:not(.dark) .topbar .mobile-menu-btn:hover {
+  background: var(--steel-200) !important;
+  color: var(--signal-500) !important;
+}
+
+:root:not(.dark) .topbar .role-chip {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25) !important;
+}
+
+:root:not(.dark) .topbar .role-chip * {
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .topbar .badge-count {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .topbar .inicialesUser {
+  background-color: var(--steel-200) !important;
+  color: var(--ink-900) !important;
+}
+
+/* Shimmer suave y continuo sobre el topbar (SOLO en modo oscuro) */
+.topbar::after {
+  display: none;
+}
+
+:root.dark .topbar::after {
+  display: block;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.03) 46%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 54%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  animation: topbarShimmer 19s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes topbarShimmer {
+  0% {
+    background-position: 250% 0;
+  }
+  52%, 100% {
+    background-position: -150% 0;
+  }
+}
+
+.role-chip {
+  background: var(--signal-500);
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.badge-count {
+  background: var(--signal-500);
+  color: #fff;
+  min-width: 18px;
+  height: 18px;
+  font-size: 10px;
+  line-height: 1;
+  animation: popIn 0.3s var(--ease-emphasized);
+}
+
+/* =========================================================
+   RESPONSIVE: Sidebar como drawer por debajo de 1024px
+   ========================================================= */
+@media (max-width: 1024px) {
+  .app-shell,
+  .app-shell:has(.sidebar.is-collapsed) {
+    padding: 12px !important;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    bottom: 10px;
+    height: auto;
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    z-index: 70;
+    transform: translateX(calc(-100% - 30px));
+    border-radius: 20px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
+  }
+
+  .sidebar.is-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar.is-mobile-open::after {
+    animation-play-state: running !important;
+    opacity: 1 !important;
+  }
+
+  /* En móvil el drawer siempre muestra las etiquetas completas */
+  .sidebar.is-collapsed {
+    width: 280px;
+  }
+
+  .sidebar.is-collapsed .sidebar-label,
+  .sidebar.is-collapsed .sidebar-brand-text,
+  .sidebar.is-collapsed .sidebar-chevron {
+    opacity: 1 !important;
+    max-width: 200px !important;
+    margin-left: revert !important;
+  }
+
+  .sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex !important;
+  }
+
+  .mobile-sidebar-close {
+    display: inline-flex !important;
+  }
+
+  .topbar {
+    top: 12px;
+    margin-bottom: 12px;
+    border-radius: 14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

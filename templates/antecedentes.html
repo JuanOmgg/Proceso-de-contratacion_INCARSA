@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antecedentes y Seguimiento · INCARSA</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Estilos custom -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="assets/css/dark-mode.css">
+  <!-- Datos + lógica (deben ir antes de Alpine) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/antecedentes.js"></script>
+  <script src="assets/js/plantas.js"></script>
+  <script src="assets/js/contratistas.js"></script>
+  <script src="assets/js/vehiculos.js"></script>
+  <!-- Alpine.js (plugin collapse debe cargar ANTES que el core; ambos con defer) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased bg-[var(--bg-app)] text-[var(--text-primary)]">
+
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- ============================================================
+       SIDEBAR
+    ============================================================= -->
+    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
+
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+          </div>
+          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
+        </div>
+        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+
+        <!-- Módulo desplegable: Formularios -->
+        <div>
+          <button @click="openModules.formularios = !openModules.formularios"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
+              <span class="sidebar-label">Formularios</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.formularios ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.formularios" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nueva solicitud</a>
+            <a href="usuario-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nuevo usuario</a>
+          </div>
+        </div>
+
+        <!-- Módulo desplegable: Consultas -->
+        <div>
+          <button @click="openModules.tablas = !openModules.tablas"
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-table-list w-4 text-center"></i>
+              <span class="sidebar-label">Consultas</span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
+              :class="openModules.tablas ? 'rotate-180' : ''"></i>
+          </button>
+          <div x-show="openModules.tablas" x-collapse
+            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <a href="solicitudes-listado.html" class="sidebar-sublink block py-2 text-[13px]">Solicitudes</a>
+            <a href="usuarios-listado.html" class="sidebar-sublink block py-2 text-[13px]">Usuarios</a>
+            <a href="personas-listado.html" class="sidebar-sublink block py-2 text-[13px]">Personas</a>
+            <a href="antecedentes.html" class="sidebar-sublink is-active block py-2 text-[13px]">Antecedentes</a>
+            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Plantas y zonas</a>
+            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Contratistas</a>
+            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Vehículos</a>
+          </div>
+        </div>
+
+        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
+          <span class="sidebar-label">Procesamiento</span>
+        </a>
+      </nav>
+
+      <button @click="sidebarCollapsed = !sidebarCollapsed"
+        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
+        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+        <span class="sidebar-label text-xs">Contraer</span>
+      </button>
+    </aside>
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="antecedentesModule()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      <header
+        class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <a href="dashboard.html" class="action-icon-btn text-white hover:bg-white/10 hidden sm:inline-flex" title="Volver al dashboard">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+          <div>
+            <h1 class="font-display font-semibold text-lg text-white">Módulo de Antecedentes</h1>
+            <p class="text-xs text-slate-400 hidden sm:block">Control de revisiones anuales, responsables e historial de solicitudes</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <!-- Notificaciones -->
+          <div class="relative" @click.outside="notificationsOpen = false">
+            <button @click="notificationsOpen = !notificationsOpen"
+              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+              <i class="fa-regular fa-bell text-base"></i>
+              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1"
+                x-text="notifications.length"></span>
+            </button>
+            <div x-show="notificationsOpen" x-transition x-cloak
+              class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <div class="px-4 py-3 border-b border-[var(--border-subtle)] font-semibold text-sm">Notificaciones</div>
+              <template x-for="n in notifications" :key="n.id">
+                <div
+                  class="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--steel-100)] text-sm">
+                  <p class="text-[var(--text-primary)]" x-text="n.texto"></p>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5" x-text="n.tiempo"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Perfil -->
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/10 transition-colors">
+              <div
+                class="w-8 h-8 rounded-full bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
+                x-text="userInitials"></div>
+              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName"></span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)]"></i>
+            </button>
+            <div x-show="open" x-transition x-cloak
+              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              <a href="login.html"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+          <!-- ===== 1. CARDS DE INDICADORES (gauge-card) ===== -->
+          <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            
+            <!-- Total Personas -->
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--ink-800); --gauge-color-bg: var(--steel-100);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-users-viewfinder"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Total personas</p>
+                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : totalRegistros"></p>
+              </div>
+            </div>
+
+            <!-- Vigentes -->
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--state-aprobado); --gauge-color-bg: var(--state-aprobado-bg);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-shield-check"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Revisiones vigentes</p>
+                <p class="gauge-value text-2xl font-semibold text-emerald-600" x-text="cargando ? '...' : totalVigentes"></p>
+              </div>
+            </div>
+
+            <!-- Por Vencer -->
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: #d97706; --gauge-color-bg: #fffbeb;">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Por vencer (≤30d)</p>
+                <p class="gauge-value text-2xl font-semibold text-amber-600" x-text="cargando ? '...' : totalPorVencer"></p>
+              </div>
+            </div>
+
+            <!-- Consultas Vencidas -->
+            <div class="gauge-card p-4 flex items-center gap-4"
+              style="--gauge-color: var(--state-rechazado); --gauge-color-bg: var(--state-rechazado-bg);">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-xmark"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Consultas vencidas</p>
+                <p class="gauge-value text-2xl font-semibold text-red-600" x-text="cargando ? '...' : totalVencidos"></p>
+              </div>
+            </div>
+
+            <!-- Total Solicitudes Históricas -->
+            <div class="gauge-card p-4 flex items-center gap-4 col-span-2 sm:col-span-1"
+              style="--gauge-color: #7c3aed; --gauge-color-bg: #f5f3ff;">
+              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clipboard-list"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)]">Ingresos solicitados</p>
+                <p class="gauge-value text-2xl font-semibold text-purple-700" x-text="cargando ? '...' : totalIngresosHistoricos"></p>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ===== 2. FILTROS / BUSCADOR (filter-bar) ===== -->
+          <div class="filter-bar p-4 flex flex-col xl:flex-row xl:items-center gap-3">
+            
+            <!-- Buscador general -->
+            <div class="search-input-wrapper flex-1 min-w-[240px]">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" x-model="search" placeholder="Buscar persona por nombre, cargo o documento..."
+                class="input-field w-full rounded-lg py-2.5 text-sm">
+            </div>
+
+            <!-- Chips de Vigencia -->
+            <div class="flex gap-2 flex-wrap items-center">
+              <button type="button" @click="filtroVigencia = 'todos'" class="chip-select"
+                :class="filtroVigencia === 'todos' ? 'bg-[var(--ink-800)] text-white border-[var(--ink-800)] hover:bg-gray-600' : ''">
+                Todos
+              </button>
+              <button type="button" @click="filtroVigencia = 'vigente'" class="chip-select"
+                :class="filtroVigencia === 'vigente' ? 'bg-green-600 text-white border-green-600 hover:bg-green-700' : ''">
+                <i class="fa-solid fa-circle-check text-xs"></i> Vigentes
+              </button>
+              <button type="button" @click="filtroVigencia = 'por_vencer'" class="chip-select"
+                :class="filtroVigencia === 'por_vencer' ? 'bg-amber-500 text-white border-amber-400 hover:bg-amber-600' : ''">
+                <i class="fa-solid fa-triangle-exclamation text-xs"></i> Por vencer
+              </button>
+              <button type="button" @click="filtroVigencia = 'vencido'" class="chip-select"
+                :class="filtroVigencia === 'vencido' ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : ''">
+                <i class="fa-solid fa-circle-xmark text-xs"></i> Vencidos
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ===== 3. TABLA DE ANTECEDENTES (wizard-card) ===== -->
+          <div class="wizard-card overflow-hidden">
+            <div class="w-full overflow-x-auto xl:overflow-x-visible">
+              <table class="data-table w-full text-left text-sm">
+                <thead>
+                  <tr class="border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3.5 text-center w-12">#</th>
+                    <th class="px-4 py-3.5">Persona / Documento</th>
+                    <th class="px-4 py-3.5">Última Revisión</th>
+                    <th class="px-4 py-3.5">Fecha Consulta (+1 Año)</th>
+                    <th class="px-4 py-3.5 text-center">Días Restantes</th>
+                    <th class="px-4 py-3.5 text-center">Ingresos Solicitados</th>
+                    <th class="px-4 py-3.5 text-center w-36">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  
+                  <!-- Skeleton / Loading -->
+                  <template x-if="cargando">
+                    <tr>
+                      <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)] mb-2"></i>
+                        <p class="text-sm font-medium">Cargando registros de antecedentes...</p>
+                      </td>
+                    </tr>
+                  </template>
+
+                  <!-- Filas de la tabla -->
+                  <template x-for="(item, index) in antecedentesPagina" :key="item.id_persona || index">
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                      
+                      <!-- Índice -->
+                      <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-400"
+                        x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                      <!-- Persona -->
+                      <td class="px-4 py-3.5">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs flex-shrink-0 border border-slate-200">
+                            <span x-text="obtenerIniciales(item)"></span>
+                          </div>
+                          <div>
+                            <p class="font-semibold text-[var(--text-primary)] text-sm"
+                              x-text="obtenerNombreCompleto(item)"></p>
+                            <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                              <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px]" x-text="item.persona_tipo_doc + ': ' + item.persona_identificacion"></span>
+                              <span>·</span>
+                              <span x-text="item.persona_cargo"></span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Última Revisión -->
+                      <td class="px-4 py-3.5">
+                        <div class="text-xs text-slate-700 font-medium flex items-center gap-1.5">
+                          <i class="fa-regular fa-clock text-slate-400"></i>
+                          <span x-text="formatearFecha(item.ultima_revision, true)"></span>
+                        </div>
+                      </td>
+
+                      <!-- Fecha Consulta (+1 Año) Formateada como fecha -->
+                      <td class="px-4 py-3.5">
+                        <div class="text-xs text-slate-700 font-medium flex items-center gap-1.5">
+                          <i class="fa-regular fa-calendar-check text-slate-400"></i>
+                          <span x-text="formatearFecha(item.fecha_consulta, false)"></span>
+                        </div>
+                      </td>
+
+                      <!-- Días Restantes -->
+                      <td class="px-4 py-3.5 text-center">
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border"
+                          :class="getEstadoVigencia(item.fecha_consulta).badgeClass">
+                          <i :class="getEstadoVigencia(item.fecha_consulta).icono" class="text-[11px]"></i>
+                          <span x-text="getEstadoVigencia(item.fecha_consulta).textoDias"></span>
+                        </div>
+                      </td>
+
+                      <!-- Conteo informativo de Ingresos / Solicitudes (Clickable) -->
+                      <td class="px-4 py-3.5 text-center">
+                        <button type="button" @click="abrirHistorialModal(item)"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all hover:scale-105"
+                          :class="item.total_solicitudes > 0 ? 'bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                          title="Clic para ver historial de solicitudes">
+                          <i class="fa-solid fa-layer-group text-[10px]"></i>
+                          <span x-text="item.total_solicitudes + ' ' + (item.total_solicitudes === 1 ? 'solicitud' : 'solicitudes')"></span>
+                        </button>
+                      </td>
+
+                      <!-- Acciones Estándar (action-icon-btn con tooltips) -->
+                      <td class="px-4 py-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <!-- Botón 1: Ver Historial (Solo lectura) -->
+                          <button type="button" @click="abrirHistorialModal(item)"
+                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            data-tooltip="Ver historial de solicitudes">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                          </button>
+
+                          <!-- Botón 2: Actualizar Vigencia y Formulario -->
+                          <button type="button" @click="abrirFormularioAntecedentes(item)"
+                            class="action-icon-btn text-[var(--signal-500)] hover:text-red-700 hover:bg-red-50 transition-colors"
+                            data-tooltip="Actualizar vigencia y notas">
+                            <i class="fa-solid fa-calendar-check"></i>
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  </template>
+
+                  <!-- Estado vacío -->
+                  <tr x-show="!cargando && antecedentesFiltrados.length === 0">
+                    <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                      <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                      <p class="text-sm font-medium">No se encontraron registros de antecedentes con los filtros aplicados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- ===== Paginación Estándar ===== -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm bg-slate-50/50">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()"
+                  class="input-field rounded-lg px-2.5 py-1 text-xs border border-[var(--border-subtle)]">
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                </select>
+                <span>registros por página · <strong x-text="rangoMostrado"></strong></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn p-2 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-white"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <span class="text-xs text-[var(--text-muted)]">
+                  Página <strong class="text-[var(--text-primary)]" x-text="currentPage"></strong> de <span x-text="totalPaginas"></span>
+                </span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn p-2 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-white"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- ============================================================
+         FOOTER
+      ============================================================= -->
+      <footer class="px-6 py-4 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
+        <span>© 2026 INCARSA · Sistema de Control de Antecedentes y Acceso</span>
+        <span>Módulo de Antecedentes y Seguimiento</span>
+      </footer>
+
+      <!-- ============================================================
+         MODAL 1: HISTORIAL DE SOLICITUDES Y OBSERVACIONES (SOLO CONSULTA)
+         (No altera la vigencia de antecedentes ni 'ultima_revision')
+      ============================================================= -->
+      <div x-show="showHistorialModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <div x-show="showHistorialModal"
+          @click.outside="cerrarHistorialModal()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          
+          <!-- Encabezado del Modal -->
+          <div class="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--ink-900)] text-white">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-display font-semibold text-lg text-white truncate"
+                  x-text="'Historial de Solicitudes: ' + obtenerNombreCompleto(detalleHistorial)"></h3>
+                <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                  <span class="font-mono bg-white/10 px-2 py-0.5 rounded text-white font-medium"
+                    x-text="detalleHistorial.persona_tipo_doc + ': ' + detalleHistorial.persona_identificacion"></span>
+                  <span>·</span>
+                  <span x-text="detalleHistorial.persona_cargo"></span>
+                </p>
+              </div>
+            </div>
+            
+            <button type="button" @click="cerrarHistorialModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors" title="Cerrar modal">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+          </div>
+
+          <!-- Cuerpo del modal -->
+          <div class="p-6 space-y-5 overflow-y-auto flex-1 bg-[var(--bg-app)]">
+            
+            <!-- Resumen Informativo: Responsable, Observaciones y Vigencia Actual -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              
+              <!-- 1. Responsable Registrado -->
+              <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                  <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Responsable de Solicitud </span>
+                  <p class="text-sm font-semibold text-slate-800 truncate mt-0.5" x-text="detalleHistorial.responsable || 'Sin responsable asignado'"></p>
+                  <span class="text-[11px] text-slate-400">Registrado en sistema</span>
+                </div>
+              </div>
+
+              <!-- 2. Última Empresa Solicitante -->
+              <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Última Empresa</span>
+                  <p class="text-sm font-semibold text-blue-700 truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                  <span class="text-[11px] text-slate-400">Solicitante reciente</span>
+                </div>
+              </div>
+
+              <!-- 3. Vigencia Actual (Sin alterar) -->
+              <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vigencia Actual</span>
+                  <p class="text-sm font-semibold text-emerald-700 truncate mt-0.5" x-text="formatearFecha(detalleHistorial.fecha_consulta, false)"></p>
+                  <span class="text-[11px] font-medium" :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass" x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Observaciones / Anotaciones Registradas -->
+            <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs space-y-1.5">
+              <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                <i class="fa-regular fa-note-sticky text-amber-500 text-sm"></i>
+                <span>Anotaciones y Observaciones Registradas</span>
+              </div>
+              <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-200"
+                x-text="detalleHistorial.anotaciones || 'No se han registrado observaciones de antecedentes para esta persona.'"></p>
+            </div>
+
+            <!-- Tabla de Historial de Solicitudes -->
+            <div class="bg-white p-5 rounded-2xl border border-[var(--border-subtle)] shadow-xs space-y-3.5">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+                <div>
+                  <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-blue-600"></i>
+                    <span>Historial de Solicitudes Registradas</span>
+                  </h4>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Listado cronológico de solicitudes en las que la persona ha sido incluida.
+                  </p>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200"
+                  x-text="(detalleHistorial.historial.length || 0) + ' solicitudes'"></span>
+              </div>
+
+              <!-- Filtros de Historial en Modal -->
+              <div class="flex flex-col md:flex-row items-center justify-between gap-2.5 pt-1">
+                <div class="relative flex-1 w-full">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                  <input type="text" x-model="searchHistorial" placeholder="Filtrar por radicado, empresa o contratista..."
+                    class="input-field w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] bg-slate-50 focus:bg-white transition-colors">
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
+                  <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                    <span class="text-[10px] font-semibold text-slate-400">Desde:</span>
+                    <input type="date" x-model="fechaDesdeHistorial"
+                      class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                  </div>
+                  <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                    <span class="text-[10px] font-semibold text-slate-400">Hasta:</span>
+                    <input type="date" x-model="fechaHastaHistorial"
+                      class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                  </div>
+                  <button type="button" x-show="searchHistorial || fechaDesdeHistorial || fechaHastaHistorial"
+                    @click="searchHistorial = ''; fechaDesdeHistorial = ''; fechaHastaHistorial = ''; historialPage = 1;"
+                    class="text-slate-400 hover:text-slate-700 text-xs p-1 rounded-md hover:bg-slate-100 transition-colors" title="Limpiar filtros de historial">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+
+                  <span class="text-[11px] text-slate-400 ml-1">Mostrar</span>
+                  <select x-model.number="historialPageSize" @change="historialPage = 1"
+                    class="input-field rounded-lg px-2 py-1 text-xs border border-[var(--border-subtle)] bg-white font-medium text-slate-700">
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs data-table">
+                  <thead>
+                    <tr class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                      <th class="px-3 py-2.5 w-10 text-center">#</th>
+                      <th class="px-3 py-2.5">Código / Radicado</th>
+                      <th class="px-3 py-2.5">Empresa Solicitante</th>
+                      <th class="px-3 py-2.5">Empresa Contratista</th>
+                      <th class="px-3 py-2.5">Periodo Solicitado</th>
+                      <th class="px-3 py-2.5">Fecha Registro</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--border-subtle)]">
+                    <template x-for="(h, hIndex) in historialPagina" :key="h.id || hIndex">
+                      <tr class="hover:bg-slate-50/70">
+                        <td class="px-3 py-2.5 text-center text-slate-400 font-mono" x-text="(historialPage - 1) * historialPageSize + hIndex + 1"></td>
+                        <td class="px-3 py-2.5">
+                          <template x-if="h.codigo_radicado">
+                            <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                              <span class="font-mono font-bold text-slate-800 text-[11px]" x-text="h.codigo_radicado"></span>
+                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
+                                class="text-slate-400 hover:text-blue-600 transition-colors p-0.5"
+                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
+                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
+                              </button>
+                            </div>
+                          </template>
+                          <template x-if="!h.codigo_radicado">
+                            <span class="text-slate-400 italic">Directo</span>
+                          </template>
+                        </td>
+                        <td class="px-3 py-2.5">
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold text-[11px]">
+                            <i class="fa-regular fa-building text-[10px]"></i>
+                            <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
+                          </span>
+                        </td>
+                        <td class="px-3 py-2.5 font-medium text-slate-700">
+                          <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-600">
+                          <div class="flex items-center gap-1.5">
+                            <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
+                            <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                            <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_fin)"></span>
+                          </div>
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-500 font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
+                      </tr>
+                    </template>
+
+                    <tr x-show="historialFiltrado.length === 0">
+                      <td colspan="6" class="px-3 py-8 text-center text-slate-400">
+                        <i class="fa-solid fa-inbox text-2xl mb-1 text-slate-300"></i>
+                        <p class="text-xs">No se encontraron solicitudes registradas con los filtros aplicados.</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Paginación de Historial en Modal -->
+              <div x-show="totalPaginasHistorial > 1 || detalleHistorial.historial.length > 5"
+                class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs text-slate-500">
+                <span>Mostrando <strong class="text-slate-800" x-text="rangoHistorialMostrado"></strong></span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" @click="goToHistorialPage(historialPage - 1)" :disabled="historialPage === 1"
+                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                    :class="historialPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                  </button>
+                  <span>Página <strong class="text-slate-800" x-text="historialPage"></strong> de <span x-text="totalPaginasHistorial"></span></span>
+                  <button type="button" @click="goToHistorialPage(historialPage + 1)" :disabled="historialPage === totalPaginasHistorial"
+                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                    :class="historialPage === totalPaginasHistorial ? 'opacity-40 cursor-not-allowed' : ''">
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Pie del modal -->
+          <div class="px-6 py-4 border-t border-[var(--border-subtle)] bg-white flex items-center justify-between">
+            <button type="button" @click="cerrarHistorialModal()"
+              class="px-4 py-2 rounded-xl border border-[var(--border-subtle)] text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+              Cerrar
+            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cerrarHistorialModal(); abrirFormularioAntecedentes(detalleHistorial);"
+                class="btn-signal px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                title="Abrir formulario para renovar vigencia y editar notas">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Actualizar Vigencia</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL: DETALLES, SEGUIMIENTO E HISTORIAL DE ANTECEDENTES
+         (Actualiza 'ultima_revision' a hoy y calcula 'fecha_consulta' a +1 año automáticamente)
+      ============================================================= -->
+      <div x-show="showFormModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <div x-show="showFormModal"
+          @click.outside="cerrarFormularioAntecedentes()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+          
+          <!-- Encabezado del Modal -->
+          <div class="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--ink-900)] text-white">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-xl bg-[var(--signal-500)] text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow">
+                <i class="fa-solid fa-id-card-clip"></i>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-display font-semibold text-lg text-white truncate"
+                  x-text="'Detalle de Antecedentes: ' + obtenerNombreCompleto(formAntecedente)"></h3>
+                <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                  <span class="font-mono bg-white/10 px-2 py-0.5 rounded text-white font-medium"
+                    x-text="formAntecedente.persona_tipo_doc + ': ' + formAntecedente.persona_identificacion"></span>
+                  <span>·</span>
+                  <span x-text="formAntecedente.persona_cargo"></span>
+                </p>
+              </div>
+            </div>
+            
+            <button type="button" @click="cerrarFormularioAntecedentes()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+          </div>
+
+          <!-- Cuerpo del modal -->
+          <div class="p-6 space-y-6 overflow-y-auto flex-1 bg-[var(--bg-app)]">
+            
+            <!-- Feedback Alertas -->
+            <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+              <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+              <span x-text="mensajeExito" class="font-medium"></span>
+            </div>
+            <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+              <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+              <span x-text="mensajeError" class="font-medium"></span>
+            </div>
+
+            <!-- TARJETA INFORMATIVA: ESTADO DE REVISIÓN Y ÚLTIMA EMPRESA (AUTO-ACTUALIZADOS) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              <!-- Última Empresa Solicitante (Informativa, auto-actualizada por solicitudes) -->
+              <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Última Empresa Solicitante</span>
+                  <p class="text-sm font-bold text-blue-700 truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                  <span class="text-[11px] text-slate-400">Actualizada automáticamente</span>
+                </div>
+              </div>
+
+              <!-- Última Revisión (Autoactualizada al abrir) -->
+              <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Última Revisión</span>
+                  <p class="text-sm font-bold text-slate-800 truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
+                  <span class="text-[11px] text-emerald-600 font-medium">Auto-actualizada hoy</span>
+                </div>
+              </div>
+
+              <!-- Próxima Consulta (+1 Año) -->
+              <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                  <i class="fa-solid fa-calendar-plus"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vigencia / Fecha Consulta</span>
+                  <p class="text-sm font-bold text-emerald-700 truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
+                  <span class="text-[11px] text-slate-500 font-medium" x-text="getEstadoVigencia(formAntecedente.fecha_consulta).etiqueta"></span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SECCIÓN 1: FORMULARIO MANUAL (Responsable y Anotaciones) -->
+            <div class="bg-white p-5 rounded-2xl border border-[var(--border-subtle)] shadow-sm space-y-4">
+              <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+                <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                  <i class="fa-solid fa-user-pen text-[var(--signal-500)]"></i>
+                  <span>Responsable y Anotaciones de Seguridad</span>
+                </h4>
+                <span class="text-xs text-slate-400">Ingreso manual</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                
+                <!-- Responsable (Manual) -->
+                <div class="sm:col-span-5">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">
+                    Responsable solicitud <span class="text-red-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" x-model="formAntecedente.responsable" placeholder="Ej: Dr. Andrea Pérez / SST..."
+                      class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--border-subtle)] bg-slate-50/50 focus:bg-white">
+                  </div>
+                </div>
+
+                <!-- Anotaciones (Detalle del seguimiento) -->
+                <div class="sm:col-span-7">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">
+                    Anotaciones / Hallazgos del Antecedente
+                  </label>
+                  <textarea x-model="formAntecedente.anotaciones" rows="2" placeholder="Observaciones de antecedentes, certificados judiciales, notas especiales..."
+                    class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--border-subtle)] bg-slate-50/50 focus:bg-white"></textarea>
+                </div>
+
+              </div>
+
+              <div class="flex justify-end pt-1">
+                <button type="button" @click="guardarAntecedente()" :disabled="guardando"
+                  class="btn-signal px-5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm">
+                  <i class="fa-solid" :class="guardando ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
+                  <span x-text="guardando ? 'Guardando...' : 'Guardar Responsable y Anotaciones'"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 2: HISTORIAL DE SOLICITUDES (1 A MUCHOS) -->
+            <div class="bg-white p-5 rounded-2xl border border-[var(--border-subtle)] shadow-sm space-y-4">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+                <div>
+                  <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-purple-600"></i>
+                    <span>Historial de Solicitudes y Fechas en las que ha sido Solicitado</span>
+                  </h4>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Registro de todas las solicitudes, contratistas y periodos en los que la persona ha ingresado o sido solicitada.
+                  </p>
+                </div>
+                
+                <span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200"
+                  x-text="(formAntecedente.historial.length || 0) + ' solicitudes registradas'"></span>
+              </div>
+
+              <!-- Filtros de Historial en Modal Formulario -->
+              <div class="flex flex-col md:flex-row items-center justify-between gap-2.5 pt-1">
+                <div class="relative flex-1 w-full">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                  <input type="text" x-model="searchFormHistorial" placeholder="Filtrar por radicado, empresa o contratista..."
+                    class="input-field w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] bg-slate-50 focus:bg-white transition-colors">
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
+                  <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                    <span class="text-[10px] font-semibold text-slate-400">Desde:</span>
+                    <input type="date" x-model="searchFormFechaDesde"
+                      class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                  </div>
+                  <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                    <span class="text-[10px] font-semibold text-slate-400">Hasta:</span>
+                    <input type="date" x-model="searchFormFechaHasta"
+                      class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                  </div>
+                  <button type="button" x-show="searchFormHistorial || searchFormFechaDesde || searchFormFechaHasta"
+                    @click="searchFormHistorial = ''; searchFormFechaDesde = ''; searchFormFechaHasta = ''; formHistorialPage = 1;"
+                    class="text-slate-400 hover:text-slate-700 text-xs p-1 rounded-md hover:bg-slate-100 transition-colors" title="Limpiar filtros">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+
+                  <span class="text-[11px] text-slate-400 ml-1">Mostrar</span>
+                  <select x-model.number="formHistorialPageSize" @change="formHistorialPage = 1"
+                    class="input-field rounded-lg px-2 py-1 text-xs border border-[var(--border-subtle)] bg-white font-medium text-slate-700">
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Tabla de Historial Detallado -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs data-table">
+                  <thead>
+                    <tr class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                      <th class="px-3 py-2.5 w-10 text-center">#</th>
+                      <th class="px-3 py-2.5">Código / Radicado</th>
+                      <th class="px-3 py-2.5">Empresa Solicitante</th>
+                      <th class="px-3 py-2.5">Empresa Contratista</th>
+                      <th class="px-3 py-2.5">Periodo de Solicitud</th>
+                      <th class="px-3 py-2.5">Fecha Registro</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--border-subtle)]">
+                    <template x-for="(h, hIndex) in formHistorialPagina" :key="h.id || hIndex">
+                      <tr class="hover:bg-slate-50/70">
+                        
+                        <!-- Índice -->
+                        <td class="px-3 py-2.5 text-center text-slate-400 font-mono" x-text="(formHistorialPage - 1) * formHistorialPageSize + hIndex + 1"></td>
+                        
+                        <!-- Código / Radicado con botón de copiar -->
+                        <td class="px-3 py-2.5">
+                          <template x-if="h.codigo_radicado">
+                            <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                              <span class="font-mono font-bold text-slate-800 text-[11px]" x-text="h.codigo_radicado"></span>
+                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
+                                class="text-slate-400 hover:text-blue-600 transition-colors p-0.5"
+                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
+                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
+                              </button>
+                            </div>
+                          </template>
+                          <template x-if="!h.codigo_radicado">
+                            <span class="text-slate-400 italic">Directo</span>
+                          </template>
+                        </td>
+
+                        <!-- Empresa Solicitante -->
+                        <td class="px-3 py-2.5">
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold text-[11px]">
+                            <i class="fa-regular fa-building text-[10px]"></i>
+                            <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
+                          </span>
+                        </td>
+
+                        <!-- Empresa Contratista -->
+                        <td class="px-3 py-2.5 font-medium text-slate-700">
+                          <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
+                        </td>
+
+                        <!-- Fechas Inicio y Fin -->
+                        <td class="px-3 py-2.5 text-slate-600">
+                          <div class="flex items-center gap-1.5">
+                            <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
+                            <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                            <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_fin)"></span>
+                          </div>
+                        </td>
+
+                        <!-- Fecha de Registro del Historial -->
+                        <td class="px-3 py-2.5 text-slate-500 font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
+
+                      </tr>
+                    </template>
+
+                    <tr x-show="formHistorialFiltrado.length === 0">
+                      <td colspan="6" class="px-3 py-8 text-center text-slate-400">
+                        <i class="fa-solid fa-inbox text-2xl mb-1 text-slate-300"></i>
+                        <p class="text-xs">No se encontraron solicitudes registradas con los filtros aplicados.</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Paginación de Historial en Modal Formulario -->
+              <div x-show="totalPaginasFormHistorial > 1 || formAntecedente.historial.length > 5"
+                class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs text-slate-500">
+                <span>Mostrando <strong class="text-slate-800" x-text="rangoFormHistorialMostrado"></strong></span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" @click="goToFormHistorialPage(formHistorialPage - 1)" :disabled="formHistorialPage === 1"
+                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                    :class="formHistorialPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                  </button>
+                  <span>Página <strong class="text-slate-800" x-text="formHistorialPage"></strong> de <span x-text="totalPaginasFormHistorial"></span></span>
+                  <button type="button" @click="goToFormHistorialPage(formHistorialPage + 1)" :disabled="formHistorialPage === totalPaginasFormHistorial"
+                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                    :class="formHistorialPage === totalPaginasFormHistorial ? 'opacity-40 cursor-not-allowed' : ''">
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Pie del modal -->
+          <div class="px-6 py-4 border-t border-[var(--border-subtle)] bg-white flex items-center justify-between">
+            <button type="button" @click="cerrarFormularioAntecedentes()"
+              class="px-4 py-2 rounded-xl border border-[var(--border-subtle)] text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+              Cerrar
+            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" @click="cerrarFormularioAntecedentes()"
+                class="btn-signal px-5 py-2 rounded-xl text-sm font-semibold shadow-sm">
+                <span>Listo</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal Component: Plantas -->
+  <div x-data="plantasManager()" x-cloak>
+    <!-- Componente de gestión de plantas -->
+  </div>
+
+</body>
+</html>

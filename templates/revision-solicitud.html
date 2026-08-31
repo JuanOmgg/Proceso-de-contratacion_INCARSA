@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión de Expediente · INCARSA</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Estilos custom -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="assets/css/dark-mode.css">
+  <!-- Scripts de configuración y lógica -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/mockData.js"></script>
+  <script src="assets/js/revision-solicitud.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased bg-[var(--surface-canvas)] text-[var(--text-primary)]">
+
+  <div class="app-shell" x-data="revisionSolicitudApp()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- ============================================================
+       SIDEBAR
+    ============================================================= -->
+    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+          </div>
+          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
+        </div>
+        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="solicitudes-listado.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-file-lines w-4 text-center"></i>
+          <span>Solicitudes</span>
+        </a>
+        <a href="procesamiento.html" class="sidebar-link is-active flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-arrows-spin w-4 text-center"></i>
+          <span>Procesamiento</span>
+        </a>
+        <a href="usuarios-listado.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
+          <i class="fa-solid fa-users w-4 text-center"></i>
+          <span>Usuarios</span>
+        </a>
+      </nav>
+
+      <div class="p-3 border-t border-white/10">
+        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-white">
+          <i class="fa-solid fa-arrow-left w-4 text-center"></i>
+          <span>Volver a listado</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+       CONTENIDO PRINCIPAL
+    ============================================================= -->
+    <div class="app-main flex flex-col min-h-screen">
+
+      <!-- Header Superior -->
+      <header class="app-header flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-white sticky top-0 z-30 shadow-xs">
+        <div class="flex items-center gap-3">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn text-[var(--ink-900)] border-slate-200 hover:bg-slate-100" aria-label="Abrir menú de navegación">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <a href="procesamiento.html" class="action-icon-btn text-slate-500 hover:text-[var(--ink-900)] hidden sm:inline-flex" title="Volver a Procesamiento">
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </a>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-display font-semibold text-base text-[var(--ink-900)]">Expediente de Revisión</h1>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-slate-100 text-slate-800 border border-slate-200"
+                x-show="solicitud" x-text="solicitud ? solicitud.codigo : ''"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rol actual y selector de simulación para pruebas -->
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <span class="text-slate-500 font-medium">Auditoría activa:</span>
+            <span class="font-bold text-[var(--signal-600)]" x-text="rolActual"></span>
+          </div>
+
+          <!-- Selector rápido de rol para testeo del flujo -->
+          <div class="relative" x-data="{ openRoles: false }">
+            <button type="button" @click="openRoles = !openRoles" class="action-icon-btn text-xs px-2.5 py-1.5 h-auto flex items-center gap-1.5 border border-slate-200" title="Cambiar rol para probar flujo">
+              <i class="fa-solid fa-user-shield text-slate-500"></i>
+              <span class="font-medium hidden md:inline" x-text="'Probar como ' + rolActual"></span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+            </button>
+            <div x-show="openRoles" @click.outside="openRoles = false" x-cloak
+              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 text-xs">
+              <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Simular Rol</div>
+              <button type="button" @click="cambiarRolSimulado('SST'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'SST' ? 'font-bold text-amber-600' : ''">
+                <span>SST (Seguridad/Salud)</span>
+                <i class="fa-solid fa-check text-xs" x-show="rolActual === 'SST'"></i>
+              </button>
+              <button type="button" @click="cambiarRolSimulado('GESCO'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'GESCO' ? 'font-bold text-purple-600' : ''">
+                <span>GESCO (Conocimiento)</span>
+                <i class="fa-solid fa-check text-xs" x-show="rolActual === 'GESCO'"></i>
+              </button>
+              <button type="button" @click="cambiarRolSimulado('SCR'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'SCR' ? 'font-bold text-emerald-600' : ''">
+                <span>SCR (Riesgo/Aprobación)</span>
+                <i class="fa-solid fa-check text-xs" x-show="rolActual === 'SCR'"></i>
+              </button>
+              <button type="button" @click="cambiarRolSimulado('Administrador'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'Administrador' ? 'font-bold text-blue-600' : ''">
+                <span>Administrador</span>
+                <i class="fa-solid fa-check text-xs" x-show="rolActual === 'Administrador'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Estado Global de la solicitud con efecto shimmer -->
+          <div class="relative overflow-hidden rounded-full font-semibold shadow-xs select-none" x-show="solicitud">
+            <span class="status-pill relative overflow-hidden" :class="estadoEstilos(solicitud ? solicitud.estado : '')">
+              <span class="shimmer-ray"></span>
+              <span class="relative z-10" x-text="solicitud ? solicitud.estado : ''"></span>
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Body -->
+      <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- Cargando / Errores -->
+        <template x-if="cargando">
+          <div class="py-20 text-center space-y-3">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-[var(--signal-500)]"></i>
+            <p class="text-sm font-medium text-slate-500">Cargando expediente de la solicitud...</p>
+          </div>
+        </template>
+
+        <template x-if="error && !cargando">
+          <div class="p-6 rounded-2xl bg-red-50 border border-red-200 text-center space-y-3">
+            <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
+            <h3 class="font-display font-semibold text-base text-red-900" x-text="error"></h3>
+            <a href="procesamiento.html" class="btn-secondary inline-flex items-center gap-2 text-xs px-4 py-2">
+              <i class="fa-solid fa-arrow-left"></i> Volver a procesamiento
+            </a>
+          </div>
+        </template>
+
+        <template x-if="solicitud && !cargando">
+          <div class="space-y-6">
+
+            <!-- ============================================================
+               STEPPER DE TRAZABILIDAD Y FLUJO DE REVISIÓN
+            ============================================================= -->
+            <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs">
+              <div class="flex items-center justify-between flex-wrap gap-3 pb-3 mb-4 border-b border-[var(--border-subtle)]">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Ruta de Aprobación por Roles</span>
+                <span class="text-xs text-slate-500">
+                  Estado actual: <strong class="text-[var(--ink-900)]" x-text="solicitud.estado"></strong>
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <!-- Paso 1: Enviado -->
+                <div class="p-3.5 rounded-xl border transition-all"
+                  :class="(solicitud.estado === 'ENVIADO' || solicitud.estado === 'EN REVISIÓN' || solicitud.estado === 'POR APROBAR' || solicitud.estado === 'APROBADO') ? 'bg-cyan-50/70 border-cyan-200' : 'bg-slate-50 border-slate-200'">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-cyan-900">1. Radicación</span>
+                    <i class="fa-solid fa-check-circle text-cyan-600 text-sm"></i>
+                  </div>
+                  <p class="text-[11px] text-slate-500" x-text="'Diligenciada por ' + solicitud.diligenciador"></p>
+                </div>
+
+                <!-- Paso 2: SST & GESCO Multi-Planta -->
+                <div class="p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'RECHAZADO' ? 'bg-red-50 border-red-200' : (totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'bg-emerald-50/80 border-emerald-200' : 'bg-purple-50/70 border-purple-200')">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold" :class="solicitud.estado === 'RECHAZADO' ? 'text-red-900' : (totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'text-emerald-900' : 'text-purple-900')">
+                      2. Revisión SST / GESCO
+                    </span>
+                    <i class="fa-solid fa-xmark-circle text-red-600 text-sm" x-show="solicitud.estado === 'RECHAZADO'"></i>
+                    <i class="fa-solid fa-check-circle text-emerald-600 text-sm" x-show="totalPlantas > 0 && totalPlantasCompletadas === totalPlantas && solicitud.estado !== 'RECHAZADO'"></i>
+                    <i class="fa-solid fa-spinner fa-spin text-purple-600 text-xs" x-show="(totalPlantas === 0 || totalPlantasCompletadas < totalPlantas) && solicitud.estado !== 'RECHAZADO'"></i>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-slate-500">
+                    <span class="font-medium" x-text="totalPlantas > 0 ? (totalPlantasCompletadas + ' de ' + totalPlantas + ' plantas avaladas') : 'Revisión por planta'"></span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700" x-show="totalPlantas > 1" x-text="totalPlantas + ' plantas'"></span>
+                  </div>
+                </div>
+
+                <!-- Paso 3: SCR -->
+                <div class="p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'APROBADO' ? 'bg-emerald-50/80 border-emerald-200' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200/50' : 'bg-slate-50 border-slate-200')">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold" :class="solicitud.estado === 'APROBADO' ? 'text-emerald-900' : (solicitud.estado === 'POR APROBAR' ? 'text-amber-900' : 'text-slate-600')">3. Aprobación SCR</span>
+                    <i class="fa-solid fa-check-circle text-emerald-600 text-sm" x-show="solicitud.estado === 'APROBADO'"></i>
+                    <i class="fa-solid fa-clock text-amber-600 text-xs" x-show="solicitud.estado === 'POR APROBAR'"></i>
+                    <i class="fa-solid fa-lock text-slate-400 text-xs" x-show="solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
+                  </div>
+                  <p class="text-[11px] text-slate-500" x-text="solicitud.estado === 'POR APROBAR' ? 'Listo para dictamen SCR' : (solicitud.estado === 'APROBADO' ? 'Autorizado por SCR' : 'Bloqueado hasta aval SST+GESCO')"></p>
+                </div>
+
+                <!-- Paso 4: Finalizado -->
+                <div class="p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'APROBADO' ? 'bg-green-50 border-green-200' : (solicitud.estado === 'RECHAZADO' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200')">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold" :class="solicitud.estado === 'APROBADO' ? 'text-green-900' : (solicitud.estado === 'RECHAZADO' ? 'text-red-900' : 'text-slate-500')">4. Dictamen Final</span>
+                    <i class="fa-solid fa-circle-check text-green-600 text-sm" x-show="solicitud.estado === 'APROBADO'"></i>
+                    <i class="fa-solid fa-circle-xmark text-red-600 text-sm" x-show="solicitud.estado === 'RECHAZADO'"></i>
+                  </div>
+                  <p class="text-[11px] font-medium" :class="solicitud.estado === 'APROBADO' ? 'text-green-700' : (solicitud.estado === 'RECHAZADO' ? 'text-red-700' : 'text-slate-400')"
+                    x-text="solicitud.estado === 'APROBADO' ? 'Acceso Autorizado' : (solicitud.estado === 'RECHAZADO' ? 'Solicitud Rechazada' : 'En proceso')"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============================================================
+               BANNER DE ALERTA SI ESTÁ RECHAZADA O BLOQUEADA
+            ============================================================= -->
+            <div x-show="solicitud.estado === 'RECHAZADO'" class="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3.5" x-cloak>
+              <div class="w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 text-sm">
+                <i class="fa-solid fa-ban"></i>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-xs font-bold text-red-900">Solicitud Rechazada</h4>
+                <p class="text-xs text-red-700" x-text="solicitud.observaciones || 'Esta solicitud ha sido rechazada durante el proceso de auditoría y se encuentra bloqueada para revisiones adicionales.'"></p>
+              </div>
+            </div>
+
+            <!-- ============================================================
+               BANNER DE ACCESO RESTRINGIDO POR PLANTA (SST / GESCO)
+            ============================================================= -->
+            <div x-show="(rolActual === 'SST' || rolActual === 'GESCO') && !tienePlantaAsignadaParaSolicitud" 
+              class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5" x-cloak>
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 text-sm">
+                <i class="fa-solid fa-triangle-exclamation text-base"></i>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-xs font-bold text-amber-900 dark:text-amber-200">Revisión Restringida por Planta / Zona</h4>
+                <p class="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Esta solicitud pertenece a una planta que no coincide con las asignadas a tu perfil de <strong x-text="rolActual"></strong>.
+                  Solo puedes emitir dictamen sobre solicitudes vinculadas a tus plantas autorizadas.
+                </p>
+              </div>
+            </div>
+
+            <!-- ============================================================
+               LAYOUT DIVIDIDO: EXPEDIENTE (IZQUIERDA) + DICTAMEN (DERECHA)
+            ============================================================= -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+              <!-- ========================================================
+                 COLUMNA IZQUIERDA: EXPEDIENTE COMPLETO (7 Cols)
+              ========================================================= -->
+              <div class="lg:col-span-8 space-y-6">
+
+                <!-- 1. Ficha de Datos Generales -->
+                <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+                    <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                      <i class="fa-solid fa-file-invoice text-[var(--signal-500)]"></i> Datos de la Solicitud
+                    </h3>
+                    <span class="text-xs text-slate-400" x-text="'Radicado: ' + solicitud.codigo"></span>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Empresa Origen</span>
+                      <strong class="text-[var(--ink-900)] text-xs" x-text="solicitud.empresa_origen"></strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Empresa Contratista</span>
+                      <strong class="text-[var(--ink-900)] text-xs" x-text="solicitud.empresa_contratista"></strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Diligenciador</span>
+                      <span class="text-slate-700 font-medium" x-text="solicitud.diligenciador"></span>
+                    </div>
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Vigencia de Ingreso</span>
+                      <span class="font-medium text-slate-800" x-text="solicitud.fecha_ingreso + ' → ' + solicitud.fecha_salida"></span>
+                    </div>
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Nivel de Riesgo</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+                        :class="solicitud.nivel_de_riesgo === 'Alto' ? 'bg-red-100 text-red-700' : (solicitud.nivel_de_riesgo === 'Medio' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')"
+                        x-text="solicitud.nivel_de_riesgo"></span>
+                    </div>
+                    <div>
+                      <span class="text-slate-400 block text-[11px]">Plantas Autorizadas</span>
+                      <span class="font-semibold text-[var(--signal-600)]" x-text="solicitud.planta || solicitud.plantas || '—'"></span>
+                    </div>
+                    <div class="col-span-2 sm:col-span-3 pt-2 border-t border-slate-100">
+                      <span class="text-slate-400 block text-[11px] mb-0.5">Actividad a Desarrollar</span>
+                      <p class="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs leading-relaxed" x-text="solicitud.actividad"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Personal e Ingresantes + Control Individual de Autorización -->
+                <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                        <i class="fa-solid fa-users text-blue-500"></i> Personal e Ingresantes
+                      </h3>
+                      <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold" x-text="totalPersonas + ' personas'"></span>
+                      
+                      <!-- Píldoras de Conteo de Autorización -->
+                      <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check text-[9px]"></i>
+                        <span x-text="totalPersonasAutorizadas + ' autorizados'"></span>
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold flex items-center gap-1" x-show="totalPersonasDenegadas > 0">
+                        <i class="fa-solid fa-circle-xmark text-[9px]"></i>
+                        <span x-text="totalPersonasDenegadas + ' denegados'"></span>
+                      </span>
+                    </div>
+
+                    <!-- Botones de Acción Masiva Rápida -->
+                    <div class="flex items-center gap-1.5" x-show="solicitud.personas && solicitud.personas.length > 1">
+                      <button type="button" @click="autorizarTodasPersonas()"
+                        class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all flex items-center gap-1"
+                        title="Autorizar a todas las personas de la lista">
+                        <i class="fa-solid fa-check-double text-[11px]"></i> Autorizar todos
+                      </button>
+                      <button type="button" @click="denegarTodasPersonas()"
+                        class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all flex items-center gap-1"
+                        title="Denegar acceso a todas las personas">
+                        <i class="fa-solid fa-ban text-[11px]"></i> Denegar todos
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3.5">
+                    <template x-for="(persona, pIdx) in solicitud.personas" :key="persona.id || persona.identificacion || pIdx">
+                      <div class="p-4 rounded-xl border transition-all space-y-3"
+                        :class="persona.autorizado ? 'bg-white border-slate-200 hover:border-emerald-300' : 'bg-red-50/40 border-red-200'">
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <!-- Datos de la Persona -->
+                          <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-colors"
+                              :class="persona.autorizado ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'">
+                              <span x-text="pIdx + 1"></span>
+                            </div>
+                            <div>
+                              <div class="flex items-center gap-2 flex-wrap">
+                                <h4 class="font-display font-semibold text-xs text-[var(--ink-900)]" x-text="persona.nombre"></h4>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                                  :class="persona.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-800 border-red-300'">
+                                  <i class="fa-solid mr-0.5" :class="persona.autorizado ? 'fa-check' : 'fa-xmark'"></i>
+                                  <span x-text="persona.autorizado ? 'Autorizado' : 'Acceso Denegado'"></span>
+                                </span>
+
+                                <!-- Botón / Chip de Antecedentes y Vigencia -->
+                                <button type="button" @click="abrirHistorialModal(persona)"
+                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300 transition-all shadow-2xs cursor-pointer"
+                                  title="Consultar historial de solicitudes y vigencia de antecedentes">
+                                  <i class="fa-solid fa-clock-rotate-left text-blue-600 text-[11px]"></i>
+                                  <span>Antecedentes</span>
+                                  <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold border"
+                                    :class="persona.estadoVigencia?.badgeClass || 'bg-slate-100 text-slate-600 border-slate-200'"
+                                    x-text="persona.estadoVigencia?.etiqueta || 'Consultar'"></span>
+                                </button>
+                              </div>
+                              <p class="text-[11px] text-slate-500 mt-0.5" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
+                            </div>
+                          </div>
+
+                          <!-- Controles de Autorización Individual -->
+                          <div class="flex items-center gap-1.5 self-end sm:self-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <!-- Botón: Autorizar -->
+                            <button type="button" @click="setAutorizacionPersona(persona, true)"
+                              class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="persona.autorizado ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'">
+                              <i class="fa-solid fa-circle-check text-[11px]"></i>
+                              <span>Autorizar</span>
+                            </button>
+
+                            <!-- Botón: No Autorizar / Denegar -->
+                            <button type="button" @click="setAutorizacionPersona(persona, false)"
+                              class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="!persona.autorizado ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-red-700 hover:bg-red-50'">
+                              <i class="fa-solid fa-circle-xmark text-[11px]"></i>
+                              <span>No Autorizar</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Campo para motivo de no autorización (Visible si está denegado) -->
+                        <div x-show="!persona.autorizado" x-transition class="pt-2 border-t border-red-200/70">
+                          <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
+                            <input type="text" x-model="persona.motivo_rechazo" @input.debounce.500ms="persistirPersonasEnStorage()"
+                              placeholder="Escriba el motivo de la no autorización..."
+                              class="input-field w-full px-3 py-1.5 text-xs rounded-lg border border-red-300 bg-white text-red-900 placeholder:text-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500">
+                          </div>
+                        </div>
+
+                        <!-- Botones de Documentos Adjuntos de la persona -->
+                        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Expediente:</span>
+
+                          <template x-for="(doc, dIdx) in (persona.documentos || [])" :key="doc.id || doc.nombre_archivo || dIdx">
+                            <button type="button" @click="abrirDocumento(doc, persona.nombre)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition-all">
+                              <i class="fa-regular fa-file-pdf text-red-500 text-[11px]"></i>
+                              <span class="capitalize" x-text="(doc.tipo_doc || 'documento').replace('_', ' ')"></span>
+                              <i class="fa-solid fa-eye text-[10px] text-slate-400"></i>
+                            </button>
+                          </template>
+
+                          <!-- Enlace directo al Historial de Antecedentes en Expediente -->
+                          <button type="button" @click="abrirHistorialModal(persona)"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 hover:border-indigo-300 transition-all"
+                            title="Ver historial de antecedentes y actualizar vigencia">
+                            <i class="fa-solid fa-clock-rotate-left text-indigo-600 text-[11px]"></i>
+                            <span>Historial Antecedentes</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-indigo-400"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+
+                    <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.personas.length === 0">
+                      No se registraron ingresantes en esta solicitud.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 3. Vehículos y Maquinaria -->
+                <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                        <i class="fa-solid fa-truck-front text-amber-500"></i> Vehículos y Maquinaria
+                      </h3>
+                      <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold" x-text="solicitud.vehiculos.length"></span>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <template x-for="(veh, vIdx) in solicitud.vehiculos" :key="veh.id || vIdx">
+                      <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2.5">
+                            <span class="px-2.5 py-1 rounded font-mono font-bold text-xs bg-slate-100 border border-slate-300 text-slate-800" x-text="veh.placa"></span>
+                            <span class="text-xs font-medium text-slate-700" x-text="veh.tipo"></span>
+                          </div>
+                        </div>
+
+                        <!-- Documentos de vehículo -->
+                        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                          <!-- Licencia de conducción si existe archivo adjunto -->
+                          <template x-if="veh.licencia && veh.licencia !== '—' && veh.licencia !== ''">
+                            <button type="button" @click="abrirDocumento({ nombre_archivo: veh.licencia, tipo_doc: 'Licencia' }, veh.placa)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 transition-all"
+                              title="Ver Licencia de Conducción">
+                              <i class="fa-solid fa-id-card text-blue-600 text-[11px]"></i>
+                              <span>Licencia</span>
+                              <i class="fa-solid fa-eye text-[10px] text-blue-400"></i>
+                            </button>
+                          </template>
+
+                          <template x-for="(vdoc, dIdx) in (veh.documentos || [])" :key="vdoc.id || vdoc.nombre_archivo || vdoc.nom_documento || dIdx">
+                            <button type="button" @click="abrirDocumento(vdoc, veh.placa)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 hover:border-amber-300 transition-all">
+                              <i class="fa-regular fa-file-lines text-amber-600 text-[11px]"></i>
+                              <span class="capitalize" x-text="(vdoc.tipo_doc || 'documento').replace('_', ' ')"></span>
+                              <i class="fa-solid fa-eye text-[10px] text-slate-400"></i>
+                            </button>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+
+                    <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.vehiculos.length === 0">
+                      No se registraron vehículos para esta solicitud.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 4. Equipos de Cómputo / Herramientas -->
+                <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                        <i class="fa-solid fa-laptop text-emerald-500"></i> Equipos de Cómputo
+                      </h3>
+                      <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold" x-text="solicitud.computos.length"></span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" x-show="solicitud.computos.length > 0">
+                    <template x-for="(eq, eIdx) in solicitud.computos" :key="eq.id || eIdx">
+                      <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-start gap-2.5">
+                        <i class="fa-solid fa-laptop text-slate-400 text-sm mt-0.5"></i>
+                        <div class="text-xs">
+                          <strong class="text-slate-800 block" x-text="(eq.marca || 'Marca') + ' · ' + (eq.modelo || 'Modelo')"></strong>
+                          <span class="text-slate-500 font-mono text-[11px]" x-text="'Serie: ' + (eq.serie || 'S/N')"></span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+
+                  <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.computos.length === 0">
+                    No se declararon equipos de cómputo para el ingreso.
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- ========================================================
+                 COLUMNA DERECHA: PANEL DE DICTAMEN POR ROLES (5 Cols)
+              ========================================================= -->
+              <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+
+                <!-- Tarjeta: Estado de Evaluaciones Multi-Planta -->
+                <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+                    <div>
+                      <h3 class="font-display font-semibold text-xs uppercase tracking-wider text-slate-500">
+                        Dictámenes por Planta
+                      </h3>
+                      <p class="text-[10px] text-slate-400 mt-0.5">Aval independiente SST y GESCO</p>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      :class="totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                      x-text="totalPlantasCompletadas + '/' + totalPlantas + ' listas'"></span>
+                  </div>
+
+                  <!-- Desglose por cada planta -->
+                  <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    <template x-for="plantaItem in matrizRevisionesPorPlanta" :key="plantaItem.id">
+                      <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+                        <!-- Cabecera de la planta -->
+                        <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                          <div class="flex items-center gap-1.5 truncate">
+                            <i class="fa-solid fa-industry text-amber-600 text-xs"></i>
+                            <h4 class="font-bold text-xs text-slate-900 truncate" x-text="plantaItem.nombre"></h4>
+                          </div>
+                          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0"
+                            :class="plantaItem.completa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'"
+                            x-text="plantaItem.completa ? 'Avalada' : 'Pendiente'"></span>
+                        </div>
+
+                        <!-- Sub-item SST para esta planta -->
+                        <div class="p-2 rounded-lg border text-xs"
+                          :class="plantaItem.sst.aprobado ? 'bg-emerald-50/80 border-emerald-200' : (plantaItem.sst.rechazado ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-200')">
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                              <span class="px-1 py-0.5 rounded text-[9px] font-bold"
+                                :class="plantaItem.sst.aprobado ? 'bg-emerald-200 text-emerald-900' : 'bg-slate-200 text-slate-700'">SST</span>
+                              <span class="font-semibold text-slate-800 text-[11px]">Seguridad y Salud</span>
+                            </div>
+                            <span class="font-bold text-[10px]"
+                              :class="plantaItem.sst.aprobado ? 'text-emerald-700' : (plantaItem.sst.rechazado ? 'text-red-700' : 'text-slate-400')"
+                              x-text="plantaItem.sst.aprobado ? 'Aprobado' : (plantaItem.sst.rechazado ? 'Rechazado' : 'Pendiente')"></span>
+                          </div>
+                          <p class="text-[10px] text-slate-500 mt-1" x-show="plantaItem.sst.revisor" x-text="plantaItem.sst.revisor + ' · ' + plantaItem.sst.fecha"></p>
+                          <p class="text-[10px] text-slate-600 mt-1 italic" x-show="plantaItem.sst.observacion" x-text="plantaItem.sst.observacion"></p>
+                          <p class="text-[10px] text-red-700 font-medium mt-1" x-show="plantaItem.sst.motivoRechazo" x-text="'Motivo: ' + plantaItem.sst.motivoRechazo"></p>
+                        </div>
+
+                        <!-- Sub-item GESCO para esta planta -->
+                        <div class="p-2 rounded-lg border text-xs"
+                          :class="plantaItem.gesco.aprobado ? 'bg-emerald-50/80 border-emerald-200' : (plantaItem.gesco.rechazado ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-200')">
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                              <span class="px-1 py-0.5 rounded text-[9px] font-bold"
+                                :class="plantaItem.gesco.aprobado ? 'bg-purple-200 text-purple-900' : 'bg-slate-200 text-slate-700'">GSC</span>
+                              <span class="font-semibold text-slate-800 text-[11px]">Gestión Conocimiento</span>
+                            </div>
+                            <span class="font-bold text-[10px]"
+                              :class="plantaItem.gesco.aprobado ? 'text-emerald-700' : (plantaItem.gesco.rechazado ? 'text-red-700' : 'text-slate-400')"
+                              x-text="plantaItem.gesco.aprobado ? 'Aprobado' : (plantaItem.gesco.rechazado ? 'Rechazado' : 'Pendiente')"></span>
+                          </div>
+                          <p class="text-[10px] text-slate-500 mt-1" x-show="plantaItem.gesco.revisor" x-text="plantaItem.gesco.revisor + ' · ' + plantaItem.gesco.fecha"></p>
+                          <p class="text-[10px] text-slate-600 mt-1 italic" x-show="plantaItem.gesco.observacion" x-text="plantaItem.gesco.observacion"></p>
+                          <p class="text-[10px] text-red-700 font-medium mt-1" x-show="plantaItem.gesco.motivoRechazo" x-text="'Motivo: ' + plantaItem.gesco.motivoRechazo"></p>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Dictamen Final SCR -->
+                  <div class="p-3 rounded-xl border transition-all"
+                    :class="dictamenSCR.aprobado ? 'bg-emerald-50/70 border-emerald-200' : (dictamenSCR.rechazado ? 'bg-red-50/70 border-red-200' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-200/50' : 'bg-slate-50 border-slate-200'))">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
+                          :class="dictamenSCR.aprobado ? 'bg-emerald-200 text-emerald-800' : (dictamenSCR.rechazado ? 'bg-red-200 text-red-800' : 'bg-slate-200 text-slate-600')">
+                          SCR
+                        </div>
+                        <div>
+                          <h4 class="font-bold text-xs text-slate-900">Seguridad Corporativa (SCR)</h4>
+                          <p class="text-[10px] text-slate-500" x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
+                        </div>
+                      </div>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                        :class="dictamenSCR.aprobado ? 'bg-emerald-100 text-emerald-800' : (dictamenSCR.rechazado ? 'bg-red-100 text-red-800' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-600'))"
+                        x-text="dictamenSCR.aprobado ? 'Aprobado' : (dictamenSCR.rechazado ? 'Rechazado' : (solicitud.estado === 'POR APROBAR' ? 'Por Aprobar' : 'Bloqueado'))"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Formulario de Emisión de Dictamen -->
+                <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-md space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+                    <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                      <i class="fa-solid fa-stamp text-[var(--signal-500)]"></i> Emitir Dictamen
+                    </h3>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700" x-text="'Rol: ' + rolActual"></span>
+                  </div>
+
+                  <template x-if="puedeDictaminar">
+                    <form @submit.prevent="emitirDictamen()" class="space-y-4">
+
+                      <!-- Selector de Planta para SST / GESCO -->
+                      <div class="space-y-1.5" x-show="(rolActual === 'SST' || rolActual === 'GESCO') && misPlantasDictaminables.length > 1">
+                        <label class="form-label text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <i class="fa-solid fa-industry text-amber-600"></i>
+                          <span>Planta a dictaminar *</span>
+                        </label>
+                        <select x-model="plantaSeleccionadaDictamen" class="input-field w-full rounded-xl p-2.5 text-xs bg-white border-slate-300">
+                          <template x-for="p in misPlantasDictaminables" :key="p.id">
+                            <option :value="p.id" x-text="p.nombre"></option>
+                          </template>
+                        </select>
+                      </div>
+
+                      <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs flex items-center justify-between"
+                        x-show="(rolActual === 'SST' || rolActual === 'GESCO') && misPlantasDictaminables.length === 1">
+                        <span class="text-slate-600 font-medium">Planta asignada:</span>
+                        <strong class="text-amber-900 font-bold" x-text="misPlantasDictaminables[0]?.nombre"></strong>
+                      </div>
+
+                      <!-- Selección Decisión -->
+                      <div class="grid grid-cols-2 gap-2">
+                        <label class="p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
+                          :class="dictamenForm.decision === 'aprobar' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                          <input type="radio" name="decision" value="aprobar" x-model="dictamenForm.decision" class="hidden">
+                          <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                          <span>Aprobar</span>
+                        </label>
+
+                        <label class="p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
+                          :class="dictamenForm.decision === 'rechazar' ? 'bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                          <input type="radio" name="decision" value="rechazar" x-model="dictamenForm.decision" class="hidden">
+                          <i class="fa-solid fa-circle-xmark text-red-600 text-sm"></i>
+                          <span>Rechazar</span>
+                        </label>
+                      </div>
+
+                      <!-- Motivo de Rechazo (Solo si se selecciona Rechazar) -->
+                      <div x-show="dictamenForm.decision === 'rechazar'" class="space-y-1.5" x-cloak>
+                        <label class="form-label text-xs font-bold text-red-900">Motivo del Rechazo (Obligatorio) *</label>
+                        <textarea x-model="dictamenForm.motivoRechazo" rows="3"
+                          placeholder="Indica la razón por la cual no se aprueba la solicitud (ej: ARL vencida, falta inducción)..."
+                          class="input-field w-full rounded-xl p-3 text-xs resize-none border-red-300 focus:ring-red-200"></textarea>
+                      </div>
+
+                      <!-- Observaciones adicionales -->
+                      <div class="space-y-1.5">
+                        <label class="form-label text-xs font-semibold text-slate-700">Observaciones adicionales</label>
+                        <textarea x-model="dictamenForm.observaciones" rows="3"
+                          placeholder="Notas complementarias para el expediente..."
+                          class="input-field w-full rounded-xl p-3 text-xs resize-none"></textarea>
+                      </div>
+
+                      <!-- Resumen de Personal Autorizado -->
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between" x-show="totalPersonas > 0">
+                        <div class="flex items-center gap-1.5 text-slate-600 font-medium">
+                          <i class="fa-solid fa-users text-blue-500 text-xs"></i>
+                          <span>Personal con acceso permitido:</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 font-bold">
+                          <span class="text-emerald-700" x-text="totalPersonasAutorizadas + ' / ' + totalPersonas"></span>
+                          <span class="text-[10px] text-slate-400">ingresantes</span>
+                        </div>
+                      </div>
+
+                      <!-- Botón de Envío -->
+                      <button type="submit" :disabled="guardando"
+                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                        :class="dictamenForm.decision === 'rechazar' ? 'bg-red-600 hover:bg-red-700 text-white' : 'btn-signal'">
+                        <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
+                        <i class="fa-solid fa-paper-plane text-xs" x-show="!guardando"></i>
+                        <span x-text="guardando ? 'Procesando dictamen...' : (dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : 'Aprobar Solicitud')"></span>
+                      </button>
+                    </form>
+                  </template>
+
+                  <!-- Si no tiene permisos en esta etapa -->
+                  <template x-if="!puedeDictaminar">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                      <i class="fa-solid fa-lock text-slate-400 text-base"></i>
+                      <p class="text-xs text-slate-500 font-medium leading-relaxed">
+                        Tu rol (<strong x-text="rolActual"></strong>) no tiene acciones pendientes para el estado actual (<strong x-text="solicitud.estado"></strong>).
+                      </p>
+                      <p class="text-[11px] text-emerald-700 font-medium p-2 rounded-lg bg-emerald-50 border border-emerald-200" 
+                        x-show="miPlantaYaFirmada">
+                        <i class="fa-solid fa-check mr-1"></i>
+                        Ya has emitido dictamen para tu planta en esta solicitud.
+                      </p>
+                      <p class="text-[11px] text-amber-700 dark:text-amber-300 font-medium p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50" 
+                        x-show="(rolActual === 'SST' || rolActual === 'GESCO') && !tienePlantaAsignadaParaSolicitud">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                        No tienes asignada ninguna planta de esta solicitud. Tu perfil solo tiene autorización para sus plantas asignadas.
+                      </p>
+                      <p class="text-[11px] text-slate-400" x-show="solicitud.estado === 'EN REVISIÓN' && rolActual === 'SCR'">
+                        Debes esperar a que <strong>SST</strong> y <strong>GESCO</strong> completen sus revisiones en todas las plantas para que pase a <em>"Por aprobar"</em>.
+                      </p>
+                    </div>
+                  </template>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </template>
+
+      </main>
+
+      <!-- ============================================================
+         FOOTER
+      ============================================================= -->
+      <footer class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white mt-auto">
+        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
+        <span>Módulo de Auditoría y Dictamen de Roles</span>
+      </footer>
+
+    </div>
+
+    <!-- ============================================================
+       MODAL VISOR DE DOCUMENTOS (PDF / IMAGEN)
+    ============================================================= -->
+    <div x-show="docModalOpen" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
+      @keydown.escape.window="cerrarDocumento()">
+      <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="cerrarDocumento()">
+        
+        <!-- Header del visor -->
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm text-[var(--signal-500)]">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div>
+              <h3 class="font-display font-semibold text-sm" x-text="docActual.titulo"></h3>
+              <p class="text-[11px] text-slate-400" x-text="docActual.subtitulo || 'Documento adjunto'"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <a :href="docActual.url" target="_blank" class="action-icon-btn text-slate-300 hover:text-white hover:bg-white/10" title="Abrir en pestaña nueva">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+            <button type="button" @click="cerrarDocumento()" class="action-icon-btn text-slate-300 hover:text-white hover:bg-white/10" title="Cerrar visor">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuerpo del visor -->
+        <div class="flex-1 bg-slate-100 p-6 overflow-y-auto min-h-[400px] flex items-center justify-center">
+          
+          <!-- Simulación de previsualización de documento -->
+            <template x-if="docActual.esImagen">
+              <div class="max-h-[360px] overflow-hidden rounded-xl bg-slate-900/5 p-2 flex items-center justify-center">
+                <img :src="docActual.url" :alt="docActual.nombreArchivo" class="max-h-[340px] max-w-full object-contain rounded-lg shadow-sm border border-slate-200" />
+              </div>
+            </template>
+            <template x-if="!docActual.esImagen">
+              <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-3xl mx-auto">
+                <i class="fa-regular fa-file-pdf"></i>
+              </div>
+            </template>
+            <div class="space-y-1">
+              <h4 class="font-display font-bold text-base text-[var(--ink-900)]" x-text="docActual.nombreArchivo"></h4>
+              <p class="text-xs text-slate-500" x-text="'Tipo: ' + docActual.tipo.toUpperCase() + ' · Estado: Documento Válido'"></p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs text-slate-600 space-y-2">
+              <div class="flex justify-between py-1 border-b border-slate-200">
+                <span class="text-slate-400">Ruta de archivo:</span>
+                <span class="font-mono text-[11px] text-slate-700" x-text="docActual.url"></span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-slate-200">
+                <span class="text-slate-400">Verificación de Firma:</span>
+                <span class="font-semibold text-emerald-600"><i class="fa-solid fa-shield-check mr-1"></i> Certificado Digital Válido</span>
+              </div>
+            </div>
+
+            <div class="flex justify-center gap-3">
+              <a :href="docActual.url" download class="btn-signal text-xs px-5 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Descargar Documento
+              </a>
+              <button type="button" @click="cerrarDocumento()" class="btn-secondary text-xs px-5 py-2.5 rounded-xl font-semibold">
+                Volver al expediente
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================
+       MODAL 1: HISTORIAL DE SOLICITUDES Y VIGENCIA DE ANTECEDENTES
+    ============================================================= -->
+    <div x-show="showHistorialModal" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @keydown.escape.window="cerrarHistorialModal()"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+      
+      <div x-show="showHistorialModal"
+        @click.outside="cerrarHistorialModal()"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        
+        <!-- Encabezado del Modal -->
+        <div class="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-display font-semibold text-lg text-white truncate"
+                x-text="'Historial de Solicitudes: ' + (detalleHistorial.persona_nombre || '') + ' ' + (detalleHistorial.persona_apellido || '')"></h3>
+              <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                <span class="font-mono bg-white/10 px-2 py-0.5 rounded text-white font-medium"
+                  x-text="(detalleHistorial.persona_tipo_doc || 'CC') + ': ' + detalleHistorial.persona_identificacion"></span>
+                <span>·</span>
+                <span x-text="detalleHistorial.persona_cargo"></span>
+              </p>
+            </div>
+          </div>
+          
+          <button type="button" @click="cerrarHistorialModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors" title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Cuerpo del modal -->
+        <div class="p-6 space-y-5 overflow-y-auto flex-1 bg-[var(--bg-app)]">
+          
+          <!-- Resumen Informativo: Responsable, Última Empresa y Vigencia Actual -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            
+            <!-- 1. Responsable Registrado -->
+            <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+              <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Responsable de Revisión</span>
+                <p class="text-sm font-semibold text-slate-800 truncate mt-0.5" x-text="detalleHistorial.responsable || 'Sin asignar'"></p>
+                <span class="text-[11px] text-slate-400">Registrado en sistema</span>
+              </div>
+            </div>
+
+            <!-- 2. Última Empresa Solicitante -->
+            <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+              <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Última Empresa</span>
+                <p class="text-sm font-semibold text-blue-700 truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'INCARSA S.A.S.'"></p>
+                <span class="text-[11px] text-slate-400">Solicitante reciente</span>
+              </div>
+            </div>
+
+            <!-- 3. Vigencia Actual -->
+            <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs flex items-start gap-3">
+              <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vigencia Actual</span>
+                <p class="text-sm font-semibold text-emerald-700 truncate mt-0.5" x-text="formatearFecha(detalleHistorial.fecha_consulta, false)"></p>
+                <span class="text-[11px] font-medium" :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass" x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Observaciones / Anotaciones Registradas -->
+          <div class="bg-white p-4 rounded-xl border border-[var(--border-subtle)] shadow-xs space-y-1.5">
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+              <i class="fa-regular fa-note-sticky text-amber-500 text-sm"></i>
+              <span>Anotaciones y Observaciones Registradas</span>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-200"
+              x-text="detalleHistorial.anotaciones || 'No se han registrado observaciones de antecedentes para esta persona.'"></p>
+          </div>
+
+          <!-- Tabla de Historial de Solicitudes -->
+          <div class="bg-white p-5 rounded-2xl border border-[var(--border-subtle)] shadow-xs space-y-3.5">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+              <div>
+                <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                  <i class="fa-solid fa-list-check text-blue-600"></i>
+                  <span>Historial de Solicitudes Registradas</span>
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  Listado cronológico de solicitudes en las que la persona ha sido incluida.
+                </p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200"
+                x-text="(detalleHistorial.historial.length || 0) + ' solicitudes'"></span>
+            </div>
+
+            <!-- Filtros de Historial en Modal -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-2.5 pt-1">
+              <div class="relative flex-1 w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" x-model="searchHistorial" placeholder="Filtrar por radicado, empresa o contratista..."
+                  class="input-field w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] bg-slate-50 focus:bg-white transition-colors">
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
+                <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                  <span class="text-[10px] font-semibold text-slate-400">Desde:</span>
+                  <input type="date" x-model="fechaDesdeHistorial"
+                    class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
+                <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-[var(--border-subtle)] text-xs text-slate-600 shadow-xs">
+                  <span class="text-[10px] font-semibold text-slate-400">Hasta:</span>
+                  <input type="date" x-model="fechaHastaHistorial"
+                    class="text-xs bg-transparent border-0 p-0 text-slate-700 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
+                <button type="button" x-show="searchHistorial || fechaDesdeHistorial || fechaHastaHistorial"
+                  @click="searchHistorial = ''; fechaDesdeHistorial = ''; fechaHastaHistorial = ''; historialPage = 1;"
+                  class="text-slate-400 hover:text-slate-700 text-xs p-1 rounded-md hover:bg-slate-100 transition-colors" title="Limpiar filtros de historial">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+
+                <span class="text-[11px] text-slate-400 ml-1">Mostrar</span>
+                <select x-model.number="historialPageSize" @change="historialPage = 1"
+                  class="input-field rounded-lg px-2 py-1 text-xs border border-[var(--border-subtle)] bg-white font-medium text-slate-700">
+                  <option value="3">3</option>
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs data-table">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                    <th class="px-3 py-2.5 w-10 text-center">#</th>
+                    <th class="px-3 py-2.5">Código / Radicado</th>
+                    <th class="px-3 py-2.5">Empresa Solicitante</th>
+                    <th class="px-3 py-2.5">Empresa Contratista</th>
+                    <th class="px-3 py-2.5">Periodo Solicitado</th>
+                    <th class="px-3 py-2.5">Fecha Registro</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  <template x-for="(h, hIndex) in historialPagina" :key="h.id || hIndex">
+                    <tr class="hover:bg-slate-50/70">
+                      <td class="px-3 py-2.5 text-center text-slate-400 font-mono" x-text="(historialPage - 1) * historialPageSize + hIndex + 1"></td>
+                      <td class="px-3 py-2.5">
+                        <template x-if="h.codigo_radicado">
+                          <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                            <span class="font-mono font-bold text-slate-800 text-[11px]" x-text="h.codigo_radicado"></span>
+                            <button type="button" @click="copiarCodigo(h.codigo_radicado)"
+                              class="text-slate-400 hover:text-blue-600 transition-colors p-0.5"
+                              :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
+                              <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
+                            </button>
+                          </div>
+                        </template>
+                        <template x-if="!h.codigo_radicado">
+                          <span class="text-slate-400 italic">Directo</span>
+                        </template>
+                      </td>
+                      <td class="px-3 py-2.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold text-[11px]">
+                          <i class="fa-regular fa-building text-[10px]"></i>
+                          <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
+                        </span>
+                      </td>
+                      <td class="px-3 py-2.5 font-medium text-slate-700">
+                        <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
+                      </td>
+                      <td class="px-3 py-2.5 text-slate-600">
+                        <div class="flex items-center gap-1.5">
+                          <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
+                          <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                          <span class="font-medium text-slate-800" x-text="formatearSoloFecha(h.fecha_fin)"></span>
+                        </div>
+                      </td>
+                      <td class="px-3 py-2.5 text-slate-500 font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
+                    </tr>
+                  </template>
+
+                  <tr x-show="historialFiltrado.length === 0">
+                    <td colspan="6" class="px-3 py-8 text-center text-slate-400">
+                      <i class="fa-solid fa-inbox text-2xl mb-1 text-slate-300"></i>
+                      <p class="text-xs">No se encontraron solicitudes registradas con los filtros aplicados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación de Historial en Modal -->
+            <div x-show="totalPaginasHistorial > 1 || detalleHistorial.historial.length > 5"
+              class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs text-slate-500">
+              <span>Mostrando <strong class="text-slate-800" x-text="rangoHistorialMostrado"></strong></span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" @click="goToHistorialPage(historialPage - 1)" :disabled="historialPage === 1"
+                  class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                  :class="historialPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span>Página <strong class="text-slate-800" x-text="historialPage"></strong> de <span x-text="totalPaginasHistorial"></span></span>
+                <button type="button" @click="goToHistorialPage(historialPage + 1)" :disabled="historialPage === totalPaginasHistorial"
+                  class="action-icon-btn p-1.5 rounded-lg border border-[var(--border-subtle)] text-slate-600 hover:bg-slate-100 transition-colors"
+                  :class="historialPage === totalPaginasHistorial ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Pie del modal -->
+        <div class="px-6 py-4 border-t border-[var(--border-subtle)] bg-white flex items-center justify-between">
+          <button type="button" @click="cerrarHistorialModal()"
+            class="px-4 py-2 rounded-xl border border-[var(--border-subtle)] text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            Cerrar
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" @click="abrirFormularioAntecedentes(detalleHistorial)"
+              class="btn-signal px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+              title="Abrir formulario para renovar vigencia y editar notas">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Actualizar Vigencia</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================
+       MODAL 2: ACTUALIZACIÓN / RENOVACIÓN DE VIGENCIA DE ANTECEDENTES
+    ============================================================= -->
+    <div x-show="showFormModal" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @keydown.escape.window="cerrarFormularioAntecedentes()"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="showFormModal"
+        @click.outside="cerrarFormularioAntecedentes()"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+        
+        <!-- Encabezado del Modal -->
+        <div class="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--ink-900)] text-white">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-[var(--signal-500)] text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow">
+              <i class="fa-solid fa-id-card-clip"></i>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-display font-semibold text-lg text-white truncate"
+                x-text="'Actualizar Vigencia: ' + (formAntecedente.persona_nombre || '') + ' ' + (formAntecedente.persona_apellido || '')"></h3>
+              <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                <span class="font-mono bg-white/10 px-2 py-0.5 rounded text-white font-medium"
+                  x-text="(formAntecedente.persona_tipo_doc || 'CC') + ': ' + formAntecedente.persona_identificacion"></span>
+                <span>·</span>
+                <span x-text="formAntecedente.persona_cargo"></span>
+              </p>
+            </div>
+          </div>
+          
+          <button type="button" @click="cerrarFormularioAntecedentes()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Cuerpo del modal -->
+        <div class="p-6 space-y-6 overflow-y-auto flex-1 bg-[var(--bg-app)]">
+          
+          <!-- Feedback Alertas -->
+          <div x-show="mensajeExitoAntecedente" x-transition class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span x-text="mensajeExitoAntecedente" class="font-medium"></span>
+          </div>
+          <div x-show="mensajeErrorAntecedente" x-transition class="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-600 text-base"></i>
+            <span x-text="mensajeErrorAntecedente" class="font-medium"></span>
+          </div>
+
+          <!-- TARJETAS INFORMATIVAS DE LA RENOVACIÓN -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Última Empresa Solicitante -->
+            <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-xs flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Última Empresa</span>
+                <p class="text-sm font-bold text-blue-700 truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'INCARSA S.A.S.'"></p>
+                <span class="text-[11px] text-slate-400">Solicitante activa</span>
+              </div>
+            </div>
+
+            <!-- Última Revisión -->
+            <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-xs flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Fecha de Revisión</span>
+                <p class="text-sm font-bold text-slate-800 truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
+                <span class="text-[11px] text-emerald-600 font-medium">Auto-actualizada hoy</span>
+              </div>
+            </div>
+
+            <!-- Próxima Consulta (+1 Año) -->
+            <div class="bg-white p-4 rounded-2xl border border-[var(--border-subtle)] shadow-xs flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                <i class="fa-solid fa-calendar-plus"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Nueva Vigencia (+1 Año)</span>
+                <p class="text-sm font-bold text-emerald-700 truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
+                <span class="text-[11px] text-emerald-600 font-medium">Vigente (365 días)</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- FORMULARIO DE RESPONSABLE Y ANOTACIONES -->
+          <div class="bg-white p-5 rounded-2xl border border-[var(--border-subtle)] shadow-xs space-y-4">
+            <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <h4 class="font-display font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-[var(--signal-500)]"></i>
+                <span>Responsable y Anotaciones de Seguridad</span>
+              </h4>
+              <span class="text-xs text-slate-400">Auditoría SCR</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              
+              <!-- Responsable -->
+              <div class="sm:col-span-5">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Responsable de la Revisión <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                  <input type="text" x-model="formAntecedente.responsable" placeholder="Ej: Auditor SCR / SST..."
+                    class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--border-subtle)] bg-slate-50/50 focus:bg-white">
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Usuario que gestiona y renueva los antecedentes.</p>
+              </div>
+
+              <!-- Anotaciones -->
+              <div class="sm:col-span-7">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Anotaciones / Hallazgos del Antecedente
+                </label>
+                <textarea x-model="formAntecedente.anotaciones" rows="3" placeholder="Observaciones de antecedentes, certificados judiciales, verificación en policía/procuraduría..."
+                  class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--border-subtle)] bg-slate-50/50 focus:bg-white"></textarea>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Pie del modal de formulario -->
+        <div class="px-6 py-4 border-t border-[var(--border-subtle)] bg-white flex items-center justify-between">
+          <button type="button" @click="cerrarFormularioAntecedentes()"
+            class="px-4 py-2 rounded-xl border border-[var(--border-subtle)] text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            Volver al Historial
+          </button>
+          
+          <button type="button" @click="guardarAntecedente()" :disabled="guardandoAntecedente"
+            class="btn-signal px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm"
+            :class="guardandoAntecedente ? 'opacity-60 cursor-not-allowed' : ''">
+            <i class="fa-solid" :class="guardandoAntecedente ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+            <span x-text="guardandoAntecedente ? 'Guardando y Renovando...' : 'Guardar y Renovar Vigencia (+1 Año)'"></span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================
+       TOAST FLOTANTE DE NOTIFICACIÓN
+    ============================================================= -->
+    <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 scale-100"
+      x-transition:leave-end="opacity-0 scale-95"
+      class="fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3"
+      :class="toast.tipo === 'error' ? 'bg-red-600' : (toast.tipo === 'info' ? 'bg-blue-600' : 'bg-slate-900 border border-emerald-500/40')"
+      x-cloak>
+      <i class="fa-solid fa-check-circle text-emerald-400" x-show="toast.tipo === 'success'"></i>
+      <i class="fa-solid fa-triangle-exclamation text-white" x-show="toast.tipo === 'error'"></i>
+      <i class="fa-solid fa-info-circle text-white" x-show="toast.tipo === 'info'"></i>
+      <span x-text="toast.mensaje"></span>
+    </div>
+
+  </div>
+
+</body>
+</html>
