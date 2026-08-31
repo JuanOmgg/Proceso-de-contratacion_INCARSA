@@ -4,6 +4,7 @@ import uuid
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status
 
+from src.utils.file_manager import guardar_documento_seguro
 from src.schemas.vehiculo_schema import VehiculoInput, VehiculoUpdate
 from src.services.vehiculo import (
     CREATE_vehiculo as service_create_vehiculo,
@@ -110,35 +111,15 @@ async def SUBIR_documento_vehiculo_endpoint(
             detail=f"Vehículo #{vehiculo_id} no existe.",
         )
 
-    nombre_original = file.filename or "documento.pdf"
-    extension = (
-        nombre_original.split(".")[-1].lower()
-        if "." in nombre_original
-        else "pdf"
-    )
-
-    formatos_permitidos = ["pdf", "png", "jpg", "jpeg"]
-    if extension not in formatos_permitidos:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Formato '.{extension}' no permitido. Solo se aceptan PDF, PNG, JPG o JPEG.",
-        )
-
-    # 2. Guardar archivo físico en uploads/documentos/vehiculos
-    nombre_unico = f"{uuid.uuid4().hex}.{extension}"
-    carpeta_destino = os.path.join("uploads", "documentos", "vehiculos")
-    os.makedirs(carpeta_destino, exist_ok=True)
-    ruta_fisica = os.path.join(carpeta_destino, nombre_unico)
+    # 2. Guardar archivo físico de forma segura (valida extensión, tamaño máx y Magic Bytes)
+    archivo_guardado = await guardar_documento_seguro(file, subcarpeta="vehiculos")
 
     try:
-        with open(ruta_fisica, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
         # 3. Registrar en BD en tabla documentos_vehiculo
         resultado_db = service_agregar_documento(
             vehiculo_id=vehiculo_id,
             tipo_doc=str(tipo_documento).strip().lower(),
-            nom_documento=nombre_unico,
+            nom_documento=archivo_guardado["nombre_archivo"],
         )
 
         if not resultado_db.get("exito"):
@@ -147,21 +128,22 @@ async def SUBIR_documento_vehiculo_endpoint(
                 detail=resultado_db.get("mensaje"),
             )
 
-        url_acceso = f"/uploads/documentos/vehiculos/{nombre_unico}"
+        print(f"🚗 [DOC VEHÍCULO] '{archivo_guardado['nombre_original']}' guardado para vehículo #{vehiculo_id}")
+
         return {
             "exito": True,
             "mensaje": f"Documento '{tipo_documento}' guardado exitosamente para el vehículo #{vehiculo_id}.",
             "id_documento": resultado_db.get("id"),
-            "nombre_archivo": nombre_unico,
-            "nombre_original": nombre_original,
-            "url_documento": url_acceso,
+            "nombre_archivo": archivo_guardado["nombre_archivo"],
+            "nombre_original": archivo_guardado["nombre_original"],
+            "url_documento": archivo_guardado["url_documento"],
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error al subir documento de vehículo: {e}")
+        print(f"❌ Error al registrar documento de vehículo: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al guardar archivo: {e}",
+            detail=f"Error interno al asociar el documento al vehículo: {e}"
         )

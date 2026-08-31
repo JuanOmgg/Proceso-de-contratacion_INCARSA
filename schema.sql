@@ -207,3 +207,32 @@ CREATE TABLE IF NOT EXISTS antecedentes_historial_solicitudes (
     FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (id_empresa) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 17. Asignación de Plantas/Zonas a Usuarios (para SST y GESCO)
+CREATE TABLE IF NOT EXISTS usuario_plantas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_planta INT NOT NULL,
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_planta) REFERENCES planta(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE KEY uq_usuario_planta (id_usuario, id_planta)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 18. Historial de Revisiones y Dictámenes por Planta y Rol (SST, GESCO, SCR)
+CREATE TABLE IF NOT EXISTS solicitud_revisiones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_solicitud INT NOT NULL,
+    id_planta INT NULL,
+    rol VARCHAR(50) NOT NULL,
+    id_usuario INT NULL,
+    nombre_revisor VARCHAR(150) NULL,
+    decision VARCHAR(20) NOT NULL,
+    motivo_rechazo TEXT NULL,
+    observacion TEXT NULL,
+    fecha_revision DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_planta) REFERENCES planta(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE KEY uq_solicitud_planta_rol (id_solicitud, id_planta, rol)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

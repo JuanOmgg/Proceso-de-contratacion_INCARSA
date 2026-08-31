@@ -433,13 +433,178 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 solicitud["eq_computo"] = cursor.fetchall() or []
 
+                # 7. Obtener revisiones / dictámenes por planta
+                cursor.execute(
+                    """
+                    SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
+                           sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                           sr.motivo_rechazo, sr.observacion, sr.fecha_revision
+                    FROM solicitud_revisiones sr
+                    LEFT JOIN planta p ON sr.id_planta = p.id
+                    WHERE sr.id_solicitud = %s
+                    ORDER BY sr.fecha_revision ASC
+                    """,
+                    (solicitud_id,),
+                )
+                raw_revs = cursor.fetchall() or []
+                for r in raw_revs:
+                    if r.get("fecha_revision"):
+                        r["fecha_revision"] = str(r["fecha_revision"])
+                solicitud["revisiones"] = raw_revs
+
                 return {"exito": True, "datos": solicitud}
 
     except Exception as e:
         print(f"❌ Error en GET_solicitud_bd #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
 
-def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None):
+def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
+    try:
+        id_planta = dictamen.get("id_planta")
+        rol = str(dictamen.get("rol", "")).strip().upper()
+        decision_raw = str(dictamen.get("decision", "")).strip().lower()
+        decision = "RECHAZADO" if "rechaz" in decision_raw else "APROBADO"
+        motivo_rechazo = dictamen.get("motivo_rechazo") or ""
+        observacion = dictamen.get("observacion") or ""
+        id_usuario = dictamen.get("id_usuario")
+        nombre_revisor = dictamen.get("nombre_revisor") or ""
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # 1. Verificar existencia de la solicitud
+                cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s", (solicitud_id,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                # Si no viene nombre_revisor pero viene id_usuario, resolverlo
+                if not nombre_revisor and id_usuario:
+                    cursor.execute("SELECT nombres, apellidos FROM usuarios WHERE id = %s", (id_usuario,))
+                    u = cursor.fetchone()
+                    if u:
+                        nombre_revisor = f"{u.get('nombres', '')} {u.get('apellidos', '')}".strip()
+
+                # Si no viene id_planta y es SST o GESCO, y la solicitud solo tiene 1 planta, resolverla
+                if (not id_planta or id_planta == 0) and rol in ("SST", "GESCO"):
+                    cursor.execute("SELECT id_planta FROM visita WHERE id_solicitud = %s LIMIT 1", (solicitud_id,))
+                    v_p = cursor.fetchone()
+                    if v_p:
+                        id_planta = v_p["id_planta"]
+
+                # 2. Insertar o actualizar en solicitud_revisiones
+                sql_upsert = """
+                    INSERT INTO solicitud_revisiones (
+                        id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                        decision, motivo_rechazo, observacion, fecha_revision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        id_usuario = VALUES(id_usuario),
+                        nombre_revisor = VALUES(nombre_revisor),
+                        decision = VALUES(decision),
+                        motivo_rechazo = VALUES(motivo_rechazo),
+                        observacion = VALUES(observacion),
+                        fecha_revision = NOW()
+                """
+                cursor.execute(sql_upsert, (
+                    solicitud_id, id_planta, rol, id_usuario, nombre_revisor,
+                    decision, motivo_rechazo, observacion
+                ))
+
+                # 3. Obtener todas las plantas de la solicitud (vía visita)
+                cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (solicitud_id,))
+                plantas_sol = [r["id_planta"] for r in cursor.fetchall() or [] if r.get("id_planta")]
+
+                # Fallback plantas vía solicitudes.plantas_ids si visita estaba vacía
+                if not plantas_sol:
+                    cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (solicitud_id,))
+                    sol_p = cursor.fetchone()
+                    if sol_p and sol_p.get("plantas_ids"):
+                        plantas_sol = [int(x.strip()) for x in str(sol_p["plantas_ids"]).replace("[","").replace("]","").split(",") if x.strip().isdigit()]
+
+                # 4. Determinar nuevo estado global de la solicitud
+                nuevo_estado = sol.get("estado", "EN REVISIÓN")
+
+                if decision == "RECHAZADO":
+                    nuevo_estado = "RECHAZADO"
+                    obs_rechazo = f"[RECHAZADO por {rol}]: {motivo_rechazo}. {observacion}".strip()
+                    cursor.execute(
+                        "UPDATE solicitudes SET estado = 'RECHAZADO', observaciones = %s WHERE id = %s",
+                        (obs_rechazo, solicitud_id)
+                    )
+                elif rol == "SCR":
+                    nuevo_estado = "APROBADO"
+                    cursor.execute(
+                        "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
+                        (solicitud_id,)
+                    )
+                else:
+                    # Es SST o GESCO aprobando
+                    cursor.execute(
+                        """
+                        SELECT id_planta, rol 
+                        FROM solicitud_revisiones 
+                        WHERE id_solicitud = %s AND decision = 'APROBADO'
+                        """,
+                        (solicitud_id,)
+                    )
+                    revs_aprobadas = cursor.fetchall() or []
+                    
+                    mapa_aprobaciones = {pid: {"SST": False, "GESCO": False} for pid in plantas_sol}
+                    for ra in revs_aprobadas:
+                        pid = ra.get("id_planta")
+                        r_rol = ra.get("rol")
+                        if pid in mapa_aprobaciones and r_rol in ("SST", "GESCO"):
+                            mapa_aprobaciones[pid][r_rol] = True
+
+                    todas_listas = False
+                    if plantas_sol:
+                        todas_listas = all(
+                            mapa_aprobaciones[pid]["SST"] and mapa_aprobaciones[pid]["GESCO"]
+                            for pid in plantas_sol
+                        )
+
+                    if todas_listas:
+                        nuevo_estado = "POR APROBAR"
+                    else:
+                        nuevo_estado = "EN REVISIÓN"
+
+                    cursor.execute(
+                        "UPDATE solicitudes SET estado = %s WHERE id = %s",
+                        (nuevo_estado, solicitud_id)
+                    )
+
+                conexion.commit()
+
+                # 5. Obtener lista actualizada de revisiones
+                cursor.execute(
+                    """
+                    SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
+                           sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                           sr.motivo_rechazo, sr.observacion, sr.fecha_revision
+                    FROM solicitud_revisiones sr
+                    LEFT JOIN planta p ON sr.id_planta = p.id
+                    WHERE sr.id_solicitud = %s
+                    ORDER BY sr.fecha_revision ASC
+                    """,
+                    (solicitud_id,),
+                )
+                revs_actualizadas = cursor.fetchall() or []
+                for r in revs_actualizadas:
+                    if r.get("fecha_revision"):
+                        r["fecha_revision"] = str(r["fecha_revision"])
+
+                return {
+                    "exito": True,
+                    "mensaje": f"Dictamen registrado correctamente. Estado: {nuevo_estado}",
+                    "nuevo_estado": nuevo_estado,
+                    "revisiones": revs_actualizadas
+                }
+
+    except Exception as e:
+        print(f"❌ Error al registrar dictamen para solicitud #{solicitud_id}: {e}")
+        return {"exito": False, "mensaje": f"Error al registrar dictamen: {e}"}
+
+def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optional[int] = None):
 
     try:
 
@@ -453,12 +618,30 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None):
                 codigo_expr = "so.codigo" if "codigo" in cols else "CONCAT('RAD-', LPAD(so.id, 4, '0'))"
                 obs_expr = "so.observaciones" if "observaciones" in cols else "''"
 
-                # Construir la query con filtro opcional de activos
-                where_clause = ""
+                condiciones = []
                 if only_active is True:
-                    where_clause = f"WHERE {is_active_expr} = 1"
+                    condiciones.append(f"{is_active_expr} = 1")
                 elif only_active is False:
-                    where_clause = f"WHERE {is_active_expr} = 0"
+                    condiciones.append(f"{is_active_expr} = 0")
+
+                # Si se provee id_usuario, verificar si tiene rol SST (3) o GESCO (4)
+                if id_usuario:
+                    cursor.execute("SELECT id_rol FROM usuarios WHERE id = %s", (id_usuario,))
+                    u_row = cursor.fetchone()
+                    if u_row and int(u_row.get("id_rol", 0)) in (3, 4):
+                        cursor.execute("SELECT id_planta FROM usuario_plantas WHERE id_usuario = %s", (id_usuario,))
+                        p_rows = cursor.fetchall() or []
+                        p_ids = [int(pr["id_planta"]) for pr in p_rows if pr.get("id_planta")]
+                        if not p_ids:
+                            # Usuario SST/GESCO sin plantas asignadas: no ve ninguna solicitud
+                            return {"exito": True, "datos": [], "mensaje": "Usuario sin plantas asignadas."}
+                        
+                        # Filtrar solicitudes que contengan al menos una de las plantas asignadas
+                        in_list = ",".join(map(str, p_ids))
+                        find_set_exprs = " OR ".join([f"FIND_IN_SET('{pid}', so.plantas_ids)" for pid in p_ids])
+                        condiciones.append(f"(v.id_planta IN ({in_list}) OR ({find_set_exprs}))")
+
+                where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
 
                 query = f"""
                     SELECT
@@ -477,6 +660,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None):
                         {is_active_expr} AS is_active,
 
                         GROUP_CONCAT(DISTINCT p.nombre SEPARATOR ', ') AS planta,
+                        GROUP_CONCAT(DISTINCT p.id SEPARATOR ',') AS plantas_ids,
 
                         GROUP_CONCAT(DISTINCT
                             CONCAT_WS('|||',

@@ -103,3 +103,13 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     vehiculo: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
     vehiculos: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
     eq_computo: Optional[List[EquipoComputoSchema]] = None
+
+
+class DictamenInput(BaseModel):
+    id_planta: Optional[int] = None
+    rol: str
+    decision: str
+    motivo_rechazo: Optional[str] = None
+    observacion: Optional[str] = None
+    id_usuario: Optional[int] = None
+    nombre_revisor: Optional[str] = None

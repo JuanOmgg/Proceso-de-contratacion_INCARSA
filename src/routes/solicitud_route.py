@@ -2,15 +2,17 @@ import os
 import shutil
 import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query
+from src.utils.file_manager import guardar_documento_seguro
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
     GET_solicitud_bd,
     CREATE_solicitud_bd,
     UPDATE_solicitud_bd,
     GET_ALL_solicitudes_bd,
-    GET_date_count_db
+    GET_date_count_db,
+    REGISTRAR_dictamen_db
 )
-from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals
+from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
 from typing import List, Dict, Any, Optional
 
@@ -37,49 +39,23 @@ async def SUBIR_documento_persona(
     file: UploadFile = File(...),
     tipo_documento: str = Form("general")
 ):
-  
-    nombre_original = file.filename or "documento.pdf"
-    extension = nombre_original.split(".")[-1].lower() if "." in nombre_original else "pdf"
-
-    formatos_permitidos = ["pdf", "png", "jpg", "jpeg"]
-    if extension not in formatos_permitidos:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Formato '.{extension}' no permitido. Solo se aceptan archivos PDF, PNG, JPG o JPEG."
-        )
-
-    # Determinar subcarpeta según tipo_documento
+    # Determinar subcarpeta según el tipo de documento recibido
     tipo_norm = str(tipo_documento).strip().lower()
     subcarpeta = MAPEO_SUBDIRECTORIOS.get(tipo_norm, "general")
 
-    # Generar un nombre único para evitar sobrescribir archivos con el mismo nombre
-    nombre_unico = f"{uuid.uuid4().hex}.{extension}"
-    carpeta_destino = os.path.join("uploads", "documentos", subcarpeta)
-    os.makedirs(carpeta_destino, exist_ok=True)
-    ruta_fisica = os.path.join(carpeta_destino, nombre_unico)
+    # Guardar archivo con validaciones de seguridad (extensión, Magic Bytes, tamaño máx)
+    archivo_guardado = await guardar_documento_seguro(file, subcarpeta=subcarpeta)
 
-    try:
-        with open(ruta_fisica, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    print(f"📁 [FILE UPLOAD SEGURO] '{archivo_guardado['nombre_original']}' ({subcarpeta}) -> '{archivo_guardado['url_documento']}'")
 
-        url_acceso = f"/uploads/documentos/{subcarpeta}/{nombre_unico}"
-        print(f"📁 [FILE UPLOAD] Archivo '{nombre_original}' ({subcarpeta}) guardado en '{url_acceso}'")
-
-        return {
-            "exito": True,
-            "mensaje": f"Archivo guardado exitosamente en la categoría '{subcarpeta}'.",
-            "nombre_archivo": nombre_unico,
-            "url_documento": url_acceso,
-            "nombre_original": nombre_original,
-            "categoria": subcarpeta,
-        }
-
-    except Exception as e:
-        print(f"❌ Error al guardar el archivo: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al guardar el archivo: {e}"
-        )
+    return {
+        "exito": True,
+        "mensaje": f"Archivo guardado exitosamente en la categoría '{subcarpeta}'.",
+        "nombre_archivo": archivo_guardado["nombre_archivo"],
+        "url_documento": archivo_guardado["url_documento"],
+        "nombre_original": archivo_guardado["nombre_original"],
+        "categoria": subcarpeta,
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -128,11 +104,14 @@ def GET_fechasCount_rt():
 @router.get("/getAll", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_solicitudes(active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None")):
+def GET_ALL_solicitudes(
+    active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None"),
+    id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO")
+):
     
-    print(f"🔍 [GET] Consultando solicitudes (activas={active})...")
+    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario})...")
     
-    resultado = GET_ALL_solicitudes_bd(only_active=active) 
+    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario)
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")
@@ -143,6 +122,7 @@ def GET_ALL_solicitudes(active: Optional[bool] = Query(None, description="Filtra
         )
 
     return resultado.get("datos", resultado)
+
 
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def GET_solicitud(solicitud_id: int):
@@ -159,6 +139,17 @@ def GET_solicitud(solicitud_id: int):
     print(f"📦 [GET] Datos de la solicitud #{solicitud_id} recuperados con éxito.")
     return resultado["datos"]
 
+
+@router.post("/{solicitud_id}/dictamen", status_code=status.HTTP_200_OK)
+def REGISTRAR_dictamen_rt(solicitud_id: int, payload: DictamenInput):
+    print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
+    resultado = REGISTRAR_dictamen_db(solicitud_id, payload.model_dump())
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al registrar dictamen.")
+        )
+    return resultado
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def UPDATE_solicitud(solicitud_id: int, datos_in: UPDATE_Schema_Optionals):
 

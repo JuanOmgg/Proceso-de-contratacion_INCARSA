@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict
-from typing import List, Optional, Any
+from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict, Field
+from typing import List, Optional, Any, Dict
 from datetime import datetime
 
 class UsuarioInput(BaseModel):
@@ -11,6 +11,7 @@ class UsuarioInput(BaseModel):
     correo: EmailStr
     contrasena: str
     id_rol: int
+    plantas_ids: Optional[List[int]] = Field(default_factory=list)
 
 # Modelo individual para la lectura del usuario
 class UsuarioData(BaseModel):
@@ -26,6 +27,8 @@ class UsuarioData(BaseModel):
     rol: Optional[str] = None
     is_active: Optional[bool] = True
     fecha_creacion: Optional[Any] = None
+    plantas_ids: Optional[List[int]] = Field(default_factory=list)
+    plantas: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
     # Formatea datetime a string solo con la fecha 'DD-MM-YY'
     @field_serializer('fecha_creacion')
@@ -51,3 +54,4 @@ class UpdateUsuarioInput(BaseModel):
     contrasena: Optional[str] = None
     id_rol: Optional[int] = None
     is_active: Optional[bool] = None
+    plantas_ids: Optional[List[int]] = None

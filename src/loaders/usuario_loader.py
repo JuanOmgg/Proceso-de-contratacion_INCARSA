@@ -30,6 +30,16 @@ def CREATE_user_db(usuario: dict) -> dict:
                 cursor.execute(sql_user, valores_user)
                 user_id = cursor.lastrowid
 
+                # Guardar plantas asignadas si es rol SST (3) o GESCO (4)
+                plantas_ids = usuario.get("plantas_ids") or []
+                if int(usuario.get("id_rol", 0)) in (3, 4) and plantas_ids:
+                    for p_id in plantas_ids:
+                        if str(p_id).isdigit():
+                            cursor.execute(
+                                "INSERT IGNORE INTO usuario_plantas (id_usuario, id_planta) VALUES (%s, %s)",
+                                (user_id, int(p_id))
+                            )
+
                 conexion.commit()  # Confirmar los cambios en la base de datos
 
         print(f"✅✅ El usuario {user_id} fue registrado con éxito. ✅✅")
@@ -81,6 +91,18 @@ def GET_user_db(id_user: int) -> dict:
                         "exito": False,
                         "mensaje": f"❌❌ El usuario con ID '{id_user}' no fue encontrado. ❌❌",
                     }
+
+                # Obtener plantas asignadas
+                cursor.execute("""
+                    SELECT p.id, p.nombre
+                    FROM usuario_plantas up
+                    INNER JOIN planta p ON up.id_planta = p.id
+                    WHERE up.id_usuario = %s
+                """, (id_user,))
+                plantas_asignadas = cursor.fetchall() or []
+                usuario["plantas"] = plantas_asignadas
+                usuario["plantas_ids"] = [p["id"] for p in plantas_asignadas]
+
                 return {"exito": True, "data": usuario}
 
     except Exception as e:
@@ -145,7 +167,25 @@ def GET_ALL_users_db() -> dict:
                 """)
                 datos_user = cursor.fetchall() or []
 
+                # Obtener mapeo de plantas asignadas para todos los usuarios
+                cursor.execute("""
+                    SELECT up.id_usuario, p.id AS id_planta, p.nombre AS nombre_planta
+                    FROM usuario_plantas up
+                    INNER JOIN planta p ON up.id_planta = p.id
+                """)
+                plantas_rows = cursor.fetchall() or []
+                user_plantas_map = {}
+                for pr in plantas_rows:
+                    u_id = pr["id_usuario"]
+                    if u_id not in user_plantas_map:
+                        user_plantas_map[u_id] = []
+                    user_plantas_map[u_id].append({"id": pr["id_planta"], "nombre": pr["nombre_planta"]})
+
                 for row in datos_user:
+                    u_id = row["id"]
+                    row_plantas = user_plantas_map.get(u_id, [])
+                    row["plantas"] = row_plantas
+                    row["plantas_ids"] = [p["id"] for p in row_plantas]
                     if row.get("fecha_creacion"):
                         row["fecha_creacion"] = str(row["fecha_creacion"])
                     if row.get("num_documento"):
@@ -218,7 +258,27 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                     )
 
                     cursor.execute(sql_user, valores)
-                    conexion.commit()
+
+                # Sincronizar plantas si vienen en new_updates
+                if "plantas_ids" in new_updates:
+                    raw_plantas = new_updates["plantas_ids"]
+                    cursor.execute("DELETE FROM usuario_plantas WHERE id_usuario = %s", (id_user,))
+                    if isinstance(raw_plantas, list):
+                        rol_actual = new_updates.get("id_rol")
+                        if not rol_actual:
+                            cursor.execute("SELECT id_rol FROM usuarios WHERE id = %s", (id_user,))
+                            u_r = cursor.fetchone()
+                            rol_actual = u_r["id_rol"] if u_r else 0
+
+                        if int(rol_actual) in (3, 4):
+                            for p_id in raw_plantas:
+                                if str(p_id).isdigit():
+                                    cursor.execute(
+                                        "INSERT IGNORE INTO usuario_plantas (id_usuario, id_planta) VALUES (%s, %s)",
+                                        (id_user, int(p_id))
+                                    )
+
+                conexion.commit()
 
         return {
             "exito": True,
