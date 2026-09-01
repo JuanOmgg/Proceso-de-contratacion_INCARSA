@@ -125,9 +125,20 @@ async def get_usuarios(request: Request):
 async def get_personas(request: Request):
     return templates.TemplateResponse(name="personas-listado.html", request=request)
 
+@app.get("/usuarios/nuevo")
+@app.get("/usuarios/nueva")
 @app.get("/formulario-usuarios")
+@app.get("/usuario-formulario.html")
 async def get_formulario_usuarios(request: Request):
     return templates.TemplateResponse(name="usuario-formulario.html", request=request)
+
+@app.get("/usuarios/editar/{identificador}")
+async def get_editar_usuario(request: Request, identificador: str):
+    return templates.TemplateResponse(
+        name="usuario-formulario.html",
+        request=request,
+        context={"usuario_identificador": identificador}
+    )
 
 @app.get("/solicitudes/nueva")
 @app.get("/formulario-solicitudes")

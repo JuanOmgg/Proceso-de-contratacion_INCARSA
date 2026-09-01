@@ -430,6 +430,25 @@ select:focus-visible,
   color: var(--state-rechazado);
 }
 
+.password-toggle-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  background: var(--steel-100);
+  color: var(--ink-800);
+}
+
 /* =========================================================
    MODAL
    ========================================================= */
@@ -615,6 +634,108 @@ select:focus-visible,
   box-shadow: var(--shadow-panel);
   transform: translateY(-3px);
 }
+
+/* Chips de filtro en vista de procesamiento */
+.filter-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* 1. Todos */
+.chip-neon-todos {
+  background: var(--steel-100, #f1f5f9);
+  color: var(--ink-800, #1e293b);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+}
+.chip-neon-todos .chip-dot { background: #64748b; }
+.chip-neon-todos.is-active {
+  background: var(--ink-800, #1e293b);
+  color: #ffffff;
+  border-color: var(--ink-800, #1e293b);
+}
+.chip-neon-todos.is-active .chip-dot { background: #ffffff; }
+
+/* 2. Enviado */
+.chip-neon-enviado {
+  background: #ecfeff;
+  color: #0891b2;
+  border: 1px solid #a5f3fc;
+}
+.chip-neon-enviado .chip-dot { background: #06b6d4; }
+.chip-neon-enviado.is-active {
+  background: #0891b2;
+  color: #ffffff;
+  border-color: #0891b2;
+}
+.chip-neon-enviado.is-active .chip-dot { background: #ffffff; }
+
+/* 3. En revisión */
+.chip-neon-revision {
+  background: #faf5ff;
+  color: #9333ea;
+  border: 1px solid #e9d5ff;
+}
+.chip-neon-revision .chip-dot { background: #a855f7; }
+.chip-neon-revision.is-active {
+  background: #9333ea;
+  color: #ffffff;
+  border-color: #9333ea;
+}
+.chip-neon-revision.is-active .chip-dot { background: #ffffff; }
+
+/* 4. Por aprobar */
+.chip-neon-aprobar {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+.chip-neon-aprobar .chip-dot { background: #f59e0b; }
+.chip-neon-aprobar.is-active {
+  background: #d97706;
+  color: #ffffff;
+  border-color: #d97706;
+}
+.chip-neon-aprobar.is-active .chip-dot { background: #ffffff; }
+
+/* 5. Aprobado */
+.chip-neon-aprobado {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.chip-neon-aprobado .chip-dot { background: #22c55e; }
+.chip-neon-aprobado.is-active {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+.chip-neon-aprobado.is-active .chip-dot { background: #ffffff; }
+
+/* 6. Rechazado */
+.chip-neon-rechazado {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+.chip-neon-rechazado .chip-dot { background: #f43f5e; }
+.chip-neon-rechazado.is-active {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+}
+.chip-neon-rechazado.is-active .chip-dot { background: #ffffff; }
 
 /* =========================================================
    LOGIN

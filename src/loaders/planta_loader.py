@@ -77,7 +77,9 @@ def GET_ALL_planta_db():
                 cursor.execute("""
                     SELECT 
                         p.id,
+                        p.id_empresa,
                         e.nombre_empresa AS N_empresa,
+                        e.nombre_empresa AS empresa_nombre,
                         p.nombre
 
                     FROM planta p

@@ -29,48 +29,41 @@
       <!-- ---------- CONTENT ---------- -->
       <main class="flex-1 p-6 space-y-6">
 
-        <!-- ===== Búsqueda y filtros en una sola línea ===== -->
+        <!-- ===== Búsqueda y filtros alineados y adaptativos ===== -->
         <section
-          class="bg-white border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-card)] p-3 flex items-center justify-between gap-3 overflow-x-auto flex-nowrap">
+          class="filter-bar p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3.5 rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-card)] overflow-visible">
           
-          <!-- Izquierda: Buscador + Select de Estado de Proceso -->
-          <div class="flex items-center gap-2.5 flex-shrink-0">
+          <!-- Izquierda: Buscador + Select de Activos/Inactivos -->
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
             <!-- Buscador -->
-            <div class="relative w-48 sm:w-56 lg:w-64">
+            <div class="relative flex-1 min-w-[160px] sm:max-w-xs">
               <i
                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
-              <input type="text" x-model="search" @input="resetPage()" placeholder="Buscar..."
+              <input type="text" x-model="search" @input="resetPage()" placeholder="Buscar contratista, planta..."
                 class="input-field w-full rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm">
             </div>
 
             <!-- Select Activos / Inactivos / Todos (Solo visible para roles autorizados) -->
-            <div class="relative w-36 sm:w-40" x-show="puedeVerInactivos" x-cloak>
+            <div class="relative w-32 sm:w-36 flex-shrink-0" x-show="puedeVerInactivos" x-cloak>
               <select x-model="filtroActivo" @change="resetPage()"
-                class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs sm:text-sm bg-white cursor-pointer font-medium text-[var(--text-primary)]">
+                class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs sm:text-sm cursor-pointer font-medium text-[var(--text-primary)]">
                 <option value="activos">Activos</option>
                 <option value="inactivos">Inactivos</option>
-                <option value="todos"><i class="fa fa-globe" aria-hidden="true"></i>Todos</option>
+                <option value="todos">Todos</option>
               </select>
             </div>
           </div>
 
-          <!-- Derecha: Chips de Filtro Estado (Todos en una sola fila) -->
-          <div class="flex items-center gap-1.5 flex-shrink-0 flex-nowrap overflow-x-auto py-1">
+          <!-- Derecha: Chips de Filtro Estado con brillo libre y sin puntos -->
+          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1">
             <template x-for="estado in estadosFiltro" :key="estado">
               <button type="button" 
                 @click="filtroEstado = estado; resetPage()" 
-                class="chip-select relative overflow-hidden rounded-full text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 whitespace-nowrap transition-all duration-300 font-medium select-none"
-                style="isolation: isolate;"
-                :class="filtroEstado === estado ? (estadoEstilos(estado) + ' shadow-md scale-105 ring-2 ring-white/30') : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'">
+                class="filter-status-chip relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                :class="chipClass(estado)">
 
-                <!-- 🌟 CAPA DEL REFLEJO / HAZ DE LUZ EN MOVIMIENTO -->
-                <span 
-                  class="shimmer-ray block" 
-                  x-show="filtroEstado === estado">
-                </span>
-
-                <!-- TEXTO DEL BOTÓN -->
-                <span class="relative z-10 font-semibold" x-text="estado === 'TODOS' ? 'Todos' : (estado === 'EN REVISIÓN' ? 'En revisión' : (estado === 'POR APROBAR' ? 'Por aprobar' : (estado.charAt(0) + estado.slice(1).toLowerCase())))"></span>
+                <!-- TEXTO DEL BOTÓN SIN PUNTOS -->
+                <span class="relative z-10" x-text="estado === 'TODOS' ? 'Todos' : (estado === 'EN REVISIÓN' ? 'En revisión' : (estado === 'POR APROBAR' ? 'Por aprobar' : (estado.charAt(0) + estado.slice(1).toLowerCase())))"></span>
               </button>
             </template>
           </div>

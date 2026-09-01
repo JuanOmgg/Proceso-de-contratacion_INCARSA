@@ -128,7 +128,7 @@
             <button type="button" @click="limpiarFiltros()" class="action-icon-btn" data-tooltip="Limpiar filtros">
               <i class="fa-solid fa-filter-circle-xmark"></i>
             </button>
-            <a href="usuario-formulario.html"
+            <a href="/usuarios/nuevo"
               class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2">
               <i class="fa fa-user-plus text-xs"></i> Nuevo usuario
             </a>
@@ -196,7 +196,8 @@
                             <i class="fa-solid fa-eye"></i>
                           </button>
 
-                          <a :href="'usuario-formulario.html?edit=' + usuario.id" class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                          <a :href="'/usuarios/editar/' + encodeURIComponent(usuario.nombre_completo || ((usuario.nombres || '') + ' ' + (usuario.apellidos || '')).trim() || usuario.id)"
+                            class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
                             data-tooltip="Editar usuario">
                             <i class="fa-solid fa-pen-to-square"></i>
                           </a>
@@ -400,7 +401,7 @@
             </button>
             
             <template x-if="usuarioDetalle?.id">
-              <a :href="'usuario-formulario.html?edit=' + usuarioDetalle.id"
+              <a :href="'/usuarios/editar/' + encodeURIComponent(usuarioDetalle.nombre_completo || ((usuarioDetalle.nombres || '') + ' ' + (usuarioDetalle.apellidos || '')).trim() || usuarioDetalle.id)"
                 class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
                 <span>Editar usuario</span>

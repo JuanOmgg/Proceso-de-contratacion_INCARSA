@@ -85,8 +85,14 @@ function usuarioForm() {
     // Inicialización
     // ---------------------------------------------------
     async init() {
+      const pathParts = window.location.pathname.split("/").filter(Boolean);
+      let pathParam = "";
+      const editIdx = pathParts.indexOf("editar");
+      if (editIdx > -1 && pathParts[editIdx + 1]) {
+        pathParam = decodeURIComponent(pathParts[editIdx + 1]);
+      }
       const params = new URLSearchParams(window.location.search);
-      const editParam = params.get("edit");
+      const editParam = (window.__USUARIO_IDENTIFICADOR__ || pathParam || params.get("edit") || "").trim();
 
       await Promise.allSettled([
         this.getRoles(),
@@ -95,17 +101,28 @@ function usuarioForm() {
       ]);
 
       if (editParam) {
-        let found = this.allUsers.find(u => Number(u.id) === Number(editParam));
+        const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
+        const targetNorm = norm(editParam);
+
+        let found = this.allUsers.find(u => {
+          if (String(u.id) === String(editParam)) return true;
+          const fullName = norm(`${u.nombres || ''} ${u.apellidos || ''}`);
+          if (fullName && fullName === targetNorm) return true;
+          if (norm(u.nombres) === targetNorm) return true;
+          if (norm(u.nombre) === targetNorm) return true;
+          if (norm(u.correo) === targetNorm) return true;
+          return false;
+        });
         
         if (!found || !found.plantas_ids) {
           try {
-            const res = await fetch(`${API.usuarios}/${editParam}`);
+            const res = await fetch(`${API.usuarios}/${encodeURIComponent(editParam)}`);
             if (res.ok) {
               const uData = await res.json();
               found = uData.data || uData.datos || uData;
             }
           } catch (e) {
-            console.warn("No se pudo cargar usuario por ID directo:", e);
+            console.warn("No se pudo cargar usuario por identificador directo:", e);
           }
         }
 

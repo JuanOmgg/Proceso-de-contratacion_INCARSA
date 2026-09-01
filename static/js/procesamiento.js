@@ -38,15 +38,27 @@ function procesamientoBoard() {
     ],
 
   estadoEstilos(estado){
-    const mapaEstilos = {
-      'ENVIADO' : 'bg-cyan-500 text-white hover:bg-cyan-600',
-      'EN REVISIÓN' : 'bg-purple-500 text-white hover:bg-purple-700',
-      'POR APROBAR' : 'bg-yellow-500 text-white hover:bg-yellow-600',
-      'APROBADO' : 'bg-green-500 text-white hover:bg-green-700',
-      'RECHAZADO' : 'bg-red-500 text-white hover:bg-red-700'
-    };
+    const est = (estado || '').trim().toUpperCase();
+    if (est === 'ENVIADO') return 'status-enviado';
+    if (est.includes('REVISI')) return 'status-revision';
+    if (est.includes('APROBAR') || est === 'POR APROBAR') return 'status-aprobar';
+    if (est === 'APROBADO') return 'status-aprobado';
+    if (est === 'RECHAZADO') return 'status-rechazado';
+    return 'status-enviado';
+  },
 
-    return mapaEstilos[estado] || 'bg-gray-700 text-white border-gray-200 hover:bg-gray-500';
+  chipClass(estado) {
+    const est = (estado || '').trim().toUpperCase();
+    const isActive = this.filtroEstado === estado;
+    
+    let base = 'chip-neon-todos';
+    if (est === 'ENVIADO') base = 'chip-neon-enviado';
+    else if (est.includes('REVISI')) base = 'chip-neon-revision';
+    else if (est.includes('APROBAR') || est === 'POR APROBAR') base = 'chip-neon-aprobar';
+    else if (est === 'APROBADO') base = 'chip-neon-aprobado';
+    else if (est === 'RECHAZADO') base = 'chip-neon-rechazado';
+
+    return `${base} ${isActive ? 'is-active scale-105' : 'is-idle'}`;
   },
 
     // Paginación
@@ -115,41 +127,43 @@ function procesamientoBoard() {
 
     stepClasses(solicitud, idx) {
       const status = this.nodeStatus(solicitud, idx);
-      const color = this.getColorEstado(solicitud.estado);
+      const faseClass = `step-fase-${idx}`;
 
       if (status === 'is-complete') {
-        return 'bg-emerald-500 text-white border-transparent';
+        return `${faseClass} step-node-complete text-white border-transparent`;
       }
       if (status === 'is-rejected') {
-        return 'bg-rose-500 text-white ring-4 ring-rose-100 border-transparent';
+        return `${faseClass} step-node-rejected text-white border-transparent`;
       }
       if (status === 'is-current') {
-        return `${color.bg} text-white ring-4 ${color.ring} border-transparent scale-105`;
+        return `${faseClass} step-node-current is-active text-white border-transparent scale-105`;
       }
       // Pendiente
-      return 'bg-white text-gray-400 border-2 border-gray-200';
+      return `${faseClass} step-node-pending bg-white text-gray-400 border-2 border-gray-200`;
     },
 
     labelClasses(solicitud, idx) {
       const status = this.nodeStatus(solicitud, idx);
-      const color = this.getColorEstado(solicitud.estado);
+      const faseClass = `step-label-fase-${idx}`;
 
       if (status === 'is-complete') {
-        return 'text-emerald-600 font-semibold';
+        return `${faseClass} step-label-complete font-semibold`;
       }
       if (status === 'is-rejected') {
-        return 'text-rose-600 font-bold';
+        return `${faseClass} step-label-rejected font-bold`;
       }
       if (status === 'is-current') {
-        return 'text-gray-900 font-bold';
+        return `${faseClass} step-label-current is-active font-bold`;
       }
-      return 'text-gray-400';
+      return `${faseClass} step-label-pending text-gray-400`;
     },
 
     connectorClasses(solicitud, idx) {
       const estado = (solicitud.estado || '').toUpperCase();
+      const conClass = `step-con-${idx}`;
+
       if (estado === 'APROBADO') {
-        return 'bg-emerald-500';
+        return `${conClass} step-connector-complete is-complete`;
       }
       if (estado === 'RECHAZADO') {
         const etapaRechazo = String(solicitud.etapa_rechazo || solicitud.fase_rechazo || solicitud.rechazado_en || '').toUpperCase();
@@ -160,9 +174,9 @@ function procesamientoBoard() {
           pasoRechazo = 2;
         }
 
-        if (idx < pasoRechazo - 1) return 'bg-emerald-500';
-        if (idx === pasoRechazo - 1) return 'bg-rose-500';
-        return 'bg-gray-200';
+        if (idx < pasoRechazo - 1) return `${conClass} step-connector-complete is-complete`;
+        if (idx === pasoRechazo - 1) return `${conClass} step-connector-rejected is-rejected`;
+        return `${conClass} step-connector-pending is-pending`;
       }
       const mapaPasos = {
         'ENVIADO': 0,
@@ -171,9 +185,9 @@ function procesamientoBoard() {
       };
       const pasoActual = mapaPasos[estado] ?? 0;
       if (idx < pasoActual) {
-        return 'bg-emerald-500';
+        return `${conClass} step-connector-complete is-complete`;
       }
-      return 'bg-gray-200';
+      return `${conClass} step-connector-pending is-pending`;
     },
 
     solicitudes: [],

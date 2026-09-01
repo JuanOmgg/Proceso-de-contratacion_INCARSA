@@ -1,8 +1,11 @@
 {% extends 'pages/base.html' %}
 
-{% block title %}Nuevo usuario · INCARSA{% endblock%}
+{% block title %}{{ 'Editar usuario' if usuario_identificador else 'Nuevo usuario' }} · INCARSA{% endblock %}
 
 {% block extra_js %}
+  <script>
+    window.__USUARIO_IDENTIFICADOR__ = "{{ usuario_identificador | default('', true) }}";
+  </script>
   <script src="{{ url_for('static', path='js/usuario-formulario.js') }}"></script>
 {% endblock %}
 
@@ -30,7 +33,7 @@
           <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
             <i class="fa-solid fa-bars text-base"></i>
           </button>
-          <a href="usuarios-listado.html" class="action-icon-btn text-white hidden sm:inline-flex" title="Volver al listado"><i
+          <a href="/usuarios" class="action-icon-btn text-white hidden sm:inline-flex" title="Volver al listado"><i
               class="fa-solid fa-arrow-left"></i></a>
           <h1 class="font-display font-semibold text-lg text-white"
             x-text="isEdit ? 'Editar usuario' : 'Nuevo usuario'"></h1>
@@ -204,8 +207,8 @@
                         class="input-field w-full rounded-lg px-3 py-2.5 text-sm pr-10"
                         :class="errors.contrasena ? 'has-error' : ''">
                       <button type="button" @click="mostrarContrasena = !mostrarContrasena"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 action-icon-btn"
-                        style="width:28px;height:28px;" tabindex="-1">
+                        class="password-toggle-btn absolute right-2 top-1/2 -translate-y-1/2"
+                        tabindex="-1" title="Mostrar/ocultar contraseña">
                         <i class="fa-solid text-xs" :class="mostrarContrasena ? 'fa-eye-slash' : 'fa-eye'"></i>
                       </button>
                     </div>
@@ -219,8 +222,8 @@
                         class="input-field w-full rounded-lg px-3 py-2.5 text-sm pr-10"
                         :class="errors.confirmarContrasena ? 'has-error' : ''">
                       <button type="button" @click="mostrarConfirmar = !mostrarConfirmar"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 action-icon-btn"
-                        style="width:28px;height:28px;" tabindex="-1">
+                        class="password-toggle-btn absolute right-2 top-1/2 -translate-y-1/2"
+                        tabindex="-1" title="Mostrar/ocultar contraseña">
                         <i class="fa-solid text-xs" :class="mostrarConfirmar ? 'fa-eye-slash' : 'fa-eye'"></i>
                       </button>
                     </div>

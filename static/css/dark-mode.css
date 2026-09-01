@@ -48,35 +48,188 @@
   color: var(--text-primary) !important;
 }
 
-/*Estados en tablas */
-:root.dark .status-enviado {
-  background-color: rgba(6, 182, 212, 0.2) !important;
-  color: #22d3ee !important;
-  border-color: rgba(6, 182, 212, 0.4) !important;
+/* =========================================================
+   ESTADOS Y ETIQUETAS STATUS-PILL EN MODO OSCURO (NEON GLOW)
+   ========================================================= */
+:root.dark .status-pill {
+  font-weight: 700 !important;
+  letter-spacing: 0.025em !important;
+  transition: all 0.2s ease !important;
 }
 
-:root.dark .status-revision {
-  background-color: rgba(245, 158, 11, 0.2) !important;
-  color: #cec003 !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
+:root.dark .status-pill::before {
+  box-shadow: 0 0 6px currentColor, 0 0 10px currentColor !important;
 }
 
-:root.dark .status-aprobar {
-  background-color: rgba(126, 9, 236, 0.2) !important;
-  color: #d105fa !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
+/* 1. ETIQUETA CIAN / AZUL ELÉCTRICO NEÓN (STATUS-ENVIADO) */
+:root.dark .status-enviado,
+:root.dark .status-pill.status-enviado,
+:root.dark .modal-panel .status-enviado {
+  background-color: rgba(6, 182, 212, 0.16) !important;
+  color: #ecfeff !important;
+  border: 1px solid rgba(6, 182, 212, 0.7) !important;
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.45), inset 0 0 8px rgba(6, 182, 212, 0.2) !important;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 1), 0 0 16px rgba(6, 182, 212, 0.6) !important;
 }
 
-:root.dark .status-aprobado {
-  background-color: rgba(16, 185, 16, 0.2) !important;
-  color: #01ce3e !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
+:root.dark .status-enviado::before,
+:root.dark .status-pill.status-enviado::before,
+:root.dark .modal-panel .status-enviado::before {
+  background-color: #00f0ff !important;
+  box-shadow: 0 0 6px #00f0ff, 0 0 12px #06b6d4 !important;
 }
 
-:root.dark .status-rechazado {
-  background-color: rgba(236, 14, 51, 0.2) !important;
-  color: #f1455f !important;
-  border-color: rgba(244, 63, 94, 0.4) !important;
+:root.dark .status-enviado i,
+:root.dark .modal-panel .status-enviado i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 1)) drop-shadow(0 0 12px rgba(6, 182, 212, 0.8)) !important;
+}
+
+/* 2. ETIQUETA MORADA / VIOLETA NEÓN (STATUS-REVISION) */
+:root.dark .status-revision,
+:root.dark .status-pill.status-revision,
+:root.dark .status-pill.is-revision,
+:root.dark .modal-panel .status-revision,
+:root.dark .modal-panel .status-aprobar {
+  background-color: rgba(168, 85, 247, 0.16) !important;
+  color: #f3e8ff !important;
+  border: 1px solid rgba(192, 132, 252, 0.7) !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.45), inset 0 0 8px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 1), 0 0 16px rgba(168, 85, 247, 0.6) !important;
+}
+
+:root.dark .status-revision::before,
+:root.dark .status-pill.status-revision::before,
+:root.dark .modal-panel .status-revision::before,
+:root.dark .modal-panel .status-aprobar::before {
+  background-color: #c084fc !important;
+  box-shadow: 0 0 6px #c084fc, 0 0 12px #a855f7 !important;
+}
+
+:root.dark .status-revision i,
+:root.dark .modal-panel .status-revision i,
+:root.dark .modal-panel .status-aprobar i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 1)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.8)) !important;
+}
+
+:root.dark .status-revision:hover,
+:root.dark .modal-panel .status-revision:hover,
+:root.dark .modal-panel .status-aprobar:hover {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* 3. ETIQUETA ÁMBAR / DORADO NEÓN (STATUS-APROBAR) */
+:root.dark .status-aprobar,
+:root.dark .status-pill.status-aprobar,
+:root.dark .status-pill.is-aprobar {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  color: #fffbeb !important;
+  border: 1px solid rgba(245, 158, 11, 0.7) !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.45), inset 0 0 8px rgba(245, 158, 11, 0.2) !important;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 1), 0 0 16px rgba(245, 158, 11, 0.6) !important;
+}
+
+:root.dark .status-aprobar::before,
+:root.dark .status-pill.status-aprobar::before {
+  background-color: #ffb700 !important;
+  box-shadow: 0 0 6px #ffb700, 0 0 12px #f59e0b !important;
+}
+
+:root.dark .status-aprobar i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(255, 183, 0, 1)) drop-shadow(0 0 12px rgba(245, 158, 11, 0.8)) !important;
+}
+
+/* 4. ETIQUETA VERDE ESMERALDA NEÓN (STATUS-APROBADO) */
+:root.dark .status-aprobado,
+:root.dark .status-pill.status-aprobado,
+:root.dark .status-pill.is-aprobado,
+:root.dark .modal-panel .status-aprobado {
+  background-color: rgba(0, 255, 157, 0.16) !important;
+  color: #f0fdf4 !important;
+  border: 1px solid rgba(0, 255, 157, 0.7) !important;
+  box-shadow: 0 0 14px rgba(0, 255, 157, 0.45), inset 0 0 8px rgba(0, 255, 157, 0.2) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 1), 0 0 16px rgba(0, 255, 157, 0.6) !important;
+}
+
+:root.dark .status-aprobado::before,
+:root.dark .status-pill.status-aprobado::before,
+:root.dark .modal-panel .status-aprobado::before {
+  background-color: #00ff9d !important;
+  box-shadow: 0 0 6px #00ff9d, 0 0 12px #059669 !important;
+}
+
+:root.dark .status-aprobado i,
+:root.dark .modal-panel .status-aprobado i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 1)) drop-shadow(0 0 12px rgba(0, 255, 157, 0.8)) !important;
+}
+
+/* 5. ETIQUETA ROJO / CARMESÍ NEÓN (STATUS-RECHAZADO) */
+:root.dark .status-rechazado,
+:root.dark .status-pill.status-rechazado,
+:root.dark .status-pill.is-rechazado,
+:root.dark .modal-panel .status-rechazado {
+  background-color: rgba(255, 42, 85, 0.16) !important;
+  color: #fff1f2 !important;
+  border: 1px solid rgba(255, 42, 85, 0.7) !important;
+  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45), inset 0 0 8px rgba(255, 42, 85, 0.2) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 1), 0 0 16px rgba(255, 42, 85, 0.6) !important;
+}
+
+:root.dark .status-rechazado::before,
+:root.dark .status-pill.status-rechazado::before,
+:root.dark .modal-panel .status-rechazado::before {
+  background-color: #ff2a55 !important;
+  box-shadow: 0 0 6px #ff2a55, 0 0 12px #e11d48 !important;
+}
+
+:root.dark .status-rechazado i,
+:root.dark .modal-panel .status-rechazado i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 1)) drop-shadow(0 0 12px rgba(255, 42, 85, 0.8)) !important;
+}
+
+/* =========================================================
+   ESTADOS DE ACTIVIDAD (ACTIVO / INACTIVO) EN MODO OSCURO (NEON GLOW)
+   ========================================================= */
+:root.dark .status-usuario-activo {
+  background-color: rgba(0, 255, 157, 0.12) !important;
+  color: #00ff9d !important;
+  border: 1px solid rgba(0, 255, 157, 0.4) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.25), inset 0 0 6px rgba(0, 255, 157, 0.08) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.65) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s ease !important;
+}
+
+:root.dark .status-usuario-activo:hover {
+  background-color: rgba(0, 255, 157, 0.2) !important;
+  box-shadow: 0 0 14px rgba(0, 255, 157, 0.45), inset 0 0 8px rgba(0, 255, 157, 0.15) !important;
+  text-shadow: 0 0 12px rgba(0, 255, 157, 0.9) !important;
+}
+
+:root.dark .status-usuario-inactivo,
+:root.dark .status-usuario-inactivo.bg-red-100 {
+  background-color: rgba(255, 42, 85, 0.12) !important;
+  color: #ff2a55 !important;
+  border: 1px solid rgba(255, 42, 85, 0.4) !important;
+  box-shadow: 0 0 10px rgba(255, 42, 85, 0.25), inset 0 0 6px rgba(255, 42, 85, 0.08) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.65) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s ease !important;
+}
+
+:root.dark .status-usuario-inactivo:hover,
+:root.dark .status-usuario-inactivo.bg-red-100:hover {
+  background-color: rgba(255, 42, 85, 0.2) !important;
+  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45), inset 0 0 8px rgba(255, 42, 85, 0.15) !important;
+  text-shadow: 0 0 12px rgba(255, 42, 85, 0.9) !important;
 }
 
 /* =========================================================
@@ -531,24 +684,6 @@
 
 :root.dark .btn-outline-light:hover {
   background-color: #2a2a2a;
-}
-
-:root.dark .status-pill.is-revision {
-  background-color: rgba(245, 158, 11) !important;
-  color: #fbbf24 !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-}
-
-:root.dark .status-pill.is-aprobar {
-  background-color: rgba(168, 85, 247, 0.2) !important;
-  color: #c084fc !important;
-  border-color: rgba(168, 85, 247, 0.4) !important;
-}
-
-:root.dark .status-pill.is-aprobado {
-  background-color: rgba(16, 185, 129, 0.2) !important;
-  color: #34d399 !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
 /* :root.dark .chart-card {
@@ -1067,6 +1202,28 @@
   background: transparent;
 }
 
+/* 12. Inputs y selects dentro de modales estilo ticket */
+:root.dark .modal-panel input.input-field,
+:root.dark .modal-panel select.input-field {
+  background: #181818 !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+:root.dark .modal-panel input.input-field:focus,
+:root.dark .modal-panel select.input-field:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+:root.dark .modal-panel .bg-\[\#efe9dc\]\/20,
+:root.dark .modal-panel .bg-\[\#efe9dc\]\/30,
+:root.dark .modal-panel .bg-\[\#efe9dc\]\/40,
+:root.dark .modal-panel .bg-\[\#efe9dc\]\/70 {
+  background: #1c1c1c !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* =========================================================
    ESTILO AURORA FLAMA EN MODALES (DANGER / ERROR / RECHAZADO)
    Botón de confirmación (.modal-btn-confirm) y estampa (.modal-stamp)
@@ -1176,6 +1333,38 @@
    Ver (Cian neón), Editar (Oro/Amarillo neón), Eliminar (Rojo neón)
    ========================================================= */
 
+/* Botón de alternar visibilidad de contraseña dentro de campos input */
+:root.dark .password-toggle-btn {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+:root.dark .password-toggle-btn:hover {
+  color: #00e5ff !important;
+  background: rgba(0, 229, 255, 0.14) !important;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3) !important;
+}
+
+:root.dark .password-toggle-btn i {
+  color: inherit !important;
+  transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+
+:root.dark .password-toggle-btn:hover i {
+  color: #00e5ff !important;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.95)) !important;
+  transform: scale(1.1) !important;
+}
+
 /* Transición base y bordes en botones de acción */
 :root.dark .action-icon-btn {
   border-radius: 8px !important;
@@ -1185,22 +1374,22 @@
 /* 1. Botón VER (Ojo - Azul eléctrico / Cian fosforescente) */
 :root.dark .action-icon-btn.text-blue-600,
 :root.dark .action-icon-btn.text-blue-500,
-:root.dark .action-icon-btn:has(> .fa-eye),
-:root.dark .action-icon-btn:has(> .fa-eye-slash) {
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn),
+:root.dark .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) {
   color: #00e5ff !important;
   filter: none !important;
 }
 
 :root.dark .action-icon-btn.text-blue-600 i,
 :root.dark .action-icon-btn.text-blue-500 i,
-:root.dark .action-icon-btn:has(> .fa-eye) i {
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn) i {
   color: #00e5ff !important;
   filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 12px rgba(0, 229, 255, 0.45)) !important;
 }
 
 :root.dark .action-icon-btn.text-blue-600:hover,
 :root.dark .action-icon-btn.text-blue-500:hover,
-:root.dark .action-icon-btn:has(> .fa-eye):hover {
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover {
   background: rgba(0, 229, 255, 0.16) !important;
   transform: scale(1.18) !important;
   filter: none !important;
@@ -1337,4 +1526,527 @@
   text-shadow: none !important;
   filter: none !important;
 }
+
+/* =========================================================
+   TARJETAS DE MÉTRICAS FOSFORESCENTES (MODAL DE PLANTAS)
+   ========================================================= */
+.neon-stat-card {
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+}
+.neon-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Estilos por defecto (Modo Claro) */
+.neon-card-incarsa {
+  background: #ecfeff !important;
+  border: 1px solid #67e8f9 !important;
+}
+.neon-card-incarsa .neon-label { color: #0891b2 !important; }
+.neon-card-incarsa .neon-value { color: #0e7490 !important; }
+
+.neon-card-uniminas {
+  background: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+}
+.neon-card-uniminas .neon-label { color: #059669 !important; }
+.neon-card-uniminas .neon-value { color: #047857 !important; }
+
+.neon-card-carboinsa {
+  background: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+}
+.neon-card-carboinsa .neon-label { color: #d97706 !important; }
+.neon-card-carboinsa .neon-value { color: #b45309 !important; }
+
+.neon-card-milpa {
+  background: #faf5ff !important;
+  border: 1px solid #d8b4fe !important;
+}
+.neon-card-milpa .neon-label { color: #9333ea !important; }
+.neon-card-milpa .neon-value { color: #7e22ce !important; }
+
+.neon-card-total {
+  background: #fff1f2 !important;
+  border: 1px solid #fda4af !important;
+}
+.neon-card-total .neon-label { color: #e11d48 !important; }
+.neon-card-total .neon-value { color: #be123c !important; }
+
+/* MODO OSCURO: FOSFORESCENTES Y NEÓN INTENSO */
+
+/* 1. INCARSA - Cyan Eléctrico Fosforescente */
+:root.dark .neon-card-incarsa {
+  background: rgba(0, 240, 255, 0.08) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.65) !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.28), inset 0 0 10px rgba(0, 240, 255, 0.12) !important;
+}
+:root.dark .neon-card-incarsa:hover {
+  box-shadow: 0 0 26px rgba(0, 240, 255, 0.55), inset 0 0 16px rgba(0, 240, 255, 0.25) !important;
+  border-color: #00f0ff !important;
+}
+:root.dark .neon-card-incarsa .neon-label {
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.9), 0 0 16px rgba(0, 240, 255, 0.5) !important;
+}
+:root.dark .neon-card-incarsa .neon-value {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 1), 0 0 18px rgba(0, 240, 255, 0.8), 0 0 28px rgba(0, 240, 255, 0.5) !important;
+}
+
+/* 2. UNIMINAS - Verde Neón Fosforescente */
+:root.dark .neon-card-uniminas {
+  background: rgba(0, 255, 136, 0.08) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.65) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.28), inset 0 0 10px rgba(0, 255, 136, 0.12) !important;
+}
+:root.dark .neon-card-uniminas:hover {
+  box-shadow: 0 0 26px rgba(0, 255, 136, 0.55), inset 0 0 16px rgba(0, 255, 136, 0.25) !important;
+  border-color: #00ff88 !important;
+}
+:root.dark .neon-card-uniminas .neon-label {
+  color: #00ff88 !important;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.9), 0 0 16px rgba(0, 255, 136, 0.5) !important;
+}
+:root.dark .neon-card-uniminas .neon-value {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 1), 0 0 18px rgba(0, 255, 136, 0.8), 0 0 28px rgba(0, 255, 136, 0.5) !important;
+}
+
+/* 3. CARBOINSA - Ámbar / Oro Eléctrico Fosforescente */
+:root.dark .neon-card-carboinsa {
+  background: rgba(255, 183, 0, 0.08) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.65) !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.28), inset 0 0 10px rgba(255, 183, 0, 0.12) !important;
+}
+:root.dark .neon-card-carboinsa:hover {
+  box-shadow: 0 0 26px rgba(255, 183, 0, 0.55), inset 0 0 16px rgba(255, 183, 0, 0.25) !important;
+  border-color: #ffb700 !important;
+}
+:root.dark .neon-card-carboinsa .neon-label {
+  color: #ffb700 !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.9), 0 0 16px rgba(255, 183, 0, 0.5) !important;
+}
+:root.dark .neon-card-carboinsa .neon-value {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 1), 0 0 18px rgba(255, 183, 0, 0.8), 0 0 28px rgba(255, 183, 0, 0.5) !important;
+}
+
+/* 4. MILPA - Púrpura / Amatista Neón Fosforescente */
+:root.dark .neon-card-milpa {
+  background: rgba(192, 132, 252, 0.08) !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.65) !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.28), inset 0 0 10px rgba(192, 132, 252, 0.12) !important;
+}
+:root.dark .neon-card-milpa:hover {
+  box-shadow: 0 0 26px rgba(192, 132, 252, 0.55), inset 0 0 16px rgba(192, 132, 252, 0.25) !important;
+  border-color: #c084fc !important;
+}
+:root.dark .neon-card-milpa .neon-label {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.9), 0 0 16px rgba(192, 132, 252, 0.5) !important;
+}
+:root.dark .neon-card-milpa .neon-value {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 1), 0 0 18px rgba(192, 132, 252, 0.8), 0 0 28px rgba(192, 132, 252, 0.5) !important;
+}
+
+/* 5. TOTAL - Magenta / Rosa Neón Fosforescente */
+:root.dark .neon-card-total {
+  background: rgba(255, 42, 133, 0.09) !important;
+  border: 1.5px solid rgba(255, 42, 133, 0.7) !important;
+  box-shadow: 0 0 18px rgba(255, 42, 133, 0.32), inset 0 0 12px rgba(255, 42, 133, 0.15) !important;
+}
+:root.dark .neon-card-total:hover {
+  box-shadow: 0 0 28px rgba(255, 42, 133, 0.6), inset 0 0 18px rgba(255, 42, 133, 0.3) !important;
+  border-color: #ff2a85 !important;
+}
+:root.dark .neon-card-total .neon-label {
+  color: #ff2a85 !important;
+  text-shadow: 0 0 8px rgba(255, 42, 133, 0.9), 0 0 16px rgba(255, 42, 133, 0.5) !important;
+}
+:root.dark .neon-card-total .neon-value {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 42, 133, 1), 0 0 20px rgba(255, 42, 133, 0.85), 0 0 30px rgba(255, 42, 133, 0.6) !important;
+}
+
+/* =========================================================
+   MINI ICONOS CON BRILLO FOSFORESCENTE EN MODALES (MODO OSCURO)
+   ========================================================= */
+
+/* 1. Iconos de adición / nuevo registro (+ círculo) */
+:root.dark .modal-panel .fa-plus-circle,
+:root.dark .modal-panel .fa-circle-plus {
+  color: #00ff9d !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.95)) drop-shadow(0 0 14px rgba(0, 255, 157, 0.6)) !important;
+}
+
+/* 2. Licencia de conducción / Documento de identidad */
+:root.dark .modal-panel .fa-id-card {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.95)) drop-shadow(0 0 14px rgba(0, 240, 255, 0.6)) !important;
+}
+
+/* 3. Documentos adjuntos / Escudo de seguridad */
+:root.dark .modal-panel .fa-file-shield {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.95)) drop-shadow(0 0 14px rgba(251, 191, 36, 0.6)) !important;
+}
+
+/* 4. Subida a la nube / Upload file */
+:root.dark .modal-panel .fa-cloud-arrow-up,
+:root.dark .modal-panel .fa-upload {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.6)) !important;
+}
+
+/* 5. Botón '+ Otro' documento */
+:root.dark .modal-panel button:has(> .fa-plus) {
+  color: #00ff9d !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.6) !important;
+}
+:root.dark .modal-panel button:has(> .fa-plus) i {
+  color: #00ff9d !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.95)) drop-shadow(0 0 12px rgba(0, 255, 157, 0.6)) !important;
+}
+
+/* 6. Eliminar / Papelera (Tablas y Formularios) */
+:root.dark .modal-panel .fa-trash,
+:root.dark .modal-panel .fa-trash-can {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 0.95)) drop-shadow(0 0 14px rgba(255, 42, 85, 0.6)) !important;
+}
+
+/* 7. Editar / Lápiz */
+:root.dark .modal-panel .fa-pen,
+:root.dark .modal-panel .fa-pen-to-square {
+  color: #facc15 !important;
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 14px rgba(250, 204, 21, 0.6)) !important;
+}
+
+/* 8. Documento verificado / Check de archivos */
+:root.dark .modal-panel .fa-file-circle-check {
+  color: #00ff9d !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.95)) drop-shadow(0 0 14px rgba(0, 255, 157, 0.6)) !important;
+}
+
+/* 9. Botón Guardar / Confirmar (ícono de disco o check) */
+:root.dark .modal-panel .modal-btn-confirm i {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.6)) !important;
+}
+
+/* 10. Status pills e íconos de cabecera */
+:root.dark .modal-panel .status-pill i {
+  filter: drop-shadow(0 0 6px currentColor) !important;
+}
+
+/* 11. Botón Quitar / Cancelar archivo individual (x roja) */
+:root.dark .modal-panel button:has(> .fa-xmark).text-red-400 i {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 0.95)) !important;
+}
+
+/* 12. Inputs de archivo personalizados (Drop zones) en modo oscuro */
+:root.dark .modal-panel label.cursor-pointer {
+  background: #151515 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+:root.dark .modal-panel label.cursor-pointer:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+}
+
+/* =========================================================
+   PASO A PASO / TIMELINE BRILLANTE Y FOSFORESCENTE (PROCESAMIENTO)
+   ========================================================= */
+
+/* =========================================================
+   PASO A PASO / TIMELINE BRILLANTE Y FOSFORESCENTE (PROCESAMIENTO)
+   Cada etapa brilla estrictamente con su propio color neón:
+   Paso 0: Enviado (Cian)
+   Paso 1: En revisión (Morada)
+   Paso 2: Por aprobar (Ámbar / Oro)
+   Paso 3: Aprobado (Verde Esmeralda) / Rechazado (Rojo Carmesí)
+   ========================================================= */
+
+/* --- PASO 0: ENVIADO (CIAN ELÉCTRICO NEÓN) --- */
+:root.dark .step-fase-0.step-node-complete,
+:root.dark .step-fase-0.step-node-current {
+  background-color: #00f0ff !important;
+  color: #03202e !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.95), 0 0 32px rgba(0, 240, 255, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+}
+:root.dark .step-fase-0.step-node-complete i,
+:root.dark .step-fase-0.step-node-current i {
+  color: #03202e !important;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8)) !important;
+}
+:root.dark .step-label-fase-0.step-label-complete,
+:root.dark .step-label-fase-0.step-label-current {
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.9) !important;
+  font-weight: 700 !important;
+}
+:root.dark .step-con-0.step-connector-complete {
+  background-color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 1), 0 0 20px rgba(0, 240, 255, 0.6) !important;
+  height: 3px !important;
+}
+
+/* --- PASO 1: EN REVISIÓN (MORADA / VIOLETA NEÓN) --- */
+:root.dark .step-fase-1.step-node-complete,
+:root.dark .step-fase-1.step-node-current {
+  background-color: #c084fc !important;
+  color: #1a042e !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.95), 0 0 32px rgba(168, 85, 247, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+}
+:root.dark .step-fase-1.step-node-complete i,
+:root.dark .step-fase-1.step-node-current i,
+:root.dark .step-fase-1.step-node-current span {
+  color: #1a042e !important;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8)) !important;
+}
+:root.dark .step-label-fase-1.step-label-complete,
+:root.dark .step-label-fase-1.step-label-current {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.9) !important;
+  font-weight: 700 !important;
+}
+:root.dark .step-con-1.step-connector-complete {
+  background-color: #c084fc !important;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 1), 0 0 20px rgba(168, 85, 247, 0.6) !important;
+  height: 3px !important;
+}
+
+/* --- PASO 2: POR APROBAR (ÁMBAR / ORO ELÉCTRICO NEÓN) --- */
+:root.dark .step-fase-2.step-node-complete,
+:root.dark .step-fase-2.step-node-current {
+  background-color: #ffb700 !important;
+  color: #2b1700 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.95), 0 0 32px rgba(255, 183, 0, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+}
+:root.dark .step-fase-2.step-node-complete i,
+:root.dark .step-fase-2.step-node-current i,
+:root.dark .step-fase-2.step-node-current span {
+  color: #2b1700 !important;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8)) !important;
+}
+:root.dark .step-label-fase-2.step-label-complete,
+:root.dark .step-label-fase-2.step-label-current {
+  color: #ffb700 !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.9) !important;
+  font-weight: 700 !important;
+}
+:root.dark .step-con-2.step-connector-complete {
+  background-color: #ffb700 !important;
+  box-shadow: 0 0 10px rgba(255, 183, 0, 1), 0 0 20px rgba(255, 183, 0, 0.6) !important;
+  height: 3px !important;
+}
+
+/* --- PASO 3: APROBADO (VERDE ESMERALDA NEÓN) --- */
+:root.dark .step-fase-3.step-node-complete,
+:root.dark .step-fase-3.step-node-current {
+  background-color: #00ff9d !important;
+  color: #022315 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.95), 0 0 32px rgba(0, 255, 157, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+}
+:root.dark .step-fase-3.step-node-complete i,
+:root.dark .step-fase-3.step-node-current i,
+:root.dark .step-fase-3.step-node-current span {
+  color: #022315 !important;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8)) !important;
+}
+:root.dark .step-label-fase-3.step-label-complete,
+:root.dark .step-label-fase-3.step-label-current {
+  color: #00ff9d !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.9) !important;
+  font-weight: 700 !important;
+}
+
+/* --- PASO RECHAZADO (ROJO CARMESÍ NEÓN) --- */
+:root.dark .step-node-rejected {
+  background-color: #ff2a55 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(255, 42, 85, 0.95), 0 0 32px rgba(255, 42, 85, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+}
+:root.dark .step-node-rejected i,
+:root.dark .step-node-rejected span {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) !important;
+}
+:root.dark .step-label-rejected {
+  color: #ff2a55 !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.9) !important;
+  font-weight: 700 !important;
+}
+:root.dark .step-connector-rejected {
+  background-color: #ff2a55 !important;
+  box-shadow: 0 0 10px rgba(255, 42, 85, 1), 0 0 20px rgba(255, 42, 85, 0.6) !important;
+  height: 3px !important;
+}
+
+/* --- PASOS PENDIENTES --- */
+:root.dark .step-node-pending {
+  background-color: #1a1a1a !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+:root.dark .step-connector-pending {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  height: 2px !important;
+  box-shadow: none !important;
+}
+:root.dark .step-label-pending {
+  color: #64748b !important;
+  text-shadow: none !important;
+}
+
+/* =========================================================
+   CHIPS DE FILTRO NEÓN FOSFORESCENTES (MODO OSCURO)
+   - Sin relleno interno en reposo (fondo transparente)
+   - Brillo liberado sin restricciones
+   - Halo neón envolvente
+   ========================================================= */
+
+/* 1. TODOS (Gris / Plata Neón) */
+:root.dark .chip-neon-todos {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+}
+:root.dark .chip-neon-todos:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.3) !important;
+}
+:root.dark .chip-neon-todos.is-active {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.75), 0 0 40px rgba(255, 255, 255, 0.35) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 2. ENVIADO (Cian Neón Fosforescente) */
+:root.dark .chip-neon-enviado {
+  background: transparent !important;
+  color: #00f0ff !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.7) !important;
+}
+:root.dark .chip-neon-enviado:hover {
+  background: rgba(0, 240, 255, 0.12) !important;
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6) !important;
+}
+:root.dark .chip-neon-enviado.is-active {
+  background: rgba(0, 240, 255, 0.22) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #00f0ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.95), 0 0 45px rgba(0, 240, 255, 0.65), 0 0 65px rgba(0, 240, 255, 0.35) !important;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 1) !important;
+}
+
+/* 3. EN REVISIÓN (Morada / Violeta Neón Fosforescente) */
+:root.dark .chip-neon-revision {
+  background: transparent !important;
+  color: #c084fc !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.5) !important;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.25) !important;
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.7) !important;
+}
+:root.dark .chip-neon-revision:hover {
+  background: rgba(192, 132, 252, 0.12) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 18px rgba(192, 132, 252, 0.6) !important;
+}
+:root.dark .chip-neon-revision.is-active {
+  background: rgba(168, 85, 247, 0.24) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #c084fc !important;
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.95), 0 0 45px rgba(168, 85, 247, 0.65), 0 0 65px rgba(192, 132, 252, 0.35) !important;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 1) !important;
+}
+
+/* 4. POR APROBAR (Ámbar / Oro Eléctrico Neón Fosforescente) */
+:root.dark .chip-neon-aprobar {
+  background: transparent !important;
+  color: #ffb700 !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.5) !important;
+  box-shadow: 0 0 10px rgba(255, 183, 0, 0.25) !important;
+  text-shadow: 0 0 6px rgba(255, 183, 0, 0.7) !important;
+}
+:root.dark .chip-neon-aprobar:hover {
+  background: rgba(255, 183, 0, 0.12) !important;
+  border-color: #ffb700 !important;
+  box-shadow: 0 0 18px rgba(255, 183, 0, 0.6) !important;
+}
+:root.dark .chip-neon-aprobar.is-active {
+  background: rgba(255, 183, 0, 0.22) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffb700 !important;
+  box-shadow: 0 0 20px rgba(255, 183, 0, 0.95), 0 0 45px rgba(255, 183, 0, 0.65), 0 0 65px rgba(255, 183, 0, 0.35) !important;
+  text-shadow: 0 0 10px rgba(255, 183, 0, 1) !important;
+}
+
+/* 5. APROBADO (Verde Esmeralda Neón Fosforescente) */
+:root.dark .chip-neon-aprobado {
+  background: transparent !important;
+  color: #00ff9d !important;
+  border: 1.5px solid rgba(0, 255, 157, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.25) !important;
+  text-shadow: 0 0 6px rgba(0, 255, 157, 0.7) !important;
+}
+:root.dark .chip-neon-aprobado:hover {
+  background: rgba(0, 255, 157, 0.12) !important;
+  border-color: #00ff9d !important;
+  box-shadow: 0 0 18px rgba(0, 255, 157, 0.6) !important;
+}
+:root.dark .chip-neon-aprobado.is-active {
+  background: rgba(0, 255, 157, 0.22) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #00ff9d !important;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.95), 0 0 45px rgba(0, 255, 157, 0.65), 0 0 65px rgba(0, 255, 157, 0.35) !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 1) !important;
+}
+
+/* 6. RECHAZADO (Rojo Carmesí Neón Fosforescente) */
+:root.dark .chip-neon-rechazado {
+  background: transparent !important;
+  color: #ff2a55 !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.5) !important;
+  box-shadow: 0 0 10px rgba(255, 42, 85, 0.25) !important;
+  text-shadow: 0 0 6px rgba(255, 42, 85, 0.7) !important;
+}
+:root.dark .chip-neon-rechazado:hover {
+  background: rgba(255, 42, 85, 0.12) !important;
+  border-color: #ff2a55 !important;
+  box-shadow: 0 0 18px rgba(255, 42, 85, 0.6) !important;
+}
+:root.dark .chip-neon-rechazado.is-active {
+  background: rgba(255, 42, 85, 0.22) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ff2a55 !important;
+  box-shadow: 0 0 20px rgba(255, 42, 85, 0.95), 0 0 45px rgba(255, 42, 85, 0.65), 0 0 65px rgba(255, 42, 85, 0.35) !important;
+  text-shadow: 0 0 10px rgba(255, 42, 85, 1) !important;
+}
+
+
+
 

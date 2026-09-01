@@ -384,7 +384,8 @@ function solicitudesTable() {
     },
 
     editSolicitud(solicitud) {
-      window.location.href = `solicitudes-formulario.html?edit=${solicitud.id}`;
+      const code = (solicitud && (solicitud.codigo || solicitud.id)) || '';
+      window.location.href = `/solicitudes/editar/${code}`;
     },
 
     confirmDelete(solicitud) {

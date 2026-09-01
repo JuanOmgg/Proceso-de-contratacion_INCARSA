@@ -54,19 +54,19 @@ def GET_ALL_users_rt():
     return resultado.get("datos", resultado.get("datos_user", []))
 
 @router.get("/{id_user}", status_code=status.HTTP_200_OK, response_model=UsuarioData)   
-def GET_user_rt(id_user:int):
+def GET_user_rt(id_user: str):
 
-    print(f"🔍 [GET] Buscando usuario con ID #{id_user} en la base de datos... ")
+    print(f"🔍 [GET] Buscando usuario '{id_user}' en la base de datos... ")
     resultado = READ_user(id_user)
 
     if not resultado.get("exito", False):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=resultado.get("mensaje"),
+            detail=resultado.get("mensaje", "Usuario no encontrado"),
         )
     
-    print(f"📦 [GET] Datos del usuario #{id_user} recuperados con éxito.")
-    return resultado
+    print(f"📦 [GET] Datos del usuario '{id_user}' recuperados con éxito.")
+    return resultado["data"]
 
 
 @router.patch("/{id_user}", status_code=status.HTTP_200_OK)

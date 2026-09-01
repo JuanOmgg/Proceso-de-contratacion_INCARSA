@@ -56,49 +56,77 @@ def CREATE_user_db(usuario: dict) -> dict:
             "mensaje": f"❌❌ Error en la base de datos : {us} ❌❌",
         }
 
-def GET_user_db(id_user: int) -> dict:
+def GET_user_db(identificador: Any) -> dict:
 
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
 
-                sql = """
-                    SELECT 
-                        u.id,
-                        u.nombres,
-                        u.apellidos,
-                        u.tipo_documento,
-                        u.num_documento,
-                        u.num_telefono,
-                        u.correo,
-                        u.contrasena,
-                        u.id_rol,
-                        u.is_active,
-                        u.fecha_creacion,
-                        r.nombre_rol,
-                        r.descripcion AS descripcion_rol
-                    FROM usuarios u
-                    INNER JOIN roles r ON u.id_rol = r.id
-                    WHERE u.id = %s
-                """
-
-                cursor.execute(sql, (id_user,))
+                # Si es numérico
+                if str(identificador).strip().isdigit():
+                    sql = """
+                        SELECT 
+                            u.id,
+                            u.nombres,
+                            u.apellidos,
+                            u.tipo_documento,
+                            u.num_documento,
+                            u.num_telefono,
+                            u.correo,
+                            u.contrasena,
+                            u.id_rol,
+                            u.is_active,
+                            u.fecha_creacion,
+                            r.nombre_rol,
+                            r.descripcion AS descripcion_rol
+                        FROM usuarios u
+                        INNER JOIN roles r ON u.id_rol = r.id
+                        WHERE u.id = %s
+                    """
+                    cursor.execute(sql, (int(identificador),))
+                else:
+                    term = str(identificador).strip().replace("-", " ")
+                    sql = """
+                        SELECT 
+                            u.id,
+                            u.nombres,
+                            u.apellidos,
+                            u.tipo_documento,
+                            u.num_documento,
+                            u.num_telefono,
+                            u.correo,
+                            u.contrasena,
+                            u.id_rol,
+                            u.is_active,
+                            u.fecha_creacion,
+                            r.nombre_rol,
+                            r.descripcion AS descripcion_rol
+                        FROM usuarios u
+                        INNER JOIN roles r ON u.id_rol = r.id
+                        WHERE LOWER(CONCAT(TRIM(u.nombres), ' ', TRIM(u.apellidos))) = LOWER(%s)
+                           OR LOWER(u.nombres) = LOWER(%s)
+                           OR LOWER(u.correo) = LOWER(%s)
+                           OR LOWER(CONCAT(TRIM(u.nombres), ' ', TRIM(u.apellidos))) LIKE LOWER(%s)
+                        LIMIT 1
+                    """
+                    cursor.execute(sql, (term, term, term, f"%{term}%"))
 
                 usuario = cursor.fetchone()
 
                 if not usuario:
                     return {
                         "exito": False,
-                        "mensaje": f"❌❌ El usuario con ID '{id_user}' no fue encontrado. ❌❌",
+                        "mensaje": f"❌❌ El usuario '{identificador}' no fue encontrado. ❌❌",
                     }
 
                 # Obtener plantas asignadas
+                user_id = usuario["id"]
                 cursor.execute("""
                     SELECT p.id, p.nombre
                     FROM usuario_plantas up
                     INNER JOIN planta p ON up.id_planta = p.id
                     WHERE up.id_usuario = %s
-                """, (id_user,))
+                """, (user_id,))
                 plantas_asignadas = cursor.fetchall() or []
                 usuario["plantas"] = plantas_asignadas
                 usuario["plantas_ids"] = [p["id"] for p in plantas_asignadas]

@@ -21,6 +21,7 @@ function plantasManager() {
 
         // Filtros y búsqueda
         search: "",
+        busqueda: "",
         filtroEmpresa: "",
 
         // Paginación
@@ -44,6 +45,7 @@ function plantasManager() {
             });
 
             this.$watch("search", () => (this.currentPage = 1));
+            this.$watch("busqueda", () => (this.currentPage = 1));
             this.$watch("filtroEmpresa", () => (this.currentPage = 1));
         },
 
@@ -73,6 +75,21 @@ function plantasManager() {
             }
         },
 
+        getNombreEmpresa(id) {
+            if (!id) return "";
+            const emp = this.empresas.find(e => String(e.id) === String(id));
+            return emp ? (emp.nombre || emp.nombre_empresa || "") : "";
+        },
+
+        getColorBadgeEmpresa(emp) {
+            const nom = (typeof emp === "object" ? (emp.N_empresa || emp.nombre || "") : String(emp || "")).toLowerCase();
+            if (nom.includes("incarsa") || nom === "1") return "bg-cyan-400";
+            if (nom.includes("uniminas") || nom === "4") return "bg-emerald-400";
+            if (nom.includes("carboinsa") || nom === "3") return "bg-amber-400";
+            if (nom.includes("milpa") || nom === "2") return "bg-purple-400";
+            return "bg-blue-400";
+        },
+
         async cargarEmpresas() {
             try {
                 const res = await fetch(`${API.empresas}/getall`);
@@ -90,7 +107,16 @@ function plantasManager() {
                 const res = await fetch(`${API.plantas}/getall`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                this.plantas = Array.isArray(data) ? data : (data.datos || []);
+                const lista = Array.isArray(data) ? data : (data.datos || []);
+                this.plantas = lista.map(p => {
+                    const empNom = p.N_empresa || p.empresa_nombre || this.getNombreEmpresa(p.id_empresa) || "";
+                    return {
+                        ...p,
+                        N_empresa: empNom,
+                        empresa_nombre: empNom,
+                        nombre: p.nombre || ""
+                    };
+                });
             } catch (err) {
                 console.error("Error al cargar plantas:", err);
                 this.plantas = [];
@@ -119,15 +145,18 @@ function plantasManager() {
         // Filtros y Tabla
         // ---------------------------------------------------
         get plantasFiltradas() {
-            const text = this.search.trim().toLowerCase();
+            const text = (this.search || this.busqueda || "").trim().toLowerCase();
             return this.plantas.filter(p => {
+                const empNom = p.N_empresa || p.empresa_nombre || this.getNombreEmpresa(p.id_empresa) || "";
                 const matchTexto = !text ||
                     (p.nombre || "").toLowerCase().includes(text) ||
-                    (p.N_empresa || "").toLowerCase().includes(text) ||
+                    empNom.toLowerCase().includes(text) ||
                     String(p.id).includes(text);
 
                 const matchEmpresa = !this.filtroEmpresa ||
-                    (p.N_empresa || "").toLowerCase() === this.filtroEmpresa.toLowerCase();
+                    empNom.toLowerCase() === this.filtroEmpresa.toLowerCase() ||
+                    String(p.id_empresa) === String(this.filtroEmpresa) ||
+                    (this.empresas.find(e => String(e.id) === String(this.filtroEmpresa))?.nombre?.toLowerCase() === empNom.toLowerCase());
 
                 return matchTexto && matchEmpresa;
             });

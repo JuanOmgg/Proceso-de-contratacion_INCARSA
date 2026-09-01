@@ -1,3 +1,4 @@
+from typing import Any
 from config import settings
 from src.loaders.usuario_loader import CREATE_user_db, GET_user_db, DELETE_user_db
 from src.transformers import TRANSFORM_USER, TRANSFORM_USER_FOR_FRONT
@@ -22,9 +23,9 @@ def CREATE_user(payload: UsuarioInput) -> dict:
     return CREATE_user_db(data_clean)
 
 
-def READ_user(id_user: int) -> dict:
+def READ_user(id_user: Any) -> dict:
 
-    if id_user <= 0:
+    if isinstance(id_user, int) and id_user <= 0:
         return {
             "exito": False,
             "mensaje": f"El ID {id_user} del usuario debe ser un entero positivo",
