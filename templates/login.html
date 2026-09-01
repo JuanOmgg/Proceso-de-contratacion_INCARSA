@@ -1,35 +1,21 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iniciar sesión · INCARSA</title>
+{% extends "pages/base.html" %}
 
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- FontAwesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- Estilos custom -->
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/login.css">
-<!-- Datos + lógica (deben ir antes de Alpine) -->
-<script src="assets/js/config.js"></script>
-<script src="assets/js/mockData.js"></script>
-<script src="assets/js/auth.js"></script>
-<!-- Alpine.js (defer, se ejecuta último) -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-</head>
+{% block title %}Iniciar sesión · INCARSA{% endblock %}
 
-<body class="antialiased">
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+{% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('static', path='js/auth.js')}}"></script> 
+{% endblock %}
+
+{% block content %}
 <div class="login-page">
   <div class="login-page-stripes"></div>
 
   <div class="error-brand-mark">
-    <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
+    <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0 shadow-md">
       <i class="fa-solid fa-shield-halved text-white text-sm"></i>
     </div>
     <span class="font-display font-semibold tracking-wide">INCARSA</span>
@@ -37,31 +23,7 @@
 
   <div class="login-glow-wrap anim-fade-up" x-data="loginForm()">
     <div class="login-glow-border">
-      <div class="login-form-card p-6 sm:p-8" x-data="{
-             vista: 'login',
-             contacto: { asunto: 'Problemas para iniciar sesión', presentacion: '', mensaje: '', enviando: false, enviado: false },
-             enviarContacto() {
-               this.contacto.enviando = true;
-               setTimeout(() => {
-                 this.contacto.enviando = false;
-                 this.contacto.enviado = true;
-                 setTimeout(() => {
-                   this.vista = 'login';
-                   this.contacto.enviado = false;
-                   this.contacto.presentacion = '';
-                   this.contacto.mensaje = '';
-                 }, 1800);
-               }, 600);
-             },
-             olvide: { correo: '', enviando: false, enviado: false },
-             enviarOlvide() {
-               this.olvide.enviando = true;
-               setTimeout(() => {
-                 this.olvide.enviando = false;
-                 this.olvide.enviado = true;
-               }, 600);
-             }
-           }">
+      <div class="login-form-card p-6 sm:p-8">
 
         <!-- ============ Vista: Iniciar sesión ============ -->
         <template x-if="vista === 'login'">
@@ -72,7 +34,7 @@
                x-transition:leave-start="opacity-100 translate-x-0 scale-100"
                x-transition:leave-end="opacity-0 translate-x-4 scale-[0.98]">
             <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Iniciar sesión</h2>
-            <p class="text-sm text-center text-[var(--text-muted)] mb-8">Ingresa con tu correo corporativo para continuar.</p>
+            <p class="text-sm text-center text-[var(--text-muted)] mb-7">Ingresa con tu correo corporativo para continuar.</p>
 
             <form @submit.prevent="submit()" class="space-y-4">
 
@@ -91,7 +53,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <label class="form-label !mb-0">Contraseña</label>
-                  <button type="button" @click="vista = 'olvide'" class="text-xs font-medium text-[var(--ink-700)] hover:text-[var(--signal-500)] transition-colors">¿Olvidaste tu contraseña?</button>
+                  <button type="button" @click="iniciarRecuperacion()" class="text-xs font-medium text-[var(--ink-700)] hover:text-[var(--signal-500)] transition-colors">¿Olvidaste tu contraseña?</button>
                 </div>
                 <div class="relative">
                   <input :type="showPassword ? 'text' : 'password'" x-model="contrasena" autocomplete="current-password" placeholder="••••••••"
@@ -190,7 +152,7 @@
           </div>
         </template>
 
-        <!-- ============ Vista: Olvidé mi contraseña ============ -->
+        <!-- ============ Vista: Restablecer contraseña en pasos ============ -->
         <template x-if="vista === 'olvide'">
           <div x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-350"
                x-transition:enter-start="opacity-0 translate-x-4 scale-[0.98]"
@@ -199,46 +161,204 @@
                x-transition:leave-start="opacity-100 translate-x-0 scale-100"
                x-transition:leave-end="opacity-0 -translate-x-4 scale-[0.98]">
 
-            <!-- Estado: formulario -->
-            <template x-if="!olvide.enviado">
+            <!-- Barra indicadora de pasos (oculta en pantalla de éxito) -->
+            <div class="recovery-steps-bar" x-show="olvide.paso < 4">
+              <div class="recovery-step-dot" :class="{ 'is-active': olvide.paso === 1, 'is-completed': olvide.paso > 1 }" title="Paso 1: Correo"></div>
+              <div class="recovery-step-dot" :class="{ 'is-active': olvide.paso === 2, 'is-completed': olvide.paso > 2 }" title="Paso 2: Código"></div>
+              <div class="recovery-step-dot" :class="{ 'is-active': olvide.paso === 3, 'is-completed': olvide.paso > 3 }" title="Paso 3: Nueva contraseña"></div>
+            </div>
+
+            <!-- ==============================================
+                 PASO 1: Ingreso de correo corporativo válido
+                 ============================================== -->
+            <template x-if="olvide.paso === 1">
               <div>
                 <button type="button" @click="vista = 'login'" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--signal-500)] transition-colors inline-flex items-center gap-1.5 mb-4">
                   <i class="fa-solid fa-arrow-left text-[10px]"></i> Volver a iniciar sesión
                 </button>
 
                 <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Recuperar contraseña</h2>
-                <p class="text-sm text-[var(--text-muted)] mb-6 text-center">Ingresa tu correo corporativo y te enviaremos un enlace para restablecerla.</p>
+                <p class="text-sm text-[var(--text-muted)] mb-6 text-center">Ingresa tu correo corporativo y te enviaremos un código de verificación.</p>
 
-                <form @submit.prevent="enviarOlvide()" class="space-y-4">
+                <form @submit.prevent="enviarCodigoRecuperacion()" class="space-y-4">
+                  <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                       x-show="olvide.error" x-cloak>
+                    <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+                    <span x-text="olvide.error" class="font-medium leading-snug"></span>
+                  </div>
+
                   <div>
                     <label class="form-label">Correo corporativo</label>
                     <input type="email" x-model="olvide.correo" autocomplete="username" placeholder="nombre.apellido@incarsa.com"
-                           class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                           class="input-field w-full rounded-lg px-3 py-2.5 text-sm" required>
                   </div>
 
                   <button type="submit" :disabled="olvide.enviando || !olvide.correo.trim()"
                           class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-2"
                           :class="(olvide.enviando || !olvide.correo.trim()) ? (olvide.enviando ? 'is-submitting cursor-wait' : 'opacity-70 cursor-not-allowed') : ''">
                     <i class="fa-solid fa-spinner fa-spin" x-show="olvide.enviando"></i>
-                    <span x-text="olvide.enviando ? 'Enviando…' : 'Enviar enlace'"></span>
+                    <span x-text="olvide.enviando ? 'Enviando código…' : 'Enviar código de verificación'"></span>
                   </button>
                 </form>
               </div>
             </template>
 
-            <!-- Estado: enviado -->
-            <template x-if="olvide.enviado">
-              <div class="text-center py-6">
-                <div class="success-icon-pop w-14 h-14 rounded-full bg-[var(--state-enviado-bg)] text-[var(--state-enviado)] flex items-center justify-center mx-auto mb-4">
-                  <i class="fa-solid fa-envelope-circle-check text-2xl"></i>
-                </div>
-                <h2 class="font-display font-semibold text-lg text-[var(--ink-900)] mb-1">Revisa tu correo</h2>
-                <p class="text-sm text-[var(--text-muted)] mb-6">
-                  Te enviamos un enlace para restablecer tu contraseña a <span class="font-medium text-[var(--ink-800)]" x-text="olvide.correo"></span>.
+            <!-- ==============================================
+                 PASO 2: Ingresar código de verificación
+                 ============================================== -->
+            <template x-if="olvide.paso === 2">
+              <div>
+                <button type="button" @click="olvide.paso = 1; olvide.error = '';" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--signal-500)] transition-colors inline-flex items-center gap-1.5 mb-4">
+                  <i class="fa-solid fa-arrow-left text-[10px]"></i> Cambiar correo
+                </button>
+
+                <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Ingresa el código</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-4 text-center">
+                  Hemos enviado un código de 6 dígitos a <strong class="text-white block truncate" x-text="olvide.correo"></strong>
                 </p>
-                <button type="button" @click="vista = 'login'; olvide.enviado = false; olvide.correo = '';"
-                        class="text-xs font-medium text-[var(--ink-800)] hover:text-[var(--signal-500)] underline underline-offset-2 transition-colors">
-                  Volver a iniciar sesión
+
+                <!-- Hint de simulación para pruebas (solo si no se envió por email) -->
+                <div class="simulation-code-badge mb-4" x-show="olvide.codigoGenerado">
+                  <i class="fa-solid fa-flask text-base text-cyan-400 flex-shrink-0"></i>
+                  <div class="text-left leading-tight">
+                    <span class="block text-[11px] opacity-80">Código de prueba:</span>
+                    <span class="font-mono font-bold tracking-widest text-sm text-white" x-text="olvide.codigoGenerado"></span>
+                  </div>
+                </div>
+
+                <!-- Aviso de correo enviado a bandeja -->
+                <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 mb-4 text-xs text-emerald-300 flex items-center gap-2.5" x-show="!olvide.codigoGenerado">
+                  <i class="fa-solid fa-envelope-circle-check text-sm text-emerald-400 flex-shrink-0"></i>
+                  <span>Código enviado a tu correo. Revisa tu bandeja de entrada o spam.</span>
+                </div>
+
+                <form @submit.prevent="verificarCodigoRecuperacion()" class="space-y-4">
+                  <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                       x-show="olvide.error" x-cloak>
+                    <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+                    <span x-text="olvide.error" class="font-medium leading-snug"></span>
+                  </div>
+
+                  <div>
+                    <label class="form-label text-center block mb-2">Código de 6 dígitos</label>
+                    <input type="text"
+                           x-model="olvide.codigo"
+                           @input="olvide.codigo = olvide.codigo.replace(/[^0-9]/g, '').slice(0, 6); if(olvide.codigo.length === 6) verificarCodigoRecuperacion()"
+                           maxlength="6"
+                           inputmode="numeric"
+                           autocomplete="one-time-code"
+                           placeholder="······"
+                           class="recovery-code-input w-full" autofocus>
+                  </div>
+
+                  <!-- Reenviar código con cuenta regresiva -->
+                  <div class="text-center pt-1 pb-1">
+                    <template x-if="!olvide.puedeReenviar">
+                      <span class="text-xs text-[var(--text-muted)] flex items-center justify-center gap-1.5">
+                        <i class="fa-regular fa-clock text-[10px]"></i>
+                        <span>Reenviar código en <strong class="font-mono text-white" x-text="olvide.temporizador"></strong>s</span>
+                      </span>
+                    </template>
+                    <template x-if="olvide.puedeReenviar">
+                      <button type="button" @click="reenviarCodigoRecuperacion()"
+                              class="text-xs font-semibold text-[var(--signal-500)] hover:underline inline-flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                        <span>¿No recibiste el código? Reenviar</span>
+                      </button>
+                    </template>
+                  </div>
+
+                  <button type="submit" :disabled="olvide.codigo.trim().length !== 6"
+                          class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                          :class="olvide.codigo.trim().length !== 6 ? 'opacity-60 cursor-not-allowed' : ''">
+                    <span>Verificar código</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                  </button>
+                </form>
+              </div>
+            </template>
+
+            <!-- ==============================================
+                 PASO 3: Nueva contraseña y confirmación
+                 ============================================== -->
+            <template x-if="olvide.paso === 3">
+              <div>
+                <h2 class="font-display font-semibold text-2xl text-center text-[var(--ink-900)] mb-1">Nueva contraseña</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-5 text-center">Crea una nueva contraseña segura para acceder a tu cuenta.</p>
+
+                <form @submit.prevent="actualizarContrasena()" class="space-y-4">
+                  <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                       x-show="olvide.error" x-cloak>
+                    <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+                    <span x-text="olvide.error" class="font-medium leading-snug"></span>
+                  </div>
+
+                  <div>
+                    <label class="form-label">Nueva contraseña</label>
+                    <div class="relative">
+                      <input :type="olvide.showPass1 ? 'text' : 'password'"
+                             x-model="olvide.nuevaContrasena"
+                             placeholder="Mínimo 8 caracteres"
+                             class="input-field w-full rounded-lg px-3 py-2.5 pr-10 text-sm">
+                      <button type="button" @click="olvide.showPass1 = !olvide.showPass1" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors">
+                        <i class="fa-regular" :class="olvide.showPass1 ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                    </div>
+                    <div class="mt-1.5 flex items-center gap-1.5 text-[11px] transition-colors"
+                         :class="olvide.nuevaContrasena.length >= 8 ? 'text-emerald-400 font-medium' : 'text-[var(--text-muted)]'">
+                      <i class="fa-solid" :class="olvide.nuevaContrasena.length >= 8 ? 'fa-circle-check text-xs' : 'fa-circle text-[6px]'"></i>
+                      <span>Mínimo 8 caracteres</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label">Confirmar nueva contraseña</label>
+                    <div class="relative">
+                      <input :type="olvide.showPass2 ? 'text' : 'password'"
+                             x-model="olvide.confirmarContrasena"
+                             placeholder="Repite la contraseña"
+                             class="input-field w-full rounded-lg px-3 py-2.5 pr-10 text-sm">
+                      <button type="button" @click="olvide.showPass2 = !olvide.showPass2" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors">
+                        <i class="fa-regular" :class="olvide.showPass2 ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                    </div>
+
+                    <template x-if="olvide.confirmarContrasena.length > 0">
+                      <div class="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium transition-colors"
+                           :class="olvide.nuevaContrasena === olvide.confirmarContrasena ? 'text-emerald-400' : 'text-red-400'">
+                        <i class="fa-solid" :class="olvide.nuevaContrasena === olvide.confirmarContrasena ? 'fa-circle-check text-xs' : 'fa-circle-xmark text-xs'"></i>
+                        <span x-text="olvide.nuevaContrasena === olvide.confirmarContrasena ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'"></span>
+                      </div>
+                    </template>
+                  </div>
+
+                  <button type="submit" :disabled="olvide.enviando || olvide.nuevaContrasena.length < 8 || olvide.nuevaContrasena !== olvide.confirmarContrasena"
+                          class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-2"
+                          :class="(olvide.enviando || olvide.nuevaContrasena.length < 8 || olvide.nuevaContrasena !== olvide.confirmarContrasena) ? (olvide.enviando ? 'is-submitting cursor-wait' : 'opacity-60 cursor-not-allowed') : ''">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="olvide.enviando"></i>
+                    <span x-text="olvide.enviando ? 'Actualizando contraseña…' : 'Restablecer contraseña'"></span>
+                  </button>
+                </form>
+              </div>
+            </template>
+
+            <!-- ==============================================
+                 PASO 4: Confirmación de éxito
+                 ============================================== -->
+            <template x-if="olvide.paso === 4">
+              <div class="text-center py-4">
+                <div class="success-icon-pop w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
+                  <i class="fa-solid fa-circle-check text-3xl"></i>
+                </div>
+                <h2 class="font-display font-semibold text-xl text-[var(--ink-900)] mb-1.5">¡Contraseña restablecida!</h2>
+                <p class="text-sm text-[var(--text-muted)] mb-6">
+                  Tu contraseña ha sido actualizada con éxito. Serás redirigido al inicio de sesión en unos momentos...
+                </p>
+
+                <button type="button" @click="finalizarRecuperacion()"
+                        class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2">
+                  <span>Iniciar sesión ahora</span>
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
                 </button>
               </div>
             </template>
@@ -250,6 +370,4 @@
     </div>
   </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

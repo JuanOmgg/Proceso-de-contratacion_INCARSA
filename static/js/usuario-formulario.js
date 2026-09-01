@@ -247,7 +247,7 @@ function usuarioForm() {
 
         this.submitted = true;
         setTimeout(() => {
-          window.location.href = "usuarios-listado.html";
+          window.location.href = "/usuarios";
         }, 1400);
 
       } catch (error) {

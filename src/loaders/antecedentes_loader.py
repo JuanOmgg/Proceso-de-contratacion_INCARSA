@@ -18,7 +18,7 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
     sql_ing = """
         SELECT 
             s.id AS id_solicitud,
-            CONCAT('RAD-', LPAD(s.id, 4, '0')) AS codigo_radicado,
+            COALESCE(s.codigo, CONCAT('RAD-', LPAD(s.id, 4, '0'))) AS codigo_radicado,
             s.fecha_inicio,
             s.fecha_fin,
             s.estado AS estado_solicitud,
@@ -45,7 +45,7 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
     sql_csv = """
         SELECT 
             s.id AS id_solicitud,
-            CONCAT('RAD-', LPAD(s.id, 4, '0')) AS codigo_radicado,
+            COALESCE(s.codigo, CONCAT('RAD-', LPAD(s.id, 4, '0'))) AS codigo_radicado,
             s.fecha_inicio,
             s.fecha_fin,
             s.estado AS estado_solicitud,
@@ -76,7 +76,7 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
             SELECT 
                 h.id,
                 h.id_solicitud,
-                CONCAT('RAD-', LPAD(COALESCE(s.id, h.id_solicitud, 0), 4, '0')) AS codigo_radicado,
+                COALESCE(s.codigo, CONCAT('RAD-', LPAD(COALESCE(s.id, h.id_solicitud, 0), 4, '0'))) AS codigo_radicado,
                 s.fecha_inicio,
                 s.fecha_fin,
                 COALESCE(s.estado, 'REGISTRADO') AS estado_solicitud,

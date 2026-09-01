@@ -74,10 +74,33 @@ function revisionSolicitudApp() {
       this.sidebarOpenMobile = false;
     },
 
+    // Modo oscuro
+    darkMode: localStorage.getItem('darkMode') === 'true',
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      document.documentElement.classList.toggle('dark', this.darkMode);
+      localStorage.setItem('darkMode', this.darkMode);
+    },
+
     // Sesión y Rol actual
     usuarioSesion: null,
     rolActual: "SST", // 'SST' | 'GESCO' | 'SCR' | 'Administrador' | 'Gestion documental'
     rolNombre: "SST",
+
+    get userDisplayName() {
+      if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
+        return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
+      }
+      return "Usuario Activo";
+    },
+    get userInitials() {
+      const name = this.userDisplayName;
+      const parts = name.split(" ").filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return (name.slice(0, 2) || "UA").toUpperCase();
+    },
 
     // Estado de revisiones por roles (se almacena localmente y se sincroniza)
     revisionesHistorial: [],
@@ -250,9 +273,21 @@ function revisionSolicitudApp() {
     catalogoContratistas: [],
 
     async init() {
-      // 1. Obtener ID de la URL
+      // 0. Sincronizar estado de modo oscuro
+      this.darkMode = document.documentElement.classList.contains('dark') || localStorage.getItem('darkMode') === 'true';
+      document.documentElement.classList.toggle('dark', this.darkMode);
+
+      // 1. Obtener ID o Código de la URL
       const params = new URLSearchParams(window.location.search);
-      this.solicitudId = params.get("id");
+      this.solicitudId = params.get("codigo") || params.get("id");
+
+      if (!this.solicitudId) {
+        const segs = window.location.pathname.split("/").filter(Boolean);
+        const idxRev = segs.indexOf("revision");
+        if (idxRev !== -1 && segs[idxRev + 1]) {
+          this.solicitudId = decodeURIComponent(segs[idxRev + 1]);
+        }
+      }
 
       // 2. Obtener sesión de usuario
       try {

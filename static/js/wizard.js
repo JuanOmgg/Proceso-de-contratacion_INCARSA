@@ -82,6 +82,75 @@ function solicitudWizard() {
       "Otro documento"
     ],
 
+    // ========================================================================
+    // MODAL DE VISUALIZACIÓN DE DOCUMENTOS (PERSONAS Y VEHÍCULOS)
+    // ========================================================================
+    modalDocsOpen: false,
+    modalDocsTitle: "",
+    modalDocsSubtitle: "",
+    modalDocsIcon: "fa-folder-open",
+    modalDocsList: [],
+
+    abrirModalDocsPersona(p) {
+      this.modalDocsTitle = p.nombres || "Documentos de la persona";
+      this.modalDocsSubtitle = `${p.tipoDoc || 'CC'} ${p.numDoc || ''} · ${p.cargo || 'Sin cargo'}`.trim();
+      this.modalDocsIcon = "fa-user";
+
+      let docs = [];
+      if (Array.isArray(p.documentos) && p.documentos.length > 0) {
+        docs = p.documentos.map(d => {
+          const nombre = d.nombre_archivo || d.nom_documento || d.nombre || "Archivo adjunto";
+          return {
+            tipo: d.tipo_doc || d.tipo || "Documento",
+            nombre: nombre,
+            url: d.url_acceso || (nombre ? `/uploads/documentos/${nombre}` : null)
+          };
+        });
+      } else if (p.documento) {
+        docs.push({
+          tipo: "Documento de Identidad",
+          nombre: p.documento,
+          url: `/uploads/documentos/${p.documento}`
+        });
+      }
+      this.modalDocsList = docs;
+      this.modalDocsOpen = true;
+    },
+
+    abrirModalDocsVehiculo(v) {
+      this.modalDocsTitle = `Vehículo ${v.placa || ''} (${v.tipo || 'Vehículo'})`;
+      this.modalDocsSubtitle = v.conductor ? `Conductor: ${v.conductor}` : 'Documentación vehicular';
+      this.modalDocsIcon = "fa-truck";
+
+      let docs = [];
+      if (v.licencia_doc) {
+        docs.push({
+          tipo: "Licencia de Conducción",
+          nombre: v.licencia_doc,
+          url: `/uploads/documentos/vehiculos/${v.licencia_doc}`
+        });
+      }
+      if (Array.isArray(v.documentos)) {
+        v.documentos.forEach(d => {
+          const nom = d.nombre_archivo || d.nom_documento;
+          if (nom) {
+            docs.push({
+              tipo: d.tipo_doc || "Documento Vehicular",
+              nombre: nom,
+              url: d.url_acceso || `/uploads/documentos/vehiculos/${nom}`
+            });
+          }
+        });
+      }
+      this.modalDocsList = docs;
+      this.modalDocsOpen = true;
+    },
+
+    cerrarModalDocs() {
+      this.modalDocsOpen = false;
+      this.modalDocsList = [];
+    },
+
     /**
      * Retorna las clases visuales de Tailwind según el nivel de riesgo seleccionado.
      */
@@ -183,40 +252,51 @@ function solicitudWizard() {
      */
     async inicializarModoEdicion() {
       const params = new URLSearchParams(window.location.search);
-      const editParam = params.get("edit");
+      let editParam = params.get("codigo") || params.get("edit");
+
+      // Extraer de la ruta si viene como /solicitudes/editar/{codigo}
+      if (!editParam) {
+        const segs = window.location.pathname.split("/").filter(Boolean);
+        const idxEditar = segs.indexOf("editar");
+        if (idxEditar !== -1 && segs[idxEditar + 1]) {
+          editParam = decodeURIComponent(segs[idxEditar + 1]);
+        }
+      }
+
       if (!editParam) return;
 
       this.isEdit = true;
       this.editId = editParam;
-      console.log("🔍 [MODO EDICIÓN] Iniciando carga de solicitud ID:", editParam);
+      console.log("🔍 [MODO EDICIÓN] Iniciando carga de solicitud ID/Código:", editParam);
 
       let found = null;
 
-      // 1. Cargar todas las solicitudes del backend (getall) para encontrarla
+      // 1. Intentar buscar por endpoint individual directo (soporta ID y código RAD-XXXX)
       try {
-        const res = await fetch(`${API.solicitudes}/getall`);
+        const res = await fetch(`${API.solicitudes}/${editParam}`);
         if (res.ok) {
           const data = await res.json();
-          const lista = Array.isArray(data) ? data : (data.datos || data.data || []);
-          found = lista.find(s => 
-            String(s.id).toLowerCase() === String(editParam).toLowerCase() ||
-            (s.id_generado && String(s.id_generado).toLowerCase() === String(editParam).toLowerCase())
-          );
+          found = data.datos || data.data || data;
         }
       } catch (e) {
-        console.warn("No se pudo buscar en getall:", e);
+        console.warn("Consulta directa por código falló, buscando en listado completo:", e);
       }
 
-      // 2. Intentar buscar por endpoint individual
+      // 2. Cargar todas las solicitudes del backend (getall) para encontrarla
       if (!found) {
         try {
-          const res = await fetch(`${API.solicitudes}/${editParam}`);
+          const res = await fetch(`${API.solicitudes}/getall`);
           if (res.ok) {
             const data = await res.json();
-            found = data.datos || data.data || data;
+            const lista = Array.isArray(data) ? data : (data.datos || data.data || []);
+            found = lista.find(s => 
+              String(s.codigo || "").toLowerCase() === String(editParam).toLowerCase() ||
+              String(s.id || "").toLowerCase() === String(editParam).toLowerCase() ||
+              (s.id_generado && String(s.id_generado).toLowerCase() === String(editParam).toLowerCase())
+            );
           }
         } catch (e) {
-          console.warn("No se pudo cargar por ID directo:", e);
+          console.warn("No se pudo buscar en getall:", e);
         }
       }
 
@@ -1730,7 +1810,7 @@ function solicitudWizard() {
 
           this.submitted = true;
           setTimeout(() => {
-            window.location.href = "solicitudes-listado.html";
+            window.location.href = "/solicitudes";
           }, 1200);
 
         } catch (error) {
@@ -1764,7 +1844,7 @@ function solicitudWizard() {
 
           this.submitted = true;
           setTimeout(() => {
-            window.location.href = "solicitudes-listado.html";
+            window.location.href = "/solicitudes";
           }, 1200);
         } finally {
           this.submitting = false;
@@ -1818,7 +1898,7 @@ function solicitudWizard() {
 
         this.submitted = true;
         setTimeout(() => {
-          window.location.href = "solicitudes-listado.html";
+          window.location.href = "/solicitudes";
         }, 1200);
 
       } catch (error) {
@@ -1851,7 +1931,7 @@ function solicitudWizard() {
 
         this.submitted = true;
         setTimeout(() => {
-          window.location.href = "solicitudes-listado.html";
+          window.location.href = "/solicitudes";
         }, 1200);
 
       } finally {

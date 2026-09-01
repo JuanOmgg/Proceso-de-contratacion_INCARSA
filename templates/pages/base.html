@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}INCARSA{% endblock %}</title>
+
+  <!-- Inicialización inmediata de Modo Oscuro para evitar parpadeos y sincronizar entre pantallas -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('darkMode') === 'true') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Estilos globales compartidos -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}">
+
+  <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
+  {% block extra_head %}{% endblock %}
+
+  <!-- Configuración compartida -->
+  <script src="{{ url_for('static', path='js/config.js') }}"></script>
+  <script src="{{ url_for('static', path='js/plantas.js') }}"></script>
+  <script src="{{ url_for('static', path='js/contratistas.js') }}"></script>
+  <script src="{{ url_for('static', path='js/vehiculos.js') }}"></script>
+
+  <!-- Scripts que deben ejecutarse antes de inicializar Alpine -->
+  {% block extra_js %}{% endblock %}
+
+  <!-- Alpine.js Collapse + Core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body class="antialiased">
+
+  <!-- Contenido principal inyectado por cada plantilla -->
+  {% block content %}{% endblock %}
+
+  <!-- Bloque opcional para scripts al final del body -->
+  {% block body_scripts %}{% endblock %}
+
+</body>
+</html>

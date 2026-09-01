@@ -125,7 +125,7 @@ def GET_ALL_solicitudes(
 
 
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def GET_solicitud(solicitud_id: int):
+def GET_solicitud(solicitud_id: str):
     print(f"🔍 [GET] Buscando solicitud #{solicitud_id} en la base de datos...")
     resultado = GET_solicitud_bd(solicitud_id)
 

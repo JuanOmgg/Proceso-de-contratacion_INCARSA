@@ -1,34 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'pages/base.html' %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usuario · INCARSA</title>
+{% block title %}Nuevo usuario · INCARSA{% endblock%}
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-  <!-- Estilos custom -->
-  <link rel="stylesheet" href="assets/css/styles.css">
-  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
-  <link rel="stylesheet" href="assets/css/dark-mode.css">
-  <!-- Datos + lógica (deben ir antes de Alpine) -->
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/mock-usuarios.js"></script>
-  <script src="assets/js/usuario-formulario.js"></script>
-  <!-- Alpine.js (plugin collapse debe cargar ANTES que el core; ambos con defer) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-</head>
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/usuario-formulario.js') }}"></script>
+{% endblock %}
 
-<body class="antialiased">
+{% block content %}
 
   <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
 
@@ -38,77 +16,7 @@
     <!-- ============================================================
        SIDEBAR
   ============================================================= -->
-    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
-
-      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-          </div>
-          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
-        </div>
-        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
-
-      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
-          <span class="sidebar-label">Dashboard</span>
-        </a>
-
-        <!-- Módulo desplegable: Formularios (abierto por defecto en esta página) -->
-        <div>
-          <button @click="openModules.formularios = !openModules.formularios"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
-            <span class="flex items-center gap-3">
-              <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
-              <span class="sidebar-label">Formularios</span>
-            </span>
-            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
-              :class="openModules.formularios ? 'rotate-180' : ''"></i>
-          </button>
-          <div x-show="openModules.formularios" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="solicitudes-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nueva
-              solicitud</a>
-            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Solicitudes guardadas</a>
-            <a href="usuario-formulario.html" class="sidebar-sublink is-active block py-2 text-[13px]">Nuevo usuario</a>
-          </div>
-        </div>
-
-        <!-- Módulo desplegable: Tablas / consultas -->
-        <div>
-          <button @click="openModules.tablas = !openModules.tablas"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
-            <span class="flex items-center gap-3">
-              <i class="fa-solid fa-table-list w-4 text-center"></i>
-              <span class="sidebar-label">Consultas</span>
-            </span>
-            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
-              :class="openModules.tablas ? 'rotate-180' : ''"></i>
-          </button>
-          <div x-show="openModules.tablas" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Solicitudes</a>
-            <a href="usuarios-listado.html" class="sidebar-sublink block py-2 text-[13px]">Usuarios</a>
-            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Plantas y zonas</a>
-          </div>
-        </div>
-
-        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
-          <span class="sidebar-label">Procesamiento</span>
-        </a>
-      </nav>
-
-      <button @click="sidebarCollapsed = !sidebarCollapsed"
-        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
-        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
-        <span class="sidebar-label text-xs">Contraer</span>
-      </button>
-    </aside>
+    {% include 'pages/sidebar.html' %}
 
     <!-- ============================================================
        MAIN COLUMN
@@ -350,6 +258,4 @@
       </footer>
     </div>
   </div>
-</body>
-
-</html>
+{% endblock %}

@@ -1,9 +1,10 @@
 import os
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from src.routes.solicitud_route import router as solicitud_router
 from src.routes.usuario_route import router as usuario_router
@@ -14,6 +15,7 @@ from src.routes.personas_route import router as personas_router
 from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
+from src.routes.auth_router import router as auth_router
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -68,16 +70,19 @@ app.add_middleware(
 )
 
 app.include_router(solicitud_router)
-app.include_router(usuario_router)
+app.include_router(usuario_router, prefix="/api/v1")
 app.include_router(emp_contratista_router)
 app.include_router(planta_router)
 app.include_router(roles_router)
-app.include_router(personas_router)
+app.include_router(personas_router, prefix="/api/v1")
 app.include_router(vehiculo_router)
 app.include_router(empresa_router)
-app.include_router(antecedentes_router)
+app.include_router(antecedentes_router, prefix="/api/v1")
+app.include_router(auth_router)
+app.include_router(auth_router, prefix="/api/v1")
 
 @app.get("/", tags=["Verificador de servidor"])
+
 def verificacion_servidor():
     return {
         "estado": "OK",
@@ -86,6 +91,58 @@ def verificacion_servidor():
         "uploads": "/uploads",
     }
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
+
+
+
+@app.get("/dashboard")
+async def get_dashboard(request: Request):
+    return templates.TemplateResponse(name="dashboard.html", request=request)
+
+@app.get("/login")
+async def get_login(request: Request):
+    return templates.TemplateResponse(name="login.html", request=request)
+
+@app.get("/antecedentes")
+async def get_antecedentes(request: Request):
+    return templates.TemplateResponse(name="antecedentes.html", request=request)
+
+@app.get("/procesamiento")
+async def get_procesamiento(request: Request):
+    return templates.TemplateResponse(name="procesamiento.html", request=request)
+
+@app.get("/solicitudes")
+async def get_solicitudes(request: Request):
+    return templates.TemplateResponse(name="solicitudes-listado.html", request=request)
+
+@app.get("/usuarios")
+async def get_usuarios(request: Request):
+    return templates.TemplateResponse(name="usuarios-listado.html", request=request)
+
+@app.get("/personas")
+async def get_personas(request: Request):
+    return templates.TemplateResponse(name="personas-listado.html", request=request)
+
+@app.get("/formulario-usuarios")
+async def get_formulario_usuarios(request: Request):
+    return templates.TemplateResponse(name="usuario-formulario.html", request=request)
+
+@app.get("/solicitudes/nueva")
+@app.get("/formulario-solicitudes")
+async def get_formulario_solicitudes(request: Request):
+    return templates.TemplateResponse(name="solicitudes-formulario.html", request=request)
+
+@app.get("/solicitudes/editar/{codigo}")
+async def get_editar_solicitud(request: Request, codigo: str):
+    return templates.TemplateResponse(name="solicitudes-formulario.html", request=request, context={"codigo_solicitud": codigo})
+
+@app.get("/solicitudes/revision/{codigo}")
+@app.get("/revision-solicitud")
+@app.get("/revision-solicitud.html")
+async def get_revision_solicitud(request: Request, codigo: str = ""):
+    return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -33,6 +33,21 @@
   --state-aprobado-bg: #e1f8e2;
 }
 
+/* =========================================================
+   SIDEBAR EN MODO OSCURO (PRESERVAR FONDO OSCURO AUTÉNTICO)
+   ========================================================= */
+:root.dark .sidebar {
+  background: #2b2a2a !important;
+  background-image: linear-gradient(180deg, #2b2a2a 0%, #2c2c2c 100%) !important;
+}
+
+:root.dark .text-\[var\(--ink-900\)\],
+:root.dark [class*="text-[var(--ink-900)]"],
+:root.dark .text-\[var\(--ink-800\)\],
+:root.dark [class*="text-[var(--ink-800)]"] {
+  color: var(--text-primary) !important;
+}
+
 /*Estados en tablas */
 :root.dark .status-enviado {
   background-color: rgba(6, 182, 212, 0.2) !important;
@@ -83,32 +98,237 @@
 }
 
 /* =========================================================
-   TEXTOS TAILWIND HARDCODEADOS
+   TEXTOS TAILWIND HARDCODEADOS (GRAY Y SLATE)
    ========================================================= */
 :root.dark .text-gray-900,
 :root.dark .text-gray-800,
 :root.dark .text-gray-700,
-:root.dark .text-gray-600 {
+:root.dark .text-gray-600,
+:root.dark .text-slate-900,
+:root.dark .text-slate-800,
+:root.dark .text-slate-700,
+:root.dark .text-slate-600 {
   color: #d4d4d4 !important;
 }
 
 :root.dark .text-gray-500,
-:root.dark .text-gray-400 {
+:root.dark .text-gray-400,
+:root.dark .text-slate-500,
+:root.dark .text-slate-400 {
   color: #8a8a8a !important;
 }
 
 :root.dark .text-gray-300,
-:root.dark .text-gray-200 {
+:root.dark .text-gray-200,
+:root.dark .text-slate-300,
+:root.dark .text-slate-200 {
   color: #5a5a5a !important;
 }
 
 /* =========================================================
-   BORDES TAILWIND
+   BORDES Y FONDOS TAILWIND (GRAY Y SLATE)
    ========================================================= */
 :root.dark .border-gray-200,
 :root.dark .border-gray-300,
-:root.dark [class*="border-gray"] {
+:root.dark [class*="border-gray"],
+:root.dark .border-slate-100,
+:root.dark .border-slate-200,
+:root.dark .border-slate-300,
+:root.dark [class*="border-slate"] {
   border-color: var(--border-subtle) !important;
+}
+
+:root.dark .bg-slate-50,
+:root.dark .bg-slate-100 {
+  background-color: var(--steel-100) !important;
+}
+
+:root.dark .hover\:bg-slate-50:hover,
+:root.dark .hover\:bg-slate-100:hover {
+  background-color: var(--steel-200) !important;
+}
+
+:root.dark .bg-slate-200 {
+  background-color: var(--steel-200) !important;
+  color: #d4d4d4 !important;
+}
+
+/* =========================================================
+   TARJETAS BLANCAS Y WIZARD CARDS EN MODO OSCURO
+   ========================================================= */
+:root.dark .wizard-card,
+:root.dark .bg-white {
+  background-color: var(--surface) !important;
+  color: var(--text-primary);
+  border-color: var(--border-subtle) !important;
+}
+
+:root.dark footer.bg-white {
+  background-color: var(--surface) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* =========================================================
+   TINTES SUAVES (STEPPER, BANNERS, BOTONES Y BADGES)
+   ========================================================= */
+:root.dark .bg-red-50,
+:root.dark .bg-red-50\/40,
+:root.dark .bg-red-50\/70,
+:root.dark .bg-red-50\/80 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+:root.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+}
+:root.dark .text-red-900,
+:root.dark .text-red-800,
+:root.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+:root.dark .border-red-200,
+:root.dark .border-red-300 {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+:root.dark .hover\:bg-red-100:hover {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+:root.dark .bg-emerald-50,
+:root.dark .bg-emerald-50\/70,
+:root.dark .bg-emerald-50\/80,
+:root.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+:root.dark .bg-emerald-100,
+:root.dark .bg-green-100 {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+}
+:root.dark .bg-emerald-200,
+:root.dark .bg-green-200 {
+  background-color: rgba(16, 185, 129, 0.3) !important;
+  color: #a7f3d0 !important;
+}
+:root.dark .text-emerald-900,
+:root.dark .text-emerald-800,
+:root.dark .text-emerald-700,
+:root.dark .text-green-900,
+:root.dark .text-green-800,
+:root.dark .text-green-700 {
+  color: #6ee7b7 !important;
+}
+:root.dark .border-emerald-200,
+:root.dark .border-emerald-300,
+:root.dark .border-green-200,
+:root.dark .border-green-300 {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+:root.dark .hover\:bg-emerald-100:hover,
+:root.dark .hover\:bg-green-100:hover {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+:root.dark .bg-cyan-50,
+:root.dark .bg-cyan-50\/70 {
+  background-color: rgba(6, 182, 212, 0.12) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+:root.dark .bg-cyan-100 {
+  background-color: rgba(6, 182, 212, 0.22) !important;
+}
+:root.dark .text-cyan-900,
+:root.dark .text-cyan-800,
+:root.dark .text-cyan-700 {
+  color: #67e8f9 !important;
+}
+:root.dark .border-cyan-200 {
+  border-color: rgba(6, 182, 212, 0.35) !important;
+}
+
+:root.dark .bg-purple-50,
+:root.dark .bg-purple-50\/70 {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+:root.dark .bg-purple-100 {
+  background-color: rgba(168, 85, 247, 0.22) !important;
+}
+:root.dark .bg-purple-200 {
+  background-color: rgba(168, 85, 247, 0.3) !important;
+  color: #e9d5ff !important;
+}
+:root.dark .text-purple-900,
+:root.dark .text-purple-800,
+:root.dark .text-purple-700 {
+  color: #d8b4fe !important;
+}
+:root.dark .border-purple-200 {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+:root.dark .bg-blue-50,
+:root.dark .bg-blue-50\/70 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+:root.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.22) !important;
+}
+:root.dark .text-blue-900,
+:root.dark .text-blue-800,
+:root.dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+:root.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+:root.dark .hover\:bg-blue-100:hover,
+:root.dark .hover\:bg-blue-50:hover {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+:root.dark .bg-amber-50,
+:root.dark .bg-amber-50\/70,
+:root.dark .bg-amber-50\/80 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+:root.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+}
+:root.dark .bg-amber-200 {
+  background-color: rgba(245, 158, 11, 0.3) !important;
+  color: #fef08a !important;
+}
+:root.dark .text-amber-900,
+:root.dark .text-amber-800,
+:root.dark .text-amber-700 {
+  color: #fcd34d !important;
+}
+:root.dark .border-amber-200,
+:root.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+:root.dark .bg-indigo-50,
+:root.dark .bg-indigo-50\/70 {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+:root.dark .bg-indigo-100 {
+  background-color: rgba(99, 102, 241, 0.22) !important;
+}
+:root.dark .text-indigo-900,
+:root.dark .text-indigo-800,
+:root.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+:root.dark .border-indigo-200 {
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+:root.dark .hover\:bg-indigo-100:hover {
+  background-color: rgba(99, 102, 241, 0.25) !important;
 }
 
 /* =========================================================
@@ -599,6 +819,60 @@
   filter: none !important;
   animation-duration: 6s !important;
   box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* =========================================================
+   STEPPER / WIZARD EN MODO OSCURO (ESTILO AURORA FLAMA)
+   ========================================================= */
+:root.dark .step-circle.is-current {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 0 22px 3px rgba(249, 115, 22, 0.7), 0 0 0 4px rgba(249, 115, 22, 0.25) !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .step-circle.is-complete {
+  background: #16a34a !important;
+  border-color: #22c55e !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.45) !important;
+}
+
+:root.dark .step-circle:not(.is-current):not(.is-complete) {
+  background: #232323 !important;
+  border: 2px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+:root.dark .step-connector {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+:root.dark .step-connector.is-complete::after {
+  background: linear-gradient(90deg, #dc2626, #f77920) !important;
+}
+
+:root.dark .step-label {
+  color: #94a3b8 !important;
+}
+
+:root.dark .step-label.is-current {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 10px rgba(247, 121, 32, 0.45) !important;
 }
 
 /*estilos para modal en dashboard*/

@@ -1,6 +1,22 @@
 import json
+import secrets
+import string
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
+
+def Generate_unique_code(cursor) -> str:
+    """
+    Genera un código de radicado aleatorio y no predecible (ej: RAD-7K9M2P),
+    garantizando que no colisione con códigos existentes en la base de datos.
+    Excluye caracteres ambiguos (0, O, 1, I) para máxima legibilidad.
+    """
+    caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    while True:
+        sufijo = "".join(secrets.choice(caracteres) for _ in range(6))
+        codigo = f"RAD-{sufijo}"
+        cursor.execute("SELECT id FROM solicitudes WHERE codigo = %s", (codigo,))
+        if not cursor.fetchone():
+            return codigo
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
@@ -38,6 +54,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     empresa_plantas_map[emp_origen_default] = plantas_ids
 
                 ids_generados = []
+                codigos_generados = []
 
                 # 2. Crear una solicitud independiente por cada empresa_origen
                 for emp_origen, sub_plantas in empresa_plantas_map.items():
@@ -124,9 +141,11 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         else ""
                     )
 
-                    # Determinar código radicado
+                    # Determinar código radicado (si no viene, generar código aleatorio único)
                     raw_codigo = solicitud.get("codigo")
                     cod_val = str(raw_codigo).strip().upper() if raw_codigo and str(raw_codigo).strip() else None
+                    if not cod_val:
+                        cod_val = Generate_unique_code(cursor)
 
                     sql_solicitud = """
                         INSERT INTO solicitudes (
@@ -156,11 +175,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     cursor.execute(sql_solicitud, valores_solicitud)
                     solicitud_id = cursor.lastrowid
                     ids_generados.append(solicitud_id)
-
-                    # Si no venía código radicado específico, asignarle radicado estándar
-                    if not cod_val:
-                        codigo_generado = f"RAD-{str(solicitud_id).zfill(4)}"
-                        cursor.execute("UPDATE solicitudes SET codigo = %s WHERE id = %s", (codigo_generado, solicitud_id))
+                    codigos_generados.append(cod_val)
 
                     # Registrar relaciones en tabla intermedia 'visita' validando FKs existentes
                     if sub_plantas:
@@ -283,6 +298,8 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
             "mensaje": f"Se registraron {len(ids_generados)} solicitud(es) exitosamente.",
             "ids_generados": ids_generados,
             "id_generado": ids_generados[0] if ids_generados else None,
+            "codigos_generados": codigos_generados,
+            "codigo": codigos_generados[0] if codigos_generados else None,
         }
 
     except Exception as e:
@@ -302,6 +319,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 obs_expr = "s.observaciones" if "observaciones" in cols else "''"
             
                 # 2. Obtener la solicitud principal uniendo nombres de empresa, contratista y diligenciador
+                id_num = int(solicitud_id) if str(solicitud_id).isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                where_clause = "WHERE s.id = %s OR s.codigo = %s" if id_num else "WHERE s.codigo = %s"
+                params = (id_num, cod_str) if id_num else (cod_str,)
+
                 sql_main = f"""
                     SELECT 
                         s.*,
@@ -315,9 +337,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     LEFT JOIN empresa e ON s.empresa_origen = e.id
                     LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
                     LEFT JOIN usuarios u ON s.diligenciado_por = u.id
-                    WHERE s.id = %s
+                    {where_clause}
                 """
-                cursor.execute(sql_main, (solicitud_id,))
+                cursor.execute(sql_main, params)
                 solicitud = cursor.fetchone()
 
                 if not solicitud:
@@ -325,6 +347,8 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         "exito": False,
                         "mensaje": f"Solicitud #{solicitud_id} no encontrada.",
                     }
+
+                real_id = solicitud["id"]
 
                 # Formatear fechas a texto
                 if solicitud.get("fecha_inicio"):
@@ -342,7 +366,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     INNER JOIN planta p ON v.id_planta = p.id
                     WHERE v.id_solicitud = %s
                     """,
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 solicitud["plantas"] = cursor.fetchall() or []
 
@@ -366,7 +390,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     INNER JOIN vehiculos v ON vi.id_vehiculo = v.id
                     WHERE vi.id_solicitud = %s
                     """,
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 vehiculos = cursor.fetchall() or []
                 for v in vehiculos:
@@ -397,7 +421,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     INNER JOIN personas p ON i.id_persona = p.id
                     WHERE i.id_solicitud = %s
                     """,
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 personas = cursor.fetchall() or []
 
@@ -429,7 +453,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 # 6. Obtener los equipos asociados
                 cursor.execute(
                     "SELECT marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 solicitud["eq_computo"] = cursor.fetchall() or []
 
@@ -444,7 +468,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     WHERE sr.id_solicitud = %s
                     ORDER BY sr.fecha_revision ASC
                     """,
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 raw_revs = cursor.fetchall() or []
                 for r in raw_revs:

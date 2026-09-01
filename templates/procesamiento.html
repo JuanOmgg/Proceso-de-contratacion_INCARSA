@@ -1,39 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends "pages/base.html" %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Procesamiento · INCARSA</title>
+{% block title %}Procesamientos{% endblock %}
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-  <!-- Estilos custom -->
-  <link rel="stylesheet" href="assets/css/styles.css">
-  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
-  <link rel="stylesheet" href="assets/css/dark-mode.css">
-  <!-- Datos + lógica (deben ir antes de Alpine) -->
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/mockData.js"></script>
-  <script src="assets/js/procesamiento.js"></script>
-  <script src="assets/js/plantas.js"></script>
-  <script src="assets/js/contratistas.js"></script>
-  <script src="assets/js/vehiculos.js"></script>
-  <!-- Alpine.js (plugin collapse debe cargar ANTES que el core; ambos con defer) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-</head>
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/procesamiento.js')}}"></script>
+{% endblock %}
 
-<body class="antialiased">
-
-  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+{% block content %}
+<div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
 
     <!-- Backdrop del drawer móvil -->
     <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
@@ -41,80 +15,7 @@
     <!-- ============================================================
        SIDEBAR
   ============================================================= -->
-    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
-
-      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-          </div>
-          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
-        </div>
-        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
-
-      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
-          <span class="sidebar-label">Dashboard</span>
-        </a>
-
-        <!-- Módulo desplegable: Formularios -->
-        <div>
-          <button @click="openModules.formularios = !openModules.formularios"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
-            <span class="flex items-center gap-3">
-              <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
-              <span class="sidebar-label">Formularios</span>
-            </span>
-            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
-              :class="openModules.formularios ? 'rotate-180' : ''"></i>
-          </button>
-          <div x-show="openModules.formularios" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="solicitudes-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nueva
-              solicitud</a>
-            <a href="#" class="sidebar-sublink block py-2 text-[13px]">Solicitudes guardadas</a>
-            <a href="usuario-formulario.html" class="sidebar-sublink block py-2 text-[13px]">Nuevo usuario</a>
-          </div>
-        </div>
-
-        <!-- Módulo desplegable: Tablas / consultas -->
-        <div>
-          <button @click="openModules.tablas = !openModules.tablas"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5">
-            <span class="flex items-center gap-3">
-              <i class="fa-solid fa-table-list w-4 text-center"></i>
-              <span class="sidebar-label">Consultas</span>
-            </span>
-            <i class="fa-solid fa-chevron-down text-xs sidebar-chevron transition-transform"
-              :class="openModules.tablas ? 'rotate-180' : ''"></i>
-          </button>
-          <div x-show="openModules.tablas" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="solicitudes-listado.html" class="sidebar-sublink block py-2 text-[13px]">Solicitudes</a>
-            <a href="usuarios-listado.html" class="sidebar-sublink block py-2 text-[13px]">Usuarios</a>
-            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Plantas y zonas</a>
-            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Contratistas</a>
-            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Vehículos</a>
-            <a href="personas-listado.html" class="sidebar-sublink block py-2 text-[13px]">Personas</a>
-          </div>
-        </div>
-
-        <a href="procesamiento.html" class="sidebar-link is-active flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
-          <span class="sidebar-label">Procesamiento</span>
-        </a>
-      </nav>
-
-      <button @click="sidebarCollapsed = !sidebarCollapsed"
-        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
-        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
-        <span class="sidebar-label text-xs">Contraer</span>
-      </button>
-    </aside>
+    {% include 'pages/sidebar.html' %}
 
     <!-- ============================================================
        MAIN COLUMN
@@ -122,19 +23,8 @@
     <div class="flex-1 min-w-0 flex flex-col" x-data="procesamientoBoard()">
 
       <!-- ---------- TOPBAR ---------- -->
-      <header class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
-        <div class="flex items-center gap-3 sm:gap-4">
-          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
-            <i class="fa-solid fa-bars text-base"></i>
-          </button>
-          <a href="dashboard.html" class="action-icon-btn hidden sm:inline-flex" title="Volver al dashboard"><i
-              class="fa-solid fa-arrow-left"></i></a>
-          <h1 class="font-display font-semibold text-lg text-[var(--ink-900)]">Procesamiento</h1>
-          <span class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold">
-            <span x-text="filtered.length"></span>&nbsp;de&nbsp;<span x-text="solicitudes.length"></span>
-          </span>
-        </div>
-      </header>
+      {% set page_title = "Procesamientos" %}
+      {% include 'pages/navbar.html' %}
 
       <!-- ---------- CONTENT ---------- -->
       <main class="flex-1 p-6 space-y-6">
@@ -251,7 +141,7 @@
               <!-- Botón de acción: Revisar Expediente -->
               <div class="mt-5 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
                 <span class="text-[11px] text-[var(--text-muted)] font-mono font-bold" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
-                <a :href="'revision-solicitud.html?id=' + solicitud.id" 
+                <a :href="'/solicitudes/revision/' + (solicitud.codigo || solicitud.id)" 
                   class="btn-signal text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all">
                   <i class="fa-solid fa-clipboard-check text-[11px]"></i>
                   <span>Revisar Expediente</span>
@@ -958,7 +848,4 @@
 
       </div>
     </div>
-  </div>
-</body>
-
-</html>
+{% endblock %}

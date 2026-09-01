@@ -1,34 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'pages/base.html' %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Revisión de Expediente · INCARSA</title>
+{% block title %} Revisión de solicitud · INCARSA {% endblock %}
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <!-- Google Fonts: Space Grotesk (display) + Inter (body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-  <!-- Estilos custom -->
-  <link rel="stylesheet" href="assets/css/styles.css">
-  <link rel="stylesheet" href="assets/css/navbar-sidebar.css">
-  <link rel="stylesheet" href="assets/css/dark-mode.css">
-  <!-- Scripts de configuración y lógica -->
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/mockData.js"></script>
-  <script src="assets/js/revision-solicitud.js"></script>
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-</head>
+{% block extra_js%}
+  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}"></script>
+{% endblock %}
 
-<body class="antialiased bg-[var(--surface-canvas)] text-[var(--text-primary)]">
+{% block content %}
 
   <div class="app-shell" x-data="revisionSolicitudApp()" @keydown.escape.window="sidebarOpenMobile = false">
 
@@ -38,112 +16,109 @@
     <!-- ============================================================
        SIDEBAR
     ============================================================= -->
-    <aside class="sidebar flex flex-col text-sm" :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }" x-cloak>
-      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-          </div>
-          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
-        </div>
-        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
-
-      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="solicitudes-listado.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-file-lines w-4 text-center"></i>
-          <span>Solicitudes</span>
-        </a>
-        <a href="procesamiento.html" class="sidebar-link is-active flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-arrows-spin w-4 text-center"></i>
-          <span>Procesamiento</span>
-        </a>
-        <a href="usuarios-listado.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5">
-          <i class="fa-solid fa-users w-4 text-center"></i>
-          <span>Usuarios</span>
-        </a>
-      </nav>
-
-      <div class="p-3 border-t border-white/10">
-        <a href="procesamiento.html" class="sidebar-link flex items-center gap-3 px-3 py-2 text-xs text-slate-400 hover:text-white">
-          <i class="fa-solid fa-arrow-left w-4 text-center"></i>
-          <span>Volver a listado</span>
-        </a>
-      </div>
-    </aside>
+    {% include 'pages/sidebar.html' %}
 
     <!-- ============================================================
        CONTENIDO PRINCIPAL
     ============================================================= -->
-    <div class="app-main flex flex-col min-h-screen">
+    <div class="flex-1 min-w-0 flex flex-col">
 
-      <!-- Header Superior -->
-      <header class="app-header flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-white sticky top-0 z-30 shadow-xs">
-        <div class="flex items-center gap-3">
-          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn text-[var(--ink-900)] border-slate-200 hover:bg-slate-100" aria-label="Abrir menú de navegación">
+      <!-- Header Superior (Topbar institucional con diseño INCARSA) -->
+      <header class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
+        
+        <!-- Izquierda: Menú móvil, Volver atrás, Título y Código -->
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
             <i class="fa-solid fa-bars text-base"></i>
           </button>
-          <a href="procesamiento.html" class="action-icon-btn text-slate-500 hover:text-[var(--ink-900)] hidden sm:inline-flex" title="Volver a Procesamiento">
+          
+          <a href="/procesamiento" 
+             class="w-9 h-9 rounded-xl border border-white/20 hover:bg-white/10 flex items-center justify-center text-white transition-all shadow-xs" 
+             title="Volver a Procesamiento">
             <i class="fa-solid fa-arrow-left text-sm"></i>
           </a>
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="font-display font-semibold text-base text-[var(--ink-900)]">Expediente de Revisión</h1>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-slate-100 text-slate-800 border border-slate-200"
-                x-show="solicitud" x-text="solicitud ? solicitud.codigo : ''"></span>
-            </div>
+
+          <div class="flex items-center gap-2.5">
+            <h1 class="font-display font-semibold text-base sm:text-lg text-white">Expediente de Revisión</h1>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md font-mono font-bold text-xs bg-white/15 text-white border border-white/20"
+              x-show="solicitud" x-text="solicitud ? solicitud.codigo : ''"></span>
           </div>
         </div>
 
-        <!-- Rol actual y selector de simulación para pruebas -->
-        <div class="flex items-center gap-3">
-          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-            <span class="text-slate-500 font-medium">Auditoría activa:</span>
-            <span class="font-bold text-[var(--signal-600)]" x-text="rolActual"></span>
-          </div>
-
-          <!-- Selector rápido de rol para testeo del flujo -->
+        <!-- Derecha: Selector de simulación, Estado, Modo oscuro y Perfil -->
+        <div class="flex items-center gap-3 sm:gap-4">
+          
+          <!-- Selector de Simulación de Rol (sin restricción de ancho que aplastaba el texto) -->
           <div class="relative" x-data="{ openRoles: false }">
-            <button type="button" @click="openRoles = !openRoles" class="action-icon-btn text-xs px-2.5 py-1.5 h-auto flex items-center gap-1.5 border border-slate-200" title="Cambiar rol para probar flujo">
-              <i class="fa-solid fa-user-shield text-slate-500"></i>
-              <span class="font-medium hidden md:inline" x-text="'Probar como ' + rolActual"></span>
-              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+            <button type="button" @click="openRoles = !openRoles" 
+              class="h-9 px-3 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs font-medium flex items-center gap-2 transition-colors shadow-xs"
+              title="Cambiar rol para simular dictamen">
+              <i class="fa-solid fa-user-shield text-amber-400"></i>
+              <span class="hidden md:inline text-white/70">Auditoría:</span>
+              <span class="font-bold text-white" x-text="rolActual"></span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-white/60"></i>
             </button>
             <div x-show="openRoles" @click.outside="openRoles = false" x-cloak
-              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 text-xs">
-              <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Simular Rol</div>
-              <button type="button" @click="cambiarRolSimulado('SST'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'SST' ? 'font-bold text-amber-600' : ''">
+              class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] py-1.5 z-40 text-xs text-[var(--text-primary)]">
+              <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border-subtle)]">Simular Rol</div>
+              <button type="button" @click="cambiarRolSimulado('SST'); openRoles = false" class="w-full text-left px-3 py-2 hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center justify-between" :class="rolActual === 'SST' ? 'font-bold text-amber-600 bg-amber-50/50 dark:bg-amber-950/20' : ''">
                 <span>SST (Seguridad/Salud)</span>
                 <i class="fa-solid fa-check text-xs" x-show="rolActual === 'SST'"></i>
               </button>
-              <button type="button" @click="cambiarRolSimulado('GESCO'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'GESCO' ? 'font-bold text-purple-600' : ''">
+              <button type="button" @click="cambiarRolSimulado('GESCO'); openRoles = false" class="w-full text-left px-3 py-2 hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center justify-between" :class="rolActual === 'GESCO' ? 'font-bold text-purple-600 bg-purple-50/50 dark:bg-purple-950/20' : ''">
                 <span>GESCO (Conocimiento)</span>
                 <i class="fa-solid fa-check text-xs" x-show="rolActual === 'GESCO'"></i>
               </button>
-              <button type="button" @click="cambiarRolSimulado('SCR'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'SCR' ? 'font-bold text-emerald-600' : ''">
+              <button type="button" @click="cambiarRolSimulado('SCR'); openRoles = false" class="w-full text-left px-3 py-2 hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center justify-between" :class="rolActual === 'SCR' ? 'font-bold text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20' : ''">
                 <span>SCR (Riesgo/Aprobación)</span>
                 <i class="fa-solid fa-check text-xs" x-show="rolActual === 'SCR'"></i>
               </button>
-              <button type="button" @click="cambiarRolSimulado('Administrador'); openRoles = false" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between" :class="rolActual === 'Administrador' ? 'font-bold text-blue-600' : ''">
+              <button type="button" @click="cambiarRolSimulado('Administrador'); openRoles = false" class="w-full text-left px-3 py-2 hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center justify-between" :class="rolActual === 'Administrador' ? 'font-bold text-blue-600 bg-blue-50/50 dark:bg-blue-950/20' : ''">
                 <span>Administrador</span>
                 <i class="fa-solid fa-check text-xs" x-show="rolActual === 'Administrador'"></i>
               </button>
             </div>
           </div>
 
-          <!-- Estado Global de la solicitud con efecto shimmer -->
+          <!-- Estado Global de la solicitud -->
           <div class="relative overflow-hidden rounded-full font-semibold shadow-xs select-none" x-show="solicitud">
             <span class="status-pill relative overflow-hidden" :class="estadoEstilos(solicitud ? solicitud.estado : '')">
               <span class="shimmer-ray"></span>
               <span class="relative z-10" x-text="solicitud ? solicitud.estado : ''"></span>
             </span>
           </div>
+
+          <!-- Modo oscuro -->
+          <button
+            @click="toggleDarkMode()"
+            class="relative w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
+            :title="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+            <i class="fa-solid text-base transition-all duration-300"
+               :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon'"></i>
+          </button>
+
+          <!-- Perfil -->
+          <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/10 transition-colors">
+              <div
+                class="w-8 h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
+                x-text="userInitials"><b>LG</b></div>
+              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-white/60"></i>
+            </button>
+            <div x-show="open" x-transition x-cloak
+              class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50 text-[var(--text-primary)]">
+              <button @click="$dispatch('open-profile'); open = false"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center gap-2">
+                <i class="fa-regular fa-user w-4"></i> Ver perfil
+              </button>
+              <a href="/login"
+                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center gap-2 text-[var(--state-rechazado)]">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+              </a>
+            </div>
+          </div>
+
         </div>
       </header>
 
@@ -162,7 +137,7 @@
           <div class="p-6 rounded-2xl bg-red-50 border border-red-200 text-center space-y-3">
             <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
             <h3 class="font-display font-semibold text-base text-red-900" x-text="error"></h3>
-            <a href="procesamiento.html" class="btn-secondary inline-flex items-center gap-2 text-xs px-4 py-2">
+            <a href="/procesamiento" class="btn-secondary inline-flex items-center gap-2 text-xs px-4 py-2">
               <i class="fa-solid fa-arrow-left"></i> Volver a procesamiento
             </a>
           </div>
@@ -1262,5 +1237,4 @@
 
   </div>
 
-</body>
-</html>
+{% endblock %}

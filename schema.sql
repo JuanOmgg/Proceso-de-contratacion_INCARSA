@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS roles (
 -- Insertar roles base
 INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Administrador', ''),
+('SuperAdmin', ''),
 ('Gestion documental', ''),
 ('SST', 'Seguridad y Salud en el Trabajo'),
 ('GESCO', 'Gestión del conocimiento'),
