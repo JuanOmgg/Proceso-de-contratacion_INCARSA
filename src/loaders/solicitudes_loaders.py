@@ -482,7 +482,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
         print(f"❌ Error en GET_solicitud_bd #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
 
-def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
+def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
     try:
         id_planta = dictamen.get("id_planta")
         rol = str(dictamen.get("rol", "")).strip().upper()
@@ -495,11 +495,18 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
 
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                # 1. Verificar existencia de la solicitud
-                cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s", (solicitud_id,))
+                # 1. Verificar existencia de la solicitud y resolver ID numérico real
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, estado FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                real_id = int(sol["id"])
 
                 # Si no viene nombre_revisor pero viene id_usuario, resolverlo
                 if not nombre_revisor and id_usuario:
@@ -508,12 +515,19 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
                     if u:
                         nombre_revisor = f"{u.get('nombres', '')} {u.get('apellidos', '')}".strip()
 
-                # Si no viene id_planta y es SST o GESCO, y la solicitud solo tiene 1 planta, resolverla
+                # Si no viene id_planta y es SST o GESCO, resolver de visita o plantas_ids
                 if (not id_planta or id_planta == 0) and rol in ("SST", "GESCO"):
-                    cursor.execute("SELECT id_planta FROM visita WHERE id_solicitud = %s LIMIT 1", (solicitud_id,))
+                    cursor.execute("SELECT id_planta FROM visita WHERE id_solicitud = %s LIMIT 1", (real_id,))
                     v_p = cursor.fetchone()
                     if v_p:
                         id_planta = v_p["id_planta"]
+                    else:
+                        cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (real_id,))
+                        sol_p = cursor.fetchone()
+                        if sol_p and sol_p.get("plantas_ids"):
+                            p_list = [int(x.strip()) for x in str(sol_p["plantas_ids"]).replace("[","").replace("]","").split(",") if x.strip().isdigit()]
+                            if p_list:
+                                id_planta = p_list[0]
 
                 # 2. Insertar o actualizar en solicitud_revisiones
                 sql_upsert = """
@@ -530,20 +544,23 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
                         fecha_revision = NOW()
                 """
                 cursor.execute(sql_upsert, (
-                    solicitud_id, id_planta, rol, id_usuario, nombre_revisor,
+                    real_id, id_planta, rol, id_usuario, nombre_revisor,
                     decision, motivo_rechazo, observacion
                 ))
 
                 # 3. Obtener todas las plantas de la solicitud (vía visita)
-                cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (solicitud_id,))
+                cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (real_id,))
                 plantas_sol = [r["id_planta"] for r in cursor.fetchall() or [] if r.get("id_planta")]
 
                 # Fallback plantas vía solicitudes.plantas_ids si visita estaba vacía
                 if not plantas_sol:
-                    cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (solicitud_id,))
+                    cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (real_id,))
                     sol_p = cursor.fetchone()
                     if sol_p and sol_p.get("plantas_ids"):
                         plantas_sol = [int(x.strip()) for x in str(sol_p["plantas_ids"]).replace("[","").replace("]","").split(",") if x.strip().isdigit()]
+
+                if not plantas_sol and id_planta:
+                    plantas_sol = [id_planta]
 
                 # 4. Determinar nuevo estado global de la solicitud
                 nuevo_estado = sol.get("estado", "EN REVISIÓN")
@@ -553,13 +570,13 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
                     obs_rechazo = f"[RECHAZADO por {rol}]: {motivo_rechazo}. {observacion}".strip()
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'RECHAZADO', observaciones = %s WHERE id = %s",
-                        (obs_rechazo, solicitud_id)
+                        (obs_rechazo, real_id)
                     )
                 elif rol == "SCR":
                     nuevo_estado = "APROBADO"
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
-                        (solicitud_id,)
+                        (real_id,)
                     )
                 else:
                     # Es SST o GESCO aprobando
@@ -569,7 +586,7 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
                         FROM solicitud_revisiones 
                         WHERE id_solicitud = %s AND decision = 'APROBADO'
                         """,
-                        (solicitud_id,)
+                        (real_id,)
                     )
                     revs_aprobadas = cursor.fetchall() or []
                     
@@ -594,7 +611,7 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
 
                     cursor.execute(
                         "UPDATE solicitudes SET estado = %s WHERE id = %s",
-                        (nuevo_estado, solicitud_id)
+                        (nuevo_estado, real_id)
                     )
 
                 conexion.commit()
@@ -610,7 +627,7 @@ def REGISTRAR_dictamen_db(solicitud_id: int, dictamen: dict) -> dict:
                     WHERE sr.id_solicitud = %s
                     ORDER BY sr.fecha_revision ASC
                     """,
-                    (solicitud_id,),
+                    (real_id,),
                 )
                 revs_actualizadas = cursor.fetchall() or []
                 for r in revs_actualizadas:
@@ -877,10 +894,22 @@ def GET_date_count_db() -> List[Dict[str, Any]]:
         print(f"❌ Error en GET_conteo_solicitudes_por_mes_db: {e}")
         raise e 
 
-def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
+def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                # Resolver ID numérico real
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+                real_id = int(sol["id"])
+
                 personas = campos.pop("personas", None)
                 if personas is None:
                     personas = campos.pop("ingresantes", None)
@@ -903,7 +932,7 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                     if isinstance(lista_p, list):
                         cursor.execute(
                             "DELETE FROM ingresantes WHERE id_solicitud = %s",
-                            (solicitud_id,),
+                            (real_id,),
                         )
                         valores_ing = []
                         for item_p in lista_p:
@@ -916,9 +945,9 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                                     aut_val = True
                                 mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
                                 if p_id:
-                                    valores_ing.append((solicitud_id, int(p_id), aut_val, mot))
+                                    valores_ing.append((real_id, int(p_id), aut_val, mot))
                             elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
-                                valores_ing.append((solicitud_id, int(item_p), True, None))
+                                valores_ing.append((real_id, int(item_p), True, None))
 
                         if valores_ing:
                             cursor.executemany(
@@ -933,24 +962,24 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                         campos["plantas_ids"] = ",".join(map(str, raw_plids))
                         cursor.execute(
                             "DELETE FROM visita WHERE id_solicitud = %s",
-                            (solicitud_id,),
+                            (real_id,),
                         )
                         if raw_plids:
                             cursor.executemany(
                                 "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)",
-                                [(solicitud_id, p_id) for p_id in raw_plids],
+                                [(real_id, p_id) for p_id in raw_plids],
                             )
 
                 if campos:
                     columnas = [f"{col} = %s" for col in campos.keys()]
                     sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
-                    valores = list(campos.values()) + [solicitud_id]
+                    valores = list(campos.values()) + [real_id]
                     cursor.execute(sql_update, valores)
 
                 if vehiculo is not None:
                     cursor.execute(
                         "DELETE FROM Veh_ingreso WHERE id_solicitud = %s",
-                        (solicitud_id,),
+                        (real_id,),
                     )
                     if vehiculo:
                         for v in vehiculo:
@@ -989,13 +1018,13 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                                     VALUES (%s, %s, %s)
                                 """
                                 cursor.execute(
-                                    sql_vehingreso, (solicitud_id, id_v, lic_doc)
+                                    sql_vehingreso, (real_id, id_v, lic_doc)
                                 )
 
                 if eq_computo is not None:
                     cursor.execute(
                         "DELETE FROM equipos_solicitud WHERE solicitud_id = %s",
-                        (solicitud_id,),
+                        (real_id,),
                     )
                     if eq_computo:
                         sql_eq = """
@@ -1004,7 +1033,7 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
                         """
                         valores_eq = [
                             (
-                                solicitud_id,
+                                real_id,
                                 eq.get("marca", ""),
                                 eq.get("modelo", ""),
                                 eq.get("serie", ""),
@@ -1028,12 +1057,22 @@ def UPDATE_solicitud_bd(solicitud_id: int, campos: dict) -> dict:
             "mensaje": f"❌❌ Error al actualizar en la base de datos: {e} ❌❌",
         }
     
-def DELETE_solicitud_bd(solicitud_id: int) -> dict:
+def DELETE_solicitud_bd(solicitud_id: Any) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+                real_id = int(sol["id"])
 
-                cursor.execute("DELETE FROM solicitudes WHERE id = %s", (solicitud_id,))
+                cursor.execute("DELETE FROM solicitudes WHERE id = %s", (real_id,))
 
                 if cursor.rowcount == 0:
                     return {

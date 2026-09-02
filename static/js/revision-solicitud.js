@@ -355,6 +355,10 @@ function revisionSolicitudApp() {
           throw new Error(`Solicitud #${this.solicitudId} no encontrada.`);
         }
 
+        if (data.id) {
+          this.solicitudId = data.id;
+        }
+
         this.solicitud = this.normalizar(data);
 
         // Cargar dictámenes previos desde backend o storage local
@@ -544,7 +548,15 @@ function revisionSolicitudApp() {
         planta: cadenaPlanta,
         plantas: cadenaPlanta,
         plantas_lista: plantasLista,
-        estado: (s.estado || "ENVIADO").toUpperCase(),
+        estado: (() => {
+          const rawE = String(s.estado || "ENVIADO").trim().toUpperCase();
+          if (rawE === "EN REVISIÓN" || rawE === "EN REVISION") return "EN REVISIÓN";
+          if (rawE === "POR APROBAR") return "POR APROBAR";
+          if (rawE === "APROBADO") return "APROBADO";
+          if (rawE === "RECHAZADO") return "RECHAZADO";
+          if (rawE === "ENVIADO") return "ENVIADO";
+          return rawE;
+        })(),
         personas: listaPersonas,
         vehiculos: listaVehiculos,
         computos: listaComputos
@@ -692,8 +704,8 @@ function revisionSolicitudApp() {
       const revs = this.revisionesHistorial || [];
 
       return plantas.map(p => {
-        const revSst = revs.find(r => Number(r.id_planta) === Number(p.id) && String(r.rol).toUpperCase() === 'SST');
-        const revGesco = revs.find(r => Number(r.id_planta) === Number(p.id) && String(r.rol).toUpperCase() === 'GESCO');
+        const revSst = revs.find(r => (Number(r.id_planta) === Number(p.id) || (plantas.length === 1 && !r.id_planta)) && String(r.rol).toUpperCase() === 'SST');
+        const revGesco = revs.find(r => (Number(r.id_planta) === Number(p.id) || (plantas.length === 1 && !r.id_planta)) && String(r.rol).toUpperCase() === 'GESCO');
 
         const sstAprobado = revSst?.decision === 'APROBADO';
         const sstRechazado = revSst?.decision === 'RECHAZADO';
@@ -743,7 +755,9 @@ function revisionSolicitudApp() {
 
     get misPlantasDictaminables() {
       const todas = this.plantasSolicitud;
-      if (this.rolActual === 'Administrador' || this.rolActual === 'SCR') {
+      const esAdmin = this.rolActual === 'Administrador' || this.rolActual === 'SCR' || 
+                      (this.usuarioSesion && (Number(this.usuarioSesion.id_rol) === 1 || String(this.usuarioSesion.rol).toUpperCase().includes("ADMIN")));
+      if (esAdmin) {
         return todas;
       }
       const misIds = (this.usuarioSesion?.plantas_ids || []).map(Number);
@@ -767,7 +781,13 @@ function revisionSolicitudApp() {
         return true;
       }
 
+      // Si el rol es simulado por un Administrador o no tiene restricciones, permitir
       const sesion = this.usuarioSesion;
+      const esAdmin = sesion && (Number(sesion.id_rol) === 1 || String(sesion.rol).toUpperCase().includes("ADMIN"));
+      if (esAdmin) {
+        return true;
+      }
+
       const plantasUsuario = (sesion?.plantas_ids || []).map(Number);
 
       let plantasSol = this.plantasSolicitud.map(p => p.id);
@@ -790,7 +810,7 @@ function revisionSolicitudApp() {
     },
 
     get puedeDictaminar() {
-      const estado = (this.solicitud?.estado || "").toUpperCase();
+      const estado = String(this.solicitud?.estado || "").toUpperCase();
 
       if (estado === "RECHAZADO" || estado === "APROBADO") {
         return this.rolActual === "Administrador";
@@ -801,7 +821,7 @@ function revisionSolicitudApp() {
       // Validación para SST y GESCO:
       if (this.rolActual === "SST" || this.rolActual === "GESCO") {
         if (!this.tienePlantaAsignadaParaSolicitud) return false;
-        if (estado !== "ENVIADO" && estado !== "EN REVISIÓN") return false;
+        if (estado !== "ENVIADO" && estado !== "EN REVISIÓN" && estado !== "EN REVISION") return false;
         if (this.miPlantaYaFirmada) return false;
         return true;
       }
@@ -815,6 +835,15 @@ function revisionSolicitudApp() {
     },
 
     async emitirDictamen() {
+      // Asegurar selección de planta
+      if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
+        if (this.misPlantasDictaminables.length > 0) {
+          this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
+        } else if (this.plantasSolicitud.length > 0) {
+          this.plantaSeleccionadaDictamen = this.plantasSolicitud[0].id;
+        }
+      }
+
       if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.tienePlantaAsignadaParaSolicitud) {
         this.mostrarToast("No puedes dictaminar: ninguna planta de esta solicitud coincide con tus zonas asignadas.", "error");
         return;
@@ -838,7 +867,6 @@ function revisionSolicitudApp() {
       const nombreUsuario = this.usuarioSesion?.nombres 
         ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
         : `Auditor (${this.rolActual})`;
-      const fechaHoy = new Date().toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 
       try {
         const payloadDictamen = {
@@ -851,8 +879,9 @@ function revisionSolicitudApp() {
           nombre_revisor: nombreUsuario
         };
 
-        // Enviar a API Backend
-        const res = await fetch(`${API.solicitudes}/${this.solicitudId}/dictamen`, {
+        // Enviar a API Backend (usando solicitudId numérico o código)
+        const targetId = this.solicitud?.id || this.solicitudId;
+        const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payloadDictamen)
@@ -862,37 +891,13 @@ function revisionSolicitudApp() {
           const dataRes = await res.json();
           this.solicitud.estado = dataRes.nuevo_estado;
           this.revisionesHistorial = dataRes.revisiones || [];
-          this.mostrarToast(`Dictamen registrado exitosamente (${dataRes.nuevo_estado}).`, "success");
+          this.guardarRevisionesEnStorage();
+          this.mostrarToast(`Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`, "success");
         } else {
-          // Respaldo en memoria / localStorage si backend no está disponible
-          const rolKey = this.rolActual.toLowerCase();
-          const pid = Number(this.plantaSeleccionadaDictamen) || null;
-          
-          this.revisionesHistorial = this.revisionesHistorial.filter(
-            r => !(Number(r.id_planta) === pid && String(r.rol).toUpperCase() === this.rolActual.toUpperCase())
-          );
-          this.revisionesHistorial.push({
-            id_planta: pid,
-            rol: this.rolActual,
-            decision: decision === "rechazar" ? "RECHAZADO" : "APROBADO",
-            motivo_rechazo: decision === "rechazar" ? motivo : "",
-            observacion: obs,
-            nombre_revisor: nombreUsuario,
-            fecha_revision: new Date().toISOString()
-          });
-
-          let nuevoEstado = this.solicitud.estado;
-          if (decision === "rechazar") {
-            nuevoEstado = "RECHAZADO";
-          } else if (this.rolActual === "SCR") {
-            nuevoEstado = "APROBADO";
-          } else if (this.totalPlantas > 0 && this.totalPlantasCompletadas === this.totalPlantas) {
-            nuevoEstado = "POR APROBAR";
-          } else {
-            nuevoEstado = "EN REVISIÓN";
-          }
-          await this.cambiarEstado(nuevoEstado, true);
-          this.mostrarToast(`Dictamen registrado localmente: ${nuevoEstado}`, "success");
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
+          console.error("Error al registrar dictamen en backend:", errMsg);
+          this.mostrarToast(`Error al guardar en base de datos: ${errMsg}`, "error");
         }
 
         this.guardarRevisionesEnStorage();

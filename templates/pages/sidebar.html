@@ -29,14 +29,14 @@
   :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }"
   x-cloak>
 
-      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-          </div>
-          <span class="sidebar-brand-text font-display font-semibold text-white tracking-wide">INCARSA</span>
-        </div>
-        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close" aria-label="Cerrar menú">
+      <div class="relative flex items-center justify-center px-4 h-20 border-b border-white/10 flex-shrink-0">
+        <a href="/dashboard" class="flex items-center justify-center w-full py-2 transition-transform hover:opacity-90">
+          <img src="/static/img/logo-sidebar.png" alt="PSI"
+            class="w-auto object-contain select-none transition-all duration-300 mx-auto"
+            style="mix-blend-mode: screen;"
+            :class="sidebarCollapsed ? 'max-w-[44px] h-8' : 'max-w-[145px] h-10'">
+        </a>
+        <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close absolute right-4 top-1/2 -translate-y-1/2" aria-label="Cerrar menú">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
@@ -51,7 +51,8 @@
         <!-- Módulo desplegable: Formularios -->
         <div>
           <button type="button" @click="toggleModule('formularios')"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer">
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
+            :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') }">
             <span class="flex items-center gap-3">
               <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
               <span class="sidebar-label">Formularios</span>
@@ -71,7 +72,8 @@
         <!-- Módulo desplegable: Tablas / consultas -->
         <div>
           <button type="button" @click="toggleModule('tablas')"
-            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer">
+            class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
+            :class="{ 'is-module-active': (isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar')) || isActive('/usuarios') || isActive('/personas') }">
             <span class="flex items-center gap-3">
               <i class="fa-solid fa-table-list w-4 text-center"></i>
               <span class="sidebar-label">Consultas</span>

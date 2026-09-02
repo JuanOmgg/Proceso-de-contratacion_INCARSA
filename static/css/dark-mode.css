@@ -878,12 +878,11 @@
    Botones principales (.btn-signal), enlace activo del sidebar,
    logo de la empresa y chip de rol (.role-chip)
    ========================================================= */
-:root.dark .btn-signal,
+:root.dark .btn-signal:not(.login-page *),
 :root.dark .sidebar-link.is-active,
 :root.dark .role-chip,
 :root.dark .sidebar div:has(> .fa-shield-halved),
-:root.dark .sidebar .bg-\[var\(--signal-500\)\],
-:root.dark .badge-count {
+:root.dark .sidebar .bg-\[var\(--signal-500\)\] {
   background-image: linear-gradient(
     90deg,
     #dc2626 0%,
@@ -901,9 +900,9 @@
   border: none !important;
 }
 
-:root.dark .btn-signal *,
-:root.dark .btn-signal i,
-:root.dark .btn-signal span,
+:root.dark .btn-signal:not(.login-page *) *,
+:root.dark .btn-signal:not(.login-page *) i,
+:root.dark .btn-signal:not(.login-page *) span,
 :root.dark .sidebar-link.is-active *,
 :root.dark .sidebar-link.is-active i,
 :root.dark .sidebar-link.is-active span,
@@ -914,34 +913,64 @@
   color: #ffffff !important;
 }
 
-/* 1. Botones principales (.btn-signal) con hover interactivo */
-:root.dark .btn-signal {
+/* 1. Botones principales (.btn-signal) con hover interactivo (excepto login) */
+:root.dark .btn-signal:not(.login-page *) {
   border-radius: 12px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
 
-:root.dark .btn-signal:hover {
+:root.dark .btn-signal:not(.login-page *):hover {
   animation: flameGradientShift 1.2s linear infinite !important;
   filter: brightness(1.15);
   transform: translateY(-2px);
   box-shadow: 0 0 28px 2px rgba(249, 115, 22, 0.75), 0 0 54px 6px rgba(220, 38, 38, 0.5) !important;
 }
 
-:root.dark .btn-signal:active {
+:root.dark .btn-signal:not(.login-page *):active {
   transform: translateY(0) scale(0.97);
 }
 
-/* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con hover interactivo */
+/* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con efecto neón */
 :root.dark .sidebar-link.is-active {
   border-radius: 10px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
 }
 
 :root.dark .sidebar-link.is-active:hover {
   animation: flameGradientShift 1.5s linear infinite !important;
-  filter: brightness(1.12);
+  filter: brightness(1.15);
   transform: translateX(4px);
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.65), 0 0 44px 4px rgba(220, 38, 38, 0.4) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+}
+
+/* Sub-enlaces de módulos activos en el sidebar con efecto neón */
+:root.dark .sidebar-sublink.is-active {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-left: 3px solid #f97316 !important;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.28) 0%, rgba(249, 115, 22, 0.1) 100%) !important;
+  border-radius: 0 8px 8px 0 !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.55), inset 2px 0 8px rgba(239, 68, 68, 0.35) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 16px rgba(249, 115, 22, 0.6) !important;
+  transform: translateX(3px);
+}
+
+/* Módulo padre en el sidebar cuando contiene la sección activa */
+:root.dark .sidebar-link.is-module-active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 0 0 6px rgba(249, 115, 22, 0.15) !important;
+}
+:root.dark .sidebar-link.is-module-active i.fa-solid {
+  color: #f97316 !important;
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85));
+}
+:root.dark .sidebar-link.is-module-active:hover {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 35px rgba(220, 38, 38, 0.4) !important;
 }
 
 /* 3. Logo del sidebar (estable, sin hover interactivo) */
@@ -958,7 +987,7 @@
   animation-duration: 6s !important;
 }
 
-/* 4. CHIP DEL ROL (Sin hover: se mantiene estático y sin cambios al pasar el cursor) */
+/* 4. CHIP / BARRA DEL ROL CON EFECTO NEÓN SUAVE Y EQUILIBRADO */
 :root.dark .role-chip,
 :root.dark .role-chip:hover,
 :root.dark .role-chip:active,
@@ -966,9 +995,33 @@
   cursor: default !important;
   pointer-events: none !important;
   transform: none !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.45), 0 0 20px rgba(220, 38, 38, 0.25) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* 5. NOTIFICACIONES (Sin efecto neón: limpio, estático y discreto) */
+:root.dark .badge-count {
+  background: #ef4444 !important;
+  background-image: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
   filter: none !important;
-  animation-duration: 6s !important;
-  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+  border: 1.5px solid #18181b !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+:root.dark .topbar button:has(.fa-bell) {
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+:root.dark .topbar button:has(.fa-bell):hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }
 
 /* =========================================================
@@ -1987,6 +2040,16 @@
    - Brillo liberado sin restricciones
    - Halo neón envolvente
    ========================================================= */
+
+/* Estilo base unificado para todos los chips de estado e iconos */
+:root.dark .filter-status-chip {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+:root.dark .filter-status-chip i {
+  color: currentColor !important;
+  display: inline-block;
+  vertical-align: middle;
+}
 
 /* 1. TODOS (Gris / Plata Neón) */
 :root.dark .chip-neon-todos {

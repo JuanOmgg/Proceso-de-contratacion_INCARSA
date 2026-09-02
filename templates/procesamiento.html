@@ -54,18 +54,38 @@
             </div>
           </div>
 
-          <!-- Derecha: Chips de Filtro Estado con brillo libre y sin puntos -->
-          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1">
-            <template x-for="estado in estadosFiltro" :key="estado">
-              <button type="button" 
-                @click="filtroEstado = estado; resetPage()" 
-                class="filter-status-chip relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
-                :class="chipClass(estado)">
-
-                <!-- TEXTO DEL BOTÓN SIN PUNTOS -->
-                <span class="relative z-10" x-text="estado === 'TODOS' ? 'Todos' : (estado === 'EN REVISIÓN' ? 'En revisión' : (estado === 'POR APROBAR' ? 'Por aprobar' : (estado.charAt(0) + estado.slice(1).toLowerCase())))"></span>
-              </button>
-            </template>
+          <!-- Derecha: Chips de Filtro Estado (Texto limpio y compacto sin iconos) -->
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1 flex-shrink-0">
+            <button type="button" @click="filtroEstado = 'TODOS'; resetPage()" 
+              class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'TODOS' ? 'is-active scale-105' : 'is-idle'">
+              Todos
+            </button>
+            <button type="button" @click="filtroEstado = 'ENVIADO'; resetPage()" 
+              class="filter-status-chip chip-neon-enviado relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'ENVIADO' ? 'is-active scale-105' : 'is-idle'">
+              Enviado
+            </button>
+            <button type="button" @click="filtroEstado = 'EN REVISIÓN'; resetPage()" 
+              class="filter-status-chip chip-neon-revision relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'EN REVISIÓN' ? 'is-active scale-105' : 'is-idle'">
+              En revisión
+            </button>
+            <button type="button" @click="filtroEstado = 'POR APROBAR'; resetPage()" 
+              class="filter-status-chip chip-neon-aprobar relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'POR APROBAR' ? 'is-active scale-105' : 'is-idle'">
+              Por aprobar
+            </button>
+            <button type="button" @click="filtroEstado = 'APROBADO'; resetPage()" 
+              class="filter-status-chip chip-neon-aprobado relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'APROBADO' ? 'is-active scale-105' : 'is-idle'">
+              Aprobado
+            </button>
+            <button type="button" @click="filtroEstado = 'RECHAZADO'; resetPage()" 
+              class="filter-status-chip chip-neon-rechazado relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+              :class="filtroEstado === 'RECHAZADO' ? 'is-active scale-105' : 'is-idle'">
+              Rechazado
+            </button>
           </div>
         </section>
 

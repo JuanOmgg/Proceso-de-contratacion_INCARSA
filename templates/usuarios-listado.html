@@ -131,12 +131,12 @@
               <button type="button" @click="filtroEstado = 'activos'" 
                 class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
                 :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
-                Activos
+                <i class="fa-solid fa-circle-check text-xs mr-1"></i> Activos
               </button>
               <button type="button" @click="filtroEstado = 'inactivos'" 
                 class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
                 :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
-                Inactivos
+                <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
               </button>
             </div>
             <button type="button" @click="limpiarFiltros()" class="action-icon-btn" data-tooltip="Limpiar filtros">
