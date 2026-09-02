@@ -1020,6 +1020,60 @@ select:focus-visible,
   animation: popIn 0.35s var(--ease-emphasized);
 }
 
+/* =========================================================
+   CHIPS DE NIVEL DE RIESGO (MODO CLARO - COLORES SÓLIDOS)
+   ========================================================= */
+.chip-riesgo.chip-riesgo-bajo {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #15803d !important;
+}
+.chip-riesgo.chip-riesgo-bajo:hover {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+}
+.chip-riesgo.chip-riesgo-bajo.is-selected {
+  background: #16a34a !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35) !important;
+}
+
+.chip-riesgo.chip-riesgo-medio {
+  background: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+  color: #b45309 !important;
+}
+.chip-riesgo.chip-riesgo-medio:hover {
+  background: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+}
+.chip-riesgo.chip-riesgo-medio.is-selected {
+  background: #d97706 !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35) !important;
+}
+
+.chip-riesgo.chip-riesgo-alto {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  color: #b91c1c !important;
+}
+.chip-riesgo.chip-riesgo-alto:hover {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+}
+.chip-riesgo.chip-riesgo-alto.is-selected {
+  background: #dc2626 !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35) !important;
+}
+
 .entry-card {
   background: var(--steel-100);
   border: 1px solid var(--border-subtle);
@@ -1757,4 +1811,169 @@ table td .inline-flex {
 .bodySt:hover {
   background-color: rgba(239, 233, 220, 0.4);
 }
+
+/* =========================================================
+   TRAZABILIDAD DE SOLICITUDES: TIMELINE (MODO CLARO - COLORES SÓLIDOS)
+   ========================================================= */
+
+/* --- Nodos completados o activos generales --- */
+.step-node-complete,
+.step-node-current {
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+.step-node-complete i,
+.step-node-current i,
+.step-node-complete span,
+.step-node-current span {
+  color: #ffffff !important;
+}
+
+/* --- PASO 0: ENVIADO (Azul Teal Sólido) --- */
+.step-fase-0.step-node-complete,
+.step-fase-0.step-node-current {
+  background-color: #0c767d !important;
+  border: 2px solid #085a60 !important;
+  color: #ffffff !important;
+}
+.step-label-fase-0.step-label-complete,
+.step-label-fase-0.step-label-current {
+  color: #0c767d !important;
+  font-weight: 700 !important;
+}
+.step-con-0.step-connector-complete {
+  background-color: #0c767d !important;
+  height: 2.5px !important;
+}
+
+/* --- PASO 1: EN REVISIÓN (Púrpura / Morado Sólido) --- */
+.step-fase-1.step-node-complete,
+.step-fase-1.step-node-current {
+  background-color: #9333ea !important;
+  border: 2px solid #7e22ce !important;
+  color: #ffffff !important;
+}
+.step-label-fase-1.step-label-complete,
+.step-label-fase-1.step-label-current {
+  color: #7e22ce !important;
+  font-weight: 700 !important;
+}
+.step-con-1.step-connector-complete {
+  background-color: #9333ea !important;
+  height: 2.5px !important;
+}
+
+/* --- PASO 2: POR APROBAR (Ámbar / Dorado Sólido) --- */
+.step-fase-2.step-node-complete,
+.step-fase-2.step-node-current {
+  background-color: #d97706 !important;
+  border: 2px solid #b45309 !important;
+  color: #ffffff !important;
+}
+.step-label-fase-2.step-label-complete,
+.step-label-fase-2.step-label-current {
+  color: #b45309 !important;
+  font-weight: 700 !important;
+}
+.step-con-2.step-connector-complete {
+  background-color: #d97706 !important;
+  height: 2.5px !important;
+}
+
+/* --- PASO 3: APROBADO (Verde Esmeralda Sólido) --- */
+.step-fase-3.step-node-complete,
+.step-fase-3.step-node-current {
+  background-color: #16a34a !important;
+  border: 2px solid #15803d !important;
+  color: #ffffff !important;
+}
+.step-label-fase-3.step-label-complete,
+.step-label-fase-3.step-label-current {
+  color: #15803d !important;
+  font-weight: 700 !important;
+}
+
+/* --- PASO RECHAZADO (Rojo Sólido) --- */
+.step-node-rejected {
+  background-color: #dc2626 !important;
+  border: 2px solid #b91c1c !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.25) !important;
+}
+.step-node-rejected i,
+.step-node-rejected span {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+.step-label-rejected {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+.step-connector-rejected {
+  background-color: #dc2626 !important;
+  height: 2.5px !important;
+}
+
+/* --- PASOS PENDIENTES --- */
+.step-node-pending {
+  background-color: #f8fafc !important;
+  border: 2px solid #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
+.step-node-pending span {
+  color: #94a3b8 !important;
+}
+.step-connector-pending {
+  background-color: #e2e8f0 !important;
+  height: 2.5px !important;
+}
+.step-label-pending {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+/* =========================================================
+   SELECTOR RÁPIDO DE OPCIONES EN WIZARD (MODO CLARO)
+   Empresas contratistas, Personas y Vehículos
+   ========================================================= */
+.wizard-option-item,
+.contratista-option-item {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.wizard-option-item .wizard-option-icon,
+.contratista-option-item .contratista-option-icon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.wizard-option-item .wizard-option-action,
+.contratista-option-item .contratista-option-action {
+  color: #94a3b8;
+}
+.wizard-option-item:not(.is-already-added):hover,
+.contratista-option-item:hover {
+  background: #f8fafc;
+  border-color: #0c767d;
+  box-shadow: 0 4px 12px rgba(12, 118, 125, 0.12);
+  transform: translateY(-1px);
+}
+.wizard-option-item:not(.is-already-added):hover .wizard-option-icon,
+.contratista-option-item:hover .contratista-option-icon {
+  background: #0c767d;
+  color: #ffffff;
+}
+.wizard-option-item:not(.is-already-added):hover .wizard-option-name,
+.contratista-option-item:hover .contratista-option-name {
+  color: #0c767d;
+}
+.wizard-option-item:not(.is-already-added):hover .wizard-option-action,
+.contratista-option-item:hover .contratista-option-action {
+  color: #0c767d;
+}
+
+
+
 

@@ -37,56 +37,62 @@
       <!-- ---------- CONTENT ---------- -->
       <main class="flex-1 p-6 space-y-6">
 
-        <!--Contador de ENVIADOS-->
+        <!-- Cards de Indicadores Neón (Mismo estilo que Antecedentes) -->
         <section x-data="dashboardCards()" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
 
-          <div class="gauge-card enviado-card p-4">
-            <div class="flex justify-between">
-              <div class="gauge-icon w-9 h-9 rounded-lg flex items-center justify-center"><i
-                  class="fa-solid fa-paper-plane text-sm"></i></div>
-              <span class="gauge-value text-2xl font-semibold" x-text="counts.enviados"></span>
+          <!-- Enviados (Cian Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-paper-plane text-xl"></i>
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-3 font-medium">Enviados</p>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Enviados</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.enviados"></p>
+            </div>
           </div>
 
-          <!--Contador de EN REVISION-->
-          <div class="gauge-card enRevision-card p-4">
-            <div class="flex justify-between">
-              <div class="gauge-icon w-9 h-9 rounded-lg flex items-center justify-center"><i
-                  class="fa-solid fa-magnifying-glass text-sm"></i></div>
-              <span class="gauge-value text-2xl font-semibold" x-text="counts.enRevision"></span>
+          <!-- En revisión (Morada Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-milpa rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-magnifying-glass text-xl"></i>
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-3 font-medium">En revisión</p>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">En revisión</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.enRevision"></p>
+            </div>
           </div>
 
-          <!--Contador de POR APROBAR-->
-          <div class="gauge-card aprobar-card p-4">
-            <div class="flex justify-between">
-              <div class="gauge-icon w-9 h-9 rounded-lg flex items-center justify-center"><i
-                  class="fa-solid fa-clipboard-check text-sm"></i></div>
-              <span class="gauge-value text-2xl font-semibold" x-text="counts.porAprobar"></span>
+          <!-- Por aprobar (Ámbar / Oro Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-clipboard-check text-xl"></i>
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-3 font-medium">Por aprobar</p>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Por aprobar</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.porAprobar"></p>
+            </div>
           </div>
 
-          <!--Contador de APROBADOS-->
-          <div class="gauge-card aprobado-card p-4">
-            <div class="flex justify-between">
-              <div class="gauge-icon w-9 h-9 rounded-lg flex items-center justify-center"><i
-                  class="fa-solid fa-circle-check text-sm"></i></div>
-              <span class="gauge-value text-2xl font-semibold" x-text="counts.aprobados"></span>
+          <!-- Aprobados (Verde Esmeralda Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-circle-check text-xl"></i>
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-3 font-medium">Aprobados</p>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Aprobados</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.aprobados"></p>
+            </div>
           </div>
 
-          <!--Contador de TOTAL-->
-          <div class="gauge-card total-card p-4 col-span-2 lg:col-span-1">
-            <div class="flex  justify-between">
-              <div class="gauge-icon w-9 h-9 rounded-lg flex items-center justify-center"><i
-                  class="fa-solid fa-layer-group text-sm"></i></div>
-              <span class="gauge-value text-2xl font-semibold" x-text="counts.total"></span>
+          <!-- Total de solicitudes (Magenta / Rosa Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 col-span-2 lg:col-span-1 neon-stat-card neon-card-total rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-layer-group text-xl"></i>
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-3 font-medium">Total de solicitudes</p>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total de solicitudes</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.total"></p>
+            </div>
           </div>
         </section>
 
@@ -541,14 +547,9 @@
 
       </main>
 
-      <!-- ============================================================
-         FOOTER
-    ============================================================= -->
-      <footer
-        class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
-        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
-        <span>Desarrollado por el equipo de Tecnología INCARSA</span>
-      </footer>
+      <!-- Footer compartido -->
+      {% set footer_modulo = 'Panel Principal de Control y Operaciones' %}
+      {% include 'pages/footer.html' %}
     </div>
   </div>
 

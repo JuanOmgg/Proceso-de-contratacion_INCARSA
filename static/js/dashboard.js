@@ -502,51 +502,99 @@ function usersSection() {
 // ---------------------------------------------------------
 // Gráficos: torta de solicitudes por mes y usuarios por rol
 // ---------------------------------------------------------
-function initDashboardCharts() {
+let chartMonthsInstance = null;
+let chartRolesInstance = null;
 
-  const inkPalette = [
-    "#f52f60ff", // Neon Pink / Magenta
-    "#ca4820ff", // Electric Orange
-    "#f7c940ff", // Vivid Amber / Yellow
-    "#02f07dff", // Bright Lime Green
-    "#00B0FF", // Electric Sky Blue
-    "#7C4DFF", // Vivid Purple / Indigo
-    "#FF1744", // Crimson Red
-    "#044e57ff", // Cyan / Aqua
-    "#abe206ff", // Bright Acid Green
-    "#D500F9", // Neon Purple
-    "#FF9100", // Bright Coral / Gold
-    "#536cfaff"
+function getChartThemeConfig() {
+  const isDark = document.documentElement.classList.contains('dark') || localStorage.getItem('darkMode') === 'true';
+  
+  // Paleta neón luminosa y armoniosa para modo oscuro
+  const darkPalette = [
+    "#00f0ff", // Cian Neón Eléctrico (INCARSA)
+    "#c084fc", // Púrpura / Violeta Neón (MILPA)
+    "#00ff9d", // Verde Esmeralda Neón (UNIMINAS)
+    "#ffb700", // Ámbar / Oro Neón (CARBOINSA)
+    "#ff2a55", // Carmesí / Rojo Neón
+    "#38bdf8", // Azul Cielo Neón
+    "#f43f5e", // Rosa Neón
+    "#a855f7"  // Púrpura Eléctrico
   ];
 
-  const Rols = ["#3B82F6", "#06c283ff", "#F59E0B", "#e8fc75ff", "#FF1744"]
+  // Paleta corporativa sólida para modo claro
+  const lightPalette = [
+    "#109ea9ff", // Azul Teal Corporativo
+    "#a24ff0ff", // Púrpura
+    "#16c857ff", // Verde Esmeralda
+    "#f18811ff", // Ámbar
+    "#e72626ff", // Rojo Carmesí
+    "#0791d6ff", // Azul Cielo
+    "#f97316"  // Naranja
+  ];
+
+  return {
+    isDark,
+    palette: isDark ? darkPalette : lightPalette,
+    borderColor: isDark ? "#1e1e1e" : "#ffffff",
+    borderWidth: 2.5,
+    legendColor: isDark ? "#cbd5e1" : "#475569",
+    tooltipBg: isDark ? "rgba(18, 18, 22, 0.95)" : "#0f172a",
+    tooltipBorder: isDark ? "rgba(255, 255, 255, 0.15)" : "#334155",
+    tooltipTitle: "#ffffff",
+    tooltipBody: isDark ? "#cbd5e1" : "#f1f5f9"
+  };
+}
+
+function syncDashboardChartsTheme() {
+  const cfg = getChartThemeConfig();
+  [chartMonthsInstance, chartRolesInstance].forEach(chart => {
+    if (chart) {
+      chart.data.datasets.forEach(ds => {
+        ds.backgroundColor = cfg.palette;
+        ds.borderColor = cfg.borderColor;
+        ds.borderWidth = cfg.borderWidth;
+      });
+      if (chart.options.plugins) {
+        if (chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+          chart.options.plugins.legend.labels.color = cfg.legendColor;
+        }
+        if (chart.options.plugins.tooltip) {
+          chart.options.plugins.tooltip.backgroundColor = cfg.tooltipBg;
+          chart.options.plugins.tooltip.borderColor = cfg.tooltipBorder;
+          chart.options.plugins.tooltip.titleColor = cfg.tooltipTitle;
+          chart.options.plugins.tooltip.bodyColor = cfg.tooltipBody;
+        }
+      }
+      chart.update();
+    }
+  });
+}
+
+function initDashboardCharts() {
+  const cfg = getChartThemeConfig();
 
   async function graficoMeses() {
-
     try {
       const MonthCount = await fetch(`${API.solicitudes}/fechasCount`);
+      if (!MonthCount.ok) throw new Error("Error HTTP: " + MonthCount.status);
 
-      if (!MonthCount.ok) {
-        throw new Error("Error HTTP: " + MonthCount.status);
-      }
-
-      dataF = await MonthCount.json();
-
+      const dataF = await MonthCount.json();
       const mes = dataF.map(df => df.month);
       const total = dataF.map(df => df.total);
 
       const monthCtx = document.getElementById("chartMonths");
-
       if (monthCtx && dataF.length > 0) {
-        new Chart(monthCtx, {
+        if (chartMonthsInstance) {
+          chartMonthsInstance.destroy();
+        }
+        chartMonthsInstance = new Chart(monthCtx, {
           type: "pie",
           data: {
             labels: mes,
             datasets: [{
               data: total,
-              backgroundColor: Rols,
-              borderColor: "#ffffff",
-              borderWidth: 2
+              backgroundColor: cfg.palette,
+              borderColor: cfg.borderColor,
+              borderWidth: cfg.borderWidth
             }]
           },
           options: {
@@ -555,52 +603,63 @@ function initDashboardCharts() {
             animation: {
               animateScale: true,
               animateRotate: true,
-              duration: 2000,
+              duration: 1200,
               easing: 'easeInOutQuad',
             },
             hover: {
-              animationDuration: 300
+              animationDuration: 250
             },
-
             plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } }
+              legend: { 
+                position: "bottom", 
+                labels: { 
+                  boxWidth: 12, 
+                  font: { size: 11.5, weight: '600' },
+                  color: cfg.legendColor,
+                  padding: 14
+                } 
+              },
+              tooltip: {
+                backgroundColor: cfg.tooltipBg,
+                borderColor: cfg.tooltipBorder,
+                borderWidth: 1,
+                titleColor: cfg.tooltipTitle,
+                bodyColor: cfg.tooltipBody,
+                padding: 10,
+                cornerRadius: 8
+              }
             }
           }
-
         });
       }
     } catch (error) {
       console.error('❌ Error al cargar la gráfica de meses:', error);
     }
   }
-  graficoMeses();
 
   async function graficoRoles() {
-
     try {
       const Count = await fetch(`${API.usuarios}/usuarios/conteo-por-rol`);
-
-      if (!Count.ok) {
-        throw new Error("Error HTTP: " + Count.status);
-      }
+      if (!Count.ok) throw new Error("Error HTTP: " + Count.status);
 
       const datas = await Count.json();
-
       const ticket = datas.map(dat => dat.rol);
       const value = datas.map(dat => dat.total);
 
       const rolesCtx = document.getElementById("chartRoles");
-
       if (rolesCtx && datas.length > 0) {
-        new Chart(rolesCtx, {
+        if (chartRolesInstance) {
+          chartRolesInstance.destroy();
+        }
+        chartRolesInstance = new Chart(rolesCtx, {
           type: "pie",
           data: {
             labels: ticket,
             datasets: [{
               data: value,
-              backgroundColor: Rols,
-              borderColor: "#ffffff",
-              borderWidth: 2
+              backgroundColor: cfg.palette,
+              borderColor: cfg.borderColor,
+              borderWidth: cfg.borderWidth
             }]
           },
           options: {
@@ -609,16 +668,31 @@ function initDashboardCharts() {
             animation: {
               animateScale: true,
               animateRotate: true,
-              duration: 2000,
+              duration: 1200,
               easing: 'easeInOutQuad',
             },
-
             hover: {
-              animationDuration: 300
+              animationDuration: 250
             },
-
             plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } }
+              legend: { 
+                position: "bottom", 
+                labels: { 
+                  boxWidth: 12, 
+                  font: { size: 11.5, weight: '600' },
+                  color: cfg.legendColor,
+                  padding: 14
+                } 
+              },
+              tooltip: {
+                backgroundColor: cfg.tooltipBg,
+                borderColor: cfg.tooltipBorder,
+                borderWidth: 1,
+                titleColor: cfg.tooltipTitle,
+                bodyColor: cfg.tooltipBody,
+                padding: 10,
+                cornerRadius: 8
+              }
             }
           }
         });
@@ -627,8 +701,24 @@ function initDashboardCharts() {
       console.error('❌ Error al cargar la gráfica de roles:', error);
     }
   }
+
+  graficoMeses();
   graficoRoles();
+
+  // Escuchar cambios de tema en el elemento raíz <html> para actualización reactiva en tiempo real
+  if (!window._chartThemeObserverAttached) {
+    window._chartThemeObserverAttached = true;
+    const observer = new MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          syncDashboardChartsTheme();
+          break;
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
 }
 
-
 document.addEventListener("DOMContentLoaded", initDashboardCharts);
+

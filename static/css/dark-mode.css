@@ -31,6 +31,21 @@
   --state-aprobar-bg: #f6f8d3;
   --state-aprobado: #027E02;
   --state-aprobado-bg: #e1f8e2;
+
+  /* Tokens Paper para modales estilo ticket en modo oscuro */
+  --paper:          #222226;
+  --paper-shadow:   rgba(255, 255, 255, 0.12);
+  --paper-ink:      #f8fafc;
+  --paper-muted:    #94a3b8;
+  --paper-text:     #cbd5e1;
+  --paper-ok:       #00ff9d;
+  --paper-ok-soft:  rgba(0, 255, 157, 0.14);
+  --paper-err:      #ff2a55;
+  --paper-err-soft: rgba(255, 42, 85, 0.14);
+  --paper-warn:     #ffb700;
+  --paper-warn-soft: rgba(255, 183, 0, 0.14);
+  --paper-info:     #00f0ff;
+  --paper-info-soft: rgba(0, 240, 255, 0.14);
 }
 
 /* =========================================================
@@ -1328,6 +1343,57 @@
   animation-duration: 6s !important;
 }
 
+/* Estampas de Modal en modo oscuro (Estilo Ticket auténtico) */
+:root.dark .modal-stamp.info,
+:root.dark .al-stamp.info {
+  background: rgba(0, 240, 255, 0.12) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.5) !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.35), inset 0 0 10px rgba(0, 240, 255, 0.12) !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+:root.dark .modal-stamp.info *,
+:root.dark .modal-stamp.info i,
+:root.dark .al-stamp.info i {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.8)) !important;
+}
+
+:root.dark .modal-stamp.warning,
+:root.dark .al-stamp.warning {
+  background: rgba(255, 183, 0, 0.12) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.5) !important;
+  color: #ffb700 !important;
+  box-shadow: 0 0 20px rgba(255, 183, 0, 0.35), inset 0 0 10px rgba(255, 183, 0, 0.12) !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+:root.dark .modal-stamp.warning *,
+:root.dark .modal-stamp.warning i,
+:root.dark .al-stamp.warning i {
+  color: #ffb700 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 183, 0, 0.8)) !important;
+}
+
+:root.dark .modal-stamp.success,
+:root.dark .modal-stamp.aprobado,
+:root.dark .al-stamp.success {
+  background: rgba(0, 255, 157, 0.12) !important;
+  border: 1.5px solid rgba(0, 255, 157, 0.5) !important;
+  color: #00ff9d !important;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.35), inset 0 0 10px rgba(0, 255, 157, 0.12) !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+:root.dark .modal-stamp.success *,
+:root.dark .modal-stamp.success i,
+:root.dark .al-stamp.success i {
+  color: #00ff9d !important;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 157, 0.8)) !important;
+}
+
+
 /* =========================================================
    BOTONES DE ACCIÓN FOSFORECENTES EN TABLAS (MODO OSCURO)
    Ver (Cian neón), Editar (Oro/Amarillo neón), Eliminar (Rojo neón)
@@ -1926,126 +1992,1010 @@
 :root.dark .chip-neon-todos {
   background: transparent !important;
   color: #cbd5e1 !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
 }
 :root.dark .chip-neon-todos:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2) !important;
 }
 :root.dark .chip-neon-todos.is-active {
-  background: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
-  border: 1.5px solid #ffffff !important;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.75), 0 0 40px rgba(255, 255, 255, 0.35) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.5) !important;
 }
 
-/* 2. ENVIADO (Cian Neón Fosforescente) */
+/* 2. ENVIADO (Cian Neón) */
 :root.dark .chip-neon-enviado {
   background: transparent !important;
   color: #00f0ff !important;
-  border: 1.5px solid rgba(0, 240, 255, 0.5) !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
-  text-shadow: 0 0 6px rgba(0, 240, 255, 0.7) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.35) !important;
 }
 :root.dark .chip-neon-enviado:hover {
-  background: rgba(0, 240, 255, 0.12) !important;
+  background: rgba(0, 240, 255, 0.08) !important;
   border-color: #00f0ff !important;
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25) !important;
 }
 :root.dark .chip-neon-enviado.is-active {
-  background: rgba(0, 240, 255, 0.22) !important;
+  background: rgba(0, 240, 255, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #00f0ff !important;
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.95), 0 0 45px rgba(0, 240, 255, 0.65), 0 0 65px rgba(0, 240, 255, 0.35) !important;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 1) !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.4) !important;
 }
 
-/* 3. EN REVISIÓN (Morada / Violeta Neón Fosforescente) */
+/* 3. EN REVISIÓN (Morada / Violeta Neón) */
 :root.dark .chip-neon-revision {
   background: transparent !important;
   color: #c084fc !important;
-  border: 1.5px solid rgba(192, 132, 252, 0.5) !important;
-  box-shadow: 0 0 10px rgba(192, 132, 252, 0.25) !important;
-  text-shadow: 0 0 6px rgba(192, 132, 252, 0.7) !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.35) !important;
 }
 :root.dark .chip-neon-revision:hover {
-  background: rgba(192, 132, 252, 0.12) !important;
+  background: rgba(192, 132, 252, 0.08) !important;
   border-color: #c084fc !important;
-  box-shadow: 0 0 18px rgba(192, 132, 252, 0.6) !important;
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.25) !important;
 }
 :root.dark .chip-neon-revision.is-active {
-  background: rgba(168, 85, 247, 0.24) !important;
+  background: rgba(168, 85, 247, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #c084fc !important;
-  box-shadow: 0 0 20px rgba(192, 132, 252, 0.95), 0 0 45px rgba(168, 85, 247, 0.65), 0 0 65px rgba(192, 132, 252, 0.35) !important;
-  text-shadow: 0 0 10px rgba(192, 132, 252, 1) !important;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35) !important;
+  text-shadow: 0 0 4px rgba(192, 132, 252, 0.4) !important;
 }
 
-/* 4. POR APROBAR (Ámbar / Oro Eléctrico Neón Fosforescente) */
+/* 4. POR APROBAR (Ámbar / Oro Eléctrico Neón) */
 :root.dark .chip-neon-aprobar {
   background: transparent !important;
   color: #ffb700 !important;
-  border: 1.5px solid rgba(255, 183, 0, 0.5) !important;
-  box-shadow: 0 0 10px rgba(255, 183, 0, 0.25) !important;
-  text-shadow: 0 0 6px rgba(255, 183, 0, 0.7) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.35) !important;
 }
 :root.dark .chip-neon-aprobar:hover {
-  background: rgba(255, 183, 0, 0.12) !important;
+  background: rgba(255, 183, 0, 0.08) !important;
   border-color: #ffb700 !important;
-  box-shadow: 0 0 18px rgba(255, 183, 0, 0.6) !important;
+  box-shadow: 0 0 8px rgba(255, 183, 0, 0.25) !important;
 }
 :root.dark .chip-neon-aprobar.is-active {
-  background: rgba(255, 183, 0, 0.22) !important;
+  background: rgba(255, 183, 0, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #ffb700 !important;
-  box-shadow: 0 0 20px rgba(255, 183, 0, 0.95), 0 0 45px rgba(255, 183, 0, 0.65), 0 0 65px rgba(255, 183, 0, 0.35) !important;
-  text-shadow: 0 0 10px rgba(255, 183, 0, 1) !important;
+  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
+  text-shadow: 0 0 4px rgba(255, 183, 0, 0.4) !important;
 }
 
-/* 5. APROBADO (Verde Esmeralda Neón Fosforescente) */
+/* 5. APROBADO / ACTIVOS (Verde Esmeralda Neón) */
 :root.dark .chip-neon-aprobado {
   background: transparent !important;
   color: #00ff9d !important;
-  border: 1.5px solid rgba(0, 255, 157, 0.5) !important;
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.25) !important;
-  text-shadow: 0 0 6px rgba(0, 255, 157, 0.7) !important;
+  border: 1.5px solid rgba(0, 255, 157, 0.35) !important;
 }
 :root.dark .chip-neon-aprobado:hover {
-  background: rgba(0, 255, 157, 0.12) !important;
+  background: rgba(0, 255, 157, 0.08) !important;
   border-color: #00ff9d !important;
-  box-shadow: 0 0 18px rgba(0, 255, 157, 0.6) !important;
+  box-shadow: 0 0 8px rgba(0, 255, 157, 0.25) !important;
 }
 :root.dark .chip-neon-aprobado.is-active {
-  background: rgba(0, 255, 157, 0.22) !important;
+  background: rgba(0, 255, 157, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #00ff9d !important;
-  box-shadow: 0 0 20px rgba(0, 255, 157, 0.95), 0 0 45px rgba(0, 255, 157, 0.65), 0 0 65px rgba(0, 255, 157, 0.35) !important;
-  text-shadow: 0 0 10px rgba(0, 255, 157, 1) !important;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
+  text-shadow: 0 0 4px rgba(0, 255, 157, 0.4) !important;
 }
 
-/* 6. RECHAZADO (Rojo Carmesí Neón Fosforescente) */
+/* 6. RECHAZADO / INACTIVOS (Rojo Carmesí Neón) */
 :root.dark .chip-neon-rechazado {
   background: transparent !important;
   color: #ff2a55 !important;
-  border: 1.5px solid rgba(255, 42, 85, 0.5) !important;
-  box-shadow: 0 0 10px rgba(255, 42, 85, 0.25) !important;
-  text-shadow: 0 0 6px rgba(255, 42, 85, 0.7) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.35) !important;
 }
 :root.dark .chip-neon-rechazado:hover {
-  background: rgba(255, 42, 85, 0.12) !important;
+  background: rgba(255, 42, 85, 0.08) !important;
   border-color: #ff2a55 !important;
-  box-shadow: 0 0 18px rgba(255, 42, 85, 0.6) !important;
+  box-shadow: 0 0 8px rgba(255, 42, 85, 0.25) !important;
 }
 :root.dark .chip-neon-rechazado.is-active {
-  background: rgba(255, 42, 85, 0.22) !important;
+  background: rgba(255, 42, 85, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #ff2a55 !important;
-  box-shadow: 0 0 20px rgba(255, 42, 85, 0.95), 0 0 45px rgba(255, 42, 85, 0.65), 0 0 65px rgba(255, 42, 85, 0.35) !important;
-  text-shadow: 0 0 10px rgba(255, 42, 85, 1) !important;
+  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
+  text-shadow: 0 0 4px rgba(255, 42, 85, 0.4) !important;
 }
+
+/* =========================================================
+   ANTECEDENTES: CARDS DE MÉTRICAS, BADGES Y TABLA (MODO OSCURO)
+   ========================================================= */
+
+/* Iconos de métricas en modo oscuro (brillo neón intenso en contenedor e ícono) */
+:root.dark .neon-card-incarsa .gauge-icon,
+:root.dark .gauge-card.neon-card-incarsa .gauge-icon,
+:root.dark .gauge-card:has(.fa-users-viewfinder) .gauge-icon {
+  background: rgba(0, 240, 255, 0.16) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.6) !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4), inset 0 0 8px rgba(0, 240, 255, 0.2) !important;
+}
+:root.dark .neon-card-incarsa .gauge-icon i,
+:root.dark .gauge-card.neon-card-incarsa .gauge-icon i,
+:root.dark .gauge-card:has(.fa-users-viewfinder) .gauge-icon i {
+  color: #00f0ff !important;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 1)) drop-shadow(0 0 14px rgba(0, 240, 255, 0.75)) !important;
+}
+
+:root.dark .neon-card-uniminas .gauge-icon,
+:root.dark .gauge-card.neon-card-uniminas .gauge-icon,
+:root.dark .gauge-card:has(.fa-shield-halved) .gauge-icon,
+:root.dark .gauge-card:has(.fa-shield) .gauge-icon,
+:root.dark .gauge-card:has(.fa-shield-check) .gauge-icon {
+  background: rgba(0, 255, 157, 0.16) !important;
+  border: 1.5px solid rgba(0, 255, 157, 0.6) !important;
+  color: #00ff9d !important;
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.4), inset 0 0 8px rgba(0, 255, 157, 0.2) !important;
+}
+:root.dark .neon-card-uniminas .gauge-icon i,
+:root.dark .gauge-card.neon-card-uniminas .gauge-icon i,
+:root.dark .gauge-card:has(.fa-shield-halved) .gauge-icon i,
+:root.dark .gauge-card:has(.fa-shield) .gauge-icon i,
+:root.dark .gauge-card:has(.fa-shield-check) .gauge-icon i {
+  color: #00ff9d !important;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 1)) drop-shadow(0 0 14px rgba(0, 255, 157, 0.75)) !important;
+}
+
+:root.dark .neon-card-carboinsa .gauge-icon,
+:root.dark .gauge-card.neon-card-carboinsa .gauge-icon,
+:root.dark .gauge-card:has(.fa-clock-rotate-left) .gauge-icon {
+  background: rgba(255, 183, 0, 0.16) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.6) !important;
+  color: #ffb700 !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.4), inset 0 0 8px rgba(255, 183, 0, 0.2) !important;
+}
+:root.dark .neon-card-carboinsa .gauge-icon i,
+:root.dark .gauge-card.neon-card-carboinsa .gauge-icon i,
+:root.dark .gauge-card:has(.fa-clock-rotate-left) .gauge-icon i {
+  color: #ffb700 !important;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(255, 183, 0, 1)) drop-shadow(0 0 14px rgba(255, 183, 0, 0.75)) !important;
+}
+
+:root.dark .neon-card-total .gauge-icon,
+:root.dark .gauge-card.neon-card-total .gauge-icon,
+:root.dark .gauge-card:has(.fa-calendar-xmark) .gauge-icon {
+  background: rgba(255, 42, 85, 0.16) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.6) !important;
+  color: #ff2a55 !important;
+  box-shadow: 0 0 16px rgba(255, 42, 85, 0.4), inset 0 0 8px rgba(255, 42, 85, 0.2) !important;
+}
+:root.dark .neon-card-total .gauge-icon i,
+:root.dark .gauge-card.neon-card-total .gauge-icon i,
+:root.dark .gauge-card:has(.fa-calendar-xmark) .gauge-icon i {
+  color: #ff2a55 !important;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 1)) drop-shadow(0 0 14px rgba(255, 42, 85, 0.75)) !important;
+}
+
+:root.dark .neon-card-milpa .gauge-icon,
+:root.dark .gauge-card.neon-card-milpa .gauge-icon,
+:root.dark .gauge-card:has(.fa-clipboard-list) .gauge-icon {
+  background: rgba(192, 132, 252, 0.16) !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.6) !important;
+  color: #c084fc !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.4), inset 0 0 8px rgba(192, 132, 252, 0.2) !important;
+}
+:root.dark .neon-card-milpa .gauge-icon i,
+:root.dark .gauge-card.neon-card-milpa .gauge-icon i,
+:root.dark .gauge-card:has(.fa-clipboard-list) .gauge-icon i {
+  color: #c084fc !important;
+  font-size: 1.35rem !important;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 1)) drop-shadow(0 0 14px rgba(192, 132, 252, 0.75)) !important;
+}
+
+/* Hover de iconos en tarjetas de métricas */
+:root.dark .neon-stat-card:hover .gauge-icon,
+:root.dark .gauge-card:hover .gauge-icon {
+  transform: scale(1.14) rotate(-4deg) !important;
+}
+
+/* Badges de Días Restantes con halo neón */
+:root.dark .bg-emerald-50.text-emerald-700 {
+  background: rgba(0, 255, 157, 0.14) !important;
+  border-color: rgba(0, 255, 157, 0.6) !important;
+  color: #00ff9d !important;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
+  text-shadow: 0 0 6px rgba(0, 255, 157, 0.8) !important;
+}
+:root.dark .bg-emerald-50.text-emerald-700 i {
+  filter: drop-shadow(0 0 4px #00ff9d) !important;
+}
+
+:root.dark .bg-amber-50.text-amber-700 {
+  background: rgba(255, 183, 0, 0.14) !important;
+  border-color: rgba(255, 183, 0, 0.6) !important;
+  color: #ffb700 !important;
+  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
+  text-shadow: 0 0 6px rgba(255, 183, 0, 0.8) !important;
+}
+:root.dark .bg-amber-50.text-amber-700 i {
+  filter: drop-shadow(0 0 4px #ffb700) !important;
+}
+
+:root.dark .bg-red-50.text-red-700 {
+  background: rgba(255, 42, 85, 0.14) !important;
+  border-color: rgba(255, 42, 85, 0.6) !important;
+  color: #ff2a55 !important;
+  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
+  text-shadow: 0 0 6px rgba(255, 42, 85, 0.8) !important;
+}
+:root.dark .bg-red-50.text-red-700 i {
+  filter: drop-shadow(0 0 4px #ff2a55) !important;
+}
+
+/* Badge / Botón de Ingresos Solicitados */
+:root.dark .bg-purple-100.text-purple-700 {
+  background: rgba(168, 85, 247, 0.16) !important;
+  border-color: rgba(192, 132, 252, 0.6) !important;
+  color: #f3e8ff !important;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35) !important;
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.8) !important;
+}
+:root.dark .bg-purple-100.text-purple-700:hover {
+  background: rgba(168, 85, 247, 0.28) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 18px rgba(192, 132, 252, 0.6) !important;
+}
+:root.dark .bg-purple-100.text-purple-700 i {
+  filter: drop-shadow(0 0 4px #c084fc) !important;
+}
+
+/* Avatar de persona y documento en tabla */
+:root.dark .data-table td .rounded-xl.bg-slate-100 {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #e2e8f0 !important;
+}
+:root.dark .data-table td span.font-mono.bg-slate-100 {
+  background: #181818 !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* =========================================================
+   BOTÓN PARA ACTUALIZAR VIGENCIA (MODO OSCURO)
+   ========================================================= */
+
+/* 1. Botón de acción en la tabla (action-icon-btn con fa-calendar-check) */
+:root.dark .action-icon-btn.action-btn-vigencia,
+:root.dark .action-icon-btn:has(> .fa-calendar-check),
+:root.dark .action-icon-btn:has(> i.fa-calendar-check) {
+  color: #ff3366 !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.action-btn-vigencia i,
+:root.dark .action-icon-btn:has(> .fa-calendar-check) i,
+:root.dark .action-icon-btn:has(> i.fa-calendar-check) i {
+  color: #ff3366 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 51, 102, 1)) drop-shadow(0 0 14px rgba(255, 51, 102, 0.75)) !important;
+}
+
+:root.dark .action-icon-btn.action-btn-vigencia:hover,
+:root.dark .action-icon-btn:has(> .fa-calendar-check):hover,
+:root.dark .action-icon-btn:has(> i.fa-calendar-check):hover {
+  background: rgba(255, 51, 102, 0.22) !important;
+  transform: scale(1.22) !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn.action-btn-vigencia:hover i,
+:root.dark .action-icon-btn:has(> .fa-calendar-check):hover i,
+:root.dark .action-icon-btn:has(> i.fa-calendar-check):hover i {
+  color: #ff6688 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 51, 102, 1)) drop-shadow(0 0 20px rgba(255, 51, 102, 0.9)) !important;
+}
+
+/* 2. Botón 'Actualizar Vigencia' tipo píldora / modal (btn-signal) */
+:root.dark .btn-signal,
+:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) {
+  background: linear-gradient(135deg, #ff2a55 0%, #ff5e3a 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 18px rgba(255, 42, 85, 0.75), 0 0 35px rgba(255, 42, 85, 0.4) !important;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease !important;
+}
+
+:root.dark .btn-signal i,
+:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)) !important;
+}
+
+:root.dark .btn-signal:hover,
+:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn):hover {
+  background: linear-gradient(135deg, #ff3d66 0%, #ff7350 100%) !important;
+  box-shadow: 0 0 25px rgba(255, 42, 85, 1), 0 0 45px rgba(255, 42, 85, 0.6) !important;
+  transform: translateY(-2px) scale(1.03) !important;
+}
+
+/* =========================================================
+   PAGINACIÓN Y FOOTER ELEGANTE (MODO OSCURO)
+   ========================================================= */
+
+/* Barra de paginación integrada con la tabla (elimina el fondo gris claro) */
+:root.dark .data-table ~ div,
+:root.dark .wizard-card > div:last-child {
+  background: var(--surface) !important;
+  border-top-color: var(--border-subtle) !important;
+}
+
+/* Botones de navegación de página (< y >) */
+:root.dark .pagination-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #94a3b8 !important;
+}
+
+:root.dark .pagination-btn:not(:disabled):hover {
+  background: rgba(0, 240, 255, 0.14) !important;
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.45) !important;
+  transform: scale(1.06) !important;
+}
+
+:root.dark .pagination-btn:not(:disabled):hover i {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 4px #00f0ff) !important;
+}
+
+:root.dark .pagination-btn:disabled,
+:root.dark .pagination-btn.opacity-30 {
+  opacity: 0.28 !important;
+  cursor: not-allowed !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  background: transparent !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Select de cantidad de registros */
+:root.dark .data-table ~ div select,
+:root.dark select.input-field {
+  background-color: #181818 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+:root.dark .data-table ~ div select:hover,
+:root.dark select.input-field:hover {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25) !important;
+}
+
+/* Footer elegante integrado al fondo canvas */
+:root.dark footer {
+  background: var(--canvas) !important;
+  border-top-color: var(--border-subtle) !important;
+  color: #64748b !important;
+}
+
+:root.dark footer span,
+:root.dark footer p {
+  color: #64748b !important;
+}
+
+/* =========================================================
+   SELECTOR DE EMPRESAS Y PLANTAS (MODO OSCURO - WIZARD)
+   ========================================================= */
+
+/* Chips en estado reposo / inactivo */
+:root.dark .chip-select {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  transition: all 0.25s ease !important;
+  cursor: pointer !important;
+}
+
+:root.dark .chip-select:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Base seleccionada con brillo neón */
+:root.dark .chip-select.is-selected {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  transform: translateY(-1px) scale(1.03) !important;
+  border-width: 1.5px !important;
+}
+
+/* 1. INCARSA (Cian Eléctrico Neón) */
+:root.dark .chip-select.is-selected.chip-emp-incarsa {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22) 0%, rgba(14, 165, 233, 0.38) 100%) !important;
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.55), inset 0 0 8px rgba(0, 240, 255, 0.25) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+}
+
+:root.dark .empresa-plantas-group.group-emp-incarsa {
+  border-left: 3.5px solid #00f0ff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(0, 240, 255, 0.12) !important;
+}
+:root.dark .empresa-plantas-group.group-emp-incarsa > p {
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5) !important;
+}
+
+/* 2. MILPA (Morada / Amatista Neón) */
+:root.dark .chip-select.is-selected.chip-emp-milpa {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.22) 0%, rgba(168, 85, 247, 0.38) 100%) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.55), inset 0 0 8px rgba(192, 132, 252, 0.25) !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.8) !important;
+}
+
+:root.dark .empresa-plantas-group.group-emp-milpa {
+  border-left: 3.5px solid #c084fc !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(192, 132, 252, 0.12) !important;
+}
+:root.dark .empresa-plantas-group.group-emp-milpa > p {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.5) !important;
+}
+
+/* 3. CARBOINSA (Ámbar / Oro Neón) */
+:root.dark .chip-select.is-selected.chip-emp-carboinsa {
+  background: linear-gradient(135deg, rgba(255, 183, 0, 0.22) 0%, rgba(245, 158, 11, 0.38) 100%) !important;
+  border-color: #ffb700 !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.55), inset 0 0 8px rgba(255, 183, 0, 0.25) !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+}
+
+:root.dark .empresa-plantas-group.group-emp-carboinsa {
+  border-left: 3.5px solid #ffb700 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(255, 183, 0, 0.12) !important;
+}
+:root.dark .empresa-plantas-group.group-emp-carboinsa > p {
+  color: #ffb700 !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.5) !important;
+}
+
+/* 4. UNIMINAS (Verde Esmeralda Neón) */
+:root.dark .chip-select.is-selected.chip-emp-uniminas {
+  background: linear-gradient(135deg, rgba(0, 255, 157, 0.22) 0%, rgba(16, 185, 129, 0.38) 100%) !important;
+  border-color: #00ff9d !important;
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.55), inset 0 0 8px rgba(0, 255, 157, 0.25) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+}
+
+:root.dark .empresa-plantas-group.group-emp-uniminas {
+  border-left: 3.5px solid #00ff9d !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(0, 255, 157, 0.12) !important;
+}
+:root.dark .empresa-plantas-group.group-emp-uniminas > p {
+  color: #00ff9d !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.5) !important;
+}
+
+/* Contenedor general de plantas de empresa */
+:root.dark .empresa-plantas-group {
+  background: rgba(26, 26, 30, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+}
+
+:root.dark .empresa-plantas-group > p {
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Chips de plantas dentro del grupo */
+:root.dark .empresa-plantas-group .chip-select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #cbd5e1 !important;
+}
+
+:root.dark .empresa-plantas-group .chip-select:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Plantas seleccionadas por empresa (Brillo con su color respectivo) */
+
+/* 1. Plantas INCARSA (Cian Eléctrico Neón) */
+:root.dark .group-emp-incarsa .chip-select:hover {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3) !important;
+}
+:root.dark .group-emp-incarsa .chip-select.is-selected {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(14, 165, 233, 0.42) 100%) !important;
+  border: 1.5px solid #00f0ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6), inset 0 0 6px rgba(0, 240, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+}
+
+/* 2. Plantas MILPA (Morada / Amatista Neón) */
+:root.dark .group-emp-milpa .chip-select:hover {
+  border-color: rgba(192, 132, 252, 0.5) !important;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.3) !important;
+}
+:root.dark .group-emp-milpa .chip-select.is-selected {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.25) 0%, rgba(168, 85, 247, 0.42) 100%) !important;
+  border: 1.5px solid #c084fc !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.6), inset 0 0 6px rgba(192, 132, 252, 0.3) !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.8) !important;
+}
+
+/* 3. Plantas CARBOINSA (Ámbar / Oro Neón) */
+:root.dark .group-emp-carboinsa .chip-select:hover {
+  border-color: rgba(255, 183, 0, 0.5) !important;
+  box-shadow: 0 0 10px rgba(255, 183, 0, 0.3) !important;
+}
+:root.dark .group-emp-carboinsa .chip-select.is-selected {
+  background: linear-gradient(135deg, rgba(255, 183, 0, 0.25) 0%, rgba(245, 158, 11, 0.42) 100%) !important;
+  border: 1.5px solid #ffb700 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.6), inset 0 0 6px rgba(255, 183, 0, 0.3) !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+}
+
+/* 4. Plantas UNIMINAS (Verde Esmeralda Neón) */
+:root.dark .group-emp-uniminas .chip-select:hover {
+  border-color: rgba(0, 255, 157, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.3) !important;
+}
+:root.dark .group-emp-uniminas .chip-select.is-selected {
+  background: linear-gradient(135deg, rgba(0, 255, 157, 0.25) 0%, rgba(16, 185, 129, 0.42) 100%) !important;
+  border: 1.5px solid #00ff9d !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.6), inset 0 0 6px rgba(0, 255, 157, 0.3) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+}
+
+/* Fallback general para cualquier otra empresa */
+:root.dark .empresa-plantas-group .chip-select.is-selected {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(14, 165, 233, 0.42) 100%) !important;
+  border: 1.5px solid #00f0ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6), inset 0 0 6px rgba(0, 240, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+}
+
+/* =========================================================
+   CHIPS DE NIVEL DE RIESGO (MODO OSCURO - WIZARD)
+   ========================================================= */
+
+/* 1. Nivel Bajo (Verde Esmeralda Neón) */
+:root.dark .chip-riesgo.chip-riesgo-bajo {
+  background: rgba(0, 255, 157, 0.05) !important;
+  border: 1px solid rgba(0, 255, 157, 0.25) !important;
+  color: #00ff9d !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-bajo:hover {
+  background: rgba(0, 255, 157, 0.15) !important;
+  border-color: #00ff9d !important;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-bajo.is-selected {
+  background: linear-gradient(135deg, rgba(0, 255, 157, 0.28) 0%, rgba(16, 185, 129, 0.45) 100%) !important;
+  border: 1.5px solid #00ff9d !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(0, 255, 157, 0.65), inset 0 0 8px rgba(0, 255, 157, 0.3) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+  transform: scale(1.05) !important;
+}
+
+/* 2. Nivel Medio (Ámbar / Oro Neón) */
+:root.dark .chip-riesgo.chip-riesgo-medio {
+  background: rgba(255, 183, 0, 0.05) !important;
+  border: 1px solid rgba(255, 183, 0, 0.25) !important;
+  color: #ffb700 !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-medio:hover {
+  background: rgba(255, 183, 0, 0.15) !important;
+  border-color: #ffb700 !important;
+  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-medio.is-selected {
+  background: linear-gradient(135deg, rgba(255, 183, 0, 0.28) 0%, rgba(245, 158, 11, 0.45) 100%) !important;
+  border: 1.5px solid #ffb700 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(255, 183, 0, 0.65), inset 0 0 8px rgba(255, 183, 0, 0.3) !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+  transform: scale(1.05) !important;
+}
+
+/* 3. Nivel Alto (Rojo Carmesí Neón) */
+:root.dark .chip-riesgo.chip-riesgo-alto {
+  background: rgba(255, 42, 85, 0.05) !important;
+  border: 1px solid rgba(255, 42, 85, 0.25) !important;
+  color: #ff2a55 !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-alto:hover {
+  background: rgba(255, 42, 85, 0.15) !important;
+  border-color: #ff2a55 !important;
+  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+:root.dark .chip-riesgo.chip-riesgo-alto.is-selected {
+  background: linear-gradient(135deg, rgba(255, 42, 85, 0.3) 0%, rgba(239, 68, 68, 0.5) 100%) !important;
+  border: 1.5px solid #ff2a55 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(255, 42, 85, 0.75), inset 0 0 8px rgba(255, 42, 85, 0.3) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.8) !important;
+  transform: scale(1.05) !important;
+}
+
+/* =========================================================
+   CALENDARIOS EN MODO OSCURO (FLATPICKR + NATIVOS)
+   ========================================================= */
+
+/* Inputs de fecha nativos */
+:root.dark input[type="date"],
+:root.dark input[type="datetime-local"],
+:root.dark input[type="time"] {
+  color-scheme: dark !important;
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+:root.dark input[type="date"]::-webkit-calendar-picker-indicator,
+:root.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(100%) saturate(1200%) hue-rotate(140deg) !important;
+  cursor: pointer !important;
+  opacity: 0.85 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+:root.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+  transform: scale(1.15) !important;
+}
+
+/* Iconos de calendario en formularios */
+:root.dark .fa-calendar,
+:root.dark .fa-calendar-days,
+:root.dark .fa-calendar-plus {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.6)) !important;
+}
+
+/* Input de Flatpickr readonly */
+:root.dark .flatpickr-input[readonly] {
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  cursor: pointer !important;
+}
+
+:root.dark .flatpickr-input[readonly]:hover {
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+}
+
+/* Contenedor emergente de Flatpickr */
+:root.dark .flatpickr-calendar,
+html.dark .flatpickr-calendar {
+  background: rgba(20, 20, 24, 0.96) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 240, 255, 0.2) !important;
+  padding: 12px !important;
+  width: 320px !important;
+  color: #f1f5f9 !important;
+}
+
+/* Flechas superiores e inferiores del popup */
+:root.dark .flatpickr-calendar.arrowTop:before,
+:root.dark .flatpickr-calendar.arrowTop:after,
+html.dark .flatpickr-calendar.arrowTop:before,
+html.dark .flatpickr-calendar.arrowTop:after {
+  border-bottom-color: rgba(20, 20, 24, 0.96) !important;
+}
+
+:root.dark .flatpickr-calendar.arrowBottom:before,
+:root.dark .flatpickr-calendar.arrowBottom:after,
+html.dark .flatpickr-calendar.arrowBottom:before,
+html.dark .flatpickr-calendar.arrowBottom:after {
+  border-top-color: rgba(20, 20, 24, 0.96) !important;
+}
+
+/* Encabezado del mes y año */
+:root.dark .flatpickr-months,
+html.dark .flatpickr-months {
+  align-items: center !important;
+  padding: 4px 2px 10px 2px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 8px !important;
+}
+
+:root.dark .flatpickr-current-month,
+html.dark .flatpickr-current-month {
+  color: #ffffff !important;
+}
+
+:root.dark .flatpickr-current-month .cur-month,
+html.dark .flatpickr-current-month .cur-month {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.02em !important;
+}
+
+:root.dark .flatpickr-current-month input.cur-year,
+html.dark .flatpickr-current-month input.cur-year {
+  color: #00f0ff !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+}
+
+:root.dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+html.dark .flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+:root.dark .flatpickr-current-month .flatpickr-monthDropdown-months option,
+html.dark .flatpickr-current-month .flatpickr-monthDropdown-months option {
+  background-color: #18181c !important;
+  color: #ffffff !important;
+}
+
+/* Flechas de navegación (Mes anterior / siguiente) - Sin fondo, solo color e icono neón */
+:root.dark .flatpickr-months .flatpickr-prev-month,
+:root.dark .flatpickr-months .flatpickr-next-month,
+html.dark .flatpickr-months .flatpickr-prev-month,
+html.dark .flatpickr-months .flatpickr-next-month {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+:root.dark .flatpickr-months .flatpickr-prev-month:hover,
+:root.dark .flatpickr-months .flatpickr-next-month:hover,
+html.dark .flatpickr-months .flatpickr-prev-month:hover,
+html.dark .flatpickr-months .flatpickr-next-month:hover {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.25) !important;
+}
+
+:root.dark .flatpickr-months .flatpickr-prev-month svg,
+:root.dark .flatpickr-months .flatpickr-next-month svg,
+html.dark .flatpickr-months .flatpickr-prev-month svg,
+html.dark .flatpickr-months .flatpickr-next-month svg {
+  fill: #00f0ff !important;
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.9)) !important;
+  transition: filter 0.2s ease, transform 0.2s ease !important;
+}
+
+:root.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+:root.dark .flatpickr-months .flatpickr-next-month:hover svg,
+html.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+html.dark .flatpickr-months .flatpickr-next-month:hover svg {
+  fill: #00f0ff !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 1)) drop-shadow(0 0 16px rgba(0, 240, 255, 0.8)) !important;
+}
+
+/* Nombres de los días de la semana */
+:root.dark span.flatpickr-weekday,
+html.dark span.flatpickr-weekday {
+  color: #94a3b8 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Días */
+:root.dark .flatpickr-day,
+html.dark .flatpickr-day {
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.18s ease !important;
+}
+
+:root.dark .flatpickr-day:hover,
+html.dark .flatpickr-day:hover {
+  background: rgba(0, 240, 255, 0.15) !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4) !important;
+  transform: scale(1.08) !important;
+}
+
+/* Día de hoy */
+:root.dark .flatpickr-day.today,
+html.dark .flatpickr-day.today {
+  border-color: #ffb700 !important;
+  color: #ffb700 !important;
+  font-weight: 700 !important;
+  background: rgba(255, 183, 0, 0.12) !important;
+  box-shadow: 0 0 8px rgba(255, 183, 0, 0.4) !important;
+}
+
+:root.dark .flatpickr-day.today:hover,
+html.dark .flatpickr-day.today:hover {
+  background: rgba(255, 183, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Día seleccionado (Resplandor Cian Neón) */
+:root.dark .flatpickr-day.selected,
+:root.dark .flatpickr-day.selected:hover,
+:root.dark .flatpickr-day.selected:focus,
+html.dark .flatpickr-day.selected,
+html.dark .flatpickr-day.selected:hover,
+html.dark .flatpickr-day.selected:focus {
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%) !important;
+  border-color: #00f0ff !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.7), inset 0 0 6px rgba(255, 255, 255, 0.35) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Rango seleccionado */
+:root.dark .flatpickr-day.inRange,
+:root.dark .flatpickr-day.prevMonthDay.inRange,
+:root.dark .flatpickr-day.nextMonthDay.inRange,
+html.dark .flatpickr-day.inRange,
+html.dark .flatpickr-day.prevMonthDay.inRange,
+html.dark .flatpickr-day.nextMonthDay.inRange {
+  background: rgba(0, 240, 255, 0.18) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: -5px 0 0 rgba(0, 240, 255, 0.18), 5px 0 0 rgba(0, 240, 255, 0.18) !important;
+}
+
+/* Días de mes anterior / siguiente */
+:root.dark .flatpickr-day.prevMonthDay,
+:root.dark .flatpickr-day.nextMonthDay,
+html.dark .flatpickr-day.prevMonthDay,
+html.dark .flatpickr-day.nextMonthDay {
+  color: #475569 !important;
+}
+
+/* Días deshabilitados */
+:root.dark .flatpickr-day.disabled,
+:root.dark .flatpickr-day.disabled:hover,
+html.dark .flatpickr-day.disabled,
+html.dark .flatpickr-day.disabled:hover {
+  color: #334155 !important;
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Selector de tiempo de Flatpickr */
+:root.dark .flatpickr-time,
+html.dark .flatpickr-time {
+  background: rgba(18, 18, 20, 0.85) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0 0 14px 14px !important;
+}
+
+:root.dark .flatpickr-time input,
+html.dark .flatpickr-time input {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+:root.dark .flatpickr-time .flatpickr-time-separator,
+html.dark .flatpickr-time .flatpickr-time-separator {
+  color: #94a3b8 !important;
+}
+
+:root.dark .flatpickr-time .numInputWrapper span:hover,
+html.dark .flatpickr-time .numInputWrapper span:hover {
+  background: rgba(0, 240, 255, 0.2) !important;
+}
+
+:root.dark .flatpickr-time .numInputWrapper span.arrowUp:after,
+html.dark .flatpickr-time .numInputWrapper span.arrowUp:after {
+  border-bottom-color: #00f0ff !important;
+}
+
+:root.dark .flatpickr-time .numInputWrapper span.arrowDown:after,
+html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
+  border-top-color: #00f0ff !important;
+}
+
+/* =========================================================
+   SELECTOR RÁPIDO DE OPCIONES EN WIZARD (MODO OSCURO - RESPLANDOR BLANCO)
+   Empresas contratistas, Personas y Vehículos
+   ========================================================= */
+:root.dark .wizard-option-item,
+:root.dark .contratista-option-item {
+  background: rgba(26, 26, 30, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+:root.dark .wizard-option-item .wizard-option-icon,
+:root.dark .contratista-option-item .contratista-option-icon {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+:root.dark .wizard-option-item .wizard-option-action,
+:root.dark .contratista-option-item .contratista-option-action {
+  color: #94a3b8 !important;
+}
+
+/* Efecto hover blanco puro y brillante */
+:root.dark .wizard-option-item:not(.is-already-added):hover,
+:root.dark .contratista-option-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.45), inset 0 0 10px rgba(255, 255, 255, 0.12) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+:root.dark .wizard-option-item:not(.is-already-added):hover .wizard-option-icon,
+:root.dark .contratista-option-item:hover .contratista-option-icon {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.7) !important;
+}
+
+:root.dark .wizard-option-item:not(.is-already-added):hover .wizard-option-name,
+:root.dark .contratista-option-item:hover .contratista-option-name {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9) !important;
+}
+
+:root.dark .wizard-option-item:not(.is-already-added):hover .wizard-option-action,
+:root.dark .contratista-option-item:hover .contratista-option-action {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9) !important;
+}
+
+
+
+
+
+
 
 
 

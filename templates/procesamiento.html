@@ -179,14 +179,9 @@
 
       </main>
 
-      <!-- ============================================================
-         FOOTER
-    ============================================================= -->
-      <footer
-        class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
-        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
-        <span>Desarrollado por el equipo de Tecnología INCARSA</span>
-      </footer>
+      <!-- Footer compartido -->
+      {% set footer_modulo = 'Módulo de Procesamiento y Flujo de Estados' %}
+      {% include 'pages/footer.html' %}
     </div>
   </div>
 

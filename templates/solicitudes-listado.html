@@ -32,31 +32,36 @@
           <!-- ===== Contadores ===== -->
           <section x-data="solicitudesCards()" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
 
-            <div class="gauge-card p-4 flex items-center gap-4"
-              style="--gauge-color: var(--state-aprobado); --gauge-color-bg: var(--state-aprobado-bg);">
-              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
-                  class="fa-solid fa-user-check"></i></div>
+            <!-- Activas (Verde Esmeralda Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-user-check text-xl"></i>
+              </div>
               <div>
-                <p class="text-xs text-[var(--text-muted)]">Activas</p>
-                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : solActivas"></p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Activas</p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : solActivas"></p>
               </div>
             </div>
-            <div class="gauge-card p-4 flex items-center gap-4"
-              style="--gauge-color: var(--state-rechazado); --gauge-color-bg: var(--state-rechazado-bg);">
-              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
-                  class="fa-solid fa-user-xmark"></i></div>
+
+            <!-- Inactivas (Rojo Carmesí Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-total rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-user-xmark text-xl"></i>
+              </div>
               <div>
-                <p class="text-xs text-[var(--text-muted)]">Inactivas</p>
-                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : solInactivas"></p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Inactivas</p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : solInactivas"></p>
               </div>
             </div>
-            <div class="gauge-card p-4 flex items-center gap-4"
-              style="--gauge-color: var(--ink-800); --gauge-color-bg: var(--steel-100);">
-              <div class="gauge-icon w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"><i
-                  class="fa-solid fa-users"></i></div>
+
+            <!-- Total solicitudes (Cian Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 col-span-2 lg:col-span-1 neon-stat-card neon-card-incarsa rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-users text-xl"></i>
+              </div>
               <div>
-                <p class="text-xs text-[var(--text-muted)]">Total solicitudes</p>
-                <p class="gauge-value text-2xl font-semibold" x-text="cargando ? '...' : totalSolicitudes"></p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total solicitudes</p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalSolicitudes"></p>
               </div>
             </div>
 
@@ -129,13 +134,22 @@
             </div>
 
             <!-- Chips de Filtro Estado -->
-            <div class="flex gap-2">
-              <button type="button" @click="filtroEstado = 'todos'" class="chip-select"
-                :class="filtroEstado === 'todos' ? 'bg-[var(--ink-800)] text-white border-[var(--ink-800)] hover:bg-gray-600' : ''">Todos</button>
-              <button type="button" @click="filtroEstado = 'activos'" class="chip-select"
-                :class="filtroEstado === 'activos' ? 'bg-green-600 text-white border-green-600 hover:bg-green-700' : ''">Activos</button>
-              <button type="button" @click="filtroEstado = 'inactivos'" class="chip-select"
-                :class="filtroEstado === 'inactivos' ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : ''">Inactivos</button>
+            <div class="flex items-center gap-2 overflow-visible py-1">
+              <button type="button" @click="filtroEstado = 'todos'" 
+                class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">
+                Todos
+              </button>
+              <button type="button" @click="filtroEstado = 'activos'" 
+                class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
+                Activos
+              </button>
+              <button type="button" @click="filtroEstado = 'inactivos'" 
+                class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
+                Inactivos
+              </button>
             </div>
             <button type="button" @click="limpiarFiltros()" class="action-icon-btn" data-tooltip="Limpiar filtros">
               <i class="fa-solid fa-filter-circle-xmark"></i>
@@ -489,14 +503,10 @@
         </div>
       </main>
 
-      <!-- ============================================================
-         FOOTER
-    ============================================================= -->
-      <footer
-        class="px-6 py-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-2 bg-white">
-        <span>© 2026 INCARSA · Sistema de Gestión de Solicitudes de Acceso a Plantas</span>
-        <span>Desarrollado por el equipo de Seguridad y salud en el trabajo.</span>
-      </footer>
+      <!-- Footer compartido -->
+      {% set footer_modulo = 'Módulo de Gestión de Solicitudes de Acceso' %}
+      {% include 'pages/footer.html' %}
+
     <!-- ============================================================
        MODAL: Observaciones de la Solicitud (Estilo Ticket / SweetAlert)
     ============================================================= -->
