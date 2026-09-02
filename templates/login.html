@@ -1,16 +1,34 @@
-{% extends "pages/base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión · INCARSA</title>
 
-{% block title %}Iniciar sesión · INCARSA{% endblock %}
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-{% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
-{% endblock %}
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-{% block extra_js %}
-<script src="{{ url_for('static', path='js/auth.js')}}"></script> 
-{% endblock %}
+  <!-- Google Fonts: Space Grotesk + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-{% block content %}
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Estilos 100% exclusivos y autónomos del Login (CERO dependencia de styles.css o dark-mode.css) -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+
+  <!-- Scripts necesarios -->
+  <script src="{{ url_for('static', path='js/config.js') }}"></script>
+  <script src="{{ url_for('static', path='js/auth.js') }}"></script>
+
+  <!-- Alpine.js Core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="antialiased">
 <div class="login-page">
   <div class="login-page-stripes"></div>
 
@@ -369,4 +387,5 @@
     </div>
   </div>
 </div>
-{% endblock %}
+</body>
+</html>

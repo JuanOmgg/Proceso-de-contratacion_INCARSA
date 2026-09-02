@@ -1042,8 +1042,8 @@
   color: #ffffff !important;
   font-weight: 700 !important;
   border: none !important;
-  box-shadow: 0 0 22px 3px rgba(249, 115, 22, 0.7), 0 0 0 4px rgba(249, 115, 22, 0.25) !important;
-  transform: scale(1.22) !important;
+  box-shadow: 0 0 16px 2px rgba(249, 115, 22, 0.6), 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
+  transform: scale(1.15) !important;
 }
 
 :root.dark .step-circle.is-complete {
@@ -1061,11 +1061,17 @@
 }
 
 :root.dark .step-connector {
+  height: 2.5px !important;
   background: rgba(255, 255, 255, 0.12) !important;
+  align-self: flex-start !important;
+  margin-top: 17px !important;
+  border-radius: 999px !important;
 }
 
 :root.dark .step-connector.is-complete::after {
-  background: linear-gradient(90deg, #dc2626, #f77920) !important;
+  background: linear-gradient(90deg, #10b981 0%, #22c55e 60%, #f97316 100%) !important;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5) !important;
+  border-radius: 999px !important;
 }
 
 :root.dark .step-label {
@@ -1708,8 +1714,9 @@
   border-color: #00f0ff !important;
 }
 :root.dark .neon-card-incarsa .neon-label {
-  color: #00f0ff !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.9), 0 0 16px rgba(0, 240, 255, 0.5) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.85), 0 0 12px rgba(0, 240, 255, 0.4) !important;
+  font-weight: 500 !important;
 }
 :root.dark .neon-card-incarsa .neon-value {
   color: #ffffff !important;
@@ -1727,8 +1734,9 @@
   border-color: #00ff88 !important;
 }
 :root.dark .neon-card-uniminas .neon-label {
-  color: #00ff88 !important;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.9), 0 0 16px rgba(0, 255, 136, 0.5) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.85), 0 0 12px rgba(0, 255, 136, 0.4) !important;
+  font-weight: 500 !important;
 }
 :root.dark .neon-card-uniminas .neon-value {
   color: #ffffff !important;
@@ -1746,8 +1754,9 @@
   border-color: #ffb700 !important;
 }
 :root.dark .neon-card-carboinsa .neon-label {
-  color: #ffb700 !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.9), 0 0 16px rgba(255, 183, 0, 0.5) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(255, 183, 0, 0.85), 0 0 12px rgba(255, 183, 0, 0.4) !important;
+  font-weight: 500 !important;
 }
 :root.dark .neon-card-carboinsa .neon-value {
   color: #ffffff !important;
@@ -1765,8 +1774,9 @@
   border-color: #c084fc !important;
 }
 :root.dark .neon-card-milpa .neon-label {
-  color: #c084fc !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.9), 0 0 16px rgba(192, 132, 252, 0.5) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.9), 0 0 12px rgba(192, 132, 252, 0.45) !important;
+  font-weight: 500 !important;
 }
 :root.dark .neon-card-milpa .neon-value {
   color: #ffffff !important;
@@ -1784,8 +1794,9 @@
   border-color: #ff2a85 !important;
 }
 :root.dark .neon-card-total .neon-label {
-  color: #ff2a85 !important;
-  text-shadow: 0 0 8px rgba(255, 42, 133, 0.9), 0 0 16px rgba(255, 42, 133, 0.5) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 6px rgba(255, 42, 133, 0.85), 0 0 12px rgba(255, 42, 133, 0.4) !important;
+  font-weight: 500 !important;
 }
 :root.dark .neon-card-total .neon-value {
   color: #ffffff !important;
@@ -2182,9 +2193,9 @@
 :root.dark .neon-card-incarsa .gauge-icon i,
 :root.dark .gauge-card.neon-card-incarsa .gauge-icon i,
 :root.dark .gauge-card:has(.fa-users-viewfinder) .gauge-icon i {
-  color: #00f0ff !important;
+  color: #ffffff !important;
   font-size: 1.35rem !important;
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 1)) drop-shadow(0 0 14px rgba(0, 240, 255, 0.75)) !important;
+  filter: drop-shadow(0 0 5px #00f0ff) drop-shadow(0 0 14px rgba(0, 240, 255, 0.9)) !important;
 }
 
 :root.dark .neon-card-uniminas .gauge-icon,
@@ -2202,9 +2213,9 @@
 :root.dark .gauge-card:has(.fa-shield-halved) .gauge-icon i,
 :root.dark .gauge-card:has(.fa-shield) .gauge-icon i,
 :root.dark .gauge-card:has(.fa-shield-check) .gauge-icon i {
-  color: #00ff9d !important;
+  color: #ffffff !important;
   font-size: 1.35rem !important;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 1)) drop-shadow(0 0 14px rgba(0, 255, 157, 0.75)) !important;
+  filter: drop-shadow(0 0 5px #00ff9d) drop-shadow(0 0 14px rgba(0, 255, 157, 0.9)) !important;
 }
 
 :root.dark .neon-card-carboinsa .gauge-icon,
@@ -2218,9 +2229,9 @@
 :root.dark .neon-card-carboinsa .gauge-icon i,
 :root.dark .gauge-card.neon-card-carboinsa .gauge-icon i,
 :root.dark .gauge-card:has(.fa-clock-rotate-left) .gauge-icon i {
-  color: #ffb700 !important;
+  color: #ffffff !important;
   font-size: 1.35rem !important;
-  filter: drop-shadow(0 0 6px rgba(255, 183, 0, 1)) drop-shadow(0 0 14px rgba(255, 183, 0, 0.75)) !important;
+  filter: drop-shadow(0 0 5px #ffb700) drop-shadow(0 0 14px rgba(255, 183, 0, 0.9)) !important;
 }
 
 :root.dark .neon-card-total .gauge-icon,
@@ -2234,9 +2245,9 @@
 :root.dark .neon-card-total .gauge-icon i,
 :root.dark .gauge-card.neon-card-total .gauge-icon i,
 :root.dark .gauge-card:has(.fa-calendar-xmark) .gauge-icon i {
-  color: #ff2a55 !important;
+  color: #ffffff !important;
   font-size: 1.35rem !important;
-  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 1)) drop-shadow(0 0 14px rgba(255, 42, 85, 0.75)) !important;
+  filter: drop-shadow(0 0 5px #ff2a55) drop-shadow(0 0 14px rgba(255, 42, 85, 0.9)) !important;
 }
 
 :root.dark .neon-card-milpa .gauge-icon,
@@ -2250,9 +2261,9 @@
 :root.dark .neon-card-milpa .gauge-icon i,
 :root.dark .gauge-card.neon-card-milpa .gauge-icon i,
 :root.dark .gauge-card:has(.fa-clipboard-list) .gauge-icon i {
-  color: #c084fc !important;
+  color: #ffffff !important;
   font-size: 1.35rem !important;
-  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 1)) drop-shadow(0 0 14px rgba(192, 132, 252, 0.75)) !important;
+  filter: drop-shadow(0 0 5px #c084fc) drop-shadow(0 0 14px rgba(192, 132, 252, 0.9)) !important;
 }
 
 /* Hover de iconos en tarjetas de métricas */
@@ -2358,28 +2369,28 @@
   filter: drop-shadow(0 0 8px rgba(255, 51, 102, 1)) drop-shadow(0 0 20px rgba(255, 51, 102, 0.9)) !important;
 }
 
-/* 2. Botón 'Actualizar Vigencia' tipo píldora / modal (btn-signal) */
+/* 2. Botón 'Actualizar Vigencia' y 'Revisar Expediente' tipo píldora (btn-signal) */
 :root.dark .btn-signal,
 :root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) {
-  background: linear-gradient(135deg, #ff2a55 0%, #ff5e3a 100%) !important;
+  background: linear-gradient(135deg, #e11d48 0%, #ea580c 100%) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0 0 18px rgba(255, 42, 85, 0.75), 0 0 35px rgba(255, 42, 85, 0.4) !important;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35), 0 0 10px rgba(234, 88, 12, 0.2) !important;
+  text-shadow: none !important;
   transition: all 0.2s ease !important;
 }
 
 :root.dark .btn-signal i,
 :root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)) !important;
+  filter: none !important;
 }
 
 :root.dark .btn-signal:hover,
 :root.dark button:has(> .fa-calendar-check):not(.action-icon-btn):hover {
-  background: linear-gradient(135deg, #ff3d66 0%, #ff7350 100%) !important;
-  box-shadow: 0 0 25px rgba(255, 42, 85, 1), 0 0 45px rgba(255, 42, 85, 0.6) !important;
-  transform: translateY(-2px) scale(1.03) !important;
+  background: linear-gradient(135deg, #f43f5e 0%, #f97316 100%) !important;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.5), 0 0 16px rgba(249, 115, 22, 0.3) !important;
+  transform: translateY(-1.5px) !important;
 }
 
 /* =========================================================
@@ -3054,12 +3065,544 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.9) !important;
 }
 
+/* =========================================================
+   VENTANA DE REVISIÓN DE SOLICITUD (ESTILOS NEÓN MODO OSCURO)
+   ========================================================= */
 
+/* 1. STEPPER DE APROBACIÓN POR ROLES */
+:root.dark .revision-step-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
 
+:root.dark .revision-step-card .step-title {
+  color: #94a3b8 !important;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
+}
 
+:root.dark .revision-step-card .step-subtitle {
+  color: #94a3b8 !important;
+}
 
+/* Paso 1: Radicación (Cian Neón) */
+:root.dark .revision-step-card.step-radicacion.is-complete {
+  background: rgba(0, 240, 255, 0.07) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.65) !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.28), inset 0 0 10px rgba(0, 240, 255, 0.08) !important;
+}
 
+:root.dark .revision-step-card.step-radicacion.is-complete .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #00f0ff !important;
+}
 
+:root.dark .revision-step-card.step-radicacion.is-complete .step-icon {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 8px #00f0ff) !important;
+}
 
+/* Paso 2: SST / GESCO (Verde Neón si completo, Violeta si en proceso, Rojo si rechazado) */
+:root.dark .revision-step-card.step-revision.is-complete {
+  background: rgba(0, 255, 136, 0.07) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.65) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.28), inset 0 0 10px rgba(0, 255, 136, 0.08) !important;
+}
 
+:root.dark .revision-step-card.step-revision.is-complete .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #00ff88 !important;
+}
 
+:root.dark .revision-step-card.step-revision.is-complete .step-icon {
+  color: #00ff88 !important;
+  filter: drop-shadow(0 0 8px #00ff88) !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-pending {
+  background: rgba(192, 132, 252, 0.08) !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.65) !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.3), inset 0 0 10px rgba(192, 132, 252, 0.08) !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-pending .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #c084fc !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-pending .step-icon {
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 8px #c084fc) !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-rejected {
+  background: rgba(255, 42, 85, 0.1) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.65) !important;
+  box-shadow: 0 0 16px rgba(255, 42, 85, 0.32) !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-rejected .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #ff2a55 !important;
+}
+
+:root.dark .revision-step-card.step-revision.is-rejected .step-icon {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 8px #ff2a55) !important;
+}
+
+/* Paso 3: Aprobación SCR (Verde si aprobado, Ámbar Neón si Por Aprobar) */
+:root.dark .revision-step-card.step-scr.is-complete {
+  background: rgba(0, 255, 136, 0.07) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.65) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.28), inset 0 0 10px rgba(0, 255, 136, 0.08) !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-complete .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #00ff88 !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-complete .step-icon {
+  color: #00ff88 !important;
+  filter: drop-shadow(0 0 8px #00ff88) !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-active {
+  background: rgba(255, 183, 0, 0.1) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.7) !important;
+  box-shadow: 0 0 18px rgba(255, 183, 0, 0.38), inset 0 0 10px rgba(255, 183, 0, 0.1) !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-active .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #ffb700 !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-active .step-icon {
+  color: #ffb700 !important;
+  filter: drop-shadow(0 0 8px #ffb700) !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-locked .step-title {
+  color: #64748b !important;
+}
+
+:root.dark .revision-step-card.step-scr.is-locked .step-icon {
+  color: #475569 !important;
+}
+
+/* Paso 4: Dictamen Final (Verde Neón Brillante si Aprobado, Rojo si Rechazado) */
+:root.dark .revision-step-card.step-dictamen.is-complete {
+  background: rgba(0, 255, 136, 0.1) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.75) !important;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), inset 0 0 12px rgba(0, 255, 136, 0.12) !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-complete .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #00ff88 !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-complete .step-icon {
+  color: #00ff88 !important;
+  filter: drop-shadow(0 0 10px #00ff88) !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-complete .step-subtitle {
+  color: #4ade80 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.6) !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-rejected {
+  background: rgba(255, 42, 85, 0.12) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.75) !important;
+  box-shadow: 0 0 20px rgba(255, 42, 85, 0.42), inset 0 0 12px rgba(255, 42, 85, 0.12) !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-rejected .step-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px #ff2a55 !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-rejected .step-icon {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 10px #ff2a55) !important;
+}
+
+:root.dark .revision-step-card.step-dictamen.is-rejected .step-subtitle {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.6) !important;
+}
+
+/* 2. FICHA "DATOS DE LA SOLICITUD" */
+:root.dark .revision-ficha-card h3 i {
+  color: #ff3b4e !important;
+  filter: drop-shadow(0 0 8px rgba(255, 59, 78, 0.8)) !important;
+}
+
+:root.dark .revision-ficha-card strong,
+:root.dark .revision-ficha-card .text-\[var\(--ink-900\)\] {
+  color: #ffffff !important;
+}
+
+:root.dark .radicado-badge {
+  background: rgba(0, 240, 255, 0.12) !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+}
+
+:root.dark .revision-actividad-box {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* 3. PANEL DERECHO: DICTÁMENES POR PLANTA */
+:root.dark .planta-dictamen-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+:root.dark .planta-dictamen-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark .planta-dictamen-header .planta-title {
+  color: #ffffff !important;
+}
+
+:root.dark .planta-dictamen-header .planta-icon {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7)) !important;
+}
+
+:root.dark .badge-planta-avalada {
+  background: rgba(0, 255, 136, 0.15) !important;
+  color: #00ff88 !important;
+  border: 1px solid rgba(0, 255, 136, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3) !important;
+}
+
+:root.dark .badge-planta-pendiente {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+:root.dark .dictamen-subitem {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark .dictamen-subitem .subitem-title {
+  color: #ffffff !important;
+}
+
+:root.dark .dictamen-subitem.is-aprobado {
+  background: rgba(0, 255, 136, 0.08) !important;
+  border-color: rgba(0, 255, 136, 0.45) !important;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2) !important;
+}
+
+:root.dark .dictamen-subitem.is-aprobado .subitem-status {
+  color: #00ff88 !important;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.7) !important;
+}
+
+:root.dark .dictamen-subitem.is-rechazado {
+  background: rgba(255, 42, 85, 0.08) !important;
+  border-color: rgba(255, 42, 85, 0.45) !important;
+  box-shadow: 0 0 12px rgba(255, 42, 85, 0.2) !important;
+}
+
+:root.dark .dictamen-subitem.is-rechazado .subitem-status {
+  color: #ff2a55 !important;
+  text-shadow: 0 0 6px rgba(255, 42, 85, 0.7) !important;
+}
+
+:root.dark .dictamen-subitem.is-pendiente .subitem-status {
+  color: #94a3b8 !important;
+}
+
+:root.dark .role-badge-sst {
+  background: rgba(0, 255, 136, 0.2) !important;
+  color: #00ff88 !important;
+  border: 1px solid rgba(0, 255, 136, 0.45) !important;
+}
+
+:root.dark .role-badge-gesco {
+  background: rgba(192, 132, 252, 0.2) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(192, 132, 252, 0.45) !important;
+}
+
+/* Tarjeta Dictamen SCR */
+:root.dark .dictamen-scr-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+:root.dark .dictamen-scr-card .scr-title {
+  color: #ffffff !important;
+}
+
+:root.dark .dictamen-scr-card .scr-subtitle {
+  color: #94a3b8 !important;
+}
+
+:root.dark .dictamen-scr-card .scr-icon-box {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+:root.dark .dictamen-scr-card.is-aprobado {
+  background: rgba(0, 255, 136, 0.08) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.55) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.25) !important;
+}
+
+:root.dark .dictamen-scr-card.is-aprobado .scr-icon-box {
+  background: rgba(0, 255, 136, 0.2) !important;
+  color: #00ff88 !important;
+  border-color: rgba(0, 255, 136, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4) !important;
+}
+
+:root.dark .dictamen-scr-card.is-aprobado .scr-badge {
+  background: rgba(0, 255, 136, 0.15) !important;
+  color: #00ff88 !important;
+  border: 1px solid rgba(0, 255, 136, 0.45) !important;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.3) !important;
+}
+
+:root.dark .dictamen-scr-card.is-por-aprobar {
+  background: rgba(255, 183, 0, 0.09) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.6) !important;
+  box-shadow: 0 0 16px rgba(255, 183, 0, 0.3) !important;
+}
+
+:root.dark .dictamen-scr-card.is-por-aprobar .scr-icon-box {
+  background: rgba(255, 183, 0, 0.2) !important;
+  color: #ffb700 !important;
+  border-color: rgba(255, 183, 0, 0.5) !important;
+  box-shadow: 0 0 10px rgba(255, 183, 0, 0.4) !important;
+}
+
+:root.dark .dictamen-scr-card.is-por-aprobar .scr-badge {
+  background: rgba(255, 183, 0, 0.2) !important;
+  color: #ffb700 !important;
+  border: 1px solid rgba(255, 183, 0, 0.5) !important;
+  box-shadow: 0 0 8px rgba(255, 183, 0, 0.3) !important;
+}
+
+/* 4. FILAS DE PERSONAL E INGRESANTES Y BOTONES DE AUTORIZACIÓN */
+:root.dark .persona-revision-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark .persona-revision-card.is-autorizado {
+  border-color: rgba(0, 255, 136, 0.35) !important;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.12) !important;
+}
+
+:root.dark .persona-revision-card.is-denegado {
+  background: rgba(255, 42, 85, 0.06) !important;
+  border-color: rgba(255, 42, 85, 0.35) !important;
+  box-shadow: 0 0 12px rgba(255, 42, 85, 0.12) !important;
+}
+
+:root.dark .persona-revision-card h4 {
+  color: #ffffff !important;
+}
+
+:root.dark .persona-controls-group {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark .btn-autorizar-action.is-active {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.3) 0%, rgba(5, 150, 105, 0.55) 100%) !important;
+  border: 1px solid rgba(0, 255, 136, 0.8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.45) !important;
+}
+
+:root.dark .btn-autorizar-action.is-inactive {
+  color: #94a3b8 !important;
+  background: transparent !important;
+}
+
+:root.dark .btn-autorizar-action.is-inactive:hover {
+  color: #00ff88 !important;
+  background: rgba(0, 255, 136, 0.1) !important;
+}
+
+:root.dark .btn-denegar-action.is-active {
+  background: linear-gradient(135deg, rgba(255, 42, 85, 0.3) 0%, rgba(220, 38, 38, 0.55) 100%) !important;
+  border: 1px solid rgba(255, 42, 85, 0.8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45) !important;
+}
+
+:root.dark .btn-denegar-action.is-inactive {
+  color: #94a3b8 !important;
+  background: transparent !important;
+}
+
+:root.dark .btn-denegar-action.is-inactive:hover {
+  color: #ff2a55 !important;
+  background: rgba(255, 42, 85, 0.1) !important;
+}
+
+/* 5. OPCIONES DE DECISIÓN DEL DICTAMEN (APROBAR / RECHAZAR) */
+:root.dark .decision-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+}
+
+:root.dark .decision-card.decision-card-aprobar.is-selected {
+  background: rgba(0, 255, 136, 0.12) !important;
+  border: 1.5px solid rgba(0, 255, 136, 0.75) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.35), inset 0 0 8px rgba(0, 255, 136, 0.1) !important;
+}
+
+:root.dark .decision-card.decision-card-aprobar.is-selected i {
+  color: #00ff88 !important;
+  filter: drop-shadow(0 0 8px #00ff88) !important;
+}
+
+:root.dark .decision-card.decision-card-rechazar.is-selected {
+  background: rgba(255, 42, 85, 0.12) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.75) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(255, 42, 85, 0.35), inset 0 0 8px rgba(255, 42, 85, 0.1) !important;
+}
+
+:root.dark .decision-card.decision-card-rechazar.is-selected i {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 8px #ff2a55) !important;
+}
+
+/* =========================================================
+   MODAL DE DOCUMENTOS ADJUNTOS EN FORMULARIO SOLICITUD (WIZARD)
+   ========================================================= */
+:root.dark .modal-ticket .group:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.15) !important;
+}
+
+:root.dark .modal-ticket a[target="_blank"] {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root.dark .modal-ticket a[target="_blank"]:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444) !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* =========================================================
+   TARJETAS DE RESUMEN DEL MODAL HISTORIAL DE SOLICITUDES (NEON)
+   ========================================================= */
+:root.dark .historial-summary-card {
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* 1. Card Responsable (Púrpura / Indigo Neón) */
+:root.dark .historial-summary-card.card-responsable {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  border: 1.5px solid rgba(129, 140, 248, 0.45) !important;
+  box-shadow: 0 0 20px -3px rgba(99, 102, 241, 0.3), inset 0 0 14px rgba(99, 102, 241, 0.08) !important;
+}
+:root.dark .historial-summary-card.card-responsable:hover {
+  border-color: rgba(165, 180, 252, 0.75) !important;
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.5), inset 0 0 20px rgba(99, 102, 241, 0.15) !important;
+  transform: translateY(-2px);
+}
+:root.dark .historial-summary-card.card-responsable .summary-icon-box {
+  background: rgba(99, 102, 241, 0.28) !important;
+  border: 1.5px solid rgba(129, 140, 248, 0.65) !important;
+  color: #c7d2fe !important;
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.55) !important;
+  filter: drop-shadow(0 0 6px #818cf8) !important;
+}
+:root.dark .historial-summary-card.card-responsable .subtitles-modal {
+  color: #a5b4fc !important;
+  text-shadow: 0 0 8px rgba(165, 180, 252, 0.45) !important;
+}
+:root.dark .historial-summary-card.card-responsable p {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 2. Card Última Empresa (Cian Eléctrico Neón) */
+:root.dark .historial-summary-card.card-empresa {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.14) 0%, rgba(14, 165, 233, 0.05) 100%) !important;
+  border: 1.5px solid rgba(34, 211, 238, 0.45) !important;
+  box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.3), inset 0 0 14px rgba(6, 182, 212, 0.08) !important;
+}
+:root.dark .historial-summary-card.card-empresa:hover {
+  border-color: rgba(103, 232, 249, 0.75) !important;
+  box-shadow: 0 0 28px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(6, 182, 212, 0.15) !important;
+  transform: translateY(-2px);
+}
+:root.dark .historial-summary-card.card-empresa .summary-icon-box {
+  background: rgba(6, 182, 212, 0.28) !important;
+  border: 1.5px solid rgba(34, 211, 238, 0.65) !important;
+  color: #67e8f9 !important;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.55) !important;
+  filter: drop-shadow(0 0 6px #22d3ee) !important;
+}
+:root.dark .historial-summary-card.card-empresa .subtitles-modal {
+  color: #67e8f9 !important;
+  text-shadow: 0 0 8px rgba(103, 232, 249, 0.45) !important;
+}
+:root.dark .historial-summary-card.card-empresa p {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.55) !important;
+}
+
+/* 3. Card Vigencia Actual (Esmeralda Neón) */
+:root.dark .historial-summary-card.card-vigencia {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(34, 197, 94, 0.05) 100%) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.45) !important;
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.3), inset 0 0 14px rgba(16, 185, 129, 0.08) !important;
+}
+:root.dark .historial-summary-card.card-vigencia:hover {
+  border-color: rgba(110, 231, 183, 0.75) !important;
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.5), inset 0 0 20px rgba(16, 185, 129, 0.15) !important;
+  transform: translateY(-2px);
+}
+:root.dark .historial-summary-card.card-vigencia .summary-icon-box {
+  background: rgba(16, 185, 129, 0.28) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.65) !important;
+  color: #6ee7b7 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.55) !important;
+  filter: drop-shadow(0 0 6px #34d399) !important;
+}
+:root.dark .historial-summary-card.card-vigencia .subtitles-modal {
+  color: #6ee7b7 !important;
+  text-shadow: 0 0 8px rgba(110, 231, 183, 0.45) !important;
+}
+:root.dark .historial-summary-card.card-vigencia p {
+  color: #4ade80 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 12px rgba(74, 222, 128, 0.55) !important;
+}

@@ -11,11 +11,17 @@ function appShell() {
     activeRole: "GESTOR DE DOCUMENTACIÓN",
     openModules: { procesamiento: false, formularios: false, tablas: false },
     darkMode: localStorage.getItem('darkMode') === 'true',
-    notifications: [
-      { id: 1, texto: "SOL-2026-0145 pasó a Por Aprobar", tiempo: "Hace 12 min" },
-      { id: 2, texto: "SOL-2026-0146 fue rechazada por SCR", tiempo: "Hace 1 h" },
-      { id: 3, texto: "Nuevo usuario SST registrado", tiempo: "Hace 3 h" }
-    ],
+    userId: 1,
+    roleId: 2,
+    notifications: [],
+    unreadNotificationsCount: 0,
+
+    formatearTiempoRelativo(fechaStr) {
+      if (typeof formatearTiempoRelativo === "function") {
+        return formatearTiempoRelativo(fechaStr);
+      }
+      return fechaStr || "";
+    },
 
     init() {
       // Aplicar dark mode guardado
@@ -25,8 +31,69 @@ function appShell() {
       const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || "null");
       if (sesion) {
         this.activeRole = sesion.rol || this.activeRole;
+        this.userId = sesion.id || this.userId;
+        this.roleId = sesion.id_rol || this.roleId;
         this._userName = sesion.nombre || "Laura Gómez";
         this._userInitials = (this._userName.split(" ").map(p => p[0]).join("")).substring(0, 2).toUpperCase();
+      }
+
+      this.cargarNotificaciones();
+      setInterval(() => this.cargarNotificaciones(), 35000);
+    },
+
+    async cargarNotificaciones() {
+      try {
+        const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
+          ? API.notificaciones 
+          : "http://127.0.0.1:8000/api/v1/notificaciones";
+        const params = new URLSearchParams();
+        if (this.userId) params.append("id_usuario", this.userId);
+        if (this.roleId) params.append("id_rol", this.roleId);
+        const res = await fetch(`${notifUrl}?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          this.notifications = data.notificaciones || [];
+          this.unreadNotificationsCount = data.no_leidas || 0;
+        }
+      } catch (err) {
+        console.warn("Aviso al cargar notificaciones en dashboard:", err);
+      }
+    },
+
+    async marcarNotificacionLeida(n) {
+      if (!n.leido) {
+        try {
+          const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
+            ? API.notificaciones 
+            : "http://127.0.0.1:8000/api/v1/notificaciones";
+          await fetch(`${notifUrl}/${n.id}/leer`, { method: "PATCH" });
+          n.leido = true;
+          if (this.unreadNotificationsCount > 0) {
+            this.unreadNotificationsCount--;
+          }
+        } catch (e) {
+          console.warn("Aviso al marcar notificación como leída:", e);
+        }
+      }
+      if (n.enlace) {
+        window.location.href = n.enlace;
+      }
+    },
+
+    async marcarTodasNotificacionesLeidas() {
+      try {
+        const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
+          ? API.notificaciones 
+          : "http://127.0.0.1:8000/api/v1/notificaciones";
+        await fetch(`${notifUrl}/marcar-todas-leidas`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_usuario: this.userId, id_rol: this.roleId })
+        });
+        this.notifications.forEach(n => n.leido = true);
+        this.unreadNotificationsCount = 0;
+      } catch (e) {
+        console.warn("Aviso al marcar todas las notificaciones:", e);
       }
     },
 

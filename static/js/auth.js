@@ -395,7 +395,7 @@ function loginForm() {
               matched.plantas_ids || [],
               matched.plantas || []
             );
-            window.location.href = "dashboard.html";
+            window.location.href = "/dashboard";
             return;
           }
         }
@@ -421,7 +421,7 @@ function loginForm() {
           user.rol || "GESTOR DE DOCUMENTACIÓN"
         );
 
-        window.location.href = "dashboard.html";
+        window.location.href = "/dashboard";
       }, 700);
     }
   };

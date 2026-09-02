@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- Insertar usuario base
 INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
-(1, 'Juan', 'Prieto', 'CC', '1212121212', '3000000000', 'juandeveloper2724@gmail.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
+(1, 'Juan', 'Prieto', 'CC', '1212121212', '3000000000', 'juandeveloper2427@gmail.com', '$2b$12$MsmbFnqQWPQj.l35Je3yM.9D6j2jLYzq6J3Nas/kcVv.6S0Sp2zgu', 2, 1)
 ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
 
 -- 6. Personas

@@ -579,10 +579,13 @@ select:focus-visible,
 }
 
 .step-connector {
-  height: 2px;
+  height: 2.5px;
   background: var(--border-subtle);
   position: relative;
   overflow: hidden;
+  align-self: flex-start;
+  margin-top: 17px;
+  border-radius: 999px;
 }
 
 .step-connector::after {

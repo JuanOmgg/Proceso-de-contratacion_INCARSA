@@ -13,8 +13,30 @@ const API = {
     antecedentes: `${API_BASE_URL}/api/v1/antecedentes`,
     vehiculos: `${API_BASE_URL}/api/v1/vehiculos`,
     contratistas: `${API_BASE_URL}/emp_contratista`,
-    auth: `${API_BASE_URL}/api/v1/auth`
+    auth: `${API_BASE_URL}/api/v1/auth`,
+    notificaciones: `${API_BASE_URL}/api/v1/notificaciones`
 };
+
+// Utilidad para formatear tiempos relativos amigables
+function formatearTiempoRelativo(fechaStr) {
+    if (!fechaStr) return "";
+    try {
+        const fecha = new Date(String(fechaStr).replace(" ", "T"));
+        const ahora = new Date();
+        const diffSegundos = Math.floor((ahora - fecha) / 1000);
+        if (diffSegundos < 60) return "Hace un momento";
+        const diffMinutos = Math.floor(diffSegundos / 60);
+        if (diffMinutos < 60) return `Hace ${diffMinutos} min`;
+        const diffHoras = Math.floor(diffMinutos / 60);
+        if (diffHoras < 24) return `Hace ${diffHoras} h`;
+        const diffDias = Math.floor(diffHoras / 24);
+        if (diffDias === 1) return "Ayer";
+        if (diffDias < 7) return `Hace ${diffDias} d`;
+        return fecha.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+    } catch (e) {
+        return fechaStr;
+    }
+}
 
 // ============================================================================
 // Shell global de navegación y sesión de usuario para todas las vistas
@@ -27,23 +49,78 @@ function appShellStub() {
 
     const nombreUsuario = sesion ? (sesion.nombre || sesion.nombres || `${sesion.nombres || ''} ${sesion.apellidos || ''}`.trim() || "Usuario") : "Administrador Sistema";
     const iniciales = nombreUsuario.split(" ").filter(Boolean).map(p => p[0]).join("").substring(0, 2).toUpperCase() || "AD";
+    const userId = sesion?.id || 1;
+    const roleId = sesion?.id_rol || 2;
 
     return {
         sidebarCollapsed: false,
         sidebarOpenMobile: false,
         notificationsOpen: false,
+        userId: userId,
+        roleId: roleId,
         activeRole: sesion?.rol || "ADMINISTRADOR",
         openModules: { formularios: false, tablas: true, procesamiento: false },
-        notifications: [
-            { id: 1, texto: "Sistema actualizado correctamente", tiempo: "Hace un momento" }
-        ],
+        notifications: [],
+        unreadNotificationsCount: 0,
         userDisplayName: nombreUsuario,
         userInitials: iniciales,
         darkMode: localStorage.getItem('darkMode') === 'true',
 
+        formatearTiempoRelativo: formatearTiempoRelativo,
+
         init() {
             // Aplicar el modo oscuro guardado al cargar la página
             document.documentElement.classList.toggle('dark', this.darkMode);
+            this.cargarNotificaciones();
+            // Polling periódico cada 35 segundos
+            setInterval(() => this.cargarNotificaciones(), 35000);
+        },
+
+        async cargarNotificaciones() {
+            try {
+                const params = new URLSearchParams();
+                if (this.userId) params.append("id_usuario", this.userId);
+                if (this.roleId) params.append("id_rol", this.roleId);
+                const res = await fetch(`${API.notificaciones}?${params.toString()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    this.notifications = data.notificaciones || [];
+                    this.unreadNotificationsCount = data.no_leidas || 0;
+                }
+            } catch (err) {
+                console.warn("Aviso al cargar notificaciones:", err);
+            }
+        },
+
+        async marcarNotificacionLeida(n) {
+            if (!n.leido) {
+                try {
+                    await fetch(`${API.notificaciones}/${n.id}/leer`, { method: "PATCH" });
+                    n.leido = true;
+                    if (this.unreadNotificationsCount > 0) {
+                        this.unreadNotificationsCount--;
+                    }
+                } catch (e) {
+                    console.warn("Aviso al marcar notificación como leída:", e);
+                }
+            }
+            if (n.enlace) {
+                window.location.href = n.enlace;
+            }
+        },
+
+        async marcarTodasNotificacionesLeidas() {
+            try {
+                await fetch(`${API.notificaciones}/marcar-todas-leidas`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id_usuario: this.userId, id_rol: this.roleId })
+                });
+                this.notifications.forEach(n => n.leido = true);
+                this.unreadNotificationsCount = 0;
+            } catch (e) {
+                console.warn("Aviso al marcar todas las notificaciones:", e);
+            }
         },
 
         toggleDarkMode() {

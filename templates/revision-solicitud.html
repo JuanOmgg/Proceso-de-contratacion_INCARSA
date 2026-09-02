@@ -152,60 +152,60 @@
             <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs">
               <div class="flex items-center justify-between flex-wrap gap-3 pb-3 mb-4 border-b border-[var(--border-subtle)]">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Ruta de Aprobación por Roles</span>
-                <span class="text-xs text-slate-500">
-                  Estado actual: <strong class="text-[var(--ink-900)]" x-text="solicitud.estado"></strong>
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400 font-medium">Estado actual:</span>
+                  <span class="status-pill text-xs font-bold font-mono tracking-wide" :class="estadoEstilos(solicitud.estado)" x-text="solicitud.estado"></span>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <!-- Paso 1: Enviado -->
-                <div class="p-3.5 rounded-xl border transition-all"
-                  :class="(solicitud.estado === 'ENVIADO' || solicitud.estado === 'EN REVISIÓN' || solicitud.estado === 'POR APROBAR' || solicitud.estado === 'APROBADO') ? 'bg-cyan-50/70 border-cyan-200' : 'bg-slate-50 border-slate-200'">
+                <div class="revision-step-card step-radicacion p-3.5 rounded-xl border transition-all is-complete">
                   <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold text-cyan-900">1. Radicación</span>
-                    <i class="fa-solid fa-check-circle text-cyan-600 text-sm"></i>
+                    <span class="text-xs font-bold step-title">1. Radicación</span>
+                    <i class="fa-solid fa-check-circle step-icon text-sm"></i>
                   </div>
-                  <p class="text-[11px] text-slate-500" x-text="'Diligenciada por ' + solicitud.diligenciador"></p>
+                  <p class="text-[11px] step-subtitle" x-text="'Diligenciada por ' + solicitud.diligenciador"></p>
                 </div>
 
                 <!-- Paso 2: SST & GESCO Multi-Planta -->
-                <div class="p-3.5 rounded-xl border transition-all"
-                  :class="solicitud.estado === 'RECHAZADO' ? 'bg-red-50 border-red-200' : (totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'bg-emerald-50/80 border-emerald-200' : 'bg-purple-50/70 border-purple-200')">
+                <div class="revision-step-card step-revision p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'RECHAZADO' ? 'is-rejected' : (totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'is-complete' : 'is-pending')">
                   <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold" :class="solicitud.estado === 'RECHAZADO' ? 'text-red-900' : (totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'text-emerald-900' : 'text-purple-900')">
+                    <span class="text-xs font-bold step-title">
                       2. Revisión SST / GESCO
                     </span>
-                    <i class="fa-solid fa-xmark-circle text-red-600 text-sm" x-show="solicitud.estado === 'RECHAZADO'"></i>
-                    <i class="fa-solid fa-check-circle text-emerald-600 text-sm" x-show="totalPlantas > 0 && totalPlantasCompletadas === totalPlantas && solicitud.estado !== 'RECHAZADO'"></i>
-                    <i class="fa-solid fa-spinner fa-spin text-purple-600 text-xs" x-show="(totalPlantas === 0 || totalPlantasCompletadas < totalPlantas) && solicitud.estado !== 'RECHAZADO'"></i>
+                    <i class="fa-solid fa-xmark-circle text-red-500 text-sm step-icon" x-show="solicitud.estado === 'RECHAZADO'"></i>
+                    <i class="fa-solid fa-check-circle text-emerald-500 text-sm step-icon" x-show="totalPlantas > 0 && totalPlantasCompletadas === totalPlantas && solicitud.estado !== 'RECHAZADO'"></i>
+                    <i class="fa-solid fa-spinner fa-spin text-purple-400 text-xs step-icon" x-show="(totalPlantas === 0 || totalPlantasCompletadas < totalPlantas) && solicitud.estado !== 'RECHAZADO'"></i>
                   </div>
-                  <div class="flex items-center justify-between text-[11px] text-slate-500">
+                  <div class="flex items-center justify-between text-[11px] step-subtitle">
                     <span class="font-medium" x-text="totalPlantas > 0 ? (totalPlantasCompletadas + ' de ' + totalPlantas + ' plantas avaladas') : 'Revisión por planta'"></span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700" x-show="totalPlantas > 1" x-text="totalPlantas + ' plantas'"></span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-300/40" x-show="totalPlantas > 1" x-text="totalPlantas + ' plantas'"></span>
                   </div>
                 </div>
 
                 <!-- Paso 3: SCR -->
-                <div class="p-3.5 rounded-xl border transition-all"
-                  :class="solicitud.estado === 'APROBADO' ? 'bg-emerald-50/80 border-emerald-200' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200/50' : 'bg-slate-50 border-slate-200')">
+                <div class="revision-step-card step-scr p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'APROBADO' ? 'is-complete' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : 'is-locked')">
                   <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold" :class="solicitud.estado === 'APROBADO' ? 'text-emerald-900' : (solicitud.estado === 'POR APROBAR' ? 'text-amber-900' : 'text-slate-600')">3. Aprobación SCR</span>
-                    <i class="fa-solid fa-check-circle text-emerald-600 text-sm" x-show="solicitud.estado === 'APROBADO'"></i>
-                    <i class="fa-solid fa-clock text-amber-600 text-xs" x-show="solicitud.estado === 'POR APROBAR'"></i>
-                    <i class="fa-solid fa-lock text-slate-400 text-xs" x-show="solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
+                    <span class="text-xs font-bold step-title">3. Aprobación SCR</span>
+                    <i class="fa-solid fa-check-circle text-emerald-500 text-sm step-icon" x-show="solicitud.estado === 'APROBADO'"></i>
+                    <i class="fa-solid fa-clock text-amber-400 text-xs step-icon" x-show="solicitud.estado === 'POR APROBAR'"></i>
+                    <i class="fa-solid fa-lock text-slate-500 text-xs step-icon" x-show="solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
                   </div>
-                  <p class="text-[11px] text-slate-500" x-text="solicitud.estado === 'POR APROBAR' ? 'Listo para dictamen SCR' : (solicitud.estado === 'APROBADO' ? 'Autorizado por SCR' : 'Bloqueado hasta aval SST+GESCO')"></p>
+                  <p class="text-[11px] step-subtitle" x-text="solicitud.estado === 'POR APROBAR' ? 'Listo para dictamen SCR' : (solicitud.estado === 'APROBADO' ? 'Autorizado por SCR' : 'Bloqueado hasta aval SST+GESCO')"></p>
                 </div>
 
                 <!-- Paso 4: Finalizado -->
-                <div class="p-3.5 rounded-xl border transition-all"
-                  :class="solicitud.estado === 'APROBADO' ? 'bg-green-50 border-green-200' : (solicitud.estado === 'RECHAZADO' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200')">
+                <div class="revision-step-card step-dictamen p-3.5 rounded-xl border transition-all"
+                  :class="solicitud.estado === 'APROBADO' ? 'is-complete' : (solicitud.estado === 'RECHAZADO' ? 'is-rejected' : 'is-locked')">
                   <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-bold" :class="solicitud.estado === 'APROBADO' ? 'text-green-900' : (solicitud.estado === 'RECHAZADO' ? 'text-red-900' : 'text-slate-500')">4. Dictamen Final</span>
-                    <i class="fa-solid fa-circle-check text-green-600 text-sm" x-show="solicitud.estado === 'APROBADO'"></i>
-                    <i class="fa-solid fa-circle-xmark text-red-600 text-sm" x-show="solicitud.estado === 'RECHAZADO'"></i>
+                    <span class="text-xs font-bold step-title">4. Dictamen Final</span>
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm step-icon" x-show="solicitud.estado === 'APROBADO'"></i>
+                    <i class="fa-solid fa-circle-xmark text-red-500 text-sm step-icon" x-show="solicitud.estado === 'RECHAZADO'"></i>
                   </div>
-                  <p class="text-[11px] font-medium" :class="solicitud.estado === 'APROBADO' ? 'text-green-700' : (solicitud.estado === 'RECHAZADO' ? 'text-red-700' : 'text-slate-400')"
+                  <p class="text-[11px] font-medium step-subtitle"
                     x-text="solicitud.estado === 'APROBADO' ? 'Acceso Autorizado' : (solicitud.estado === 'RECHAZADO' ? 'Solicitud Rechazada' : 'En proceso')"></p>
                 </div>
               </div>
@@ -252,44 +252,45 @@
               <div class="lg:col-span-8 space-y-6">
 
                 <!-- 1. Ficha de Datos Generales -->
-                <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
+                <div class="wizard-card revision-ficha-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                     <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
-                      <i class="fa-solid fa-file-invoice text-[var(--signal-500)]"></i> Datos de la Solicitud
+                      <i class="fa-solid fa-file-invoice text-[var(--signal-500)] text-base"></i>
+                      <span>Datos de la Solicitud</span>
                     </h3>
-                    <span class="text-xs text-slate-400" x-text="'Radicado: ' + solicitud.codigo"></span>
+                    <span class="radicado-badge text-xs font-mono font-bold px-2.5 py-1 rounded-md" x-text="'Radicado: ' + solicitud.codigo"></span>
                   </div>
 
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Empresa Origen</span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Empresa Origen</span>
                       <strong class="text-[var(--ink-900)] text-xs" x-text="solicitud.empresa_origen"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Empresa Contratista</span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Empresa Contratista</span>
                       <strong class="text-[var(--ink-900)] text-xs" x-text="solicitud.empresa_contratista"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Diligenciador</span>
-                      <span class="text-slate-700 font-medium" x-text="solicitud.diligenciador"></span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Diligenciador</span>
+                      <span class="text-slate-700 dark:text-slate-200 font-medium" x-text="solicitud.diligenciador"></span>
                     </div>
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Vigencia de Ingreso</span>
-                      <span class="font-medium text-slate-800" x-text="solicitud.fecha_ingreso + ' → ' + solicitud.fecha_salida"></span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Vigencia de Ingreso</span>
+                      <span class="font-medium text-slate-800 dark:text-slate-200" x-text="solicitud.fecha_ingreso + ' → ' + solicitud.fecha_salida"></span>
                     </div>
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Nivel de Riesgo</span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Nivel de Riesgo</span>
                       <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
-                        :class="solicitud.nivel_de_riesgo === 'Alto' ? 'bg-red-100 text-red-700' : (solicitud.nivel_de_riesgo === 'Medio' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')"
+                        :class="solicitud.nivel_de_riesgo === 'Alto' ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 dark:border dark:border-red-500/40' : (solicitud.nivel_de_riesgo === 'Medio' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 dark:border dark:border-amber-500/40' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-500/40')"
                         x-text="solicitud.nivel_de_riesgo"></span>
                     </div>
                     <div>
-                      <span class="text-slate-400 block text-[11px]">Plantas Autorizadas</span>
-                      <span class="font-semibold text-[var(--signal-600)]" x-text="solicitud.planta || solicitud.plantas || '—'"></span>
+                      <span class="text-slate-400 block text-[11px] font-medium">Plantas Autorizadas</span>
+                      <span class="font-semibold text-[var(--signal-600)] dark:text-amber-400" x-text="solicitud.planta || solicitud.plantas || '—'"></span>
                     </div>
-                    <div class="col-span-2 sm:col-span-3 pt-2 border-t border-slate-100">
-                      <span class="text-slate-400 block text-[11px] mb-0.5">Actividad a Desarrollar</span>
-                      <p class="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs leading-relaxed" x-text="solicitud.actividad"></p>
+                    <div class="col-span-2 sm:col-span-3 pt-2 border-t border-[var(--border-subtle)]">
+                      <span class="text-slate-400 block text-[11px] mb-1 font-medium">Actividad a Desarrollar</span>
+                      <p class="revision-actividad-box p-3 rounded-xl border text-xs leading-relaxed" x-text="solicitud.actividad"></p>
                     </div>
                   </div>
                 </div>
@@ -331,13 +332,13 @@
 
                   <div class="space-y-3.5">
                     <template x-for="(persona, pIdx) in solicitud.personas" :key="persona.id || persona.identificacion || pIdx">
-                      <div class="p-4 rounded-xl border transition-all space-y-3"
-                        :class="persona.autorizado ? 'bg-white border-slate-200 hover:border-emerald-300' : 'bg-red-50/40 border-red-200'">
+                      <div class="persona-revision-card p-4 rounded-xl border transition-all space-y-3"
+                        :class="persona.autorizado ? 'is-autorizado' : 'is-denegado'">
                         
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <!-- Datos de la Persona -->
                           <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-colors"
+                            <div class="persona-num-badge w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-colors"
                               :class="persona.autorizado ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'">
                               <span x-text="pIdx + 1"></span>
                             </div>
@@ -345,40 +346,40 @@
                               <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="font-display font-semibold text-xs text-[var(--ink-900)]" x-text="persona.nombre"></h4>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                                  :class="persona.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-800 border-red-300'">
+                                  :class="persona.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40'">
                                   <i class="fa-solid mr-0.5" :class="persona.autorizado ? 'fa-check' : 'fa-xmark'"></i>
                                   <span x-text="persona.autorizado ? 'Autorizado' : 'Acceso Denegado'"></span>
                                 </span>
 
                                 <!-- Botón / Chip de Antecedentes y Vigencia -->
                                 <button type="button" @click="abrirHistorialModal(persona)"
-                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300 transition-all shadow-2xs cursor-pointer"
+                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:border-blue-300 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-500/30 transition-all shadow-2xs cursor-pointer"
                                   title="Consultar historial de solicitudes y vigencia de antecedentes">
-                                  <i class="fa-solid fa-clock-rotate-left text-blue-600 text-[11px]"></i>
+                                  <i class="fa-solid fa-clock-rotate-left text-blue-600 dark:text-blue-400 text-[11px]"></i>
                                   <span>Antecedentes</span>
                                   <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold border"
                                     :class="persona.estadoVigencia?.badgeClass || 'bg-slate-100 text-slate-600 border-slate-200'"
                                     x-text="persona.estadoVigencia?.etiqueta || 'Consultar'"></span>
                                 </button>
                               </div>
-                              <p class="text-[11px] text-slate-500 mt-0.5" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
+                              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
                             </div>
                           </div>
 
                           <!-- Controles de Autorización Individual -->
-                          <div class="flex items-center gap-1.5 self-end sm:self-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                          <div class="persona-controls-group flex items-center gap-1.5 self-end sm:self-center p-1 rounded-xl border">
                             <!-- Botón: Autorizar -->
                             <button type="button" @click="setAutorizacionPersona(persona, true)"
-                              class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                              :class="persona.autorizado ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'">
+                              class="btn-autorizar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="persona.autorizado ? 'is-active' : 'is-inactive'">
                               <i class="fa-solid fa-circle-check text-[11px]"></i>
                               <span>Autorizar</span>
                             </button>
 
                             <!-- Botón: No Autorizar / Denegar -->
                             <button type="button" @click="setAutorizacionPersona(persona, false)"
-                              class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                              :class="!persona.autorizado ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-red-700 hover:bg-red-50'">
+                              class="btn-denegar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="!persona.autorizado ? 'is-active' : 'is-inactive'">
                               <i class="fa-solid fa-circle-xmark text-[11px]"></i>
                               <span>No Autorizar</span>
                             </button>
@@ -528,75 +529,69 @@
                   </div>
 
                   <!-- Desglose por cada planta -->
-                  <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1 custom-scroll">
                     <template x-for="plantaItem in matrizRevisionesPorPlanta" :key="plantaItem.id">
-                      <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+                      <div class="planta-dictamen-card p-3 rounded-xl border space-y-2">
                         <!-- Cabecera de la planta -->
-                        <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                        <div class="planta-dictamen-header flex items-center justify-between pb-1.5 border-b">
                           <div class="flex items-center gap-1.5 truncate">
-                            <i class="fa-solid fa-industry text-amber-600 text-xs"></i>
-                            <h4 class="font-bold text-xs text-slate-900 truncate" x-text="plantaItem.nombre"></h4>
+                            <i class="fa-solid fa-industry text-amber-500 text-xs planta-icon"></i>
+                            <h4 class="font-bold text-xs truncate planta-title" x-text="plantaItem.nombre"></h4>
                           </div>
-                          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0"
-                            :class="plantaItem.completa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'"
+                          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold flex-shrink-0"
+                            :class="plantaItem.completa ? 'badge-planta-avalada' : 'badge-planta-pendiente'"
                             x-text="plantaItem.completa ? 'Avalada' : 'Pendiente'"></span>
                         </div>
 
                         <!-- Sub-item SST para esta planta -->
-                        <div class="p-2 rounded-lg border text-xs"
-                          :class="plantaItem.sst.aprobado ? 'bg-emerald-50/80 border-emerald-200' : (plantaItem.sst.rechazado ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-200')">
+                        <div class="dictamen-subitem p-2.5 rounded-xl border text-xs transition-all"
+                          :class="plantaItem.sst.aprobado ? 'is-aprobado' : (plantaItem.sst.rechazado ? 'is-rechazado' : 'is-pendiente')">
                           <div class="flex items-center justify-between">
                             <div class="flex items-center gap-1.5">
-                              <span class="px-1 py-0.5 rounded text-[9px] font-bold"
-                                :class="plantaItem.sst.aprobado ? 'bg-emerald-200 text-emerald-900' : 'bg-slate-200 text-slate-700'">SST</span>
-                              <span class="font-semibold text-slate-800 text-[11px]">Seguridad y Salud</span>
+                              <span class="role-badge-sst px-1.5 py-0.5 rounded text-[9px] font-bold">SST</span>
+                              <span class="font-semibold text-[11px] subitem-title">Seguridad y Salud</span>
                             </div>
-                            <span class="font-bold text-[10px]"
-                              :class="plantaItem.sst.aprobado ? 'text-emerald-700' : (plantaItem.sst.rechazado ? 'text-red-700' : 'text-slate-400')"
+                            <span class="font-bold text-[10px] subitem-status"
                               x-text="plantaItem.sst.aprobado ? 'Aprobado' : (plantaItem.sst.rechazado ? 'Rechazado' : 'Pendiente')"></span>
                           </div>
-                          <p class="text-[10px] text-slate-500 mt-1" x-show="plantaItem.sst.revisor" x-text="plantaItem.sst.revisor + ' · ' + plantaItem.sst.fecha"></p>
-                          <p class="text-[10px] text-slate-600 mt-1 italic" x-show="plantaItem.sst.observacion" x-text="plantaItem.sst.observacion"></p>
-                          <p class="text-[10px] text-red-700 font-medium mt-1" x-show="plantaItem.sst.motivoRechazo" x-text="'Motivo: ' + plantaItem.sst.motivoRechazo"></p>
+                          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1" x-show="plantaItem.sst.revisor" x-text="plantaItem.sst.revisor + ' · ' + plantaItem.sst.fecha"></p>
+                          <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-1 italic" x-show="plantaItem.sst.observacion" x-text="plantaItem.sst.observacion"></p>
+                          <p class="text-[10px] text-red-600 dark:text-red-400 font-medium mt-1" x-show="plantaItem.sst.motivoRechazo" x-text="'Motivo: ' + plantaItem.sst.motivoRechazo"></p>
                         </div>
 
                         <!-- Sub-item GESCO para esta planta -->
-                        <div class="p-2 rounded-lg border text-xs"
-                          :class="plantaItem.gesco.aprobado ? 'bg-emerald-50/80 border-emerald-200' : (plantaItem.gesco.rechazado ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-200')">
+                        <div class="dictamen-subitem p-2.5 rounded-xl border text-xs transition-all"
+                          :class="plantaItem.gesco.aprobado ? 'is-aprobado' : (plantaItem.gesco.rechazado ? 'is-rechazado' : 'is-pendiente')">
                           <div class="flex items-center justify-between">
                             <div class="flex items-center gap-1.5">
-                              <span class="px-1 py-0.5 rounded text-[9px] font-bold"
-                                :class="plantaItem.gesco.aprobado ? 'bg-purple-200 text-purple-900' : 'bg-slate-200 text-slate-700'">GSC</span>
-                              <span class="font-semibold text-slate-800 text-[11px]">Gestión Conocimiento</span>
+                              <span class="role-badge-gesco px-1.5 py-0.5 rounded text-[9px] font-bold">GSC</span>
+                              <span class="font-semibold text-[11px] subitem-title">Gestión Conocimiento</span>
                             </div>
-                            <span class="font-bold text-[10px]"
-                              :class="plantaItem.gesco.aprobado ? 'text-emerald-700' : (plantaItem.gesco.rechazado ? 'text-red-700' : 'text-slate-400')"
+                            <span class="font-bold text-[10px] subitem-status"
                               x-text="plantaItem.gesco.aprobado ? 'Aprobado' : (plantaItem.gesco.rechazado ? 'Rechazado' : 'Pendiente')"></span>
                           </div>
-                          <p class="text-[10px] text-slate-500 mt-1" x-show="plantaItem.gesco.revisor" x-text="plantaItem.gesco.revisor + ' · ' + plantaItem.gesco.fecha"></p>
-                          <p class="text-[10px] text-slate-600 mt-1 italic" x-show="plantaItem.gesco.observacion" x-text="plantaItem.gesco.observacion"></p>
-                          <p class="text-[10px] text-red-700 font-medium mt-1" x-show="plantaItem.gesco.motivoRechazo" x-text="'Motivo: ' + plantaItem.gesco.motivoRechazo"></p>
+                          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1" x-show="plantaItem.gesco.revisor" x-text="plantaItem.gesco.revisor + ' · ' + plantaItem.gesco.fecha"></p>
+                          <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-1 italic" x-show="plantaItem.gesco.observacion" x-text="plantaItem.gesco.observacion"></p>
+                          <p class="text-[10px] text-red-600 dark:text-red-400 font-medium mt-1" x-show="plantaItem.gesco.motivoRechazo" x-text="'Motivo: ' + plantaItem.gesco.motivoRechazo"></p>
                         </div>
                       </div>
                     </template>
                   </div>
 
                   <!-- Dictamen Final SCR -->
-                  <div class="p-3 rounded-xl border transition-all"
-                    :class="dictamenSCR.aprobado ? 'bg-emerald-50/70 border-emerald-200' : (dictamenSCR.rechazado ? 'bg-red-50/70 border-red-200' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-200/50' : 'bg-slate-50 border-slate-200'))">
+                  <div class="dictamen-scr-card p-3 rounded-xl border transition-all"
+                    :class="dictamenSCR.aprobado ? 'is-aprobado' : (dictamenSCR.rechazado ? 'is-rechazado' : (solicitud.estado === 'POR APROBAR' ? 'is-por-aprobar' : 'is-bloqueado'))">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
-                          :class="dictamenSCR.aprobado ? 'bg-emerald-200 text-emerald-800' : (dictamenSCR.rechazado ? 'bg-red-200 text-red-800' : 'bg-slate-200 text-slate-600')">
+                        <div class="scr-icon-box w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold">
                           SCR
                         </div>
                         <div>
-                          <h4 class="font-bold text-xs text-slate-900">Seguridad Corporativa (SCR)</h4>
-                          <p class="text-[10px] text-slate-500" x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
+                          <h4 class="font-bold text-xs scr-title">Seguridad Corporativa (SCR)</h4>
+                          <p class="text-[10px] scr-subtitle" x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
                         </div>
                       </div>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold"
-                        :class="dictamenSCR.aprobado ? 'bg-emerald-100 text-emerald-800' : (dictamenSCR.rechazado ? 'bg-red-100 text-red-800' : (solicitud.estado === 'POR APROBAR' ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-600'))"
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold scr-badge"
                         x-text="dictamenSCR.aprobado ? 'Aprobado' : (dictamenSCR.rechazado ? 'Rechazado' : (solicitud.estado === 'POR APROBAR' ? 'Por Aprobar' : 'Bloqueado'))"></span>
                     </div>
                   </div>
@@ -635,15 +630,15 @@
 
                       <!-- Selección Decisión -->
                       <div class="grid grid-cols-2 gap-2">
-                        <label class="p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
-                          :class="dictamenForm.decision === 'aprobar' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                        <label class="decision-card decision-card-aprobar p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
+                          :class="dictamenForm.decision === 'aprobar' ? 'is-selected bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
                           <input type="radio" name="decision" value="aprobar" x-model="dictamenForm.decision" class="hidden">
                           <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
                           <span>Aprobar</span>
                         </label>
 
-                        <label class="p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
-                          :class="dictamenForm.decision === 'rechazar' ? 'bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                        <label class="decision-card decision-card-rechazar p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
+                          :class="dictamenForm.decision === 'rechazar' ? 'is-selected bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
                           <input type="radio" name="decision" value="rechazar" x-model="dictamenForm.decision" class="hidden">
                           <i class="fa-solid fa-circle-xmark text-red-600 text-sm"></i>
                           <span>Rechazar</span>
@@ -800,7 +795,6 @@
         </div>
 
       </div>
-    </div>
 
     <!-- ============================================================
        MODAL 1: HISTORIAL DE SOLICITUDES Y VIGENCIA DE ANTECEDENTES (Estilo Ticket)
@@ -855,8 +849,8 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             
             <!-- 1. Responsable Registrado -->
-            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3">
-              <div class="w-9 h-9 rounded-lg bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-indigo-500/30">
+            <div class="historial-summary-card card-responsable p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
+              <div class="summary-icon-box w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-indigo-500/30">
                 <i class="fa-solid fa-user-shield"></i>
               </div>
               <div class="min-w-0 flex-1">
@@ -867,8 +861,8 @@
             </div>
 
             <!-- 2. Última Empresa Solicitante -->
-            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3">
-              <div class="w-9 h-9 rounded-lg bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-cyan-500/30">
+            <div class="historial-summary-card card-empresa p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
+              <div class="summary-icon-box w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-cyan-500/30">
                 <i class="fa-solid fa-building"></i>
               </div>
               <div class="min-w-0 flex-1">
@@ -879,8 +873,8 @@
             </div>
 
             <!-- 3. Vigencia Actual (Sin alterar) -->
-            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3">
-              <div class="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-emerald-500/30">
+            <div class="historial-summary-card card-vigencia p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
+              <div class="summary-icon-box w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-emerald-500/30">
                 <i class="fa-solid fa-calendar-check"></i>
               </div>
               <div class="min-w-0 flex-1">

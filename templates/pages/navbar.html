@@ -15,21 +15,65 @@
           <!-- Notificaciones -->
           <div class="relative" @click.outside="notificationsOpen = false">
             <button @click="notificationsOpen = !notificationsOpen"
-              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white">
+              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
+              title="Notificaciones">
               <i class="fa-regular fa-bell text-base"></i>
-              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1"
-                x-text="notifications.length"></span>
+              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1 text-[11px] font-bold"
+                x-show="unreadNotificationsCount > 0"
+                x-text="unreadNotificationsCount" x-cloak></span>
             </button>
             <div x-show="notificationsOpen" x-transition x-cloak
-              class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
-              <div class="px-4 py-3 border-b border-[var(--border-subtle)] font-semibold text-sm">Notificaciones</div>
-              <template x-for="n in notifications" :key="n.id">
-                <div
-                  class="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--steel-100)] text-sm">
-                  <p class="text-[var(--text-primary)]" x-text="n.texto"></p>
-                  <p class="text-xs text-[var(--text-muted)] mt-0.5" x-text="n.tiempo"></p>
+              class="notifications-panel absolute right-0 mt-2 w-[350px] sm:w-[430px] overflow-hidden z-50">
+              <div class="notifications-header flex items-center justify-between">
+                <div class="font-semibold text-sm flex items-center gap-2.5">
+                  <span class="notifications-title font-semibold tracking-tight">Notificaciones</span>
+                  <span class="notifications-count-badge text-[11px] rounded-full font-medium"
+                        x-text="unreadNotificationsCount + ' no leídas'"></span>
                 </div>
-              </template>
+                <button type="button" @click="marcarTodasNotificacionesLeidas()"
+                        x-show="unreadNotificationsCount > 0"
+                        class="btn-mark-all">
+                  Marcar todas
+                </button>
+              </div>
+
+              <div class="max-h-[55vh] sm:max-h-96 overflow-y-auto custom-scroll">
+                <template x-for="n in notifications" :key="n.id">
+                  <div @click="marcarNotificacionLeida(n)"
+                       class="notification-item flex items-start gap-3.5"
+                       :class="!n.leido ? 'is-unread' : ''">
+                    <div class="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm shadow-sm"
+                         :class="{
+                           'notif-icon-success': n.tipo === 'success',
+                           'notif-icon-error': n.tipo === 'error' || n.tipo === 'danger',
+                           'notif-icon-warning': n.tipo === 'warning',
+                           'notif-icon-info': !n.tipo || n.tipo === 'info'
+                         }">
+                      <i class="fa-solid" :class="{
+                        'fa-circle-check': n.tipo === 'success',
+                        'fa-triangle-exclamation': n.tipo === 'error' || n.tipo === 'danger',
+                        'fa-bell': n.tipo === 'warning',
+                        'fa-info': !n.tipo || n.tipo === 'info'
+                      }"></i>
+                    </div>
+                    <div class="flex-1 min-w-0 pr-1">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <p class="text-[13px] truncate font-semibold"
+                           :class="!n.leido ? 'notification-title-unread' : 'notification-title-read'"
+                           x-text="n.titulo"></p>
+                        <span class="notification-time text-[10px] flex-shrink-0 font-medium" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
+                      </div>
+                      <p class="notification-msg text-xs leading-relaxed" x-text="n.mensaje"></p>
+                    </div>
+                    <span x-show="!n.leido" class="unread-dot flex-shrink-0 self-center ml-1"></span>
+                  </div>
+                </template>
+
+                <div x-show="notifications.length === 0" class="notification-empty py-10 text-center text-xs">
+                  <i class="fa-regular fa-bell-slash text-3xl mb-2.5 opacity-40 block"></i>
+                  No tienes notificaciones pendientes
+                </div>
+              </div>
             </div>
           </div>
 

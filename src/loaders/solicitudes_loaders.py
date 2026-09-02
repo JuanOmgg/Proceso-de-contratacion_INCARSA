@@ -290,6 +290,28 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         except Exception as e_eq:
                             print(f"⚠️ Aviso al registrar equipos: {e_eq}")
 
+                    # Notificar a los roles revisores (SST y GESCO) sobre la nueva solicitud
+                    try:
+                        cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
+                        roles_revisores = cursor.fetchall() or []
+                        for r_rev in roles_revisores:
+                            if cod_val:
+                                cursor.execute(
+                                    """
+                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (
+                                        r_rev["id"],
+                                        f"Nueva solicitud para revisión ({r_rev['nombre_rol']})",
+                                        f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}.",
+                                        "info",
+                                        f"/solicitudes/revision/{cod_val}"
+                                    )
+                                )
+                    except Exception as e_notif:
+                        print(f"⚠️ Aviso al generar notificación de nueva solicitud: {e_notif}")
+
                 conexion.commit()
 
         print(f"✅ Se registraron {len(ids_generados)} solicitud(es) con éxito: IDs {ids_generados}")
@@ -613,6 +635,54 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         "UPDATE solicitudes SET estado = %s WHERE id = %s",
                         (nuevo_estado, real_id)
                     )
+
+                # Notificaciones automáticas basadas en el dictamen emitido
+                try:
+                    cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
+                    id_creador = sol.get("diligenciado_por")
+                    
+                    if id_creador:
+                        if decision == "RECHAZADO":
+                            tit = f"Solicitud {cod_sol} Rechazada"
+                            msg = f"{rol} ha rechazado la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Sin motivo detallado'}"
+                            tipo_notif = "error"
+                        elif nuevo_estado == "APROBADO":
+                            tit = f"¡Solicitud {cod_sol} Aprobada!"
+                            msg = f"Tu solicitud {cod_sol} completó todas las revisiones y fue Aprobada para ingreso."
+                            tipo_notif = "success"
+                        else:
+                            tit = f"Revisión {rol} en {cod_sol}"
+                            msg = f"{rol} ha emitido dictamen favorable para {cod_sol}. Estado: {nuevo_estado}."
+                            tipo_notif = "info"
+
+                        cursor.execute(
+                            """
+                            INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
+                        )
+
+                    # Si pasó a POR APROBAR, alertar al rol SCR para el visto bueno final
+                    if nuevo_estado == "POR APROBAR":
+                        cursor.execute("SELECT id FROM roles WHERE nombre_rol = 'SCR' LIMIT 1")
+                        r_scr = cursor.fetchone()
+                        if r_scr:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    f"Solicitud {cod_sol} lista para visto bueno final",
+                                    f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR.",
+                                    "warning",
+                                    f"/solicitudes/revision/{cod_sol}"
+                                )
+                            )
+                except Exception as e_notif:
+                    print(f"⚠️ Aviso al registrar notificación de dictamen: {e_notif}")
 
                 conexion.commit()
 

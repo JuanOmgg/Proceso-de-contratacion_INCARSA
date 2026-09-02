@@ -31,6 +31,8 @@ def upgrade() -> None:
     op.execute("""
         INSERT INTO roles (nombre_rol, descripcion) VALUES
         ('Administrador', ''),
+        ('SuperAdmin', ''),
+        ('Vigilante', ''),
         ('Gestion documental', ''),
         ('SST', 'Seguridad y Salud en el Trabajo'),
         ('GESCO', 'Gestión del conocimiento'),
@@ -55,7 +57,7 @@ def upgrade() -> None:
         ON DUPLICATE KEY UPDATE nombre_empresa = VALUES(nombre_empresa);
     """)
 
-    # 3. Empresa Contratista
+    # 3. Empresa Contratista (sin datos semilla)
     op.execute("""
         CREATE TABLE IF NOT EXISTS emp_contratista (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,17 +65,6 @@ def upgrade() -> None:
             observacion VARCHAR(250) NULL,
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    """)
-
-    op.execute("""
-        INSERT INTO emp_contratista (nombre, observacion) VALUES
-        ('Contratista General S.A.S.',     'Empresa contratista base para pruebas'),
-        ('Electricos del Norte S.A.S.',     'Especialistas en instalaciones electricas industriales'),
-        ('Construcciones Andes Ltda.',       'Obras civiles y mantenimiento de infraestructura'),
-        ('Servicios Tecnicos Omega S.A.S.',  'Mantenimiento mecanico y servicios tecnicos especializados'),
-        ('Logistica y Transporte Rio S.A.',  'Transporte de carga y logistica operacional'),
-        ('Seguridad Industrial Alpha Ltda.', 'Consultoria en SST y seguridad industrial')
-        ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
     """)
 
     # 4. Planta
@@ -107,7 +98,7 @@ def upgrade() -> None:
 
     op.execute("""
         INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
-        (1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
+        (1, 'Juan', 'Prieto', 'CC', '1212121212', '3000000000', 'juandeveloper2427@gmail.com', '$2b$12$MsmbFnqQWPQj.l35Je3yM.9D6j2jLYzq6J3Nas/kcVv.6S0Sp2zgu', 2, 1)
         ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
     """)
 
