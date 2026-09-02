@@ -15,10 +15,9 @@
   <div class="login-page-stripes"></div>
 
   <div class="error-brand-mark">
-    <div class="w-9 h-9 rounded-lg bg-[var(--signal-500)] flex items-center justify-center flex-shrink-0 shadow-md">
-      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
-    </div>
-    <span class="font-display font-semibold tracking-wide">INCARSA</span>
+    <img src="{{ url_for('static', path='img/logo-sidebar.png') }}" alt="PSI" 
+      class="h-10 w-auto object-contain select-none"
+      style="mix-blend-mode: screen;">
   </div>
 
   <div class="login-glow-wrap anim-fade-up" x-data="loginForm()">

@@ -141,7 +141,7 @@ def GET_solicitud(solicitud_id: str):
 
 
 @router.post("/{solicitud_id}/dictamen", status_code=status.HTTP_200_OK)
-def REGISTRAR_dictamen_rt(solicitud_id: int, payload: DictamenInput):
+def REGISTRAR_dictamen_rt(solicitud_id: str, payload: DictamenInput):
     print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
     resultado = REGISTRAR_dictamen_db(solicitud_id, payload.model_dump())
     if not resultado.get("exito"):
@@ -151,7 +151,7 @@ def REGISTRAR_dictamen_rt(solicitud_id: int, payload: DictamenInput):
         )
     return resultado
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def UPDATE_solicitud(solicitud_id: int, datos_in: UPDATE_Schema_Optionals):
+def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals):
 
     print(f"📝 [PATCH] Tomando los campos enviados para actualizar la solicitud #{solicitud_id}...")
     new_updates = datos_in.model_dump(exclude_unset=True)
@@ -181,7 +181,7 @@ def UPDATE_solicitud(solicitud_id: int, datos_in: UPDATE_Schema_Optionals):
 
 
 @router.delete("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def DELETE_solicitud(solicitud_id: int):
+def DELETE_solicitud(solicitud_id: str):
     print(f"🗑️ [DELETE] Eliminando solicitud #{solicitud_id} de la base de datos...")
     resultado = DELETE_solicitud_bd(solicitud_id)
 

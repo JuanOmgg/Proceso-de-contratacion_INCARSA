@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS roles (
 INSERT INTO roles (nombre_rol, descripcion) VALUES
 ('Administrador', ''),
 ('SuperAdmin', ''),
+('Vigilante', ''),
 ('Gestion documental', ''),
 ('SST', 'Seguridad y Salud en el Trabajo'),
 ('GESCO', 'Gestión del conocimiento'),
@@ -77,7 +78,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- Insertar usuario base
 INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
-(1, 'Administrador', 'Sistema', 'CC', '1000000000', '3000000000', 'admin@incarsa.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
+(1, 'Juan', 'Prieto', 'CC', '1212121212', '3000000000', 'juandeveloper2724@gmail.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 1, TRUE)
 ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
 
 -- 6. Personas
