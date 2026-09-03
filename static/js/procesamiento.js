@@ -209,18 +209,42 @@ function procesamientoBoard() {
 
       const term = this.search.trim().toLowerCase();
       if (term) {
+        const termClean = term.replace(/[\s\-_]/g, "");
         rows = rows.filter(s => {
-          const idStr = String(s.id || "").toLowerCase();
-          const contratistaStr = String(s.nombre_emContratista || s.contratista || "").toLowerCase();
-          const plantaStr = (Array.isArray(s.planta) ? s.planta.join(", ") : String(s.planta || "")).toLowerCase();
-          const diligenciadorStr = String(s.diligenciador || s.diligenciadoPor || "").toLowerCase();
+          const idNum = s.id != null ? String(s.id).trim() : "";
+          const idPad = idNum ? idNum.padStart(4, "0") : "";
+          const radCode = idNum ? `rad-${idPad}` : "";
+          const radShort = idNum ? `rad-${idNum}` : "";
+          const codigoCustom = String(s.codigo || s.codigo_solicitud || s.radicado || s.codigo_radicado || "").toLowerCase().trim();
+
+          const codigos = [
+            idNum.toLowerCase(),
+            idPad.toLowerCase(),
+            radCode.toLowerCase(),
+            radShort.toLowerCase(),
+            codigoCustom,
+            codigoCustom.replace(/[\s\-_]/g, ""),
+            radCode.replace(/[\s\-_]/g, ""),
+            radShort.replace(/[\s\-_]/g, "")
+          ];
+
+          const coincideCodigo = codigos.some(c => c && (c.includes(term) || (termClean && c.includes(termClean))));
+
+          const contratistaStr = String(s.nombre_emContratista || s.contratista || s.empresa_contratista || "").toLowerCase();
+          const plantaStr = (Array.isArray(s.planta) ? s.planta.join(", ") : String(s.planta || s.plantas || "")).toLowerCase();
+          const empresaOrigenStr = String(s.empresa_origen || s.empresa || s.nombre_empresa || "").toLowerCase();
+          const diligenciadorStr = String(s.diligenciador || s.diligenciadoPor || s.usuario_creador || "").toLowerCase();
           const estadoStr = String(s.estado || "").toLowerCase();
+          const obsStr = String(s.observaciones || s.observacion || "").toLowerCase();
+
           return (
-            idStr.includes(term) ||
+            coincideCodigo ||
             contratistaStr.includes(term) ||
             plantaStr.includes(term) ||
+            empresaOrigenStr.includes(term) ||
             diligenciadorStr.includes(term) ||
-            estadoStr.includes(term)
+            estadoStr.includes(term) ||
+            obsStr.includes(term)
           );
         });
       }

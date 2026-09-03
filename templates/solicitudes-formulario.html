@@ -1171,7 +1171,7 @@
             <div class="min-w-0">
               <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate" x-text="modalDocsTitle"></h3>
               <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] px-2 py-0.5 rounded border border-[var(--paper-shadow)]" x-text="modalDocsSubtitle"></span>
+                <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 dark:text-zinc-300 px-2 py-0.5 rounded border border-[var(--paper-shadow)]" x-text="modalDocsSubtitle"></span>
               </div>
             </div>
           </div>
@@ -1179,14 +1179,14 @@
           <!-- Lista de Documentos estilo Ticket con scroll -->
           <div class="border-y border-dashed border-[var(--paper-shadow)] py-4 my-2 space-y-3 max-h-[55vh] overflow-y-auto custom-scroll pr-1">
             <template x-for="(doc, idx) in modalDocsList" :key="idx">
-              <div class="doc-ticket-row p-3.5 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 hover:bg-[#efe9dc]/85 transition-all flex items-center justify-between gap-3 group">
+              <div class="doc-ticket-row p-3.5 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] hover:bg-[#efe9dc]/85 dark:hover:bg-white/[0.08] transition-all flex items-center justify-between gap-3 group">
                 <div class="flex items-center gap-3 min-w-0">
                   <div class="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <i class="fa-solid fa-file-pdf text-lg"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="doc-type-badge inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#faf7f0] text-[var(--paper-ink)] border border-[var(--paper-shadow)]" x-text="doc.tipo"></span>
-                    <p class="text-xs font-bold text-[var(--paper-ink)] truncate mt-1" x-text="doc.nombre"></p>
+                    <span class="doc-type-badge inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#faf7f0] dark:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 border border-[var(--paper-shadow)]" x-text="doc.tipo"></span>
+                    <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-zinc-100 truncate mt-1" x-text="doc.nombre"></p>
                   </div>
                 </div>
                 <template x-if="doc.url">

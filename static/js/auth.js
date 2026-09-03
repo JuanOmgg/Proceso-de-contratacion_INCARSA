@@ -458,6 +458,13 @@ function loginForm() {
           u => u.correo.toLowerCase() === this.correo.trim().toLowerCase()
         );
         if (mockMatch) {
+          if (mockMatch.is_active === 0 || mockMatch.is_active === false || mockMatch.is_active === "0") {
+            await new Promise(r => setTimeout(r, 450));
+            this.splash.activo = false;
+            this.submitting = false;
+            this.error = "Tu cuenta se encuentra inactiva. Comunícate con el administrador.";
+            return;
+          }
           matchedUser = {
             nombre: `${mockMatch.nombres} ${mockMatch.apellidos}`.trim(),
             correo: mockMatch.correo,

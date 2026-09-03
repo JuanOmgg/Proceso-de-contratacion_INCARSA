@@ -39,7 +39,7 @@
             <div class="relative flex-1 min-w-[160px] sm:max-w-xs">
               <i
                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
-              <input type="text" x-model="search" @input="resetPage()" placeholder="Buscar contratista, planta..."
+              <input type="text" x-model="search" @input="resetPage()" placeholder="Buscar código (RAD-0001), contratista..."
                 class="input-field w-full rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm">
             </div>
 
@@ -92,8 +92,8 @@
             </div>
           </div>
 
-          <!-- Derecha: Chips de Filtro Estado (Texto limpio y compacto sin iconos) -->
-          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1 flex-shrink-0">
+          <!-- Derecha: Chips de Filtro Estado (Fila única desplazable en móvil) -->
+          <div class="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar max-w-full py-1.5 px-0.5 flex-shrink-0">
             <button type="button" @click="filtroEstado = 'TODOS'; resetPage()" 
               class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
               :class="filtroEstado === 'TODOS' ? 'is-active scale-105' : 'is-idle'">
@@ -130,14 +130,15 @@
         <!-- ===== Tarjetas de trazabilidad ===== -->
         <section class="grid lg:grid-cols-2 gap-5">
           <template x-for="solicitud in paginated" :key="solicitud.id">
-            <div class="tracking-card p-5" :class="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0' ? 'opacity-75 bg-gray-50/50' : ''">
+            <div class="tracking-card p-5" :class="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0' ? 'tracking-card-inactiva' : ''">
               <!-- Encabezado -->
               <div class="flex items-start justify-between mb-1 gap-2">
                 <div>
                   <h3 class="font-display font-semibold text-[var(--ink-900)]" x-text="solicitud.nombre_emContratista || solicitud.contratista || '—'"></h3>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
-                  <span x-show="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0'" class="status-pill status-usuario-inactivo">Inactivo</span>
+                  <span x-show="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0'"
+                    class="status-pill tracking-card-inactive-badge">Inactivo</span>
                   <span class="status-pill" :class="estadoEstilos(solicitud.estado)" x-text="solicitud.estado"></span>
                 </div>
               </div>

@@ -1240,6 +1240,21 @@ html.dark select option:checked {
   color: #38bdf8 !important;
 }
 
+:root.dark .doc-ticket-row {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark .doc-ticket-row:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+:root.dark .doc-type-badge {
+  background: #14161f !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
 :root.dark .modal-panel p,
 :root.dark .modal-panel p.italic {
   color: #94a3b8 !important;
@@ -3863,5 +3878,41 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
 :root.dark div[x-show="open"] a:has(.fa-arrow-right-from-bracket):hover i {
   filter: drop-shadow(0 0 14px #ff3355) !important;
   transform: translateX(2px) scale(1.18);
+}
+
+/* =========================================================
+   TARJETAS DE PROCESAMIENTO INACTIVAS (MODO OSCURO NEÓN)
+   ========================================================= */
+:root.dark .tracking-card.tracking-card-inactiva {
+  background: linear-gradient(145deg, #181a22 0%, #13141a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 4px solid #ff2a55 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+:root.dark .tracking-card.tracking-card-inactiva:hover {
+  background: linear-gradient(145deg, #1d1f2a 0%, #161820 100%) !important;
+  border-color: rgba(255, 42, 85, 0.35) !important;
+  border-left-color: #ff4d73 !important;
+  box-shadow: 0 6px 24px rgba(255, 42, 85, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  transform: translateY(-2px) !important;
+}
+
+:root.dark .tracking-card.tracking-card-inactiva h3 {
+  color: #f1f5f9 !important;
+}
+
+:root.dark .tracking-card.tracking-card-inactiva .tracking-card-inactive-badge {
+  background: rgba(255, 42, 85, 0.14) !important;
+  color: #ff4d73 !important;
+  border: 1px solid rgba(255, 42, 85, 0.45) !important;
+  box-shadow: 0 0 10px rgba(255, 42, 85, 0.25) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.6) !important;
+  padding: 2px 10px !important;
+}
+
+:root.dark .tracking-card-inactive-badge::before {
+  display: none !important;
+  content: none !important;
 }
 

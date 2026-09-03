@@ -133,37 +133,39 @@
               </div>
             </div>
 
-            <!-- Chips de Filtro Estado -->
-            <div class="flex items-center gap-2 overflow-visible py-1">
-              <button type="button" @click="filtroEstado = 'todos'" 
-                class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
-                :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">
-                Todos
-              </button>
-              <button type="button" @click="filtroEstado = 'activos'" 
-                class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
-                :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
-                <i class="fa-solid fa-circle-check text-xs mr-1"></i> Activos
-              </button>
-              <button type="button" @click="filtroEstado = 'inactivos'" 
-                class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
-                :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
-                <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
+            <!-- Chips de Filtro Estado + Limpiar filtros -->
+            <div class="flex items-center justify-between w-full lg:w-auto gap-2 py-1">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+                <button type="button" @click="filtroEstado = 'todos'" 
+                  class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">
+                  Todos
+                </button>
+                <button type="button" @click="filtroEstado = 'activos'" 
+                  class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
+                  <i class="fa-solid fa-circle-check text-xs mr-1"></i> Activos
+                </button>
+                <button type="button" @click="filtroEstado = 'inactivos'" 
+                  class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
+                  <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
+                </button>
+              </div>
+              <button type="button" @click="limpiarFiltros()" class="action-icon-btn flex-shrink-0" data-tooltip="Limpiar filtros">
+                <i class="fa-solid fa-filter-circle-xmark"></i>
               </button>
             </div>
-            <button type="button" @click="limpiarFiltros()" class="action-icon-btn" data-tooltip="Limpiar filtros">
-              <i class="fa-solid fa-filter-circle-xmark"></i>
-            </button>
             <a href="/solicitudes/nueva"
-              class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2">
+              class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 w-full lg:w-auto flex-shrink-0">
               <i class="fa fa-plus text-xs"></i> Nueva solicitud
             </a>
           </div>
 
           <!-- ===== Tabla ===== -->
           <div class="wizard-card overflow-hidden">
-            <div class="w-full overflow-x-auto xl:overflow-x-visible">
-              <table class="w-full text-sm data-table text-center">
+            <div class="w-full overflow-x-auto xl:overflow-x-visible custom-scroll">
+              <table class="w-full min-w-[850px] text-sm data-table text-center">
                 <thead>
                   <tr>
                     <th class="w-12 px-3 py-3 text-center">#</th>

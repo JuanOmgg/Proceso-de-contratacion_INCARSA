@@ -79,7 +79,8 @@ def login(payload: LoginInput):
             detail="Credenciales incorrectas."
         )
 
-    if not usuario.get("is_active"):
+    is_active_val = usuario.get("is_active")
+    if not is_active_val or str(is_active_val).strip() in ("0", "false", "False"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tu cuenta se encuentra inactiva. Comunícate con el administrador."

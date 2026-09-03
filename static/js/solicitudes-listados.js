@@ -350,9 +350,22 @@ function solicitudesTable() {
             const text = this.search.trim().toLowerCase();
 
             return this.solicitudes.filter(s => {
-                // Búsqueda en múltiples campos incluyendo código y observaciones
-                const matchTexto = !text ||
+                const idNum = s.id != null ? String(s.id).trim() : "";
+                const idPad = idNum ? idNum.padStart(4, "0") : "";
+                const radCode = idNum ? `rad-${idPad}` : "";
+                const radShort = idNum ? `rad-${idNum}` : "";
+                const textClean = text.replace(/[\s\-_]/g, "");
+
+                const matchCodigo = !text ||
                     (s.codigo || "").toLowerCase().includes(text) ||
+                    radCode.includes(text) ||
+                    radShort.includes(text) ||
+                    idNum.includes(text) ||
+                    idPad.includes(text) ||
+                    (textClean && radCode.replace(/[\s\-_]/g, "").includes(textClean));
+
+                // Búsqueda en múltiples campos incluyendo código y observaciones
+                const matchTexto = matchCodigo ||
                     (s.observaciones || "").toLowerCase().includes(text) ||
                     (s.nombre_empresa || "").toLowerCase().includes(text) ||
                     (s.nombre_emContratista || "").toLowerCase().includes(text) ||

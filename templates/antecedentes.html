@@ -35,60 +35,60 @@
         <div class="max-w-7xl mx-auto space-y-6">
 
           <!-- ===== 1. CARDS DE INDICADORES NEÓN (gauge-card) ===== -->
-          <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
             
             <!-- Total Personas (Cian Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
-              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-users-viewfinder text-xl"></i>
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-users-viewfinder text-base sm:text-xl"></i>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total personas</p>
-                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalRegistros"></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Total personas</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalRegistros"></p>
               </div>
             </div>
 
             <!-- Vigentes (Verde Esmeralda Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
-              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-shield-halved text-xl"></i>
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-shield-halved text-base sm:text-xl"></i>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Revisiones vigentes</p>
-                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalVigentes"></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium truncate sm:whitespace-normal" title="Revisiones vigentes">Revisiones vigentes</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVigentes"></p>
               </div>
             </div>
 
             <!-- Por Vencer (Ámbar / Oro Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
-              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clock-rotate-left text-base sm:text-xl"></i>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Por vencer (≤30d)</p>
-                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalPorVencer"></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Por vencer (≤30d)</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalPorVencer"></p>
               </div>
             </div>
 
             <!-- Consultas Vencidas (Rojo Carmesí Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-total rounded-xl">
-              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-calendar-xmark text-xl"></i>
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-total rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-xmark text-base sm:text-xl"></i>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Consultas vencidas</p>
-                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalVencidos"></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Consultas vencidas</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVencidos"></p>
               </div>
             </div>
 
             <!-- Total Solicitudes Históricas (Morada Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 col-span-2 sm:col-span-1 neon-stat-card neon-card-milpa rounded-xl">
-              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-clipboard-list text-xl"></i>
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 col-span-2 sm:col-span-1 neon-stat-card neon-card-milpa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clipboard-list text-base sm:text-xl"></i>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Ingresos solicitados</p>
-                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalIngresosHistoricos"></p>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Ingresos solicitados</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalIngresosHistoricos"></p>
               </div>
             </div>
 
@@ -132,8 +132,8 @@
 
           <!-- ===== 3. TABLA DE ANTECEDENTES (wizard-card) ===== -->
           <div class="wizard-card overflow-hidden">
-            <div class="w-full overflow-x-auto xl:overflow-x-visible">
-              <table class="data-table w-full text-left text-sm">
+            <div class="w-full overflow-x-auto xl:overflow-x-visible custom-scroll">
+              <table class="data-table w-full min-w-[850px] text-left text-sm">
                 <thead>
                   <tr class="border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
                     <th class="px-4 py-3.5 text-center w-12">#</th>
