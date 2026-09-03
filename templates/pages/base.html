@@ -36,8 +36,20 @@
     })();
   </script>
 
+  <!-- Ocultar de inmediato modales y elementos condicionales antes de que Alpine inicialice (FOUC) -->
+  <style>
+    [x-cloak], [x-cloak] * {
+      display: none !important;
+    }
+  </style>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
 
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">

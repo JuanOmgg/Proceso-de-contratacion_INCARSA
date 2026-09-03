@@ -123,7 +123,7 @@ function loginForm() {
       this.olvide.enviando = true;
 
       try {
-        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : "http://127.0.0.1:8000/auth";
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
         const response = await fetch(`${authUrl}/solicitar_recuperacion`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -178,7 +178,7 @@ function loginForm() {
       this.olvide.codigo = "";
 
       try {
-        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : "http://127.0.0.1:8000/auth";
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
         const response = await fetch(`${authUrl}/solicitar_recuperacion`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -219,7 +219,7 @@ function loginForm() {
 
       // Intentar validar contra el backend
       try {
-        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : "http://127.0.0.1:8000/auth";
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
         const response = await fetch(`${authUrl}/verificar-codigo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -273,7 +273,7 @@ function loginForm() {
       this.olvide.enviando = true;
 
       try {
-        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : "http://127.0.0.1:8000/auth";
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
         const response = await fetch(`${authUrl}/restablecer-contrasena`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -568,12 +568,12 @@ function loginForm() {
       });
 
       // Esperar resolución de todas las llamadas (con timeout de seguridad de 6s)
-      const timeoutSeguridad = new Promise(resolve => setTimeout(resolve, 6000));
+      const timeoutSeguridad = new Promise(resolve => setTimeout(resolve, 8000));
       await Promise.race([Promise.allSettled(tareas), timeoutSeguridad]);
 
       // Mínimo 1.2 segundos para asegurar apreciación visual y fluidez cinematográfica
       const transcurrido = Date.now() - startTime;
-      const duracionMinima = 1200;
+      const duracionMinima = 2200;
       if (transcurrido < duracionMinima) {
         await new Promise(res => setTimeout(res, duracionMinima - transcurrido));
       }

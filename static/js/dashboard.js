@@ -28,12 +28,20 @@ function appShell() {
       document.documentElement.classList.toggle('dark', this.darkMode);
 
       // Restaurar el nombre y rol del usuario desde la sesión si existe
-      const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || "null");
+      let sesion = null;
+      if (typeof getAuthSession === "function") {
+        sesion = getAuthSession();
+      } else {
+        try {
+          sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        } catch (e) {}
+      }
+
       if (sesion) {
         this.activeRole = sesion.rol || this.activeRole;
         this.userId = sesion.id || this.userId;
         this.roleId = sesion.id_rol || this.roleId;
-        this._userName = sesion.nombre || "Laura Gómez";
+        this._userName = sesion.nombre || "Usuario";
         this._userInitials = (this._userName.split(" ").map(p => p[0]).join("")).substring(0, 2).toUpperCase();
       }
 
@@ -57,7 +65,7 @@ function appShell() {
       try {
         const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
           ? API.notificaciones 
-          : "http://127.0.0.1:8000/api/v1/notificaciones";
+          : `${window.location.origin}/api/v1/notificaciones`;
         const params = new URLSearchParams();
         if (this.userId) params.append("id_usuario", this.userId);
         if (this.roleId) params.append("id_rol", this.roleId);
@@ -77,7 +85,7 @@ function appShell() {
         try {
           const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
             ? API.notificaciones 
-            : "http://127.0.0.1:8000/api/v1/notificaciones";
+            : `${window.location.origin}/api/v1/notificaciones`;
           await fetch(`${notifUrl}/${n.id}/leer`, { method: "PATCH" });
           n.leido = true;
           if (this.unreadNotificationsCount > 0) {
@@ -96,7 +104,7 @@ function appShell() {
       try {
         const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
           ? API.notificaciones 
-          : "http://127.0.0.1:8000/api/v1/notificaciones";
+          : `${window.location.origin}/api/v1/notificaciones`;
         await fetch(`${notifUrl}/marcar-todas-leidas`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -133,6 +141,18 @@ function appShell() {
     },
     toggleModule(name) {
       this.openModules[name] = !this.openModules[name];
+    },
+    cerrarSesion() {
+      if (typeof cerrarSesionUsuario === "function") {
+        cerrarSesionUsuario();
+      } else {
+        try {
+          sessionStorage.clear();
+          localStorage.removeItem("incarsa_token");
+          localStorage.removeItem("incarsa_session");
+        } catch (e) {}
+        window.location.replace("/login?logout=1");
+      }
     }
   };
 }

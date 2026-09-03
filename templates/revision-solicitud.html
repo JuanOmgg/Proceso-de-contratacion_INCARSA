@@ -113,10 +113,11 @@
                 <i class="fa-regular fa-user w-4"></i> <span>Ver perfil</span>
               </button>
               <div class="dropdown-divider"></div>
-              <a href="/login"
+              <button type="button"
+                @click="(typeof cerrarSesion === 'function') ? cerrarSesion() : cerrarSesionUsuario()"
                 class="dropdown-item-logout w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] dark:hover:bg-slate-800 flex items-center gap-2 text-[var(--state-rechazado)]">
                 <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> <span>Cerrar sesión</span>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -868,7 +869,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                <p class="text-sm font-semibold text-cyan-600 dark:text-cyan-400 truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
                 <span class="text-[11px] text-[var(--paper-muted)]">Solicitante reciente</span>
               </div>
             </div>
@@ -880,7 +881,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Vigencia Actual</span>
-                <p class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate mt-0.5" x-text="formatearSoloFecha(detalleHistorial.fecha_consulta)"></p>
+                <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearSoloFecha(detalleHistorial.fecha_consulta)"></p>
                 <span class="text-[11px] font-medium" :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass" x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
               </div>
             </div>
@@ -922,19 +923,25 @@
               </div>
 
               <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04]">
-                  <span class="subtitles-modal text-[10px] font-semibold">Desde:</span>
-                  <input type="date" x-model="fechaDesdeHistorial"
-                    class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
+                  @click="$refs.fpDesdeInput && $refs.fpDesdeInput._flatpickr && $refs.fpDesdeInput._flatpickr.open()">
+                  <span class="subtitles-modal text-[10px] font-semibold select-none">Desde:</span>
+                  <input type="text" x-ref="fpDesdeInput" x-init="initFlatpickrHistorial($el, 'desde')"
+                    placeholder="dd/mm/aaaa"
+                    class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
+                  <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
                 </div>
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04]">
-                  <span class="subtitles-modal text-[10px] font-semibold">Hasta:</span>
-                  <input type="date" x-model="fechaHastaHistorial"
-                    class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
+                  @click="$refs.fpHastaInput && $refs.fpHastaInput._flatpickr && $refs.fpHastaInput._flatpickr.open()">
+                  <span class="subtitles-modal text-[10px] font-semibold select-none">Hasta:</span>
+                  <input type="text" x-ref="fpHastaInput" x-init="initFlatpickrHistorial($el, 'hasta')"
+                    placeholder="dd/mm/aaaa"
+                    class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
+                  <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
                 </div>
                 <button type="button" x-show="searchHistorial || fechaDesdeHistorial || fechaHastaHistorial"
-                  @click="searchHistorial = ''; fechaDesdeHistorial = ''; fechaHastaHistorial = ''; historialPage = 1;"
-                  class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] text-xs p-1 rounded-md hover:bg-black/5 transition-colors" title="Limpiar filtros de historial">
+                  @click="limpiarFiltrosHistorial()"
+                  class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] text-xs p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Limpiar filtros de historial">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -1108,7 +1115,7 @@
               </div>
               <div class="min-w-0">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                <p class="text-sm font-bold text-cyan-600 dark:text-cyan-400 truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'INCARSA S.A.S.'"></p>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'INCARSA S.A.S.'"></p>
                 <span class="text-[11px] text-[var(--paper-muted)]">Solicitante activa</span>
               </div>
             </div>
@@ -1120,7 +1127,7 @@
               </div>
               <div class="min-w-0">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Fecha de Revisión</span>
-                <p class="text-sm font-bold text-[var(--paper-ink)] truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
                 <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Auto-actualizada hoy</span>
               </div>
             </div>
@@ -1132,7 +1139,7 @@
               </div>
               <div class="min-w-0">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Nueva Vigencia (+1 Año)</span>
-                <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400 truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
                 <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Vigente (365 días)</span>
               </div>
             </div>

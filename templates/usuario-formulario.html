@@ -80,13 +80,33 @@
                 <p class="form-error" x-show="errors.apellidos" x-text="errors.apellidos"></p>
               </div>
 
-              <div>
+              <div class="relative text-left" x-data="{ openTipoDoc: false }" @click.outside="openTipoDoc = false">
                 <label class="form-label">Tipo de documento*</label>
-                <select x-model="form.tipo_documento" class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                <button type="button" @click="openTipoDoc = !openTipoDoc"
+                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm flex items-center justify-between cursor-pointer text-left bg-white dark:bg-[#18181b] border border-[var(--border-subtle)] dark:border-white/15">
+                  <span class="truncate font-medium text-[var(--text-primary)] dark:text-zinc-100"
+                    x-text="form.tipo_documento || 'Selecciona tipo'"></span>
+                  <i class="fa-solid fa-chevron-down text-xs text-[var(--text-muted)] dark:text-zinc-400 transition-transform duration-200"
+                    :class="openTipoDoc ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+                </button>
+
+                <div x-show="openTipoDoc" x-cloak
+                  x-transition:enter="transition ease-out duration-150"
+                  x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave="transition ease-in duration-100"
+                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                  class="absolute z-50 mt-1.5 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--border-subtle)] dark:border-white/15 py-1.5 overflow-hidden max-h-60 overflow-y-auto">
                   <template x-for="tipo in tiposDocumento" :key="tipo">
-                    <option :value="tipo" x-text="tipo"></option>
+                    <div @click="form.tipo_documento = tipo; openTipoDoc = false"
+                      class="mx-1 px-3 py-2 text-xs sm:text-sm rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                      :class="form.tipo_documento === tipo ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                      <span x-text="tipo"></span>
+                      <i x-show="form.tipo_documento === tipo" class="fa-solid fa-check text-xs text-[var(--signal-500)]"></i>
+                    </div>
                   </template>
-                </select>
+                </div>
               </div>
               <div>
                 <label class="form-label">Número de documento*</label>
@@ -110,16 +130,38 @@
                 <p class="form-error" x-show="errors.correo" x-text="errors.correo"></p>
               </div>
 
-              <div :class="!isEdit ? 'sm:col-span-2' : ''">
+              <div :class="!isEdit ? 'sm:col-span-2' : ''" class="relative text-left" x-data="{ openRol: false }" @click.outside="openRol = false">
                 <label class="form-label">Rol*</label>
-                <select x-model="form.rol" class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
-                  :class="errors.rol ? 'has-error' : ''">
-                  <option value="" disabled>Selecciona un rol</option>
+                <button type="button" @click="openRol = !openRol"
+                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm flex items-center justify-between cursor-pointer text-left bg-white dark:bg-[#18181b] border border-[var(--border-subtle)] dark:border-white/15"
+                  :class="errors.rol ? 'has-error ring-1 ring-red-500' : ''">
+                  <span class="truncate font-medium"
+                    :class="form.rol ? 'text-[var(--text-primary)] dark:text-zinc-100' : 'text-[var(--text-muted)]'"
+                    x-text="form.rol ? ((roles && roles.find(r => r.id == form.rol)) ? roles.find(r => r.id == form.rol).nombre_rol : 'Rol seleccionado') : 'Selecciona un rol'"></span>
+                  <i class="fa-solid fa-chevron-down text-xs text-[var(--text-muted)] dark:text-zinc-400 transition-transform duration-200"
+                    :class="openRol ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+                </button>
+
+                <!-- Menú flotante personalizado -->
+                <div x-show="openRol" x-cloak
+                  x-transition:enter="transition ease-out duration-150"
+                  x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave="transition ease-in duration-100"
+                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                  class="absolute z-50 mt-1.5 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--border-subtle)] dark:border-white/15 py-1.5 overflow-hidden max-h-60 overflow-y-auto">
+                  
                   <template x-for="r in roles" :key="r.id">
-                    <option :value="r.id" x-text="r.nombre_rol"></option>
+                    <div @click="form.rol = r.id; if (errors.rol) errors.rol = ''; openRol = false"
+                      class="mx-1 px-3 py-2 text-xs sm:text-sm rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                      :class="form.rol == r.id ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                      <span x-text="r.nombre_rol"></span>
+                      <i x-show="form.rol == r.id" class="fa-solid fa-check text-xs text-[var(--signal-500)]"></i>
+                    </div>
                   </template>
-                </select>
-                <p class="form-error" x-show="errors.rol || errors.id_rol" x-text="errors.rol || errors.id_rol"></p>
+                </div>
+                <p class="form-error mt-1" x-show="errors.rol || errors.id_rol" x-text="errors.rol || errors.id_rol"></p>
               </div>
               <div x-show="isEdit" x-cloak>
                 <label class="form-label">Estado</label>

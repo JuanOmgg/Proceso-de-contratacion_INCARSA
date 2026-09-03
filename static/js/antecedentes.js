@@ -29,6 +29,8 @@ function antecedentesModule() {
     fechaHastaHistorial: "",
     historialPage: 1,
     historialPageSize: 5,
+    fpHistorialDesdeInstance: null,
+    fpHistorialHastaInstance: null,
 
     // Filtros y paginación en Modal de Formulario (Modal 2)
     searchFormHistorial: "",
@@ -36,6 +38,108 @@ function antecedentesModule() {
     searchFormFechaHasta: "",
     formHistorialPage: 1,
     formHistorialPageSize: 5,
+    fpFormDesdeInstance: null,
+    fpFormHastaInstance: null,
+
+    initFlatpickrHistorial(el, tipo) {
+      if (typeof flatpickr === "undefined") return;
+      const isDesde = tipo === "desde";
+      const instance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium placeholder:text-[var(--paper-muted)]",
+        disableMobile: "true",
+        allowInput: false,
+        placeholder: "dd/mm/aaaa",
+        onChange: (selectedDates, dateStr) => {
+          if (isDesde) {
+            this.fechaDesdeHistorial = dateStr;
+            if (this.fpHistorialHastaInstance) {
+              this.fpHistorialHastaInstance.set("minDate", dateStr || null);
+            }
+          } else {
+            this.fechaHastaHistorial = dateStr;
+            if (this.fpHistorialDesdeInstance) {
+              this.fpHistorialDesdeInstance.set("maxDate", dateStr || null);
+            }
+          }
+          this.historialPage = 1;
+        }
+      });
+
+      if (isDesde) {
+        this.fpHistorialDesdeInstance = instance;
+      } else {
+        this.fpHistorialHastaInstance = instance;
+      }
+    },
+
+    limpiarFiltrosHistorial() {
+      this.searchHistorial = "";
+      this.fechaDesdeHistorial = "";
+      this.fechaHastaHistorial = "";
+      this.historialPage = 1;
+      if (this.fpHistorialDesdeInstance) {
+        this.fpHistorialDesdeInstance.clear();
+        this.fpHistorialDesdeInstance.set("maxDate", null);
+      }
+      if (this.fpHistorialHastaInstance) {
+        this.fpHistorialHastaInstance.clear();
+        this.fpHistorialHastaInstance.set("minDate", null);
+      }
+    },
+
+    initFlatpickrForm(el, tipo) {
+      if (typeof flatpickr === "undefined") return;
+      const isDesde = tipo === "desde";
+      const instance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium placeholder:text-[var(--paper-muted)]",
+        disableMobile: "true",
+        allowInput: false,
+        placeholder: "dd/mm/aaaa",
+        onChange: (selectedDates, dateStr) => {
+          if (isDesde) {
+            this.searchFormFechaDesde = dateStr;
+            if (this.fpFormHastaInstance) {
+              this.fpFormHastaInstance.set("minDate", dateStr || null);
+            }
+          } else {
+            this.searchFormFechaHasta = dateStr;
+            if (this.fpFormDesdeInstance) {
+              this.fpFormDesdeInstance.set("maxDate", dateStr || null);
+            }
+          }
+          this.formHistorialPage = 1;
+        }
+      });
+
+      if (isDesde) {
+        this.fpFormDesdeInstance = instance;
+      } else {
+        this.fpFormHastaInstance = instance;
+      }
+    },
+
+    limpiarFiltrosForm() {
+      this.searchFormHistorial = "";
+      this.searchFormFechaDesde = "";
+      this.searchFormFechaHasta = "";
+      this.formHistorialPage = 1;
+      if (this.fpFormDesdeInstance) {
+        this.fpFormDesdeInstance.clear();
+        this.fpFormDesdeInstance.set("maxDate", null);
+      }
+      if (this.fpFormHastaInstance) {
+        this.fpFormHastaInstance.clear();
+        this.fpFormHastaInstance.set("minDate", null);
+      }
+    },
 
     // Modal Formulario de Antecedentes y Detalles (Actualiza vigencia)
     showFormModal: false,
@@ -651,10 +755,7 @@ function antecedentesModule() {
       this.mensajeExito = "";
       this.mensajeError = "";
       this.copiadoFeedback = null;
-      this.searchFormHistorial = "";
-      this.searchFormFechaDesde = "";
-      this.searchFormFechaHasta = "";
-      this.formHistorialPage = 1;
+      this.limpiarFiltrosForm();
       this.showFormModal = true;
 
       // Calcular hoy como nueva última revisión local y exactamente +1 año como nueva fecha de consulta (YYYY-MM-DD)
@@ -752,10 +853,7 @@ function antecedentesModule() {
       const idPersona = item.id_persona || item.id;
       this.cargandoHistorial = true;
       this.copiadoFeedback = null;
-      this.searchHistorial = "";
-      this.fechaDesdeHistorial = "";
-      this.fechaHastaHistorial = "";
-      this.historialPage = 1;
+      this.limpiarFiltrosHistorial();
       this.showHistorialModal = true;
 
       // Asignar datos previos conocidos

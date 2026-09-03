@@ -9,7 +9,7 @@
 
 {% block extra_js %}
   <!-- Scripts específicos del Dashboard -->
-  <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+  <script src="{{ url_for('static', path='js/dashboard.js') }}?v=2.1"></script>
   
 {% endblock %}
 
@@ -35,70 +35,70 @@
       
 
       <!-- ---------- CONTENT ---------- -->
-      <main class="flex-1 p-6 space-y-6">
+      <main class="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 min-w-0 max-w-full">
 
         <!-- Cards de Indicadores Neón (Mismo estilo que Antecedentes) -->
-        <section x-data="dashboardCards()" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <section x-data="dashboardCards()" class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4 min-w-0 max-w-full">
 
           <!-- Enviados (Cian Neón) -->
-          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
-            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-              <i class="fa-solid fa-paper-plane text-xl"></i>
+          <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-incarsa rounded-xl min-w-0">
+            <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-paper-plane text-base sm:text-xl"></i>
             </div>
-            <div>
-              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Enviados</p>
-              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.enviados"></p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] sm:text-xs text-[var(--text-muted)] neon-label font-medium truncate">Enviados</p>
+              <p class="gauge-value text-xl sm:text-2xl font-semibold neon-value" x-text="counts.enviados"></p>
             </div>
           </div>
 
           <!-- En revisión (Morada Neón) -->
-          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-milpa rounded-xl">
-            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-              <i class="fa-solid fa-magnifying-glass text-xl"></i>
+          <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-milpa rounded-xl min-w-0">
+            <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-magnifying-glass text-base sm:text-xl"></i>
             </div>
-            <div>
-              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">En revisión</p>
-              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.enRevision"></p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] sm:text-xs text-[var(--text-muted)] neon-label font-medium truncate">En revisión</p>
+              <p class="gauge-value text-xl sm:text-2xl font-semibold neon-value" x-text="counts.enRevision"></p>
             </div>
           </div>
 
           <!-- Por aprobar (Ámbar / Oro Neón) -->
-          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
-            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-              <i class="fa-solid fa-clipboard-check text-xl"></i>
+          <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-carboinsa rounded-xl min-w-0">
+            <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-clipboard-check text-base sm:text-xl"></i>
             </div>
-            <div>
-              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Por aprobar</p>
-              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.porAprobar"></p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] sm:text-xs text-[var(--text-muted)] neon-label font-medium truncate">Por aprobar</p>
+              <p class="gauge-value text-xl sm:text-2xl font-semibold neon-value" x-text="counts.porAprobar"></p>
             </div>
           </div>
 
           <!-- Aprobados (Verde Esmeralda Neón) -->
-          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
-            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-              <i class="fa-solid fa-circle-check text-xl"></i>
+          <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-uniminas rounded-xl min-w-0">
+            <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-circle-check text-base sm:text-xl"></i>
             </div>
-            <div>
-              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Aprobados</p>
-              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.aprobados"></p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] sm:text-xs text-[var(--text-muted)] neon-label font-medium truncate">Aprobados</p>
+              <p class="gauge-value text-xl sm:text-2xl font-semibold neon-value" x-text="counts.aprobados"></p>
             </div>
           </div>
 
           <!-- Total de solicitudes (Magenta / Rosa Neón) -->
-          <div class="gauge-card p-4 flex items-center gap-4 col-span-2 lg:col-span-1 neon-stat-card neon-card-total rounded-xl">
-            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-              <i class="fa-solid fa-layer-group text-xl"></i>
+          <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 col-span-2 lg:col-span-1 neon-stat-card neon-card-total rounded-xl min-w-0">
+            <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-layer-group text-base sm:text-xl"></i>
             </div>
-            <div>
-              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total de solicitudes</p>
-              <p class="gauge-value text-2xl font-semibold neon-value" x-text="counts.total"></p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] sm:text-xs text-[var(--text-muted)] neon-label font-medium truncate">Total de solicitudes</p>
+              <p class="gauge-value text-xl sm:text-2xl font-semibold neon-value" x-text="counts.total"></p>
             </div>
           </div>
         </section>
 
         <!-- ===== B. Tabla de solicitudes activas ===== -->
         <section x-data="solicitudesTable()"
-          class="tabla-solicitudes-activas bg-white border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-card)]">
+          class="tabla-solicitudes-activas bg-white border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-card)] min-w-0 max-w-full overflow-hidden">
           <div
             class="solicitudesActivas flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-[var(--border-subtle)]">
             <h2 class="font-display font-semibold text-[var(--ink-900)]">Solicitudes activas</h2>
@@ -420,27 +420,27 @@
 
         <!-- ===== D. Sección de usuarios ===== -->
         <section x-data="usersSection()"
-          class="chart-card p-5">
+          class="chart-card p-3 sm:p-5 min-w-0 max-w-full overflow-hidden">
           <h2 class="font-display font-semibold text-[var(--ink-900)] mb-4"><b> Usuarios del sistema</b></h2>
 
-          <div class="user-roles-tabs flex flex-wrap gap-2 mb-5 border-b border-[var(--border-subtle)] pb-3">
+          <div class="user-roles-tabs flex overflow-x-auto sm:overflow-visible sm:flex-wrap gap-2 mb-4 border-b border-[var(--border-subtle)] pb-3 scrollbar-none">
             <template x-for="role in roles" :key="role">
               <button @click="activeTab = role"
-                class="user-role-tab px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer"
+                class="user-role-tab px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
                 :class="activeTab === role ? 'is-active bg-[var(--signal-500)] text-white' : 'bg-[var(--steel-100)] text-[var(--text-muted)] hover:bg-[var(--steel-200)]'"
                 x-text="role"></button>
             </template>
           </div>
 
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 min-w-0 max-w-full">
 
             <template x-for="user in usuariosFiltrados" :key="user.id">
               <button @click="openUser(user)"
-                class="buttonUserSistem p-4 rounded-xl flex items-center gap-3 w-full cursor-pointer">
+                class="buttonUserSistem p-3 sm:p-4 rounded-xl flex items-center gap-3 w-full cursor-pointer min-w-0 max-w-full overflow-hidden">
                 <div
                   class="usuariosSistema w-10 h-10 rounded-full font-bold text-xs flex-shrink-0 flex items-center justify-center"
                   x-text="getIniciales(user)"></div>
-                <div class="min-w-0 text-left">
+                <div class="min-w-0 flex-1 text-left overflow-hidden">
                   <p class="user-card-name font-semibold text-sm truncate" x-text="getNombreCompleto(user)"></p>
                   <p class="user-card-email text-xs text-gray-400 truncate mt-0.5" x-text="user.correo"></p>
                 </div>

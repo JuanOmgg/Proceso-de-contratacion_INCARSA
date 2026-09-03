@@ -43,14 +43,52 @@
                 class="input-field w-full rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm">
             </div>
 
-            <!-- Select Activos / Inactivos / Todos (Solo visible para roles autorizados) -->
-            <div class="relative w-32 sm:w-36 flex-shrink-0" x-show="puedeVerInactivos" x-cloak>
-              <select x-model="filtroActivo" @change="resetPage()"
-                class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs sm:text-sm cursor-pointer font-medium text-[var(--text-primary)]">
-                <option value="activos">Activos</option>
-                <option value="inactivos">Inactivos</option>
-                <option value="todos">Todos</option>
-              </select>
+            <!-- Custom Dropdown Activos / Inactivos / Todos (Solo visible para roles autorizados) -->
+            <div class="relative w-32 sm:w-36 flex-shrink-0 text-left" x-data="{ openActivo: false }" @click.outside="openActivo = false" x-show="puedeVerInactivos" x-cloak>
+              <button type="button" @click="openActivo = !openActivo"
+                class="w-full flex items-center justify-between px-3 py-1.5 bg-white dark:bg-[#18181b] border border-[var(--border-subtle)] dark:border-white/15 rounded-lg text-xs sm:text-sm font-medium hover:border-[var(--steel-300)] shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[var(--signal-500)]/20">
+                <span class="truncate text-[var(--text-primary)] dark:text-zinc-100 font-medium capitalize"
+                  x-text="filtroActivo === 'activos' ? 'Activos' : (filtroActivo === 'inactivos' ? 'Inactivos' : 'Todos')"></span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)] dark:text-zinc-400 transition-transform duration-200"
+                  :class="openActivo ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+              </button>
+
+              <!-- Menú Flotante Estilo Custom -->
+              <div x-show="openActivo" x-cloak
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                class="absolute z-50 mt-1.5 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--border-subtle)] dark:border-white/15 py-1.5 overflow-hidden">
+                
+                <!-- Opción: Activos -->
+                <div @click="filtroActivo = 'activos'; resetPage(); openActivo = false"
+                  class="mx-1 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                  :class="filtroActivo === 'activos' ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                  <span>Activos</span>
+                  <i x-show="filtroActivo === 'activos'" class="fa-solid fa-check text-xs text-[var(--signal-500)]"></i>
+                </div>
+
+                <!-- Opción: Inactivos -->
+                <div @click="filtroActivo = 'inactivos'; resetPage(); openActivo = false"
+                  class="mx-1 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                  :class="filtroActivo === 'inactivos' ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                  <span>Inactivos</span>
+                  <i x-show="filtroActivo === 'inactivos'" class="fa-solid fa-check text-xs text-[var(--signal-500)]"></i>
+                </div>
+
+                <div class="h-px bg-[var(--border-subtle)] dark:bg-white/10 my-1 mx-2"></div>
+
+                <!-- Opción: Todos -->
+                <div @click="filtroActivo = 'todos'; resetPage(); openActivo = false"
+                  class="mx-1 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                  :class="filtroActivo === 'todos' ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                  <span>Todos</span>
+                  <i x-show="filtroActivo === 'todos'" class="fa-solid fa-check text-xs text-[var(--signal-500)]"></i>
+                </div>
+              </div>
             </div>
           </div>
 

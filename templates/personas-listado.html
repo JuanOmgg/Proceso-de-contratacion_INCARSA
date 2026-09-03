@@ -234,8 +234,6 @@
             <div class="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
               <span class="status-pill inline-flex select-none font-semibold status-enviado text-xs"
                 x-text="personaDetalle?.cargo || 'Personal General'"></span>
-              <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
-                x-text="'ID #' + (personaDetalle?.id || '—')"></span>
             </div>
           </div>
 
@@ -496,14 +494,33 @@
 
                 <!-- Tipo y N° de Documento -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
+                  <div class="relative text-left" x-data="{ openTipoDocP: false }" @click.outside="openTipoDocP = false">
                     <label class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-1">Tipo Doc.</label>
-                    <select x-model="form.tipo_doc" required class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm border border-[var(--paper-shadow)]">
-                      <option value="CC">CC (Cédula)</option>
-                      <option value="CE">CE (Extranjería)</option>
-                      <option value="PAS">Pasaporte</option>
-                      <option value="PEP">PEP</option>
-                    </select>
+                    <button type="button" @click="openTipoDocP = !openTipoDocP"
+                      class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm border border-[var(--paper-shadow)] dark:border-white/15 bg-white dark:bg-[#18181b] flex items-center justify-between cursor-pointer">
+                      <span class="truncate font-medium text-[var(--paper-ink)] dark:text-zinc-100"
+                        x-text="form.tipo_doc || 'CC'"></span>
+                      <i class="fa-solid fa-chevron-down text-[9px] text-[var(--paper-muted)] dark:text-zinc-400 transition-transform duration-200"
+                        :class="openTipoDocP ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+                    </button>
+
+                    <div x-show="openTipoDocP" x-cloak
+                      x-transition:enter="transition ease-out duration-150"
+                      x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                      x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                      x-transition:leave="transition ease-in duration-100"
+                      x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                      x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                      class="absolute z-50 mt-1 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--paper-shadow)] dark:border-white/15 py-1 overflow-hidden max-h-52 overflow-y-auto">
+                      <template x-for="t in [{id:'CC',label:'CC (Cédula)'},{id:'CE',label:'CE (Extranjería)'},{id:'PAS',label:'Pasaporte'},{id:'PEP',label:'PEP'}]" :key="t.id">
+                        <div @click="form.tipo_doc = t.id; openTipoDocP = false"
+                          class="mx-1 px-2.5 py-1.5 text-xs rounded-lg font-medium cursor-pointer transition-all flex items-center justify-between"
+                          :class="form.tipo_doc === t.id ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--paper-ink)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">
+                          <span x-text="t.label"></span>
+                          <i x-show="form.tipo_doc === t.id" class="fa-solid fa-check text-[10px] text-[var(--signal-500)]"></i>
+                        </div>
+                      </template>
+                    </div>
                   </div>
                   <div class="sm:col-span-2">
                     <label class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-1">N° de Documento <span class="text-red-500">*</span></label>

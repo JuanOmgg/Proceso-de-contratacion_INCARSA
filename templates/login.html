@@ -31,6 +31,20 @@
   <script src="{{ url_for('static', path='js/mockData.js') }}"></script>
   <script src="{{ url_for('static', path='js/auth.js') }}?v=2.2"></script>
 
+  <!-- Limpieza de credenciales al cerrar sesión o expirar -->
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get("logout") || params.get("expired")) {
+          sessionStorage.clear();
+          localStorage.removeItem("incarsa_token");
+          localStorage.removeItem("incarsa_session");
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Alpine.js Core -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>

@@ -505,9 +505,23 @@
 :root.dark input,
 :root.dark select,
 :root.dark textarea {
-  background-color: #1e1e1e !important;
+  background-color: #18181b !important;
   color: var(--text-primary) !important;
   border-color: var(--border-subtle) !important;
+}
+
+:root.dark select option,
+html.dark select option {
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  padding: 8px 12px !important;
+  font-weight: 500;
+}
+
+:root.dark select option:checked,
+html.dark select option:checked {
+  background-color: #fa051a !important;
+  color: #ffffff !important;
 }
 
 :root.dark input::placeholder,
@@ -1189,17 +1203,15 @@
 }
 
 /* 2. Línea punteada superior (estilo cupón) */
-:root.dark .modal-panel::before,
-:root.dark .al-card::before,
-:root.dark .modal-ticket::before { 
+:root.dark .modal-ticket::before,
+:root.dark .al-card::before { 
   border-top: 2px dashed rgba(255, 255, 255, 0.15) !important;
   z-index: 2;
 }
 
 /* 3. Agujero de troquel central (orificio superior realista) */
-:root.dark .modal-panel::after,
-:root.dark .al-card::after,
-:root.dark .modal-ticket::after {
+:root.dark .modal-ticket::after,
+:root.dark .al-card::after {
   background: #111111 !important;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
   z-index: 3;
@@ -1243,12 +1255,30 @@
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 7. Pill del código RAD */
-:root.dark .modal-panel span.bg-\[\#efe9dc\],
-:root.dark .modal-panel span[x-text*="codigo"] {
-  background: #333333 !important;
-  color: #cbd5e1 !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+/* 7. Pill del código RAD / ID en modo oscuro */
+:root.dark .modal-panel .bg-\[\#efe9dc\],
+:root.dark .modal-panel div.bg-\[\#efe9dc\],
+:root.dark .modal-panel span[x-text*="codigo"],
+:root.dark .modal-panel div:has(> span[x-text*="codigo"]) {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.1) !important;
+}
+
+:root.dark .modal-panel .bg-\[\#efe9dc\] i,
+:root.dark .modal-panel div.bg-\[\#efe9dc\] i {
+  color: #38bdf8 !important;
+}
+
+:root.dark .modal-panel .bg-\[\#efe9dc\] button,
+:root.dark .modal-panel div.bg-\[\#efe9dc\] button {
+  color: #94a3b8 !important;
+}
+
+:root.dark .modal-panel .bg-\[\#efe9dc\] button:hover,
+:root.dark .modal-panel div.bg-\[\#efe9dc\] button:hover {
+  color: #38bdf8 !important;
 }
 
 /* 8. TABLA DE PERSONAS REGISTRADAS DENTRO DEL MODAL */
@@ -2866,6 +2896,7 @@ html.dark .flatpickr-calendar {
   padding: 12px !important;
   width: 320px !important;
   color: #f1f5f9 !important;
+  z-index: 99999 !important;
 }
 
 /* Flechas superiores e inferiores del popup */
@@ -3719,17 +3750,42 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
    DROPDOWN MENÚ DE PERFIL EN MODO OSCURO NEÓN (NAVBAR)
    ========================================================= */
 :root.dark .navbar-user-dropdown,
-:root.dark div[x-show="open"].rounded-xl {
-  background: rgba(20, 22, 29, 0.96) !important;
+:root.dark div[x-show="open"].rounded-xl,
+:root.dark div[x-show="openActivo"].rounded-xl,
+:root.dark div[x-show="openEmp"].rounded-xl,
+:root.dark div[x-show*="open"].rounded-xl {
+  background: #22252e !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.85),
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6),
               0 0 0 1px rgba(255, 255, 255, 0.08),
-              0 0 24px rgba(167, 34, 193, 0.22),
-              0 0 12px rgba(250, 5, 26, 0.15) !important;
+              0 0 20px rgba(250, 5, 26, 0.12) !important;
   border-radius: 14px !important;
   padding: 6px !important;
+}
+
+/* Opciones dentro del menú flotante: fondo transparente (sin parches negros) */
+:root.dark div[x-show*="open"].rounded-xl div[class*="cursor-pointer"] {
+  background-color: transparent !important;
+  color: #f1f5f9 !important;
+}
+
+:root.dark div[x-show*="open"].rounded-xl div[class*="cursor-pointer"]:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+:root.dark div[x-show*="open"].rounded-xl div[class*="cursor-pointer"][class*="bg-[var(--signal-500)]"] {
+  background-color: rgba(250, 5, 26, 0.18) !important;
+  color: #ff4d4d !important;
+}
+
+/* Botones disparadores de selectores en modo oscuro */
+:root.dark div[x-data*="open"] > button {
+  background-color: #22252e !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f1f5f9 !important;
 }
 
 /* Divisor sutil entre opciones */

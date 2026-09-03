@@ -294,14 +294,14 @@
              MODAL: Ver solicitud (Detalle completo - Estilo SweetAlert / Ticket Limpio)
           ============================================================= -->
           <div x-show="viewModalOpen" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto modal-backdrop"
             @keydown.escape.window="closeView()">
             <div x-show="viewModalOpen" x-transition @click.outside="closeView()"
-              class="modal-panel w-full max-w-2xl pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
+              class="modal-panel w-full max-w-2xl my-auto pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
               
               <!-- Botón cerrar superior derecho -->
               <button type="button" @click="closeView()"
-                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
                 title="Cerrar modal">
                 <i class="fa-solid fa-xmark text-base"></i>
               </button>
@@ -317,11 +317,11 @@
                     <div class="flex items-center justify-center gap-2 mt-1">
                       <span class="status-pill inline-flex select-none shadow-xs font-semibold" :class="estadoClass(selected.estado)"
                         x-text="selected.estado"></span>
-                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-bold text-xs bg-[#efe9dc] text-[var(--paper-ink)] border border-[var(--paper-shadow)] group">
-                        <i class="fa-solid fa-hashtag text-[10px] text-[var(--paper-muted)]"></i>
-                        <span x-text="selected.codigo || ('RAD-' + selected.id)"></span>
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono font-bold text-xs bg-[#efe9dc] text-[var(--paper-ink)] border border-[var(--paper-shadow)] dark:bg-slate-900/90 dark:text-cyan-300 dark:border-cyan-500/30 group shadow-xs">
+                        <i class="fa-solid fa-hashtag text-[10px] text-[var(--paper-muted)] dark:text-cyan-400"></i>
+                        <span x-text="selected.codigo || ('RAD-' + selected.id)" class="tracking-wide"></span>
                         <button type="button" @click="copiarTexto(selected.codigo)" 
-                          class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] ml-0.5 opacity-70 hover:opacity-100 transition-opacity" 
+                          class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] dark:text-slate-400 dark:hover:text-cyan-200 ml-1 opacity-70 hover:opacity-100 transition-all" 
                           data-tooltip="Copiar código" title="Copiar código">
                           <i class="fa-regular fa-copy text-[11px]"></i>
                         </button>
@@ -511,12 +511,12 @@
        MODAL: Observaciones de la Solicitud (Estilo Ticket / SweetAlert)
     ============================================================= -->
     <div x-show="observacionesModalOpen" x-cloak
-      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
       @keydown.escape.window="closeObservacionModal()">
-      <div class="modal-panel w-full max-w-md pt-7 px-6 sm:px-8 pb-9 relative text-center" @click.outside="closeObservacionModal()">
+      <div class="modal-panel w-full max-w-md my-auto pt-7 px-6 sm:px-8 pb-9 relative text-center" @click.outside="closeObservacionModal()">
         <!-- Botón cerrar superior derecho -->
         <button type="button" @click="closeObservacionModal()"
-          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
           title="Cerrar modal">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
@@ -576,9 +576,9 @@
        MODAL: Confirmar eliminación (Estilo Alertas Ticket)
   ============================================================= -->
     <div x-show="showDeleteModal" x-cloak
-      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
       @keydown.escape.window="cancelarEliminar()">
-      <div class="modal-panel w-full max-w-sm p-7 text-center" @click.outside="cancelarEliminar()">
+      <div class="modal-panel w-full max-w-sm my-auto p-7 text-center" @click.outside="cancelarEliminar()">
         <div class="modal-stamp warning">
           <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
         </div>

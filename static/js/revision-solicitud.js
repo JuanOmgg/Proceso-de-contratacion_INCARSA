@@ -161,6 +161,58 @@ function revisionSolicitudApp() {
     fechaHastaHistorial: "",
     historialPage: 1,
     historialPageSize: 5,
+    fpDesdeHistorialInstance: null,
+    fpHastaHistorialInstance: null,
+
+    initFlatpickrHistorial(el, tipo) {
+      if (typeof flatpickr === "undefined") return;
+      const isDesde = tipo === "desde";
+      const instance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium placeholder:text-[var(--paper-muted)]",
+        disableMobile: "true",
+        allowInput: false,
+        placeholder: "dd/mm/aaaa",
+        onChange: (selectedDates, dateStr) => {
+          if (isDesde) {
+            this.fechaDesdeHistorial = dateStr;
+            if (this.fpHastaHistorialInstance) {
+              this.fpHastaHistorialInstance.set("minDate", dateStr || null);
+            }
+          } else {
+            this.fechaHastaHistorial = dateStr;
+            if (this.fpDesdeHistorialInstance) {
+              this.fpDesdeHistorialInstance.set("maxDate", dateStr || null);
+            }
+          }
+          this.historialPage = 1;
+        }
+      });
+
+      if (isDesde) {
+        this.fpDesdeHistorialInstance = instance;
+      } else {
+        this.fpHastaHistorialInstance = instance;
+      }
+    },
+
+    limpiarFiltrosHistorial() {
+      this.searchHistorial = "";
+      this.fechaDesdeHistorial = "";
+      this.fechaHastaHistorial = "";
+      this.historialPage = 1;
+      if (this.fpDesdeHistorialInstance) {
+        this.fpDesdeHistorialInstance.clear();
+        this.fpDesdeHistorialInstance.set("maxDate", null);
+      }
+      if (this.fpHastaHistorialInstance) {
+        this.fpHastaHistorialInstance.clear();
+        this.fpHastaHistorialInstance.set("minDate", null);
+      }
+    },
 
     // Detalle de historial cargado para el modal
     detalleHistorial: {
@@ -1248,10 +1300,7 @@ function revisionSolicitudApp() {
 
       this.cargandoHistorial = true;
       this.copiadoFeedback = null;
-      this.searchHistorial = "";
-      this.fechaDesdeHistorial = "";
-      this.fechaHastaHistorial = "";
-      this.historialPage = 1;
+      this.limpiarFiltrosHistorial();
       this.showHistorialModal = true;
 
       const empresaSolicitud = this.solicitud?.nombre_empresa || this.solicitud?.empresa_solicitante || "INCARSA S.A.S.";

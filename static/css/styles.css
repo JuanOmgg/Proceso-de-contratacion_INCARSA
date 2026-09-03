@@ -5,6 +5,11 @@
    Design tokens + estilos custom (complementan Tailwind)
    ========================================================= */
 
+/* Prevenir parpadeo de modales y elementos condicionales de Alpine (FOUC) */
+[x-cloak], [x-cloak] * {
+  display: none !important;
+}
+
 :root {
   /* --- Paleta: identidad "control industrial" ---
      Azul acero = autoridad / seguridad corporativa
@@ -52,11 +57,20 @@
   --shadow-modal: 0 20px 48px rgba(14, 22, 38, 0.28);
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-body);
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 @keyframes destello {
@@ -233,6 +247,49 @@ select:focus-visible,
   outline: 2px solid var(--signal-500);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ---------- Selectores estilizados universales ---------- */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.1em 1.1em;
+  padding-right: 2.25rem !important;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #1c2033;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   DROPDOWNS PERSONALIZADOS (MODO CLARO Y BASE)
+   ========================================================= */
+.custom-dropdown-panel,
+div[x-show^="open"].rounded-xl {
+  background: #ffffff !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.custom-dropdown-panel .dropdown-item,
+div[x-show^="open"].rounded-xl div[class*="cursor-pointer"] {
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+}
+
+.custom-dropdown-panel .dropdown-item:hover,
+div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
+  background-color: #fdf2f2 !important;
+  color: var(--signal-500) !important;
 }
 
 /* ---------- Scrollbar discreto ---------- */
@@ -1174,6 +1231,7 @@ select:focus-visible,
   padding: 12px !important;
   width: 308px !important;
   animation: modalPopIn 0.22s var(--ease-out) forwards !important;
+  z-index: 99999 !important;
 }
 
 .flatpickr-calendar::before,
@@ -1643,10 +1701,9 @@ table td .inline-flex {
     font-family: var(--font-body) !important;
   }
 
-/* Perforación punteada superior */
-.modal-panel::before,
-.al-card::before,
-.modal-ticket::before {
+/* Perforación punteada superior (exclusivo para tarjetas estilo ticket) */
+.modal-ticket::before,
+.al-card::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1657,10 +1714,9 @@ table td .inline-flex {
   z-index: 2;
 }
 
-/* Agujero / Pin central en el borde superior */
-.modal-panel::after,
-.al-card::after,
-.modal-ticket::after {
+/* Agujero / Pin central en el borde superior (exclusivo para tarjetas estilo ticket) */
+.modal-ticket::after,
+.al-card::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -1811,6 +1867,10 @@ table td .inline-flex {
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   box-shadow: var(--shadow-card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   transition: transform 0.25s var(--ease-standard), box-shadow 0.25s var(--ease-standard), border-color 0.2s ease, background-color 0.2s ease;
 }
 

@@ -203,5 +203,16 @@
     window.addEventListener("pageshow", function () {
       hideLoader();
     });
+
+    // Ocultar de forma segura cuando el DOM y Alpine hayan terminado de cargar
+    document.addEventListener("DOMContentLoaded", function () {
+      hideLoader();
+    });
+    window.addEventListener("load", function () {
+      hideLoader();
+    });
+    document.addEventListener("alpine:initialized", function () {
+      hideLoader();
+    });
   })();
 </script>

@@ -93,10 +93,11 @@
                 <i class="fa-regular fa-user w-4"></i> <span>Ver perfil</span>
               </button>
               <div class="dropdown-divider"></div>
-              <a href="/login"
+              <button type="button"
+                @click="(typeof cerrarSesion === 'function') ? cerrarSesion() : cerrarSesionUsuario()"
                 class="dropdown-item-logout w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
                 <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> <span>Cerrar sesión</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>

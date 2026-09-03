@@ -67,7 +67,7 @@ async def servir_archivo_upload(archivo_path: str):
 # Conectamos los routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -169,15 +169,24 @@ async def get_editar_solicitud(request: Request, codigo: str):
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-
 # Manejo de errores
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if "text/html" in request.headers.get("Accept", "") and exc.status_code == 404:
+        try:
+            return templates.TemplateResponse(
+                name="errors/error-404.html",
+                request=request,
+                status_code=404
+            )
+        except Exception:
+            pass
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "status_code": exc.status_code},
+    )
 
-    if "error-404.html" not in request.headers.get("Accept", ""):
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": exc.detail, "status_code": exc.status_code},
-        )
+if __name__ == "__main__":
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host=host, port=port, reload=False)

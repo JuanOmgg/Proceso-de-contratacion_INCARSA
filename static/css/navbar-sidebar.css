@@ -631,7 +631,10 @@
 @media (max-width: 1024px) {
   .app-shell,
   .app-shell:has(.sidebar.is-collapsed) {
-    padding: 12px !important;
+    padding: 8px 10px !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
   }
 
   .sidebar {
@@ -686,10 +689,28 @@
   }
 
   .topbar {
-    top: 12px;
-    margin-bottom: 12px;
+    top: 8px;
+    margin-bottom: 10px;
     border-radius: 14px;
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    min-height: 54px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell,
+  .app-shell:has(.sidebar.is-collapsed) {
+    padding: 6px 8px !important;
+  }
+
+  .topbar {
+    top: 4px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    min-height: 50px !important;
   }
 }

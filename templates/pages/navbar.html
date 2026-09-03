@@ -1,29 +1,29 @@
 <header
-        class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
-        <div class="flex items-center gap-3 sm:gap-4">
-          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
+        class="topbar flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-2 sm:gap-4 min-w-0">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn flex-shrink-0" aria-label="Abrir menú de navegación">
             <i class="fa-solid fa-bars text-base"></i>
           </button>
-          <h1 class="font-display font-semibold text-lg text-white">{{ page_title | default("Dashboard") }}</h1>
+          <h1 class="font-display font-semibold text-base sm:text-lg text-white truncate max-w-[160px] sm:max-w-none">{{ page_title | default("Dashboard") }}</h1>
           <span
-            class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--signal-500)]">
+            class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--signal-500)] flex-shrink-0">
             <span x-text="activeRole"></span>
           </span>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
           <!-- Notificaciones -->
           <div class="relative" @click.outside="notificationsOpen = false">
             <button @click="notificationsOpen = !notificationsOpen"
-              class="relative w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
+              class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
               title="Notificaciones">
-              <i class="fa-regular fa-bell text-base"></i>
-              <span class="badge-count absolute top-1.5 right-1.5 rounded-full flex items-center justify-center px-1 text-[11px] font-bold"
+              <i class="fa-regular fa-bell text-sm sm:text-base"></i>
+              <span class="badge-count absolute top-0.5 right-0.5 sm:top-1.5 sm:right-1.5 rounded-full flex items-center justify-center px-1 text-[10px] sm:text-[11px] font-bold"
                 x-show="unreadNotificationsCount > 0"
                 x-text="unreadNotificationsCount" x-cloak></span>
             </button>
             <div x-show="notificationsOpen" x-transition x-cloak
-              class="notifications-panel absolute right-0 mt-2 w-[350px] sm:w-[430px] overflow-hidden z-50">
+              class="notifications-panel absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-[350px] sm:max-w-[430px] overflow-hidden z-50">
               <div class="notifications-header flex items-center justify-between">
                 <div class="font-semibold text-sm flex items-center gap-2.5">
                   <span class="notifications-title font-semibold tracking-tight">Notificaciones</span>
@@ -80,20 +80,20 @@
           <!-- Modo oscuro -->
           <button
             @click="toggleDarkMode()"
-            class="relative w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
+            class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
             :title="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-            <i class="fa-solid text-base transition-all duration-300"
+            <i class="fa-solid text-sm sm:text-base transition-all duration-300"
                :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon'"></i>
           </button>
 
           <!-- Perfil -->
           <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full">
+            <button @click="open = !open" class="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 pr-1 py-1 rounded-full">
               <div
-                class="w-8 h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
+                class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-[11px] sm:text-xs font-semibold flex-shrink-0"
                 x-text="userInitials"><b>LG</b></div>
-              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName">Laura Gómez</span>
-              <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)]"></i>
+              <span class="hidden md:block text-sm font-medium text-white truncate max-w-[120px]" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-[var(--text-muted)]"></i>
             </button>
             <div x-show="open" x-transition x-cloak
               class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50">
@@ -102,11 +102,11 @@
                 <i class="fa-regular fa-user w-4"></i> <span>Ver perfil</span>
               </button>
               <div class="dropdown-divider"></div>
-              <a href="/login"
-                @click="sessionStorage.removeItem('incarsa_token'); sessionStorage.removeItem('incarsa_session'); localStorage.removeItem('incarsa_token'); localStorage.removeItem('incarsa_session');"
+              <button type="button"
+                @click="(typeof cerrarSesion === 'function') ? cerrarSesion() : cerrarSesionUsuario()"
                 class="dropdown-item-logout w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
                 <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> <span>Cerrar sesión</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>

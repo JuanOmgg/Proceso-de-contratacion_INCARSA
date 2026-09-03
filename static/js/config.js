@@ -1,6 +1,5 @@
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-const API_BASE_URL = isLocal ? "http://127.0.0.1:8000" : "PONER_SERVIDOR_PRODUCCION";
+const API_BASE_URL = window.location.origin;
 
 const API = {
     base: API_BASE_URL,
@@ -42,10 +41,18 @@ function getAuthSession() {
 }
 
 function clearAuthSession() {
-    sessionStorage.removeItem("incarsa_token");
-    sessionStorage.removeItem("incarsa_session");
-    localStorage.removeItem("incarsa_token");
-    localStorage.removeItem("incarsa_session");
+    try {
+        sessionStorage.removeItem("incarsa_token");
+        sessionStorage.removeItem("incarsa_session");
+        sessionStorage.clear();
+        localStorage.removeItem("incarsa_token");
+        localStorage.removeItem("incarsa_session");
+    } catch (e) {}
+}
+
+function cerrarSesionUsuario() {
+    clearAuthSession();
+    window.location.replace("/login?logout=1");
 }
 
 // ============================================================================
@@ -226,6 +233,10 @@ function appShellStub() {
 
         closeMobileSidebar() {
             this.sidebarOpenMobile = false;
+        },
+
+        cerrarSesion() {
+            cerrarSesionUsuario();
         }
     };
 }
