@@ -17,6 +17,96 @@ const API = {
     notificaciones: `${API_BASE_URL}/api/v1/notificaciones`
 };
 
+// ============================================================================
+// GESTIÓN CENTRALIZADA DE AUTENTICACIÓN Y TOKEN JWT
+// ============================================================================
+function getAuthToken() {
+    let token = sessionStorage.getItem("incarsa_token") || localStorage.getItem("incarsa_token") || null;
+    if (!token) {
+        try {
+            const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+            if (sesion && sesion.token) {
+                token = sesion.token;
+            }
+        } catch (e) {}
+    }
+    return token;
+}
+
+function getAuthSession() {
+    try {
+        return JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearAuthSession() {
+    sessionStorage.removeItem("incarsa_token");
+    sessionStorage.removeItem("incarsa_session");
+    localStorage.removeItem("incarsa_token");
+    localStorage.removeItem("incarsa_session");
+}
+
+// ============================================================================
+// INTERCEPTOR GLOBAL DE FETCH: Inyecta Authorization: Bearer <token>
+// ============================================================================
+(function () {
+    const _fetch = window.fetch;
+    window.fetch = async function (resource, init = {}) {
+        const token = getAuthToken();
+        const urlStr = typeof resource === "string" ? resource : (resource?.url || "");
+
+        // Verificar si es una petición a nuestros endpoints de API
+        // Es importante porque evita enviarle el JWT a servicios externos
+        const esApiInterna = urlStr.includes("/api/") || 
+                             urlStr.includes("/planta") || 
+                             urlStr.includes("/roles") || 
+                             urlStr.includes("/emp_contratista") || 
+                             urlStr.includes("/auth/");
+
+        if (token && esApiInterna) {
+            if (resource instanceof Request) {
+                const newHeaders = new Headers(resource.headers);
+                if (!newHeaders.has("Authorization")) {
+                    newHeaders.set("Authorization", `Bearer ${token}`);
+                }
+                resource = new Request(resource, { headers: newHeaders });
+            } else {
+                if (!init.headers) {
+                    init.headers = {};
+                }
+                if (init.headers instanceof Headers) {
+                    if (!init.headers.has("Authorization")) {
+                        init.headers.set("Authorization", `Bearer ${token}`);
+                    }
+                } else if (Array.isArray(init.headers)) {
+                    const hasAuth = init.headers.some(([k]) => k.toLowerCase() === "authorization");
+                    if (!hasAuth) {
+                        init.headers.push(["Authorization", `Bearer ${token}`]);
+                    }
+                } else {
+                    const hasAuth = Object.keys(init.headers).some(k => k.toLowerCase() === "authorization");
+                    if (!hasAuth) {
+                        init.headers["Authorization"] = `Bearer ${token}`;
+                    }
+                }
+            }
+        }
+
+        const response = await _fetch.apply(this, [resource, init]);
+
+        // Si el backend responde 401 Unauthorized en peticiones autenticadas
+        if (response.status === 401 && esApiInterna && !window.location.pathname.includes("/login")) {
+            console.warn("🔒 [AUTH] Token inválido o sesión caducada. Redirigiendo a /login...");
+            clearAuthSession();
+            window.location.replace("/login?expired=1");
+        }
+
+        return response;
+    };
+})();
+
 // Utilidad para formatear tiempos relativos amigables
 function formatearTiempoRelativo(fechaStr) {
     if (!fechaStr) return "";
@@ -42,10 +132,7 @@ function formatearTiempoRelativo(fechaStr) {
 // Shell global de navegación y sesión de usuario para todas las vistas
 // ============================================================================
 function appShellStub() {
-    let sesion = null;
-    try {
-        sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-    } catch (e) {}
+    let sesion = getAuthSession();
 
     const nombreUsuario = sesion ? (sesion.nombre || sesion.nombres || `${sesion.nombres || ''} ${sesion.apellidos || ''}`.trim() || "Usuario") : "Administrador Sistema";
     const iniciales = nombreUsuario.split(" ").filter(Boolean).map(p => p[0]).join("").substring(0, 2).toUpperCase() || "AD";

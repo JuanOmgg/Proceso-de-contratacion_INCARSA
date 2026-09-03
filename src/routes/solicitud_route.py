@@ -1,7 +1,7 @@
 import os
 import shutil
 import uuid
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query, Depends
 from src.utils.file_manager import guardar_documento_seguro
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
@@ -14,6 +14,7 @@ from src.loaders.solicitudes_loaders import (
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
+from src.utils.security import get_current_user, require_role
 from typing import List, Dict, Any, Optional
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
@@ -37,7 +38,8 @@ MAPEO_SUBDIRECTORIOS = {
 @router.post("/subir-documento/", status_code=status.HTTP_201_CREATED)
 async def SUBIR_documento_persona(
     file: UploadFile = File(...),
-    tipo_documento: str = Form("general")
+    tipo_documento: str = Form("general"),
+    current_user: dict = Depends(get_current_user)
 ):
     # Determinar subcarpeta según el tipo de documento recibido
     tipo_norm = str(tipo_documento).strip().lower()
@@ -60,8 +62,10 @@ async def SUBIR_documento_persona(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED, include_in_schema=False)
-def CREATE_solicitud(payload: SolicitudInput):
+def CREATE_solicitud(payload: SolicitudInput, current_user: dict = Depends(get_current_user)):
     datos_raw = payload.model_dump()
+    if not datos_raw.get("id_usuario"):
+        datos_raw["id_usuario"] = current_user.get("id")
 
     print("🧹 [TRANSFORMER] Limpiando y normalizando datos entrantes por API...")
     datos_limpios = transformar_solicitud(datos_raw)
@@ -85,7 +89,7 @@ def CREATE_solicitud(payload: SolicitudInput):
     }
 
 @router.get("/fechasCount", response_model=List[Dict[str, Any]])
-def GET_fechasCount_rt():
+def GET_fechasCount_rt(current_user: dict = Depends(get_current_user)):
 
     try:
 
@@ -106,9 +110,13 @@ def GET_fechasCount_rt():
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_ALL_solicitudes(
     active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None"),
-    id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO")
+    id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO"),
+    current_user: dict = Depends(get_current_user)
 ):
-    
+    # Si no se envió id_usuario y el usuario es SST (3) o GESCO (4), filtrar por su id
+    if id_usuario is None and current_user.get("id_rol") in (3, 4):
+        id_usuario = current_user.get("id")
+
     print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario})...")
     
     resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario)
@@ -125,7 +133,7 @@ def GET_ALL_solicitudes(
 
 
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def GET_solicitud(solicitud_id: str):
+def GET_solicitud(solicitud_id: str, current_user: dict = Depends(get_current_user)):
     print(f"🔍 [GET] Buscando solicitud #{solicitud_id} en la base de datos...")
     resultado = GET_solicitud_bd(solicitud_id)
 
@@ -141,7 +149,11 @@ def GET_solicitud(solicitud_id: str):
 
 
 @router.post("/{solicitud_id}/dictamen", status_code=status.HTTP_200_OK)
-def REGISTRAR_dictamen_rt(solicitud_id: str, payload: DictamenInput):
+def REGISTRAR_dictamen_rt(
+    solicitud_id: str,
+    payload: DictamenInput,
+    current_user: dict = Depends(require_role(["SST", "GESCO", "SCR", "Administrador", "SuperAdmin"]))
+):
     print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
     resultado = REGISTRAR_dictamen_db(solicitud_id, payload.model_dump())
     if not resultado.get("exito"):
@@ -150,8 +162,9 @@ def REGISTRAR_dictamen_rt(solicitud_id: str, payload: DictamenInput):
             detail=resultado.get("mensaje", "Error al registrar dictamen.")
         )
     return resultado
+
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals):
+def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, current_user: dict = Depends(get_current_user)):
 
     print(f"📝 [PATCH] Tomando los campos enviados para actualizar la solicitud #{solicitud_id}...")
     new_updates = datos_in.model_dump(exclude_unset=True)
@@ -181,7 +194,7 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals):
 
 
 @router.delete("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def DELETE_solicitud(solicitud_id: str):
+def DELETE_solicitud(solicitud_id: str, current_user: dict = Depends(require_role(["Administrador", "Gestion documental"]))):
     print(f"🗑️ [DELETE] Eliminando solicitud #{solicitud_id} de la base de datos...")
     resultado = DELETE_solicitud_bd(solicitud_id)
 

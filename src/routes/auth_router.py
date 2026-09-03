@@ -4,7 +4,7 @@ import hashlib
 import bcrypt
 import resend 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 
 from dotenv import load_dotenv
 
@@ -25,7 +25,7 @@ from src.loaders.auth_loader import (
     PATCH_password_db
 )
 
-from src.utils.security import verify_password, create_access_token
+from src.utils.security import verify_password, create_access_token, get_current_user
 
 resend.api_key = os.getenv("RESEND_API_KEY", "")
 
@@ -118,6 +118,13 @@ def login(payload: LoginInput):
             "plantas_ids": usuario.get("plantas_ids", []),
             "plantas": usuario.get("plantas", [])
         }
+    }
+
+@router.get("/me", summary="Obtener perfil del usuario autenticado", status_code=status.HTTP_200_OK)
+def get_current_user_profile(current_user: dict = Depends(get_current_user)):
+    return {
+        "exito": True,
+        "usuario": current_user
     }
 
 @router.post("/solicitar_recuperacion", status_code=status.HTTP_200_OK)

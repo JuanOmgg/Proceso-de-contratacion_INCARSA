@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}403 · Acceso no autorizado · INCARSA{% endblock %}</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{{ url_for( 'static', path= 'css/styles.css')}}">
+<link rel="stylesheet" href="{{ url_for( 'static', path= 'css/error-pages.css')}}">
+
+<!-- Favicon / Ícono de la pestaña del navegador -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
+
+</head>
+
+<body class="antialiased">
+
+<div id="page-transition-overlay" class="page-transition-overlay">
+  <div class="loader"></div>
+</div>
+
+{% block content %}{% endblock %}
+
+
+<script src="{{ url_for( 'static', path= 'js/page-transition.js')}}"></script>
+</body>
+</html>

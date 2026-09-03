@@ -23,6 +23,20 @@ function loginForm() {
       completado: false
     },
 
+    init() {
+      // Si el usuario tenía "Recordarme" activo, precargar su correo
+      const correoGuardado = localStorage.getItem("incarsa_recordado_correo");
+      if (correoGuardado) {
+        this.correo = correoGuardado;
+        this.recordarme = true;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("expired")) {
+        this.error = "Tu sesión ha caducado o el token ha expirado. Inicia sesión nuevamente.";
+      }
+    },
+
     // Vista actual: 'login' | 'contacto' | 'olvide'
     vista: "login",
 
@@ -361,12 +375,24 @@ function loginForm() {
         plantas: plantas || [],
         token: token || null
       };
+
+      // sessionStorage mantiene la sesión activa en la pestaña y ventanas abiertas
+      sessionStorage.setItem("incarsa_session", JSON.stringify(datos));
+      if (token) {
+        sessionStorage.setItem("incarsa_token", token);
+      }
+
+      // Si el usuario marcó "Recordarme", persistir permanentemente en localStorage
       if (this.recordarme) {
         localStorage.setItem("incarsa_session", JSON.stringify(datos));
         if (token) localStorage.setItem("incarsa_token", token);
+        localStorage.setItem("incarsa_recordado_correo", correo);
+      } else {
+        // Si NO marcó Recordarme, limpiar localStorage para que la sesión expire al cerrar el navegador
+        localStorage.removeItem("incarsa_session");
+        localStorage.removeItem("incarsa_token");
+        localStorage.removeItem("incarsa_recordado_correo");
       }
-      sessionStorage.setItem("incarsa_session", JSON.stringify(datos));
-      if (token) sessionStorage.setItem("incarsa_token", token);
     },
 
     async submit() {
