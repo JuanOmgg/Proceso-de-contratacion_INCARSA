@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Iniciar sesión · INCARSA</title>
 
+  <!-- Favicon / Ícono de la pestaña del navegador -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -23,14 +28,72 @@
 
   <!-- Scripts necesarios -->
   <script src="{{ url_for('static', path='js/config.js') }}"></script>
+  <script src="{{ url_for('static', path='js/mockData.js') }}"></script>
   <script src="{{ url_for('static', path='js/auth.js') }}"></script>
 
   <!-- Alpine.js Core -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body class="antialiased">
-<div class="login-page">
+<div class="login-page" x-data="loginForm()">
   <div class="login-page-stripes"></div>
+
+  <!-- ============================================================
+       SPLASH SCREEN / PANTALLA DE CARGA EN TODA LA PANTALLA
+       ============================================================ -->
+  <div class="splash-overlay"
+       x-show="splash.activo"
+       x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-350"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-102">
+    <div class="max-w-md w-full flex flex-col items-center">
+      
+      <!-- Spinner orbital de alta tecnología -->
+      <div class="loader-pulse mb-6">
+        <div class="loader"></div>
+      </div>
+
+      <!-- Marca e Identidad -->
+      <h1 class="font-display font-bold text-white text-2xl tracking-wider splash-brand-glow">INCARSA</h1>
+      <p class="text-[#9FADC9] text-xs font-medium mt-1 tracking-wide">Sistema de Gestión de Solicitudes de Acceso</p>
+
+      <!-- Badge de Usuario Activo -->
+      <div class="items-center gap-2 mt-4 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-xs text-orange-400 font-semibold shadow-[0_0_12px_rgba(249,115,22,0.2)]"
+           :class="splash.usuarioNombre ? 'inline-flex' : 'hidden'">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span x-text="splash.usuarioNombre || 'Iniciando sesión'"></span>
+      </div>
+
+      <!-- Barra de progreso real -->
+      <div class="splash-progress-track-custom">
+        <div class="splash-progress-bar-custom"
+             :style="'width: ' + splash.progreso + '%; ' + (splash.completado ? 'background: linear-gradient(90deg, #10b981 0%, #22c55e 100%); box-shadow: 0 0 16px rgba(34, 197, 94, 0.85), 0 0 4px #ffffff;' : '')"></div>
+      </div>
+
+      <!-- Porcentaje y Estado dinámico -->
+      <div class="w-[280px] max-w-[85vw] flex items-center justify-between text-xs mt-3 px-0.5">
+        <span class="text-slate-300 font-medium truncate flex items-center gap-1">
+          <template x-if="!splash.completado">
+            <span>
+              <span x-text="splash.mensaje"></span><span class="splash-dot">.</span><span class="splash-dot">.</span><span class="splash-dot">.</span>
+            </span>
+          </template>
+          <template x-if="splash.completado">
+            <span class="text-emerald-400 font-semibold flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>¡Todo listo! Bienvenido</span>
+            </span>
+          </template>
+        </span>
+        <span class="text-slate-400 font-mono font-semibold ml-2" x-text="splash.progreso + '%'"></span>
+      </div>
+
+    </div>
+  </div>
 
   <div class="error-brand-mark">
     <img src="{{ url_for('static', path='img/logo-sidebar.png') }}" alt="PSI" 
@@ -38,7 +101,7 @@
       style="mix-blend-mode: screen;">
   </div>
 
-  <div class="login-glow-wrap anim-fade-up" x-data="loginForm()">
+  <div class="login-glow-wrap anim-fade-up">
     <div class="login-glow-border">
       <div class="login-form-card p-6 sm:p-8">
 

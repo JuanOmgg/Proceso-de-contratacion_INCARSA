@@ -42,6 +42,18 @@ function appShell() {
     },
 
     async cargarNotificaciones() {
+      // Revisar si ya están precargadas desde el splash
+      try {
+        const preloadedNotifs = sessionStorage.getItem("incarsa_preloaded_notificaciones");
+        if (preloadedNotifs) {
+          const d = JSON.parse(preloadedNotifs);
+          if (d && (d.notificaciones || d.no_leidas !== undefined)) {
+            this.notifications = d.notificaciones || [];
+            this.unreadNotificationsCount = d.no_leidas || 0;
+          }
+        }
+      } catch (e) {}
+
       try {
         const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
           ? API.notificaciones 
@@ -278,6 +290,20 @@ function dashboardCards() {
     cargando: true,
 
     async init() {
+      // 1. Usar datos precargados desde el splash inmediatamente para cero parpadeo
+      try {
+        const pre = sessionStorage.getItem("incarsa_preloaded_solicitudes");
+        if (pre) {
+          const raw = JSON.parse(pre);
+          if (Array.isArray(raw) && raw.length > 0) {
+            this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
+            this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
+            this.cargando = false;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Refrescar en background
       try {
         const res = await fetch(`${API.solicitudes}/getall`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -286,10 +312,12 @@ function dashboardCards() {
         this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
         this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
       } catch (error) {
-        console.warn("Backend no disponible, usando datos mock:", error.message);
-        const mock = (typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : []).map(normalizarSolicitud).filter(Boolean);
-        this.solicitudesTodas = mock;
-        this.solicitudesActivas = mock.filter(s => esSolicitudActiva(s));
+        if (!this.solicitudesTodas || this.solicitudesTodas.length === 0) {
+          console.warn("Backend no disponible, usando datos mock:", error.message);
+          const mock = (typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : []).map(normalizarSolicitud).filter(Boolean);
+          this.solicitudesTodas = mock;
+          this.solicitudesActivas = mock.filter(s => esSolicitudActiva(s));
+        }
       } finally {
         this.cargando = false;
       }
@@ -327,18 +355,33 @@ function solicitudesTable() {
     pendingDeleteId: null,
 
     async init() {
+      // 1. Usar datos precargados desde el splash inmediatamente
+      try {
+        const pre = sessionStorage.getItem("incarsa_preloaded_solicitudes");
+        if (pre) {
+          const raw = JSON.parse(pre);
+          if (Array.isArray(raw) && raw.length > 0) {
+            const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
+            this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
+            this.cargando = false;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Refrescar en background
       try {
         const res = await fetch(`${API.solicitudes}/getall`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const raw = Array.isArray(data) ? data : (data.datos || []);
         const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
-        // En el dashboard se muestran exclusivamente las solicitudes activas
         this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
       } catch (error) {
-        console.warn("Backend no disponible, usando datos mock:", error.message);
-        const mock = (typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : []).map(normalizarSolicitud).filter(Boolean);
-        this.solicitudes = mock.filter(s => esSolicitudActiva(s));
+        if (!this.solicitudes || this.solicitudes.length === 0) {
+          console.warn("Backend no disponible, usando datos mock:", error.message);
+          const mock = (typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : []).map(normalizarSolicitud).filter(Boolean);
+          this.solicitudes = mock.filter(s => esSolicitudActiva(s));
+        }
       } finally {
         this.cargando = false;
       }
@@ -488,13 +531,35 @@ function usersSection() {
     cargando: true,
 
     async init() {
+      // 1. Usar datos precargados desde el splash
+      try {
+        const preUsers = sessionStorage.getItem("incarsa_preloaded_usuarios");
+        if (preUsers) {
+          const uRaw = JSON.parse(preUsers);
+          if (Array.isArray(uRaw) && uRaw.length > 0) {
+            this.usuarios = uRaw;
+            this.cargando = false;
+          }
+        }
+        const preSols = sessionStorage.getItem("incarsa_preloaded_solicitudes");
+        if (preSols) {
+          const sRaw = JSON.parse(preSols);
+          if (Array.isArray(sRaw) && sRaw.length > 0) {
+            this.solicitudes = sRaw.map(normalizarSolicitud);
+          }
+        }
+      } catch (e) {}
+
+      // 2. Refrescar usuarios desde backend
       try {
         const response = await fetch(`${API.usuarios}/getall`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         this.usuarios = Array.isArray(data) ? data : (data.datos || []);
       } catch (error) {
-        console.warn("Backend no disponible, usando datos mock de usuarios:", error.message);
+        if (!this.usuarios || this.usuarios.length === 0) {
+          console.warn("Backend no disponible, usando datos mock de usuarios:", error.message);
+        }
       } finally {
         this.cargando = false;
       }
@@ -507,8 +572,10 @@ function usersSection() {
         const raw = Array.isArray(data) ? data : (data.datos_solicitudes || data.datos || []);
         this.solicitudes = raw.map(normalizarSolicitud);
       } catch {
-        const mock = typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : [];
-        this.solicitudes = mock.map(normalizarSolicitud);
+        if (!this.solicitudes || this.solicitudes.length === 0) {
+          const mock = typeof MOCK_SOLICITUDES !== "undefined" ? MOCK_SOLICITUDES : [];
+          this.solicitudes = mock.map(normalizarSolicitud);
+        }
       }
     },
 

@@ -95,6 +95,10 @@ def verificacion_servidor():
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(os.path.join(BASE_DIR, "static", "img", "icono.jpg"))
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -106,6 +110,11 @@ async def get_dashboard(request: Request):
 @app.get("/login")
 async def get_login(request: Request):
     return templates.TemplateResponse(name="login.html", request=request)
+
+@app.get("/splash-loading")
+@app.get("/cargando")
+async def get_splash_loading(request: Request):
+    return templates.TemplateResponse(name="splash-loading.html", request=request)
 
 @app.get("/antecedentes")
 async def get_antecedentes(request: Request):

@@ -32,7 +32,7 @@
       <div class="relative flex items-center justify-center px-4 h-20 border-b border-white/10 flex-shrink-0">
         <a href="/dashboard" class="flex items-center justify-center w-full py-2 transition-transform hover:opacity-90">
           <img src="/static/img/logo-sidebar.png" alt="PSI"
-            class="w-auto object-contain select-none transition-all duration-300 mx-auto"
+            class="w-auto object-contain select-none transition-all duration-100 mx-auto"
             style="mix-blend-mode: screen;"
             :class="sidebarCollapsed ? 'max-w-[44px] h-8' : 'max-w-[145px] h-10'">
         </a>
@@ -61,10 +61,10 @@
               :class="openModules.formularios ? 'rotate-180' : ''"></i>
           </button>
           <div x-show="openModules.formularios" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="/solicitudes/nueva" class="sidebar-sublink block py-2 text-[13px]"
+            class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
+            <a href="/solicitudes/nueva" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') ? 'is-active' : ''">Nueva solicitud</a>
-            <a href="/usuarios/nuevo" class="sidebar-sublink block py-2 text-[13px]"
+            <a href="/usuarios/nuevo" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') ? 'is-active' : ''">Nuevo usuario</a>
           </div>
         </div>
@@ -82,15 +82,15 @@
               :class="openModules.tablas ? 'rotate-180' : ''"></i>
           </button>
           <div x-show="openModules.tablas" x-collapse
-            class="sidebar-label ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
-            <a href="/solicitudes" class="sidebar-sublink block py-2 text-[13px]"
+            class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
+            <a href="/solicitudes" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar') ? 'is-active' : ''">Solicitudes</a>
-            <a href="/usuarios" class="sidebar-sublink block py-2 text-[13px]"
+            <a href="/usuarios" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/usuarios') ? 'is-active' : ''">Usuarios</a>
-            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Plantas y zonas</a>
-            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Contratistas</a>
-            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 text-[13px] cursor-pointer">Vehículos</a>
-            <a href="/personas" class="sidebar-sublink block py-2 text-[13px]"
+            <a href="#" @click.prevent="$dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Plantas y zonas</a>
+            <a href="#" @click.prevent="$dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Contratistas</a>
+            <a href="#" @click.prevent="$dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Vehículos</a>
+            <a href="/personas" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/personas') ? 'is-active' : ''">Personas</a>
           </div>
         </div>
@@ -107,11 +107,15 @@
         </a>
       </nav>
 
-      <button @click="sidebarCollapsed = !sidebarCollapsed"
-        class="sidebar-collapse-btn flex items-center justify-center gap-2 h-12 border-t border-white/10 text-[#9FADC9] hover:text-white transition-colors">
-        <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
-        <span class="sidebar-label text-xs">Contraer</span>
-      </button>
+      <!-- Footer del sidebar: Control interactivo Modo Compacto -->
+      <div class="p-2.5 border-t border-white/10">
+        <button type="button" @click="sidebarCollapsed = !sidebarCollapsed"
+          class="sidebar-collapse-btn w-full h-10 px-3 flex items-center justify-center gap-2.5 cursor-pointer group"
+          :title="sidebarCollapsed ? 'Expandir barra lateral' : 'Modo compacto (Plegar panel)'">
+          <i class="fa-solid text-xs" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left group-hover:-translate-x-1'"></i>
+          <span class="sidebar-label text-xs font-semibold tracking-wide">Modo compacto</span>
+        </button>
+      </div>
     </aside>
 
   <!-- ============================================================

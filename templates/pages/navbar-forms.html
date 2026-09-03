@@ -87,14 +87,15 @@
               <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)]"></i>
             </button>
             <div x-show="open" x-transition x-cloak
-              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden">
+              class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50">
               <button @click="$dispatch('open-profile'); open = false"
-                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2">
-                <i class="fa-regular fa-user w-4"></i> Ver perfil
+                class="dropdown-item-profile w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2">
+                <i class="fa-regular fa-user w-4"></i> <span>Ver perfil</span>
               </button>
-              <a href="login.html"
-                class="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
-                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+              <div class="dropdown-divider"></div>
+              <a href="/login"
+                class="dropdown-item-logout w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--steel-100)] flex items-center gap-2 text-[var(--state-rechazado)]">
+                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> <span>Cerrar sesión</span>
               </a>
             </div>
           </div>

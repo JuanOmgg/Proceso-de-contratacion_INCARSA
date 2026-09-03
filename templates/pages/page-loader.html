@@ -1,0 +1,207 @@
+<!-- ============================================================
+     OVERLAY AUTÓNOMO DE TRANSICIÓN ENTRE PÁGINAS · INCARSA
+     ============================================================ -->
+<div id="pageTransitionOverlay" class="page-loader-overlay" aria-hidden="true">
+  <div class="page-loader-content">
+    
+    <!-- Spinner orbital grande -->
+    <div class="page-loader-pulse">
+      <div class="page-loader-spinner"></div>
+    </div>
+
+    <!-- Texto de carga -->
+    <div class="page-loader-text">
+      <span>Cargando</span><span class="pdot">.</span><span class="pdot">.</span><span class="pdot">.</span>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  /* Contenedor a pantalla completa 100% aislado */
+  .page-loader-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    z-index: 9999999 !important;
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+    background-color: #0d1117 !important;
+    background-image:
+      radial-gradient(circle at 50% 40%, rgba(249, 115, 22, 0.12) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  }
+
+  /* Estado visible al transicionar */
+  .page-loader-overlay.is-active {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+  }
+
+  .page-loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+
+  /* Animación de pulso */
+  .page-loader-pulse {
+    animation: ploaderPulse 3s ease-in-out infinite;
+    margin-bottom: 22px;
+  }
+
+  @keyframes ploaderPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.04); opacity: 0.9; }
+  }
+
+  /* Spinner Orbital Grande Autónomo */
+  .page-loader-spinner {
+    --size: 1.3px;
+    --color-1: #ffffff;
+    --color-2: #f97316;
+    position: relative;
+    transform: rotateZ(45deg);
+    perspective: calc(1000 * var(--size));
+    border-radius: 50%;
+    width: calc(48 * var(--size));
+    height: calc(48 * var(--size));
+    color: var(--color-1);
+    margin: 0 auto;
+  }
+
+  .page-loader-spinner:before,
+  .page-loader-spinner:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: inherit;
+    height: inherit;
+    border-radius: 50%;
+    transform: rotateX(70deg);
+    animation: 1s ploaderSpin linear infinite;
+  }
+
+  .page-loader-spinner:after {
+    color: var(--color-2);
+    transform: rotateY(70deg);
+    animation-delay: 0.4s;
+  }
+
+  @keyframes ploaderSpin {
+    0%, 100% { box-shadow: 0.2em 0 0 0 currentcolor; }
+    12% { box-shadow: 0.2em 0.2em 0 0 currentcolor; }
+    25% { box-shadow: 0 0.2em 0 0 currentcolor; }
+    37% { box-shadow: -0.2em 0.2em 0 0 currentcolor; }
+    50% { box-shadow: -0.2em 0 0 0 currentcolor; }
+    62% { box-shadow: -0.2em -0.2em 0 0 currentcolor; }
+    75% { box-shadow: 0 -0.2em 0 0 currentcolor; }
+    87% { box-shadow: 0.2em -0.2em 0 0 currentcolor; }
+  }
+
+  /* Texto de Estado "Cargando..." */
+  .page-loader-text {
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    color: #f8fafc !important;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.45), 0 0 24px rgba(249, 115, 22, 0.35) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+
+  .page-loader-text .pdot {
+    display: inline-block;
+    color: #f97316;
+    font-weight: 700;
+    animation: ploaderDot 1.4s infinite;
+  }
+  .page-loader-text .pdot:nth-child(2) { animation-delay: 0.2s; }
+  .page-loader-text .pdot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes ploaderDot {
+    0%, 20% { opacity: 0; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
+    80%, 100% { opacity: 0; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  (function () {
+    const overlay = document.getElementById("pageTransitionOverlay");
+    if (!overlay) return;
+
+    function showLoader() {
+      overlay.classList.add("is-active");
+    }
+
+    function hideLoader() {
+      overlay.classList.remove("is-active");
+    }
+
+    // Funciones globales por si se quieren invocar manualmente
+    window.showPageLoader = showLoader;
+    window.hidePageLoader = hideLoader;
+
+    // Interceptar clics en enlaces internos navegables
+    document.addEventListener("click", function (e) {
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const a = e.target.closest("a[href]");
+      if (!a) return;
+
+      const rawHref = a.getAttribute("href");
+      if (!rawHref || rawHref === "#" || rawHref.startsWith("#") || rawHref.startsWith("javascript:") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) {
+        return;
+      }
+      if (a.hasAttribute("download") || (a.target && a.target !== "_self")) {
+        return;
+      }
+
+      try {
+        const dest = new URL(a.href, window.location.href);
+        if (dest.origin !== window.location.origin) return;
+
+        // Si es exactamente la misma ruta, no recargar
+        const currentPath = window.location.pathname + window.location.search;
+        const destPath = dest.pathname + dest.search;
+        if (currentPath === destPath && dest.hash) return;
+
+        // Mostrar pantalla de carga y navegar con suavidad
+        e.preventDefault();
+        showLoader();
+        setTimeout(function () {
+          window.location.href = a.href;
+        }, 160);
+      } catch (err) {}
+    });
+
+    // Ocultar si la página se restaura desde la caché de historial del navegador (bfcache)
+    window.addEventListener("pageshow", function () {
+      hideLoader();
+    });
+  })();
+</script>

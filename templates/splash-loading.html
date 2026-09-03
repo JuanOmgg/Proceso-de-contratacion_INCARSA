@@ -1,43 +1,277 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cargando · INCARSA</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargando sesión · INCARSA</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos del Sistema -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}">
+
+  <!-- Configuración de APIs -->
+  <script src="{{ url_for('static', path='js/config.js') }}"></script>
+
+  <style>
+    body {
+      background-color: #0f131a;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .splash-container {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      position: relative;
+      background-color: #0d1117;
+      background-image:
+        radial-gradient(circle at 50% 40%, rgba(249, 115, 22, 0.08) 0%, transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .splash-progress-track-custom {
+      width: 280px;
+      max-width: 85vw;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      position: relative;
+      margin: 24px auto 0;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    .splash-progress-bar-custom {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #f97316 0%, #ef4444 60%, #dc2626 100%);
+      box-shadow: 0 0 14px rgba(249, 115, 22, 0.8), 0 0 4px #ffffff;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .splash-brand-glow {
+      text-shadow: 0 0 14px rgba(255, 255, 255, 0.6), 0 0 25px rgba(249, 115, 22, 0.4);
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.85; }
+    }
+
+    .loader-pulse {
+      animation: pulseSoft 3s ease-in-out infinite;
+    }
+  </style>
 </head>
 
 <body class="antialiased">
 
-<div class="splash-screen login-brand">
-  <div>
-    <div class="loader"></div>
-
-    <h1 class="font-display font-semibold text-white text-lg mt-8 tracking-wide">INCARSA</h1>
-    <p class="text-[#9FADC9] text-xs mt-1">Sistema de Gestión de Solicitudes de Acceso</p>
-
-    <div class="splash-progress-track">
-      <div class="splash-progress-fill"></div>
+<div class="splash-container" id="splashContainer">
+  <div class="max-w-md w-full flex flex-col items-center">
+    
+    <!-- Spinner orbital de alta tecnología -->
+    <div class="loader-pulse mb-6">
+      <div class="loader"></div>
     </div>
 
-    <p class="text-[#C7D0E4] text-xs mt-4">
-      Cargando tu sesión<span class="splash-dot">.</span><span class="splash-dot">.</span><span class="splash-dot">.</span>
-    </p>
+    <!-- Marca e Identidad -->
+    <h1 class="font-display font-bold text-white text-2xl tracking-wider splash-brand-glow">INCARSA</h1>
+    <p class="text-[#9FADC9] text-xs font-medium mt-1 tracking-wide">Sistema de Gestión de Solicitudes de Acceso</p>
+
+    <!-- Badge de Usuario Activo -->
+    <div id="splashUserBadge" class="hidden items-center gap-2 mt-4 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-xs text-orange-400 font-semibold shadow-[0_0_12px_rgba(249,115,22,0.2)]">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span id="splashUserName">Iniciando sesión</span>
+    </div>
+
+    <!-- Barra de progreso real -->
+    <div class="splash-progress-track-custom">
+      <div id="splashProgressBar" class="splash-progress-bar-custom"></div>
+    </div>
+
+    <!-- Porcentaje y Estado dinámico -->
+    <div class="w-[280px] max-w-[85vw] flex items-center justify-between text-xs mt-3 px-0.5">
+      <span id="splashStatusText" class="text-slate-300 font-medium truncate flex items-center gap-1">
+        Cargando recursos<span class="splash-dot">.</span><span class="splash-dot">.</span><span class="splash-dot">.</span>
+      </span>
+      <span id="splashPercent" class="text-slate-400 font-mono font-semibold ml-2">10%</span>
+    </div>
+
   </div>
 </div>
 
 <script>
-  // Simula el tiempo de carga inicial (verificar sesión, cargar catálogos, etc.)
-  // TODO: reemplazar por la espera real de las llamadas de arranque (auth, catálogos)
-  // y redirigir solo cuando resuelvan, o mostrar un error si fallan.
-  setTimeout(() => {
-    window.location.href = "/dashboard";
-  }, 2200);
+  async function ejecutarCargaInicial() {
+    const container = document.getElementById('splashContainer');
+    const bar = document.getElementById('splashProgressBar');
+    const percentEl = document.getElementById('splashPercent');
+    const statusEl = document.getElementById('splashStatusText');
+    const badgeEl = document.getElementById('splashUserBadge');
+    const nameEl = document.getElementById('splashUserName');
+
+    // 1. Verificación obligatoria de sesión
+    const sesionRaw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+    if (!sesionRaw) {
+      window.location.replace('/login');
+      return;
+    }
+
+    try {
+      const sesion = JSON.parse(sesionRaw);
+      if (sesion && (sesion.nombre || sesion.correo)) {
+        nameEl.textContent = sesion.nombre || sesion.correo;
+        badgeEl.classList.remove('hidden');
+        badgeEl.classList.add('inline-flex');
+      }
+    } catch (e) {
+      console.warn("No se pudo leer la sesión:", e);
+    }
+
+    function actualizarProgreso(pct, mensaje) {
+      if (bar) bar.style.width = pct + '%';
+      if (percentEl) percentEl.textContent = pct + '%';
+      if (statusEl && mensaje) {
+        statusEl.innerHTML = mensaje + '<span class="splash-dot">.</span><span class="splash-dot">.</span><span class="splash-dot">.</span>';
+      }
+    }
+
+    actualizarProgreso(15, "Verificando credenciales y perfil");
+
+    const startTime = Date.now();
+
+    // 2. Lista de llamadas de arranque en paralelo (reales del sistema)
+    const solicitudesEndpoint = (typeof API !== 'undefined' && API.solicitudes) ? API.solicitudes : '/api/v1/solicitudes';
+    const usuariosEndpoint = (typeof API !== 'undefined' && API.usuarios) ? API.usuarios : '/api/v1/usuarios';
+    const plantasEndpoint = (typeof API !== 'undefined' && API.plantas) ? API.plantas : '/planta';
+    const contratistasEndpoint = (typeof API !== 'undefined' && API.contratistas) ? API.contratistas : '/emp_contratista';
+    const notificacionesEndpoint = (typeof API !== 'undefined' && API.notificaciones) ? API.notificaciones : '/api/v1/notificaciones';
+
+    const tareas = [
+      // Solicitudes y radicados (crucial para dashboard)
+      fetch(`${solicitudesEndpoint}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          const lista = Array.isArray(data) ? data : (data.datos || []);
+          sessionStorage.setItem('incarsa_preloaded_solicitudes', JSON.stringify(lista));
+          return lista;
+        }).catch(() => null),
+
+      // Usuarios / Sesión en backend
+      fetch(`${usuariosEndpoint}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          const lista = Array.isArray(data) ? data : (data.datos || []);
+          sessionStorage.setItem('incarsa_preloaded_usuarios', JSON.stringify(lista));
+          return lista;
+        }).catch(() => null),
+
+      // Catálogo de Plantas
+      fetch(`${plantasEndpoint}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem('incarsa_preloaded_plantas', JSON.stringify(data));
+          return data;
+        }).catch(() => null),
+
+      // Empresas contratistas
+      fetch(`${contratistasEndpoint}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem('incarsa_preloaded_contratistas', JSON.stringify(data));
+          return data;
+        }).catch(() => null),
+
+      // Notificaciones iniciales
+      fetch(`${notificacionesEndpoint}`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem('incarsa_preloaded_notificaciones', JSON.stringify(data));
+          return data;
+        }).catch(() => null),
+
+      // Precarga de imagen del logo principal
+      new Promise(resolve => {
+        const img = new Image();
+        img.src = '/static/img/logo-sidebar.png';
+        img.onload = resolve;
+        img.onerror = resolve;
+      })
+    ];
+
+    let completadas = 0;
+    tareas.forEach(p => {
+      p.finally(() => {
+        completadas++;
+        const pct = Math.min(88, 15 + Math.round((completadas / tareas.length) * 73));
+        if (completadas === 1) {
+          actualizarProgreso(pct, "Sincronizando permisos y catálogos");
+        } else if (completadas === 3) {
+          actualizarProgreso(pct, "Cargando notificaciones y plantas");
+        } else if (completadas >= 4) {
+          actualizarProgreso(pct, "Preparando espacio de trabajo");
+        }
+      });
+    });
+
+    // 3. Esperar a que concluyan todas las solicitudes (o hasta 5s máximo por seguridad)
+    const timeoutSeguridad = new Promise(resolve => setTimeout(resolve, 5000));
+    await Promise.race([Promise.allSettled(tareas), timeoutSeguridad]);
+
+    // 4. Garantizar mínimo 1.2 segundos para una percepción visual suave y cinematográfica
+    const transcurrido = Date.now() - startTime;
+    const duracionMinima = 1200;
+    if (transcurrido < duracionMinima) {
+      await new Promise(res => setTimeout(res, duracionMinima - transcurrido));
+    }
+
+    // 5. 100% completado con animación de éxito
+    if (bar) {
+      bar.style.width = '100%';
+      bar.style.background = 'linear-gradient(90deg, #10b981 0%, #22c55e 100%)';
+      bar.style.boxShadow = '0 0 16px rgba(34, 197, 94, 0.85), 0 0 4px #ffffff';
+    }
+    if (percentEl) percentEl.textContent = '100%';
+    if (statusEl) statusEl.innerHTML = '<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check mr-1.5"></i>¡Todo listo! Bienvenido</span>';
+
+    // 6. Pausa breve para apreciar el estado y transición de salida
+    await new Promise(res => setTimeout(res, 380));
+
+    if (container) {
+      container.style.opacity = '0';
+      container.style.transform = 'scale(1.02)';
+    }
+
+    setTimeout(() => {
+      window.location.replace('/dashboard');
+    }, 380);
+  }
+
+  document.addEventListener('DOMContentLoaded', ejecutarCargaInicial);
 </script>
 
 </body>

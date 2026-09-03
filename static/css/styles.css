@@ -1412,37 +1412,74 @@ span.flatpickr-weekday {
 
 /* =========================================================
    TRANSICIÓN ENTRE PANTALLAS
-   Overlay reutilizable para la navegación interna (enlaces del
-   sidebar, tablas, botones "Ver/Editar", etc.). Ver
-   page-transition.js para la lógica que lo muestra/oculta.
    ========================================================= */
 .page-transition-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
-  background: var(--bg-app);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  background-color: #0d1117;
+  background-image:
+    radial-gradient(circle at 50% 40%, rgba(249, 115, 22, 0.09) 0%, transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 48px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  padding: 24px;
   opacity: 1;
   visibility: visible;
   pointer-events: all;
-  transition: opacity 0.25s var(--ease-standard), visibility 0.25s;
-}
-.page-transition-overlay.is-hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.page-transition-overlay .loader {
-  --color-1: var(--ink-800);
-  --color-2: var(--signal-500);
-  --size: 0.8px;
+  transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-[x-cloak] {
-  display: none !important;
+.page-transition-overlay.is-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
+
+.page-transition-overlay .loader-pulse {
+  animation: pulseSoft 3s ease-in-out infinite;
+  margin-bottom: 24px;
+}
+
+.page-transition-overlay .loader {
+  --color-1: #ffffff;
+  --color-2: #f97316;
+  --size: 1.25px; /* Loader grande */
+  width: calc(48 * var(--size));
+  height: calc(48 * var(--size));
+}
+
+.page-transition-overlay .page-loader-status {
+  font-family: var(--font-display, 'Space Grotesk', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f1f5f9;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.45), 0 0 20px rgba(249, 115, 22, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.page-transition-overlay .splash-dot {
+  display: inline-block;
+  animation: splashDotBlink 1.4s infinite;
+  color: #f97316;
+  font-weight: 700;
+}
+.page-transition-overlay .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+.page-transition-overlay .splash-dot:nth-child(3) { animation-delay: 0.4s; }
 
 
 /* =========================================================
@@ -1976,6 +2013,588 @@ table td .inline-flex {
 .contratista-option-item:hover .contratista-option-action {
   color: #0c767d;
 }
+
+/* =========================================================
+   STEPPER DE RUTA DE APROBACIÓN POR ROLES (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .wizard-card {
+  background: #ffffff;
+  border-color: var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+:root:not(.dark) .wizard-card .text-slate-400 {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .revision-step-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root:not(.dark) .revision-step-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+}
+
+:root:not(.dark) .revision-step-card .step-title {
+  color: #1e293b !important;
+  font-weight: 700;
+  font-size: 12px;
+  transition: color 0.2s ease;
+}
+
+:root:not(.dark) .revision-step-card .step-subtitle {
+  color: #64748b !important;
+  font-size: 11px;
+}
+
+/* Paso 1: Radicación (Completado: Cian / Teal) */
+:root:not(.dark) .revision-step-card.step-radicacion.is-complete {
+  background: linear-gradient(145deg, #f0fdfa 0%, #e6fffa 100%) !important;
+  border-color: #2dd4bf !important;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.1), inset 0 0 0 1px rgba(20, 184, 166, 0.12) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-radicacion.is-complete .step-title {
+  color: #0f766e !important;
+}
+
+:root:not(.dark) .revision-step-card.step-radicacion.is-complete .step-icon {
+  color: #0d9488 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-radicacion.is-complete .step-subtitle {
+  color: #115e59 !important;
+}
+
+/* Paso 2: Revisión SST / GESCO */
+:root:not(.dark) .revision-step-card.step-revision.is-complete {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border-color: #4ade80 !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1), inset 0 0 0 1px rgba(34, 197, 94, 0.12) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-complete .step-title {
+  color: #15803d !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-complete .step-icon {
+  color: #16a34a !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-complete .step-subtitle {
+  color: #166534 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-pending {
+  background: linear-gradient(145deg, #faf5ff 0%, #f3e8ff 100%) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.1), inset 0 0 0 1px rgba(147, 51, 234, 0.12) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-pending .step-title {
+  color: #7e22ce !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-pending .step-icon {
+  color: #9333ea !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-pending .step-subtitle {
+  color: #6b21a8 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-rejected {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1), inset 0 0 0 1px rgba(239, 68, 68, 0.12) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-rejected .step-title {
+  color: #b91c1c !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-rejected .step-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-revision.is-rejected .step-subtitle {
+  color: #991b1b !important;
+}
+
+/* Paso 3: Aprobación SCR */
+:root:not(.dark) .revision-step-card.step-scr.is-complete {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border-color: #4ade80 !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1), inset 0 0 0 1px rgba(34, 197, 94, 0.12) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-complete .step-title {
+  color: #15803d !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-complete .step-icon {
+  color: #16a34a !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-complete .step-subtitle {
+  color: #166534 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-active {
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-color: #fbbf24 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.12), inset 0 0 0 1px rgba(245, 158, 11, 0.14) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-active .step-title {
+  color: #b45309 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-active .step-icon {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-active .step-subtitle {
+  color: #92400e !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-locked {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  opacity: 0.85;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-locked .step-title {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-locked .step-icon {
+  color: #94a3b8 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-locked .step-subtitle {
+  color: #94a3b8 !important;
+}
+
+/* Paso 4: Dictamen Final */
+:root:not(.dark) .revision-step-card.step-dictamen.is-complete {
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.14), inset 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-complete .step-title {
+  color: #047857 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-complete .step-icon {
+  color: #059669 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-complete .step-subtitle {
+  color: #065f46 !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-rejected {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.14), inset 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-rejected .step-title {
+  color: #b91c1c !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-rejected .step-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-rejected .step-subtitle {
+  color: #991b1b !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-locked {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  opacity: 0.85;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-title {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-icon {
+  color: #94a3b8 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-subtitle {
+  color: #94a3b8 !important;
+}
+
+/* Status pills en Modo Claro */
+:root:not(.dark) .status-pill.status-rechazado {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fca5a5 !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08);
+}
+:root:not(.dark) .status-pill.status-rechazado::before {
+  background: #dc2626 !important;
+}
+
+:root:not(.dark) .status-pill.status-aprobado {
+  background: #dcfce7 !important;
+  color: #16a34a !important;
+  border: 1px solid #86efac !important;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08);
+}
+:root:not(.dark) .status-pill.status-aprobado::before {
+  background: #16a34a !important;
+}
+
+:root:not(.dark) .status-pill.status-revision {
+  background: #f3e8ff !important;
+  color: #9333ea !important;
+  border: 1px solid #d8b4fe !important;
+  box-shadow: 0 1px 3px rgba(147, 51, 234, 0.08);
+}
+:root:not(.dark) .status-pill.status-revision::before {
+  background: #9333ea !important;
+}
+
+:root:not(.dark) .status-pill.status-aprobar {
+  background: #fef3c7 !important;
+  color: #d97706 !important;
+  border: 1px solid #fcd34d !important;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08);
+}
+:root:not(.dark) .status-pill.status-aprobar::before {
+  background: #d97706 !important;
+}
+
+:root:not(.dark) .status-pill.status-enviado {
+  background: #ccfbf1 !important;
+  color: #0d9488 !important;
+  border: 1px solid #5eead4 !important;
+  box-shadow: 0 1px 3px rgba(13, 148, 136, 0.08);
+}
+:root:not(.dark) .status-pill.status-enviado::before {
+  background: #0d9488 !important;
+}
+
+/* =========================================================
+   FICHA: DATOS DE LA SOLICITUD (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .revision-ficha-card {
+  background: #ffffff !important;
+  border: 1.5px solid var(--border-subtle) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.02) !important;
+}
+
+:root:not(.dark) .revision-ficha-card h3 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .radicado-badge {
+  background: #eff6ff !important;
+  border: 1.5px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.08) !important;
+}
+
+:root:not(.dark) .revision-ficha-card .text-slate-400 {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+
+:root:not(.dark) .revision-ficha-card strong,
+:root:not(.dark) .revision-ficha-card .text-\[var\(--ink-900\)\],
+:root:not(.dark) .revision-ficha-card .text-slate-700,
+:root:not(.dark) .revision-ficha-card .text-slate-800 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .revision-actividad-box {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* =========================================================
+   PERSONAL E INGRESANTES (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .persona-revision-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+:root:not(.dark) .persona-revision-card:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+:root:not(.dark) .persona-revision-card.is-autorizado {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%) !important;
+  border-color: #86efac !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08) !important;
+}
+
+:root:not(.dark) .persona-revision-card.is-denegado {
+  background: linear-gradient(145deg, #ffffff 0%, #fef2f2 100%) !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08) !important;
+}
+
+:root:not(.dark) .persona-revision-card h4 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+}
+
+:root:not(.dark) .persona-revision-card .persona-num-badge {
+  font-weight: 800;
+  border: 1.5px solid transparent;
+}
+
+:root:not(.dark) .persona-revision-card.is-autorizado .persona-num-badge {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+
+:root:not(.dark) .persona-revision-card.is-denegado .persona-num-badge {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+/* Chip / Botón de Antecedentes en Modo Claro */
+:root:not(.dark) .btn-antecedente-chip {
+  background: #eff6ff !important;
+  border: 1.5px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.06) !important;
+}
+
+:root:not(.dark) .btn-antecedente-chip:hover {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+:root:not(.dark) .btn-antecedente-chip i {
+  color: #2563eb !important;
+}
+
+/* Grupo de Controles: Autorizar / No Autorizar (Modo Claro) */
+:root:not(.dark) .persona-controls-group {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root:not(.dark) .btn-autorizar-action.is-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35) !important;
+}
+
+:root:not(.dark) .btn-autorizar-action.is-inactive {
+  background: transparent !important;
+  color: #475569 !important;
+  border: 1px solid transparent !important;
+}
+
+:root:not(.dark) .btn-autorizar-action.is-inactive:hover {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+:root:not(.dark) .btn-denegar-action.is-active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35) !important;
+}
+
+:root:not(.dark) .btn-denegar-action.is-inactive {
+  background: transparent !important;
+  color: #475569 !important;
+  border: 1px solid transparent !important;
+}
+
+:root:not(.dark) .btn-denegar-action.is-inactive:hover {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+/* Botones de Documentos Adjuntos (Expediente) en Modo Claro */
+:root:not(.dark) .persona-revision-card button.bg-slate-50,
+:root:not(.dark) .persona-revision-card button.bg-indigo-50\/70 {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root:not(.dark) .persona-revision-card button.bg-slate-50:hover,
+:root:not(.dark) .persona-revision-card button.bg-indigo-50\/70:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+/* =========================================================
+   WIZARD STEPPER FORMULARIO (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .step-circle.is-complete {
+  border-color: #10b981 !important;
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+}
+
+:root:not(.dark) .step-connector.is-complete::after {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+}
+
+:root:not(.dark) .step-circle.is-current {
+  border-color: #fa051a !important;
+  background: #fa051a !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 5px rgba(250, 5, 26, 0.15), 0 4px 12px rgba(250, 5, 26, 0.25) !important;
+}
+
+:root:not(.dark) .step-circle:not(.is-current):not(.is-complete) {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+}
+
+:root:not(.dark) .step-label {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+
+:root:not(.dark) .step-label.is-current {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* =========================================================
+   BOTONES VER DOCUMENTOS EN TABLAS (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .btn-ver-documentos-pdf {
+  background: #fef2f2 !important;
+  border: 1.5px solid #fca5a5 !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08) !important;
+}
+
+:root:not(.dark) .btn-ver-documentos-pdf:hover {
+  background: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
+  transform: translateY(-1px);
+}
+
+:root:not(.dark) .btn-ver-documentos-pdf i {
+  color: #ef4444 !important;
+}
+
+:root:not(.dark) .btn-ver-documentos-pdf .badge-count-doc {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+  font-weight: 800 !important;
+}
+
+:root:not(.dark) .btn-ver-documentos-blue {
+  background: #eff6ff !important;
+  border: 1.5px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.08) !important;
+}
+
+:root:not(.dark) .btn-ver-documentos-blue:hover {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+  transform: translateY(-1px);
+}
+
+:root:not(.dark) .btn-ver-documentos-blue i {
+  color: #2563eb !important;
+}
+
+:root:not(.dark) .btn-ver-documentos-blue .badge-count-doc {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #bfdbfe !important;
+  font-weight: 800 !important;
+}
+
+/* =========================================================
+   MODAL TICKET DE DOCUMENTOS (ESTILO TICKET AUTÉNTICO)
+   ========================================================= */
+.modal-ticket {
+  background: var(--paper) !important;
+  color: var(--paper-ink) !important;
+  border: 1px solid var(--paper-shadow) !important;
+}
+
+.modal-ticket .modal-serrated {
+  background:
+    linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0/16px 16px,
+    linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 0 0/16px 16px !important;
+  background-repeat: repeat-x !important;
+}
+
+.modal-ticket h3 {
+  color: var(--paper-ink) !important;
+  font-weight: 700 !important;
+}
+
+.modal-ticket .doc-ticket-row {
+  background: rgba(239, 233, 220, 0.5) !important;
+  border: 1px solid var(--paper-shadow) !important;
+  transition: all 0.2s ease;
+}
+
+.modal-ticket .doc-ticket-row:hover {
+  background: rgba(239, 233, 220, 0.85) !important;
+  border-color: #d8cfbe !important;
+}
+
+.modal-ticket .doc-type-badge {
+  background: var(--paper) !important;
+  color: var(--paper-ink) !important;
+  border: 1px solid var(--paper-shadow) !important;
+  font-weight: 700 !important;
+}
+
+
+
 
 
 

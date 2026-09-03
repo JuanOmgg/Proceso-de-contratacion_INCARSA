@@ -10,14 +10,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src.schemas.auth_schema import RecuperacionInput, VerificarCodigoInput, RestablecerPasswordInput
+from src.schemas.auth_schema import (
+    LoginInput,
+    RecuperacionInput,
+    VerificarCodigoInput,
+    RestablecerPasswordInput
+)
 
 from src.loaders.auth_loader import (
     SEARCH_userbyCorreo_db,
+    GET_user_for_login_db,
     POST_recoveryToken_db,
     GET_validateTokens_db,
     PATCH_password_db
 )
+
+from src.utils.security import verify_password, create_access_token
 
 resend.api_key = os.getenv("RESEND_API_KEY", "")
 
@@ -28,7 +36,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def enviar_correo_smtp(destinatario: str, asunto: str, cuerpo_html: str) -> bool:
-    load_dotenv()
+    load_dotenv(override=True)
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "465"))
     smtp_user = os.getenv("SMTP_USER", "").strip()
@@ -60,20 +68,82 @@ def enviar_correo_smtp(destinatario: str, asunto: str, cuerpo_html: str) -> bool
         print(f"[AUTH-SMTP] Error enviando correo a {destinatario}: {e}")
         return False
 
+@router.post("/login", status_code=status.HTTP_200_OK)
+def login(payload: LoginInput):
+    correo = payload.correo.strip().lower()
+    usuario = GET_user_for_login_db(correo)
+
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas."
+        )
+
+    if not usuario.get("is_active"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu cuenta se encuentra inactiva. Comunícate con el administrador."
+        )
+
+    # Validar contraseña con bcrypt mediante security.py
+    contrasena_almacenada = usuario.get("contrasena") or ""
+    if not verify_password(payload.contrasena, contrasena_almacenada):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas."
+        )
+
+    # Construir token JWT
+    token_data = {
+        "sub": str(usuario["id"]),
+        "correo": usuario["correo"],
+        "rol": usuario.get("rol", "USUARIO"),
+        "id_rol": usuario.get("id_rol")
+    }
+
+    token = create_access_token(data=token_data)
+    nombre_completo = f"{usuario.get('nombres', '')} {usuario.get('apellidos', '')}".strip()
+
+    return {
+        "exito": True,
+        "mensaje": "Inicio de sesión exitoso.",
+        "access_token": token,
+        "token_type": "bearer",
+        "usuario": {
+            "id": usuario["id"],
+            "nombre": nombre_completo,
+            "correo": usuario["correo"],
+            "rol": usuario.get("rol", "USUARIO"),
+            "id_rol": usuario.get("id_rol"),
+            "plantas_ids": usuario.get("plantas_ids", []),
+            "plantas": usuario.get("plantas", [])
+        }
+    }
+
 @router.post("/solicitar_recuperacion", status_code=status.HTTP_200_OK)
 def solicitar_recuperacion(payload: RecuperacionInput):
     correo = payload.correo.strip().lower()
 
     usuario = SEARCH_userbyCorreo_db(correo)
 
-    mensaje_exito = {
-        "exito": True,
-        "mensaje": "Si el correo está registrado en el sistema, se ha enviado un código de recuperación."
-    }
-
     if not usuario:
         print(f"[AUTH] Solicitud de recuperacion para correo no registrado: {correo}")
-        return mensaje_exito
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El correo ingresado no se encuentra registrado en el sistema."
+        )
+
+    if not usuario.get("is_active"):
+        print(f"[AUTH] Solicitud de recuperacion para usuario inactivo: {correo}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El usuario asociado a este correo se encuentra inactivo. Comunícate con el administrador."
+        )
+
+    mensaje_exito = {
+        "exito": True,
+        "mensaje": "Se ha enviado un código de recuperación a tu correo electrónico."
+    }
 
     codigo_plano = f"{random.randint(100000, 999999)}"
     codigo_hash = hashlib.sha256(codigo_plano.encode()).hexdigest()
@@ -84,12 +154,12 @@ def solicitar_recuperacion(payload: RecuperacionInput):
     html_correo = f"""
         <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;">
             <div style="text-align: center; margin-bottom: 24px;">
-                <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">INCARSA</h2>
+                <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">PSI</h2>
                 <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Control y Gestión de Contratos</p>
             </div>
-            <h3 style="color: #111827; font-size: 18px; margin-bottom: 12px;">Código de recuperación de contraseña</h3>
+            <h3 style="color: #111827; font-size: 18px; margin-bottom: 12px; text-align: center;">Código de recuperación de contraseña</h3>
             <p style="color: #4b5563; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
-                Has solicitado restablecer tu contraseña de acceso al sistema INCARSA. Utiliza el siguiente código de verificación:
+                Has solicitado restablecer tu contraseña de acceso al sistema PSI. Utiliza el siguiente código de verificación:
             </p>
             <div style="background: #f9fafb; border: 2px dashed #ea580c; border-radius: 10px; padding: 18px; text-align: center; margin-bottom: 20px;">
                 <span style="font-family: monospace, Courier; font-size: 34px; font-weight: bold; letter-spacing: 8px; color: #ea580c;">{codigo_plano}</span>
@@ -99,7 +169,7 @@ def solicitar_recuperacion(payload: RecuperacionInput):
             </p>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin-bottom: 16px;" />
             <p style="color: #9ca3af; font-size: 11px; text-align: center; margin: 0;">
-                Este es un mensaje automático generado por la plataforma INCARSA. Por favor no responder a este correo.
+                Este es un mensaje automático generado por la plataforma PSI. Por favor no responder a este correo.
             </p>
         </div>
     """
@@ -160,7 +230,10 @@ def verificar_codigo(payload: VerificarCodigoInput):
 
     usuario = SEARCH_userbyCorreo_db(correo)
     if not usuario:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo no se encuentra registrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El correo no se encuentra registrado.")
+
+    if not usuario.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario se encuentra inactivo.")
 
     token_info = GET_validateTokens_db(usuario["id_usuario"], codigo_hash)
     if not token_info:
@@ -182,7 +255,10 @@ def restablecer_contrasena(payload: RestablecerPasswordInput):
 
     usuario = SEARCH_userbyCorreo_db(correo)
     if not usuario:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Datos o código inválidos.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El correo no se encuentra registrado.")
+
+    if not usuario.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario se encuentra inactivo.")
 
     token_info = GET_validateTokens_db(usuario["id_usuario"], codigo_hash)
     

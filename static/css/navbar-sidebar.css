@@ -25,6 +25,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  transition: padding-left 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Sidebar colapsado → ajustar padding izquierdo */
@@ -56,7 +57,8 @@
   top: 0;
   height: 100vh;
   z-index: 40;
-  transition: width 0.4s var(--ease-standard), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.12s cubic-bezier(0.2, 0, 0, 1), transform 0.14s cubic-bezier(0.2, 0, 0, 1);
+  will-change: width, transform;
 }
 
 .sidebar::after {
@@ -97,13 +99,31 @@
   width: var(--sidebar-collapsed-w);
 }
 
+/* Ocultar submenús abiertos cuando la barra se repliega al modo compacto */
+.sidebar.is-collapsed .sidebar-submenu {
+  display: none !important;
+}
+
+/* Centrar iconos de enlaces en modo compacto */
+.sidebar.is-collapsed .sidebar-link {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.is-collapsed .sidebar-collapse-btn {
+  padding-left: 0;
+  padding-right: 0;
+  justify-content: center;
+}
+
 /* Pausar shimmer cuando el sidebar está contraído */
 .sidebar.is-collapsed::after {
   animation-play-state: paused;
   opacity: 0;
 }
 
-/* Textos, logos y chevrones con transición al colapsar */
+/* Textos, logos y chevrones con transición al colapsar y expandir */
 .sidebar-label,
 .sidebar-brand-text,
 .sidebar-chevron {
@@ -111,7 +131,11 @@
   max-width: 200px;
   overflow: hidden;
   white-space: nowrap;
-  transition: opacity 0.25s ease, max-width 0.4s var(--ease-standard), margin 0.4s var(--ease-standard);
+  display: inline-block;
+  vertical-align: middle;
+  transition: opacity 0.10s ease-out,
+              max-width 0.12s cubic-bezier(0.2, 0, 0, 1),
+              transform 0.10s ease-out;
 }
 
 .sidebar.is-collapsed .sidebar-label,
@@ -119,15 +143,19 @@
 .sidebar.is-collapsed .sidebar-chevron {
   opacity: 0;
   max-width: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
   margin-left: 0 !important;
-  transition: opacity 0.15s ease, max-width 0.3s var(--ease-standard), margin 0.3s var(--ease-standard);
+  transition: opacity 0.08s ease-in,
+              max-width 0.12s cubic-bezier(0.2, 0, 0, 1),
+              transform 0.08s ease-in;
 }
 
 /* Enlaces principales del sidebar */
 .sidebar-link {
   color: #C7D0E4;
-  border-radius: 10px;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s var(--ease-standard);
+  border-radius: 12px;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, padding 0.12s cubic-bezier(0.2, 0, 0, 1), justify-content 0.12s ease;
 }
 
 .sidebar-link:hover {
@@ -144,14 +172,18 @@
 
 /* Sub-enlaces de módulos desplegables */
 .sidebar-sublink {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 8px;
   color: #9FADC9;
-  border-left: 2px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease-standard);
+  border-left: 3px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.25s var(--ease-standard);
 }
 
 .sidebar-sublink:hover {
   color: #fff;
   border-left-color: var(--signal-500);
+  background: rgba(255, 255, 255, 0.05);
   transform: translateX(4px);
 }
 
@@ -160,9 +192,20 @@
   border-left-color: var(--signal-500);
 }
 
-/* Botón inferior para contraer/expandir */
+/* Botón inferior para contraer/expandir (Modo compacto) */
 .sidebar-collapse-btn {
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #9FADC9;
+  transition: all 0.25s var(--ease-standard);
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(232, 128, 76, 0.4);
+  color: #ffffff;
 }
 
 /* ---------- Drawer móvil y controles ---------- */
@@ -175,7 +218,7 @@
   -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s var(--ease-standard);
+  transition: opacity 0.15s ease-out;
 }
 
 .sidebar-backdrop.is-visible {
@@ -605,7 +648,7 @@
     transform: translateX(calc(-100% - 30px));
     border-radius: 20px;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s ease;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), width 0.12s ease;
   }
 
   .sidebar.is-mobile-open {

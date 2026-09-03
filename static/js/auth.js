@@ -14,6 +14,15 @@ function loginForm() {
     submitting: false,
     error: "",
 
+    // Estado de Pantalla de Carga (Splash Screen)
+    splash: {
+      activo: false,
+      progreso: 0,
+      mensaje: "Verificando credenciales...",
+      usuarioNombre: "",
+      completado: false
+    },
+
     // Vista actual: 'login' | 'contacto' | 'olvide'
     vista: "login",
 
@@ -110,7 +119,7 @@ function loginForm() {
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(data.detail || "No se pudo procesar la solicitud de recuperación.");
+          throw new Error(data.detail || data.mensaje || "No se pudo procesar la solicitud de recuperación.");
         }
 
         // Si el backend entrega código demo (modo prueba / dev), lo mostramos en el badge
@@ -127,15 +136,9 @@ function loginForm() {
         this.iniciarTemporizadorCodigo();
 
       } catch (err) {
-        console.warn("Backend no disponible o error en recuperación:", err);
-        // Modo fallback para pruebas locales / mock
-        const nuevoCodigo = Math.floor(100000 + Math.random() * 900000).toString();
-        this.olvide.codigoGenerado = nuevoCodigo;
+        console.warn("Error en recuperación:", err);
         this.olvide.enviando = false;
-        this.olvide.paso = 2;
-        this.olvide.codigo = "";
-        this.olvide.error = "";
-        this.iniciarTemporizadorCodigo();
+        this.olvide.error = err.message || "No se pudo procesar la solicitud de recuperación.";
       }
     },
 
@@ -168,16 +171,19 @@ function loginForm() {
           body: JSON.stringify({ correo: (this.olvide.correo || "").trim() })
         });
         const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          this.olvide.error = data.detail || data.mensaje || "Error al reenviar el código.";
+          return;
+        }
         if (data.codigo_demo) {
           this.olvide.codigoGenerado = String(data.codigo_demo);
         } else {
-          this.olvide.codigoGenerado = Math.floor(100000 + Math.random() * 900000).toString();
+          this.olvide.codigoGenerado = "";
         }
+        this.iniciarTemporizadorCodigo();
       } catch (e) {
-        this.olvide.codigoGenerado = Math.floor(100000 + Math.random() * 900000).toString();
+        this.olvide.error = e.message || "Error al reenviar código.";
       }
-
-      this.iniciarTemporizadorCodigo();
     },
 
     // Paso 2 -> Paso 3: Verificar código ingresado
@@ -218,28 +224,14 @@ function loginForm() {
           if (this.olvide.intervalo) clearInterval(this.olvide.intervalo);
           return;
         } else {
-          // Si el código coincide con el código de prueba local o 123456, permitir continuar
-          if (cod === this.olvide.codigoGenerado || cod === "123456") {
-            this.olvide.enviando = false;
-            this.olvide.paso = 3;
-            this.olvide.error = "";
-            if (this.olvide.intervalo) clearInterval(this.olvide.intervalo);
-            return;
-          }
           this.olvide.enviando = false;
-          this.olvide.error = data.detail || "El código ingresado es incorrecto o ha expirado.";
+          this.olvide.error = data.detail || data.mensaje || "El código ingresado es incorrecto o ha expirado.";
           return;
         }
       } catch (err) {
-        console.warn("Backend no disponible para verificar código, usando validación de prueba:", err);
+        console.warn("Error al verificar código:", err);
         this.olvide.enviando = false;
-        if (cod === this.olvide.codigoGenerado || cod === "123456") {
-          this.olvide.paso = 3;
-          this.olvide.error = "";
-          if (this.olvide.intervalo) clearInterval(this.olvide.intervalo);
-        } else {
-          this.olvide.error = "El código ingresado es incorrecto o ha expirado.";
-        }
+        this.olvide.error = err.message || "El código ingresado es incorrecto o ha expirado.";
       }
     },
 
@@ -358,7 +350,7 @@ function loginForm() {
       return true;
     },
 
-    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = []) {
+    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = [], token = null) {
       const datos = { 
         nombre, 
         correo, 
@@ -366,63 +358,207 @@ function loginForm() {
         id, 
         id_rol, 
         plantas_ids: Array.isArray(plantas_ids) ? plantas_ids.map(Number) : [],
-        plantas: plantas || []
+        plantas: plantas || [],
+        token: token || null
       };
       if (this.recordarme) {
         localStorage.setItem("incarsa_session", JSON.stringify(datos));
+        if (token) localStorage.setItem("incarsa_token", token);
       }
       sessionStorage.setItem("incarsa_session", JSON.stringify(datos));
+      if (token) sessionStorage.setItem("incarsa_token", token);
     },
 
     async submit() {
       if (!this.validate()) return;
       this.submitting = true;
+      this.error = "";
 
-      // 1. Intentar autenticación contra usuarios en backend
+      // Activar pantalla de carga (Splash)
+      this.splash.activo = true;
+      this.splash.progreso = 12;
+      this.splash.completado = false;
+      this.splash.mensaje = "Verificando credenciales y perfil";
+      this.splash.usuarioNombre = this.correo ? this.correo.split("@")[0] : "Iniciando sesión";
+
+      let matchedUser = null;
+      let accessToken = null;
+
+      // 1. Intentar autenticación real contra el endpoint /auth/login
       try {
-        const response = await fetch(`${API.usuarios}/getall`);
+        const authEndpoint = (typeof API !== "undefined" && API.auth) ? `${API.auth}/login` : "/auth/login";
+        const response = await fetch(authEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            correo: this.correo.trim().toLowerCase(),
+            contrasena: this.contrasena
+          })
+        });
+
         if (response.ok) {
-          const data = await response.json();
-          const lista = Array.isArray(data) ? data : (data.datos || data.data || []);
-          const matched = lista.find(u => String(u.correo || "").trim().toLowerCase() === this.correo.trim().toLowerCase());
-          if (matched) {
-            this.guardarSesion(
-              matched.nombre_completo || `${matched.nombres || ''} ${matched.apellidos || ''}`.trim(),
-              matched.correo,
-              matched.rol || "USUARIO",
-              matched.id,
-              matched.id_rol,
-              matched.plantas_ids || [],
-              matched.plantas || []
-            );
-            window.location.href = "/dashboard";
+          const resData = await response.json();
+          if (resData.exito && resData.usuario) {
+            matchedUser = resData.usuario;
+            accessToken = resData.access_token;
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          let mensajeError = "Correo o contraseña incorrectos.";
+          if (typeof errData.detail === "string") {
+            mensajeError = errData.detail;
+          } else if (Array.isArray(errData.detail) && errData.detail[0]?.msg) {
+            mensajeError = errData.detail[0].msg;
+          }
+
+          // Si el servidor devolvió un error de validación o credenciales, detener y mostrar
+          if (response.status === 401 || response.status === 403 || response.status === 422 || response.status === 404) {
+            await new Promise(r => setTimeout(r, 450));
+            this.splash.activo = false;
+            this.submitting = false;
+            this.error = mensajeError;
             return;
           }
         }
       } catch (errApi) {
-        console.warn("Consulta a usuarios backend:", errApi);
+        console.warn("Intento de conexión con /auth/login falló:", errApi);
       }
 
-      // 2. Modo mock: buscar en MOCK_USUARIOS (de mockData.js)
-      setTimeout(() => {
-        const user = MOCK_USUARIOS.find(
+      // 2. Modo mock fallback si no se encontró en backend
+      if (!matchedUser && typeof MOCK_USUARIOS !== "undefined") {
+        const mockMatch = MOCK_USUARIOS.find(
           u => u.correo.toLowerCase() === this.correo.trim().toLowerCase()
         );
-
-        if (!user) {
-          this.submitting = false;
-          this.error = "Correo o contraseña incorrectos.";
-          return;
+        if (mockMatch) {
+          matchedUser = {
+            nombre: `${mockMatch.nombres} ${mockMatch.apellidos}`.trim(),
+            correo: mockMatch.correo,
+            rol: mockMatch.rol || "GESTOR DE DOCUMENTACIÓN",
+            id: mockMatch.id || 1,
+            id_rol: 2,
+            plantas_ids: [],
+            plantas: []
+          };
         }
+      }
 
-        this.guardarSesion(
-          `${user.nombres} ${user.apellidos}`.trim(),
-          user.correo,
-          user.rol || "GESTOR DE DOCUMENTACIÓN"
-        );
+      // Si no existe el usuario, cerrar splash y mostrar error
+      if (!matchedUser) {
+        await new Promise(r => setTimeout(r, 450));
+        this.splash.activo = false;
+        this.submitting = false;
+        this.error = this.error || "Correo o contraseña incorrectos.";
+        return;
+      }
 
-        window.location.href = "/dashboard";
-      }, 700);
+      // Usuario autenticado: guardar sesión y token JWT, y proceder con carga
+      this.splash.usuarioNombre = matchedUser.nombre || matchedUser.correo;
+      this.guardarSesion(
+        matchedUser.nombre,
+        matchedUser.correo,
+        matchedUser.rol,
+        matchedUser.id,
+        matchedUser.id_rol,
+        matchedUser.plantas_ids,
+        matchedUser.plantas,
+        accessToken
+      );
+
+      await this.ejecutarPrecargaCompleta(matchedUser);
+    },
+
+    async ejecutarPrecargaCompleta(user) {
+      const startTime = Date.now();
+
+      const actualizarProgreso = (pct, msg) => {
+        this.splash.progreso = pct;
+        if (msg) this.splash.mensaje = msg;
+      };
+
+      actualizarProgreso(25, "Cargando solicitudes y radicados");
+
+      // Tareas de precarga real de toda la plataforma
+      const tSolicitudes = fetch(`${API.solicitudes}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          const lista = Array.isArray(data) ? data : (data.datos || []);
+          sessionStorage.setItem("incarsa_preloaded_solicitudes", JSON.stringify(lista));
+          return lista;
+        }).catch(() => null);
+
+      const tPlantas = fetch(`${API.plantas}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem("incarsa_preloaded_plantas", JSON.stringify(data));
+          return data;
+        }).catch(() => null);
+
+      const tContratistas = fetch(`${API.contratistas}/getall`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem("incarsa_preloaded_contratistas", JSON.stringify(data));
+          return data;
+        }).catch(() => null);
+
+      const paramsNotif = new URLSearchParams();
+      if (user.id) paramsNotif.append("id_usuario", user.id);
+      if (user.id_rol) paramsNotif.append("id_rol", user.id_rol);
+      const notifEndpoint = (typeof API !== "undefined" && API.notificaciones) ? API.notificaciones : "/api/v1/notificaciones";
+      const tNotificaciones = fetch(`${notifEndpoint}?${paramsNotif.toString()}`)
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          sessionStorage.setItem("incarsa_preloaded_notificaciones", JSON.stringify(data));
+          return data;
+        }).catch(() => null);
+
+      const tLogo = new Promise(resolve => {
+        const img = new Image();
+        img.src = "/static/img/logo-sidebar.png";
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+
+      const tareas = [tSolicitudes, tPlantas, tContratistas, tNotificaciones, tLogo];
+      let completadas = 0;
+
+      tareas.forEach(p => {
+        p.finally(() => {
+          completadas++;
+          const pct = Math.min(92, 25 + Math.round((completadas / tareas.length) * 67));
+          if (completadas === 1) {
+            actualizarProgreso(pct, "Sincronizando permisos y catálogos");
+          } else if (completadas === 3) {
+            actualizarProgreso(pct, "Cargando notificaciones y plantas");
+          } else if (completadas >= 4) {
+            actualizarProgreso(pct, "Preparando espacio de trabajo");
+          }
+        });
+      });
+
+      // Esperar resolución de todas las llamadas (con timeout de seguridad de 6s)
+      const timeoutSeguridad = new Promise(resolve => setTimeout(resolve, 6000));
+      await Promise.race([Promise.allSettled(tareas), timeoutSeguridad]);
+
+      // Mínimo 1.2 segundos para asegurar apreciación visual y fluidez cinematográfica
+      const transcurrido = Date.now() - startTime;
+      const duracionMinima = 1200;
+      if (transcurrido < duracionMinima) {
+        await new Promise(res => setTimeout(res, duracionMinima - transcurrido));
+      }
+
+      // 100% Completado con animación de éxito
+      actualizarProgreso(100, "¡Todo listo! Bienvenido");
+      this.splash.completado = true;
+
+      // Breve pausa para apreciar el 100% y redirigir
+      await new Promise(res => setTimeout(res, 400));
+      window.location.replace("/dashboard");
     }
   };
 }

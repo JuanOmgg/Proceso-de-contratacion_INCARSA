@@ -1,43 +1,43 @@
 /**
  * page-transition.js
- * Overlay de transición al navegar entre pantallas del sistema.
- *
- * Uso: incluir en cada página, justo después de abrir <body>,
- * junto con este markup (antes de cualquier otro contenido):
- *
- *   <div id="page-transition-overlay" class="page-transition-overlay">
- *     <div class="loader"></div>
- *   </div>
- *
- * El overlay arranca visible en el HTML (evita el "flash" del
- * contenido mientras carga) y este script lo oculta apenas el
- * DOM está listo. Al hacer clic en un enlace interno (mismo
- * origen, sin target="_blank", sin modificadores de teclado),
- * intercepta la navegación, muestra el overlay y navega poco
- * después para que la transición alcance a verse.
+ * Pantalla de carga y transición fluida entre páginas del sistema.
  */
 (function () {
   const OVERLAY_ID = "page-transition-overlay";
-  const NAV_DELAY_MS = 220;
+  const NAV_DELAY_MS = 180;
 
   function getOverlay() {
     return document.getElementById(OVERLAY_ID);
   }
+
   function showOverlay() {
     const overlay = getOverlay();
-    if (overlay) overlay.classList.remove("is-hidden");
-  }
-  function hideOverlay() {
-    const overlay = getOverlay();
-    if (overlay) overlay.classList.add("is-hidden");
+    if (overlay) {
+      overlay.classList.remove("is-hidden");
+    }
   }
 
+  function hideOverlay() {
+    const overlay = getOverlay();
+    if (overlay) {
+      overlay.classList.add("is-hidden");
+    }
+  }
+
+  // Exponer a nivel global para llamadas programáticas
+  window.showPageTransition = showOverlay;
+  window.hidePageTransition = hideOverlay;
+
   function esEnlaceInternoNavegable(link) {
-    if (!link || !link.getAttribute("href")) return false;
-    const href = link.getAttribute("href");
-    if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return false;
+    if (!link) return false;
+    const rawHref = link.getAttribute("href");
+    if (!rawHref || rawHref === "#" || rawHref.startsWith("#") || rawHref.startsWith("javascript:") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) {
+      return false;
+    }
     if (link.hasAttribute("download")) return false;
     if (link.target && link.target !== "" && link.target !== "_self") return false;
+    if (link.getAttribute("role") === "button" && !rawHref.includes("/")) return false;
+
     try {
       const url = new URL(link.href, window.location.href);
       return url.origin === window.location.origin;
@@ -52,7 +52,12 @@
 
     const link = event.target.closest("a[href]");
     if (!esEnlaceInternoNavegable(link)) return;
-    if (link.href === window.location.href) return;
+
+    const currentUrlClean = window.location.href.split("#")[0];
+    const targetUrlClean = link.href.split("#")[0];
+
+    // No mostrar si el enlace navega a la misma página exacta
+    if (currentUrlClean === targetUrlClean && link.href.includes("#")) return;
 
     event.preventDefault();
     showOverlay();
@@ -61,12 +66,23 @@
     }, NAV_DELAY_MS);
   });
 
-  // Ocultar el overlay una vez que la página nueva ya puede verse.
-  window.addEventListener("DOMContentLoaded", function () {
-    requestAnimationFrame(() => requestAnimationFrame(hideOverlay));
-  });
+  // Ocultar suavemente cuando la página termine de cargar
+  function suaveDesvanecer() {
+    setTimeout(() => {
+      hideOverlay();
+    }, 120);
+  }
 
-  // Si el navegador restaura la página desde el historial (bfcache),
-  // aseguramos que el overlay no quede visible por error.
-  window.addEventListener("pageshow", hideOverlay);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    suaveDesvanecer();
+  } else {
+    window.addEventListener("DOMContentLoaded", suaveDesvanecer);
+    window.addEventListener("load", hideOverlay);
+  }
+
+  // Si el usuario regresa con el botón atrás del navegador (bfcache)
+  window.addEventListener("pageshow", function (e) {
+    hideOverlay();
+  });
 })();
+

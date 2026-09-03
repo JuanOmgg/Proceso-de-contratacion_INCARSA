@@ -797,12 +797,44 @@
   z-index: 1;
 } */
 
+/* =========================================================
+   USUARIOS DEL SISTEMA EN MODO OSCURO (DASHBOARD)
+   ========================================================= */
+:root.dark .user-role-tab {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  transition: all 0.25s ease !important;
+}
+
+:root.dark .user-role-tab:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.45) !important;
+}
+
+:root.dark .user-role-tab.is-active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.2) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
+}
+
 :root.dark .buttonUserSistem {
-  background-color: #262626 !important;
-  border: 1px solid #333333 !important;
-  color: var(--text-primary) !important;
-  position: relative;
-  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+  border-radius: 14px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-shadow: 0 4px 18px -3px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.02) !important;
+  transition: all 0.25s ease !important;
 }
 
 :root.dark .buttonUserSistem > * {
@@ -811,44 +843,53 @@
 }
 
 :root.dark .buttonUserSistem:hover {
-  background-color: #303030 !important;
-  border-color: #484848 !important;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%) !important;
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.25), inset 0 0 14px rgba(0, 240, 255, 0.06) !important;
+  transform: translateY(-3px) !important;
+}
+
+:root.dark .buttonUserSistem .usuariosSistema {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(99, 102, 241, 0.2)) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.45) !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.25s ease !important;
+}
+
+:root.dark .buttonUserSistem:hover .usuariosSistema {
+  background: linear-gradient(135deg, #00f0ff, #3b82f6) !important;
+  border-color: #ffffff !important;
+  color: #0d1117 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.7) !important;
+  text-shadow: none !important;
+  transform: scale(1.08) !important;
+}
+
+:root.dark .buttonUserSistem .user-card-name {
   color: #ffffff !important;
+  font-weight: 600 !important;
+  transition: color 0.2s ease, text-shadow 0.2s ease !important;
 }
 
-:root.dark .buttonUserSistem::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 70%;
-  height: 100%;
-  background: linear-gradient(
-    115deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0) 25%,
-    rgba(255, 255, 255, 0.03) 45%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.03) 55%,
-    rgba(255, 255, 255, 0) 75%,
-    transparent 100%
-  );
-  transform: translateX(-150%) skewX(-20deg);
-  animation: cardShimmerSlow 12s infinite ease-in-out;
-  pointer-events: none;
-  z-index: 1;
+:root.dark .buttonUserSistem:hover .user-card-name {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
 }
 
-:root.dark .buttonUserSistem:hover::after {
-  background: linear-gradient(
-    115deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.02) 35%,
-    rgba(255, 255, 255, 0.18) 50%,
-    rgba(255, 255, 255, 0.02) 65%,
-    transparent 100%
-  );
-  animation: cardShimmer 3.5s infinite ease-in-out;
+:root.dark .buttonUserSistem .user-card-email {
+  color: #94a3b8 !important;
+  transition: color 0.2s ease, text-shadow 0.2s ease !important;
+}
+
+:root.dark .buttonUserSistem:hover .user-card-email {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5) !important;
 }
 
 /* =========================================================
@@ -946,16 +987,34 @@
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
-/* Sub-enlaces de módulos activos en el sidebar con efecto neón */
+/* Sub-enlaces de módulos en el sidebar */
+:root.dark .sidebar-sublink {
+  color: #94a3b8 !important;
+  padding: 6px 12px !important;
+  border-radius: 0 8px 8px 0 !important;
+  border-left: 3px solid transparent !important;
+  font-weight: 500 !important;
+  transition: all 0.22s ease !important;
+}
+
+:root.dark .sidebar-sublink:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-left-color: rgba(249, 115, 22, 0.5) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6) !important;
+  transform: translateX(3px) !important;
+}
+
+/* Sub-enlace activo con efecto neón refinado */
 :root.dark .sidebar-sublink.is-active {
   color: #ffffff !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   border-left: 3px solid #f97316 !important;
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.28) 0%, rgba(249, 115, 22, 0.1) 100%) !important;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22) 0%, rgba(239, 68, 68, 0.08) 60%, transparent 100%) !important;
   border-radius: 0 8px 8px 0 !important;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.55), inset 2px 0 8px rgba(239, 68, 68, 0.35) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 16px rgba(249, 115, 22, 0.6) !important;
-  transform: translateX(3px);
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 2px 0 8px rgba(239, 68, 68, 0.15) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 14px rgba(249, 115, 22, 0.45) !important;
+  transform: translateX(2px) !important;
 }
 
 /* Módulo padre en el sidebar cuando contiene la sección activa */
@@ -964,6 +1023,7 @@
   background: rgba(255, 255, 255, 0.06) !important;
   border: 1px solid rgba(249, 115, 22, 0.45) !important;
   box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 0 0 6px rgba(249, 115, 22, 0.15) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
 }
 :root.dark .sidebar-link.is-module-active i.fa-solid {
   color: #f97316 !important;
@@ -971,6 +1031,33 @@
 }
 :root.dark .sidebar-link.is-module-active:hover {
   box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 35px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* Control inferior Modo Compacto (Sidebar footer) */
+:root.dark .sidebar-collapse-btn {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  color: #94a3b8 !important;
+  transition: all 0.25s ease !important;
+}
+
+:root.dark .sidebar-collapse-btn:hover {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
+  border-color: rgba(249, 115, 22, 0.55) !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.06) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
+}
+
+:root.dark .sidebar-collapse-btn i {
+  color: #f97316 !important;
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.6)) !important;
+  transition: transform 0.2s ease, filter 0.2s ease !important;
+}
+
+:root.dark .sidebar-collapse-btn:hover i {
+  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.9)) !important;
 }
 
 /* 3. Logo del sidebar (estable, sin hover interactivo) */
@@ -3606,3 +3693,119 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   font-weight: 700 !important;
   text-shadow: 0 0 12px rgba(74, 222, 128, 0.55) !important;
 }
+
+/* =========================================================
+   BRILLO BLANCO EN ENCABEZADOS DE TABLAS (MODO OSCURO)
+   ========================================================= */
+:root.dark thead th,
+:root.dark .data-table thead th,
+:root.dark .data-table th,
+:root.dark table thead th,
+:root.dark table thead tr th,
+:root.dark table th {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.35) !important;
+}
+
+:root.dark thead th i,
+:root.dark .data-table thead th i {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) !important;
+}
+
+/* =========================================================
+   DROPDOWN MENÚ DE PERFIL EN MODO OSCURO NEÓN (NAVBAR)
+   ========================================================= */
+:root.dark .navbar-user-dropdown,
+:root.dark div[x-show="open"].rounded-xl {
+  background: rgba(20, 22, 29, 0.96) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.85),
+              0 0 0 1px rgba(255, 255, 255, 0.08),
+              0 0 24px rgba(167, 34, 193, 0.22),
+              0 0 12px rgba(250, 5, 26, 0.15) !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+}
+
+/* Divisor sutil entre opciones */
+:root.dark .navbar-user-dropdown .dropdown-divider,
+:root.dark div[x-show="open"] .dropdown-divider {
+  height: 1px;
+  margin: 5px 6px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent) !important;
+  border: none !important;
+}
+
+/* Opción 1: Ver perfil (Azul / Cian Neón Eléctrico) */
+:root.dark .navbar-user-dropdown .dropdown-item-profile,
+:root.dark div[x-show="open"] button:has(.fa-user) {
+  color: #f8fafc !important;
+  font-weight: 500 !important;
+  border-radius: 9px !important;
+  padding: 9px 12px !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: transparent !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-profile i,
+:root.dark div[x-show="open"] button:has(.fa-user) i {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
+  transition: transform 0.22s ease, filter 0.22s ease !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-profile:hover,
+:root.dark div[x-show="open"] button:has(.fa-user):hover {
+  background: rgba(56, 189, 248, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.22), 0 0 14px rgba(56, 189, 248, 0.25) !important;
+  border-left: 2.5px solid #38bdf8 !important;
+  padding-left: 14px !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-profile:hover i,
+:root.dark div[x-show="open"] button:has(.fa-user):hover i {
+  filter: drop-shadow(0 0 12px #38bdf8) !important;
+  transform: scale(1.15);
+}
+
+/* Opción 2: Cerrar sesión (Rojo / Carmín Neón Eléctrico Brillante) */
+:root.dark .navbar-user-dropdown .dropdown-item-logout,
+:root.dark div[x-show="open"] a:has(.fa-arrow-right-from-bracket) {
+  color: #ff4d6d !important;
+  font-weight: 600 !important;
+  border-radius: 9px !important;
+  padding: 9px 12px !important;
+  text-shadow: 0 0 10px rgba(255, 77, 109, 0.55) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: transparent !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-logout i,
+:root.dark div[x-show="open"] a:has(.fa-arrow-right-from-bracket) i {
+  color: #ff3355 !important;
+  filter: drop-shadow(0 0 9px rgba(255, 51, 85, 0.95)) !important;
+  transition: transform 0.22s ease, filter 0.22s ease !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-logout:hover,
+:root.dark div[x-show="open"] a:has(.fa-arrow-right-from-bracket):hover {
+  background: rgba(255, 51, 85, 0.16) !important;
+  color: #ff7593 !important;
+  text-shadow: 0 0 14px rgba(255, 77, 109, 0.85) !important;
+  box-shadow: inset 0 0 14px rgba(255, 51, 85, 0.25), 0 0 16px rgba(255, 51, 85, 0.3) !important;
+  border-left: 2.5px solid #ff3355 !important;
+  padding-left: 14px !important;
+}
+
+:root.dark .navbar-user-dropdown .dropdown-item-logout:hover i,
+:root.dark div[x-show="open"] a:has(.fa-arrow-right-from-bracket):hover i {
+  filter: drop-shadow(0 0 14px #ff3355) !important;
+  transform: translateX(2px) scale(1.18);
+}
+

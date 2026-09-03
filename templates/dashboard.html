@@ -423,11 +423,11 @@
           class="chart-card p-5">
           <h2 class="font-display font-semibold text-[var(--ink-900)] mb-4"><b> Usuarios del sistema</b></h2>
 
-          <div class="flex flex-wrap gap-2 mb-5 border-b border-[var(--border-subtle)] pb-3">
+          <div class="user-roles-tabs flex flex-wrap gap-2 mb-5 border-b border-[var(--border-subtle)] pb-3">
             <template x-for="role in roles" :key="role">
               <button @click="activeTab = role"
-                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                :class="activeTab === role ? 'bg-[var(--signal-500)] text-white' : 'bg-[var(--steel-100)] text-[var(--text-muted)] hover:bg-[var(--steel-200)]'"
+                class="user-role-tab px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer"
+                :class="activeTab === role ? 'is-active bg-[var(--signal-500)] text-white' : 'bg-[var(--steel-100)] text-[var(--text-muted)] hover:bg-[var(--steel-200)]'"
                 x-text="role"></button>
             </template>
           </div>
@@ -436,13 +436,13 @@
 
             <template x-for="user in usuariosFiltrados" :key="user.id">
               <button @click="openUser(user)"
-                class="buttonUserSistem p-4 rounded-xl flex items-center gap-3 w-full">
+                class="buttonUserSistem p-4 rounded-xl flex items-center gap-3 w-full cursor-pointer">
                 <div
-                  class="usuariosSistema w-10 h-10 rounded-full font-semibold text-sm flex-shrink-0 flex"
+                  class="usuariosSistema w-10 h-10 rounded-full font-bold text-xs flex-shrink-0 flex items-center justify-center"
                   x-text="getIniciales(user)"></div>
-                <div class="min-w-0">
-                  <p class="font-medium text-sm truncate" x-text="getNombreCompleto(user)"></p>
-                  <p class="text-xs text-gray-400 truncate" x-text="user.correo"></p>
+                <div class="min-w-0 text-left">
+                  <p class="user-card-name font-semibold text-sm truncate" x-text="getNombreCompleto(user)"></p>
+                  <p class="user-card-email text-xs text-gray-400 truncate mt-0.5" x-text="user.correo"></p>
                 </div>
               </button>
             </template>
@@ -553,4 +553,7 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block body_scripts %}
 {% endblock %}

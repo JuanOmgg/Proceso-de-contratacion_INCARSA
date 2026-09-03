@@ -1,5 +1,9 @@
 from pydantic import BaseModel, EmailStr, Field
 
+class LoginInput(BaseModel):
+    correo: EmailStr
+    contrasena: str = Field(..., min_length=8, description="Contraseña del usuario")
+
 class RecuperacionInput(BaseModel):
     correo: EmailStr
 
@@ -10,4 +14,4 @@ class VerificarCodigoInput(BaseModel):
 class RestablecerPasswordInput(BaseModel):
     correo: EmailStr
     codigo: str = Field(..., min_length=6, max_length=8, description="Código de restauración")
-    nueva_contrasena: str = Field(..., min_length=6, description="Nueva contraseña")
+    nueva_contrasena: str = Field(..., min_length=6, description="Nueva contraseña")

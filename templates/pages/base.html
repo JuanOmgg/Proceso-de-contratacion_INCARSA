@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}INCARSA{% endblock %}</title>
 
+  <!-- Favicon / Ícono de la pestaña del navegador -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
+
   <!-- Inicialización inmediata de Modo Oscuro para evitar parpadeos y sincronizar entre pantallas -->
   <script>
     (function () {
@@ -59,6 +64,9 @@
 </head>
 
 <body class="antialiased">
+
+  <!-- Pantalla de carga y transición autónoma entre páginas -->
+  {% include 'pages/page-loader.html' %}
 
   <!-- Contenido principal inyectado por cada plantilla -->
   {% block content %}{% endblock %}
