@@ -364,7 +364,7 @@ function loginForm() {
       return true;
     },
 
-    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = [], token = null) {
+    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = [], token = null, permisos = null) {
       const datos = { 
         nombre, 
         correo, 
@@ -381,16 +381,21 @@ function loginForm() {
       if (token) {
         sessionStorage.setItem("incarsa_token", token);
       }
+      if (permisos) {
+        sessionStorage.setItem("incarsa_permisos", JSON.stringify(permisos));
+      }
 
       // Si el usuario marcó "Recordarme", persistir permanentemente en localStorage
       if (this.recordarme) {
         localStorage.setItem("incarsa_session", JSON.stringify(datos));
         if (token) localStorage.setItem("incarsa_token", token);
+        if (permisos) localStorage.setItem("incarsa_permisos", JSON.stringify(permisos));
         localStorage.setItem("incarsa_recordado_correo", correo);
       } else {
         // Si NO marcó Recordarme, limpiar localStorage para que la sesión expire al cerrar el navegador
         localStorage.removeItem("incarsa_session");
         localStorage.removeItem("incarsa_token");
+        localStorage.removeItem("incarsa_permisos");
         localStorage.removeItem("incarsa_recordado_correo");
       }
     },
@@ -409,6 +414,7 @@ function loginForm() {
 
       let matchedUser = null;
       let accessToken = null;
+      let userPermisos = null;
 
       // 1. Intentar autenticación real contra el endpoint /auth/login
       try {
@@ -429,6 +435,7 @@ function loginForm() {
           if (resData.exito && resData.usuario) {
             matchedUser = resData.usuario;
             accessToken = resData.access_token;
+            userPermisos = resData.permisos || null;
           }
         } else {
           const errData = await response.json().catch(() => ({}));
@@ -496,7 +503,8 @@ function loginForm() {
         matchedUser.id_rol,
         matchedUser.plantas_ids,
         matchedUser.plantas,
-        accessToken
+        accessToken,
+        userPermisos
       );
 
       await this.ejecutarPrecargaCompleta(matchedUser);
@@ -550,6 +558,17 @@ function loginForm() {
           return data;
         }).catch(() => null);
 
+      const tPermisos = fetch("/api/v1/roles/mis-permisos")
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          if (data && data.permisos) {
+            sessionStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+            localStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+            return data.permisos;
+          }
+        }).catch(() => null);
+
       const tLogo = new Promise(resolve => {
         const img = new Image();
         img.src = "/static/img/logo-sidebar.png";
@@ -557,7 +576,7 @@ function loginForm() {
         img.onerror = resolve;
       });
 
-      const tareas = [tSolicitudes, tPlantas, tContratistas, tNotificaciones, tLogo];
+      const tareas = [tSolicitudes, tPlantas, tContratistas, tNotificaciones, tPermisos, tLogo];
       let completadas = 0;
 
       tareas.forEach(p => {

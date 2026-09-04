@@ -14,7 +14,7 @@ from src.loaders.solicitudes_loaders import (
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
-from src.utils.security import get_current_user, require_role
+from src.utils.security import get_current_user, require_role, require_permission
 from typing import List, Dict, Any, Optional
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
@@ -62,7 +62,7 @@ async def SUBIR_documento_persona(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED, include_in_schema=False)
-def CREATE_solicitud(payload: SolicitudInput, current_user: dict = Depends(get_current_user)):
+def CREATE_solicitud(payload: SolicitudInput, current_user: dict = Depends(require_permission("solicitudes", "crear"))):
     datos_raw = payload.model_dump()
     if not datos_raw.get("id_usuario"):
         datos_raw["id_usuario"] = current_user.get("id")
@@ -152,7 +152,7 @@ def GET_solicitud(solicitud_id: str, current_user: dict = Depends(get_current_us
 def REGISTRAR_dictamen_rt(
     solicitud_id: str,
     payload: DictamenInput,
-    current_user: dict = Depends(require_role(["SST", "GESCO", "SCR", "Administrador", "SuperAdmin"]))
+    current_user: dict = Depends(require_permission("solicitudes", "aprobar"))
 ):
     print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
     resultado = REGISTRAR_dictamen_db(solicitud_id, payload.model_dump())
@@ -164,7 +164,7 @@ def REGISTRAR_dictamen_rt(
     return resultado
 
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, current_user: dict = Depends(get_current_user)):
+def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, current_user: dict = Depends(require_permission("solicitudes", "editar"))):
 
     print(f"📝 [PATCH] Tomando los campos enviados para actualizar la solicitud #{solicitud_id}...")
     new_updates = datos_in.model_dump(exclude_unset=True)
@@ -194,7 +194,7 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
 
 
 @router.delete("/{solicitud_id}", status_code=status.HTTP_200_OK)
-def DELETE_solicitud(solicitud_id: str, current_user: dict = Depends(require_role(["Administrador", "Gestion documental"]))):
+def DELETE_solicitud(solicitud_id: str, current_user: dict = Depends(require_permission("solicitudes", "eliminar"))):
     print(f"🗑️ [DELETE] Eliminando solicitud #{solicitud_id} de la base de datos...")
     resultado = DELETE_solicitud_bd(solicitud_id)
 

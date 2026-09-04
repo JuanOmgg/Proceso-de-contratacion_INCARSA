@@ -1,0 +1,362 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Panel SuperAdmin & Mantenimiento · INCARSA{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/superadmin-panel.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+  <!-- Backdrop del drawer móvil -->
+  <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+  <!-- SIDEBAR -->
+  {% include 'pages/sidebar.html' %}
+
+  <!-- ============================================================
+     MAIN COLUMN
+  ============================================================= -->
+  <div class="flex-1 min-w-0 flex flex-col" x-data="superAdminPanel()">
+
+    <!-- ---------- TOPBAR ---------- -->
+    {% set page_title = "Panel de Control SuperAdmin" %}
+    {% include 'pages/navbar.html' %}
+
+    <!-- ---------- CONTENT ---------- -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8">
+      <div class="max-w-7xl mx-auto space-y-8">
+
+        <!-- ===== HEADER DEL PANEL MAESTRO ===== -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-purple-500/10 border border-amber-500/20 backdrop-blur-sm">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/30 flex-shrink-0">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="text-xl sm:text-2xl font-bold font-display text-[var(--text-primary)]">
+                  Panel Maestro SuperAdmin
+                </h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  Nivel 6 • Maestro
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+                Control dinámico de permisos de acceso por rol y activación del modo mantenimiento (HTTP 503).
+              </p>
+            </div>
+          </div>
+
+          <!-- Estado Global Rápido -->
+          <div class="flex items-center gap-3">
+            <div class="px-4 py-2 rounded-xl border flex items-center gap-3 text-xs font-medium"
+              :class="mantenimiento.activo ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'">
+              <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  :class="mantenimiento.activo ? 'bg-rose-400' : 'bg-emerald-400'"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                  :class="mantenimiento.activo ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+              </span>
+              <span x-text="mantenimiento.activo ? 'MODO MANTENIMIENTO ACTIVO' : 'SISTEMA 100% OPERATIVO'"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================
+           SECCIÓN 1: MODO MANTENIMIENTO GLOBAL (ERROR 503)
+        ============================================================= -->
+        <section class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl relative overflow-hidden">
+          <!-- Efecto sutil de fondo -->
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
+            :class="mantenimiento.activo ? 'bg-rose-500' : 'bg-emerald-500'"></div>
+
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div class="space-y-2 max-w-2xl">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                  :class="mantenimiento.activo ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
+                  Control de Emergencia: Modo Mantenimiento (HTTP 503)
+                </h2>
+              </div>
+              <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+                Cuando el mantenimiento está activado, <strong>todos los usuarios estándar</strong> que intenten acceder al sistema recibirán la pantalla de <strong>Error 503 (En Mantenimiento)</strong>. Como SUPERADMIN, tendrás acceso sin interrupciones para aplicar cambios y pruebas.
+              </p>
+            </div>
+
+            <!-- Switch de Activación Principal -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 bg-[var(--table-header,#0f172a)]/60 p-4 rounded-xl border border-[var(--border-color,#334155)]">
+              <div class="text-right sm:text-left">
+                <span class="block text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Estado del switch</span>
+                <span class="text-sm font-bold"
+                  :class="mantenimiento.activo ? 'text-rose-400' : 'text-emerald-400'"
+                  x-text="mantenimiento.activo ? 'Mantenimiento ACTIVO' : 'Mantenimiento INACTIVO'">
+                </span>
+              </div>
+              
+              <button type="button"
+                @click="toggleMantenimiento(!mantenimiento.activo)"
+                :disabled="guardandoMantenimiento"
+                class="relative inline-flex h-8 w-16 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="mantenimiento.activo ? 'bg-rose-600' : 'bg-slate-600'">
+                <span class="sr-only">Toggle mantenimiento</span>
+                <span
+                  aria-hidden="true"
+                  class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                  :class="mantenimiento.activo ? 'translate-x-8' : 'translate-x-0'"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Formulario de Configuración del Mantenimiento -->
+          <div class="mt-6 pt-6 border-t border-[var(--border-color,#334155)] grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                <i class="fa-regular fa-comment-dots text-amber-400"></i> Mensaje que verán los usuarios
+              </label>
+              <textarea
+                x-model="mantenimiento.mensaje"
+                rows="3"
+                class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                placeholder="Indica el motivo del mantenimiento..."></textarea>
+            </div>
+
+            <div class="flex flex-col justify-between">
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock text-amber-400"></i> Tiempo estimado de espera
+                </label>
+                <input
+                  type="text"
+                  x-model="mantenimiento.tiempo"
+                  class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
+                  placeholder="Ej: Disponible en aproximadamente 30 minutos">
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  @click="toggleMantenimiento(mantenimiento.activo)"
+                  :disabled="guardandoMantenimiento"
+                  class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all shadow-lg shadow-amber-600/20 inline-flex items-center gap-2">
+                  <i class="fa-solid fa-floppy-disk text-xs"></i>
+                  <span x-text="guardandoMantenimiento ? 'Guardando...' : 'Guardar Mensajes'"></span>
+                </button>
+
+                <a
+                  href="/templates/errors/error-503.html"
+                  target="_blank"
+                  class="px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-white/5 hover:bg-white/10 transition-colors inline-flex items-center gap-2">
+                  <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Previsualizar Pantalla 503
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+           SECCIÓN 2: MATRIZ DE PERMISOS DINÁMICOS POR ROL (RBAC)
+        ============================================================= -->
+        <section class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl space-y-6">
+          
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm">
+                  <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
+                  Matriz de Permisos por Rol (RBAC Dinámico)
+                </h2>
+              </div>
+              <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+                Configura qué módulos pueden ver y qué botones de acción (Crear, Editar, Eliminar, Aprobar) tienen habilitados.
+              </p>
+            </div>
+
+            <!-- Botones de Acción Global para el Rol -->
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="marcarTodosRol(true)"
+                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-check-double text-[10px]"></i> Habilitar Todo
+              </button>
+              <button
+                type="button"
+                @click="marcarTodosRol(false)"
+                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-ban text-[10px]"></i> Bloquear Todo
+              </button>
+            </div>
+          </div>
+
+          <!-- Pestañas de Selección de Roles -->
+          <div class="flex flex-wrap items-center gap-2 border-b border-[var(--border-color,#334155)] pb-4">
+            <template x-for="rol in roles" :key="rol.id">
+              <button
+                type="button"
+                @click="seleccionarRol(rol.id)"
+                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center gap-2"
+                :class="rolSeleccionadoId === rol.id 
+                  ? 'bg-amber-500 text-slate-900 shadow-md shadow-amber-500/20 font-bold' 
+                  : 'bg-[var(--table-header,#0f172a)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-[var(--border-color,#334155)]'">
+                <i class="fa-solid" :class="rol.nombre_rol === 'SUPERADMIN' ? 'fa-crown text-amber-900' : 'fa-user-tag'"></i>
+                <span x-text="rol.nombre_rol"></span>
+              </button>
+            </template>
+          </div>
+
+          <!-- Banner Informativo para SUPERADMIN -->
+          <template x-if="rolActual && rolActual.nombre_rol === 'SUPERADMIN'">
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+              <i class="fa-solid fa-circle-info text-base"></i>
+              <span>El rol <strong>SUPERADMIN</strong> posee acceso irrestricto a nivel de arquitectura en todas las vistas y acciones del sistema. Esta matriz es ilustrativa para dicho rol.</span>
+            </div>
+          </template>
+
+          <!-- Barra de Búsqueda de Módulos -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="relative flex-1 max-w-md">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
+              <input
+                type="text"
+                x-model="busquedaModulo"
+                placeholder="Filtrar módulos (ej: Solicitudes, Usuarios, Plantas...)"
+                class="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500">
+            </div>
+
+            <span class="text-xs text-[var(--text-muted)]" x-text="`Configurando rol: ${rolActual ? rolActual.nombre_rol : ''}`"></span>
+          </div>
+
+          <!-- TABLA MATRIZ DE PERMISOS -->
+          <div class="overflow-x-auto rounded-xl border border-[var(--border-color,#334155)]">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-[var(--table-header,#0f172a)] text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-semibold border-b border-[var(--border-color,#334155)]">
+                  <th class="p-3.5 sm:p-4">Módulo del Sistema</th>
+                  <th class="p-3.5 sm:p-4 text-center">Acceso (Ver)</th>
+                  <th class="p-3.5 sm:p-4 text-center">Crear</th>
+                  <th class="p-3.5 sm:p-4 text-center">Editar</th>
+                  <th class="p-3.5 sm:p-4 text-center">Eliminar</th>
+                  <th class="p-3.5 sm:p-4 text-center">Aprobar</th>
+                  <th class="p-3.5 sm:p-4 text-center">Acciones Rápidas</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-color,#334155)]">
+                <template x-for="mod in modulosFiltrados" :key="mod">
+                  <tr class="hover:bg-white/[0.02] transition-colors"
+                    :class="getPermiso(mod, 'ver') ? '' : 'opacity-60 bg-rose-500/[0.02]'">
+                    <!-- Nombre del Módulo -->
+                    <td class="p-3.5 sm:p-4 font-medium text-[var(--text-primary)]">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center flex-shrink-0">
+                          <i class="fa-solid text-xs" :class="iconoModulo(mod)"></i>
+                        </div>
+                        <div>
+                          <p class="font-semibold text-xs sm:text-sm" x-text="formatoModulo(mod)"></p>
+                          <span class="text-[10px] text-[var(--text-muted)] font-mono" x-text="mod"></span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Switch: Ver -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <button type="button"
+                        @click="togglePermiso(mod, 'ver')"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
+                        :class="getPermiso(mod, 'ver') ? 'bg-emerald-500' : 'bg-slate-700'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                          :class="getPermiso(mod, 'ver') ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Switch: Crear -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <button type="button"
+                        @click="togglePermiso(mod, 'crear')"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
+                        :class="getPermiso(mod, 'crear') ? 'bg-sky-500' : 'bg-slate-700'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                          :class="getPermiso(mod, 'crear') ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Switch: Editar -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <button type="button"
+                        @click="togglePermiso(mod, 'editar')"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
+                        :class="getPermiso(mod, 'editar') ? 'bg-amber-500' : 'bg-slate-700'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                          :class="getPermiso(mod, 'editar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Switch: Eliminar -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <button type="button"
+                        @click="togglePermiso(mod, 'eliminar')"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
+                        :class="getPermiso(mod, 'eliminar') ? 'bg-rose-500' : 'bg-slate-700'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                          :class="getPermiso(mod, 'eliminar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Switch: Aprobar -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <button type="button"
+                        @click="togglePermiso(mod, 'aprobar')"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
+                        :class="getPermiso(mod, 'aprobar') ? 'bg-purple-500' : 'bg-slate-700'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                          :class="getPermiso(mod, 'aprobar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Acciones Rápidas del Módulo -->
+                    <td class="p-3.5 sm:p-4 text-center">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <button type="button"
+                          @click="marcarTodosModulo(mod, true)"
+                          title="Habilitar todas las acciones de este módulo"
+                          class="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10">
+                          <i class="fa-solid fa-circle-check text-xs"></i>
+                        </button>
+                        <button type="button"
+                          @click="marcarTodosModulo(mod, false)"
+                          title="Deshabilitar todas las acciones de este módulo"
+                          class="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10">
+                          <i class="fa-solid fa-circle-xmark text-xs"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BOTÓN GUARDAR CAMBIOS -->
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color,#334155)]">
+            <button
+              type="button"
+              @click="guardarPermisosRol()"
+              :disabled="guardandoPermisos"
+              class="px-6 py-3 rounded-xl text-sm font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 active:scale-95 transition-all shadow-lg shadow-amber-500/20 inline-flex items-center gap-2">
+              <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+              <span x-text="guardandoPermisos ? 'Guardando en Base de Datos...' : `Guardar Permisos para ${rolActual ? rolActual.nombre_rol : 'Rol'}`"></span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

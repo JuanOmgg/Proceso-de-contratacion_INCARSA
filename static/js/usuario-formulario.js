@@ -45,11 +45,11 @@ function usuarioForm() {
     },
 
     // ---------------------------------------------------
-    // Getter: Roles que requieren asignación de plantas (SST=3, GESCO=4)
+    // Getter: Roles que requieren asignación de plantas (SST=5, GESCO=6)
     // ---------------------------------------------------
     get esRolConPlantas() {
       const rolId = Number(this.form.rol);
-      if (rolId === 3 || rolId === 4) return true;
+      if (rolId === 5 || rolId === 6) return true;
       const rolObj = this.roles.find(r => Number(r.id) === rolId);
       if (rolObj) {
         const nombre = String(rolObj.nombre_rol || "").toUpperCase();
@@ -127,6 +127,22 @@ function usuarioForm() {
         }
 
         if (found) {
+          // REGLA: Los usuarios de rol ADMINISTRADOR no pueden editar administradores (exclusivo SUPERADMIN)
+          const rolUsuario = String(found.rol || found.nombre_rol || "").trim().toUpperCase();
+          const esAdminTarget = rolUsuario === "ADMINISTRADOR" || Number(found.id_rol) === 1 || rolUsuario === "SUPERADMIN" || Number(found.id_rol) === 2;
+          const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+          const miRol = (sesion?.rol || "").trim().toUpperCase();
+
+          if (esAdminTarget && miRol !== "SUPERADMIN") {
+            if (typeof window.showToast === "function") {
+              window.showToast("Solo un usuario con rol SUPERADMIN puede editar a usuarios administradores.", "error");
+            } else {
+              alert("Solo un usuario con rol SUPERADMIN puede editar a usuarios administradores.");
+            }
+            window.location.replace("/usuarios");
+            return;
+          }
+
           this.isEdit = true;
           this.editId = Number(found.id || editParam);
           this.form.nombres = found.nombres || found.nombre || "";
@@ -156,7 +172,20 @@ function usuarioForm() {
         const rol = await fetch(`${API.roles}/getall`);
         if (!rol.ok) throw new Error(`HTTP ${rol.status}`);
         const data = await rol.json();
-        this.roles = Array.isArray(data) ? data : (data.datos || data.data || []);
+        let listaRoles = Array.isArray(data) ? data : (data.datos || data.data || []);
+
+        // REGLA: Solo SUPERADMIN puede crear o asignar usuarios con rol ADMINISTRADOR
+        const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+        const miRol = (sesion?.rol || "").trim().toUpperCase();
+
+        if (miRol !== "SUPERADMIN") {
+          listaRoles = listaRoles.filter(r => {
+            const nom = String(r.nombre_rol || "").trim().toUpperCase();
+            return nom !== "ADMINISTRADOR" && nom !== "SUPERADMIN";
+          });
+        }
+
+        this.roles = listaRoles;
       } catch (error) {
         console.error("Error al cargar roles: ", error);
       } 
@@ -217,6 +246,12 @@ function usuarioForm() {
       try {
         if (this.isEdit && this.editId) {
           // ================= MODO EDICIÓN =================
+          const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+          const miRol = (sesion?.rol || "").trim().toUpperCase();
+          if (id_rol === 1 && miRol !== "SUPERADMIN") {
+            throw new Error("Solo un usuario con rol SUPERADMIN puede gestionar usuarios administradores.");
+          }
+
           const payload = { ...usuarioData };
           if (this.cambiarContrasena && contrasena) {
             payload.contrasena = contrasena;

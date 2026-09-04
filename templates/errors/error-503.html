@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/error-pages.css">
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/error-pages.css">
 </head>
 
 <body class="antialiased">
@@ -23,22 +23,22 @@
   <div class="error-hazard-bg"></div>
 
   <div class="error-brand-mark">
-    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#f5c400;">
-      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20" style="background:#f5c400;">
+      <i class="fa-solid fa-screwdriver-wrench text-white text-sm"></i>
     </div>
     <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
   </div>
 
   <p class="error-code-hero">503</p>
 
-  <p class="error-code">Servicio 503</p>
-  <h1 class="error-title">En mantenimiento</h1>
+  <p class="error-code">Estado del Servicio</p>
+  <h1 class="error-title">Mantenimiento Programado</h1>
   <p class="error-description">
-    Estamos realizando mejoras al sistema. El servicio estará disponible nuevamente en unos minutos.
+    {{ mensaje if mensaje else 'Estamos realizando actualizaciones y optimizaciones programadas en la plataforma. Los servicios habituales se reanudarán brevemente.' }}
   </p>
 
   <div class="error-actions">
-    <button type="button" onclick="location.reload()" class="w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2 text-gray-900" style="background:#f5c400;">
+    <button type="button" onclick="location.reload()" class="w-full rounded-lg px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2 text-slate-900 transition-all active:scale-95 shadow-md" style="background:#f5c400;">
       <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
     </button>
     <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
@@ -48,15 +48,21 @@
 
   <div class="error-info-card p-4 flex items-center gap-3 text-left">
     <div class="error-info-icon w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
-      <i class="fa-regular fa-clock text-sm"></i>
+      <i class="fa-regular fa-clock text-sm text-yellow-400"></i>
     </div>
     <div>
-      <p class="text-xs">Tiempo estimado</p>
-      <p class="text-sm font-medium">Disponible en aproximadamente 30 minutos</p>
+      <p class="text-xs text-slate-400">Tiempo estimado</p>
+      <p class="text-sm font-medium text-slate-200">{{ tiempo if tiempo else 'Disponible en aproximadamente 30 minutos' }}</p>
     </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="/login" class="text-xs text-amber-400/80 hover:text-amber-300 inline-flex items-center gap-1.5 transition-colors">
+      <i class="fa-solid fa-shield-halved text-[11px]"></i> Acceso exclusivo para administradores
+    </a>
   </div>
 </div>
 
-<script src="assets/js/page-transition.js"></script>
+<script src="/static/js/page-transition.js"></script>
 </body>
 </html>

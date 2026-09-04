@@ -232,6 +232,24 @@ function solicitudWizard() {
     // 6. INICIALIZACIÓN (Lifecycle Hook de Alpine)
     // ========================================================================
     async init() {
+      // Validar permisos RBAC de creación y edición
+      const isEditar = window.location.pathname.includes("editar") || new URLSearchParams(window.location.search).has("edit") || new URLSearchParams(window.location.search).has("codigo");
+      const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+      const esSuper = (miSesion?.rol || "").trim().toUpperCase() === "SUPERADMIN";
+
+      if (!esSuper) {
+        if (isEditar && !window.puedeAccion('solicitudes', 'editar')) {
+          console.warn("Acceso denegado: No tienes permiso para editar solicitudes.");
+          window.location.replace("/solicitudes");
+          return;
+        }
+        if (!isEditar && (!window.puedeAccion('solicitudes', 'crear') || !window.puedeModulo('nueva_solicitud'))) {
+          console.warn("Acceso denegado: No tienes permiso para crear solicitudes.");
+          window.location.replace("/solicitudes");
+          return;
+        }
+      }
+
       // 1. Cargar empresas, plantas, contratistas, personas y vehículos desde FastAPI
       await Promise.allSettled([
         this.cargarEmpresas(),

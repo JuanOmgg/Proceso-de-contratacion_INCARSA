@@ -41,6 +41,7 @@
             </button>
             
             <button type="button" @click="abrirCrear()"
+              x-show="puedeAccion('personas', 'crear')"
               class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 shadow-sm">
               <i class="fa-solid fa-user-plus text-xs"></i>
               <span>Nueva persona</span>
@@ -108,15 +109,15 @@
                         <template x-if="p.documentos && p.documentos.length > 0">
                           <button type="button" @click="abrirModalDocs(p)"
                             class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-all cursor-pointer shadow-xs active:scale-95 select-none"
-                            data-tooltip="Clic para ver y abrir documentos">
-                            <i class="fa-solid fa-file-circle-check text-emerald-600 text-xs"></i>
-                            <span x-text="p.documentos.length + ' doc(s)'"></span>
+                            data-tooltip="Ver documentos adjuntos">
+                            <i class="fa-solid fa-folder-open text-emerald-600 text-[11px]"></i>
+                            <span x-text="p.documentos.length + (p.documentos.length === 1 ? ' doc' : ' docs')"></span>
                           </button>
                         </template>
                         <template x-if="!p.documentos || p.documentos.length === 0">
-                          <button type="button" @click="abrirModalDocs(p)"
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors cursor-pointer select-none"
-                            data-tooltip="Ver estado de documentos">
+                          <button type="button" @click="puedeAccion('personas', 'editar') ? abrirModalDocs(p) : null"
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-slate-400 bg-slate-50 border border-dashed border-slate-200 hover:border-slate-300 hover:text-slate-600 transition-colors cursor-pointer select-none"
+                            :data-tooltip="puedeAccion('personas', 'editar') ? 'Adjuntar documentos' : 'Sin documentos'">
                             <i class="fa-regular fa-file text-slate-400"></i>
                             <span>Ninguno</span>
                           </button>
@@ -127,18 +128,21 @@
                       <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-1">
                           <button type="button" @click="verPersona(p)"
+                            x-show="puedeAccion('personas', 'ver')"
                             class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
                             data-tooltip="Ver detalle">
                             <i class="fa-solid fa-eye"></i>
                           </button>
 
                           <button type="button" @click="abrirEditar(p)"
+                            x-show="puedeAccion('personas', 'editar')"
                             class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
                             data-tooltip="Editar persona">
                             <i class="fa-solid fa-pen-to-square"></i>
                           </button>
                           
                           <button type="button" @click="confirmarEliminar(p)"
+                            x-show="puedeAccion('personas', 'eliminar')"
                             class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                             data-tooltip="Eliminar persona">
                             <i class="fa-solid fa-trash-can"></i>
@@ -315,6 +319,7 @@
             </button>
             
             <button type="button" @click="cerrarDetalle(); abrirEditar(personaDetalle)"
+              x-show="puedeAccion('personas', 'editar')"
               class="btn-signal rounded-lg px-7 py-2.5 text-sm font-semibold flex items-center gap-2">
               <i class="fa-solid fa-pen-to-square text-xs"></i>
               <span>Editar persona</span>

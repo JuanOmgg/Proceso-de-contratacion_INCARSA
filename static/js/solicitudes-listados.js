@@ -292,7 +292,22 @@ function solicitudesTable() {
         showDeleteModal: false,
         solicitudAEliminar: null,
 
+        // Reactividad de permisos RBAC
+        permisosVersion: 0,
+        puedeAccion(mod, acc) {
+            const _v = this.permisosVersion;
+            return window.puedeAccion(mod, acc);
+        },
+        puedeModulo(mod) {
+            const _v = this.permisosVersion;
+            return window.puedeModulo(mod);
+        },
+
         async init() {
+            window.addEventListener("permisos-actualizados", () => {
+                this.permisosVersion++;
+            });
+
             await Promise.allSettled([
                 this.getEmpresas(),
                 this.getSolicitudes()

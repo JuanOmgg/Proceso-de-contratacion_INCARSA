@@ -16,6 +16,13 @@ function appShell() {
     notifications: [],
     unreadNotificationsCount: 0,
 
+    tieneRol(...roles) {
+      if (typeof window.tieneRol === "function") {
+        return window.tieneRol(...roles);
+      }
+      return false;
+    },
+
     formatearTiempoRelativo(fechaStr) {
       if (typeof formatearTiempoRelativo === "function") {
         return formatearTiempoRelativo(fechaStr);
@@ -796,7 +803,10 @@ function initDashboardCharts() {
       const Count = await fetch(`${API.usuarios}/usuarios/conteo-por-rol`);
       if (!Count.ok) throw new Error("Error HTTP: " + Count.status);
 
-      const datas = await Count.json();
+      const rawDatas = await Count.json();
+      const datas = Array.isArray(rawDatas)
+        ? rawDatas.filter(dat => String(dat.rol || '').trim().toUpperCase() !== 'SUPERADMIN')
+        : [];
       const ticket = datas.map(dat => dat.rol);
       const value = datas.map(dat => dat.total);
 

@@ -136,6 +136,111 @@ function formatearTiempoRelativo(fechaStr) {
 }
 
 // ============================================================================
+// Función global de validación de roles para Alpine y cualquier script
+// ============================================================================
+function tieneRol(...roles) {
+    let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+    if (!sesion) {
+        try {
+            sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        } catch (e) {}
+    }
+    const miRol = (sesion?.rol || "ADMINISTRADOR").trim().toUpperCase();
+
+    // Solo SuperAdmin tiene acceso total automático
+    if (miRol === "SUPERADMIN") {
+        return true;
+    }
+
+    const listaRoles = roles.flat().filter(Boolean).map(r => String(r).trim().toUpperCase());
+    return listaRoles.includes(miRol);
+}
+window.tieneRol = tieneRol;
+
+// ============================================================================
+// GESTIÓN DINÁMICA DE PERMISOS RBAC (Módulos y Acciones)
+// ============================================================================
+window.permisosActivos = (function() {
+    try {
+        return JSON.parse(sessionStorage.getItem("incarsa_permisos") || localStorage.getItem("incarsa_permisos") || "null");
+    } catch(e) {
+        return null;
+    }
+})();
+
+async function recargarMisPermisos() {
+    try {
+        const token = getAuthToken();
+        if (!token) return {};
+        const res = await fetch("/api/v1/roles/mis-permisos");
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.permisos) {
+                sessionStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+                localStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+                window.permisosActivos = data.permisos;
+                window.dispatchEvent(new CustomEvent("permisos-actualizados", { detail: data.permisos }));
+                return data.permisos;
+            }
+        }
+    } catch (e) {
+        console.warn("Aviso cargando permisos dinámicos:", e);
+    }
+    return {};
+}
+window.recargarMisPermisos = recargarMisPermisos;
+
+function puedeModulo(modulo) {
+    let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+    const miRol = (sesion?.rol || "").trim().toUpperCase();
+    if (miRol === "SUPERADMIN") return true;
+
+    try {
+        const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem("incarsa_permisos") || localStorage.getItem("incarsa_permisos") || "null");
+        if (permisos && permisos[modulo] && permisos[modulo].ver !== undefined) {
+            return !!permisos[modulo].ver;
+        }
+    } catch (e) {}
+
+    // Fallbacks de compatibilidad por rol si no se ha cargado la matriz
+    const fallbacks = {
+        "dashboard": true,
+        "solicitudes": true,
+        "nueva_solicitud": ["ADMINISTRADOR", "GESTION DOCUMENTAL", "SST", "GESCO", "SCR"].includes(miRol),
+        "usuarios": ["ADMINISTRADOR"].includes(miRol),
+        "nuevo_usuario": ["ADMINISTRADOR"].includes(miRol),
+        "plantas": ["ADMINISTRADOR", "SCR"].includes(miRol),
+        "contratistas": ["ADMINISTRADOR", "SCR", "GESTION DOCUMENTAL"].includes(miRol),
+        "vehiculos": ["ADMINISTRADOR", "SCR", "GESTION DOCUMENTAL"].includes(miRol),
+        "personas": true,
+        "procesamiento": ["ADMINISTRADOR", "SST", "GESCO", "SCR"].includes(miRol),
+        "antecedentes": ["ADMINISTRADOR", "SCR"].includes(miRol),
+        "superadmin": miRol === "SUPERADMIN"
+    };
+
+    return fallbacks[modulo] !== undefined ? fallbacks[modulo] : true;
+}
+window.puedeModulo = puedeModulo;
+
+function puedeAccion(modulo, accion) {
+    let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+    const miRol = (sesion?.rol || "").trim().toUpperCase();
+    if (miRol === "SUPERADMIN") return true;
+
+    try {
+        const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem("incarsa_permisos") || localStorage.getItem("incarsa_permisos") || "null");
+        if (permisos && permisos[modulo] && permisos[modulo][accion] !== undefined) {
+            return !!permisos[modulo][accion];
+        }
+    } catch (e) {}
+
+    // Por defecto administrador tiene permiso de acción si no hay regla específica
+    if (miRol === "ADMINISTRADOR") return true;
+    return false;
+}
+window.puedeAccion = puedeAccion;
+
+// ============================================================================
 // Shell global de navegación y sesión de usuario para todas las vistas
 // ============================================================================
 function appShellStub() {
@@ -159,6 +264,33 @@ function appShellStub() {
         userDisplayName: nombreUsuario,
         userInitials: iniciales,
         darkMode: localStorage.getItem('darkMode') === 'true',
+        permisos: (function() {
+            try {
+                return window.permisosActivos || JSON.parse(sessionStorage.getItem("incarsa_permisos") || localStorage.getItem("incarsa_permisos") || "{}");
+            } catch(e) {
+                return {};
+            }
+        })(),
+
+        tieneRol(...roles) {
+            return window.tieneRol(...roles);
+        },
+
+        puedeModulo(mod) {
+            if (this.activeRole === "SUPERADMIN") return true;
+            if (this.permisos && this.permisos[mod] && this.permisos[mod].ver !== undefined) {
+                return !!this.permisos[mod].ver;
+            }
+            return window.puedeModulo(mod);
+        },
+
+        puedeAccion(mod, acc) {
+            if (this.activeRole === "SUPERADMIN") return true;
+            if (this.permisos && this.permisos[mod] && this.permisos[mod][acc] !== undefined) {
+                return !!this.permisos[mod][acc];
+            }
+            return window.puedeAccion(mod, acc);
+        },
 
         formatearTiempoRelativo: formatearTiempoRelativo,
 
@@ -168,6 +300,20 @@ function appShellStub() {
             this.cargarNotificaciones();
             // Polling periódico cada 35 segundos
             setInterval(() => this.cargarNotificaciones(), 35000);
+
+            // Escuchar actualizaciones de permisos en vivo
+            window.addEventListener("permisos-actualizados", (e) => {
+                this.permisos = e.detail || {};
+            });
+
+            // Sincronizar permisos frescos con backend
+            if (getAuthToken()) {
+                window.recargarMisPermisos().then(p => {
+                    if (p && Object.keys(p).length > 0) {
+                        this.permisos = p;
+                    }
+                });
+            }
         },
 
         async cargarNotificaciones() {
@@ -324,3 +470,22 @@ async function confirmDemo() {
     text: isConfirmed ? 'El archivo fue eliminado.' : 'No se realizó ningún cambio.'
   });
 }
+
+// ============================================================================
+// HELPER GLOBAL: Toast con SweetAlert2 adaptable a Neón / Modo Activo
+// ============================================================================
+window.showToast = function(message, icon = 'info', duration = 3000) {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: icon,
+      title: message,
+      showConfirmButton: false,
+      timer: duration,
+      timerProgressBar: true
+    });
+  } else {
+    console.log(`[TOAST ${String(icon).toUpperCase()}] ${message}`);
+  }
+};

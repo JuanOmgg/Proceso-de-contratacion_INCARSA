@@ -68,17 +68,17 @@
           </section>
 
           <!-- Aviso informativo de plantas asignadas para SST / GESCO -->
-          <div x-show="esRolConPlantas" x-cloak class="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 shadow-xs">
+          <div x-show="esRolConPlantas" x-cloak class="banner-zonas-autorizadas p-3.5 rounded-xl flex items-center justify-between text-xs shadow-xs">
             <div class="flex items-center gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+              <div class="banner-zonas-icon w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fa-solid fa-industry text-xs"></i>
               </div>
               <div>
-                <strong class="font-semibold text-amber-950">Filtrado por zonas autorizadas:</strong>
-                <span class="text-amber-800 ml-1" x-text="plantasUsuarioNombres ? ('Mostrando solicitudes vinculadas a: ' + plantasUsuarioNombres) : 'No tienes plantas asignadas actualmente.'"></span>
+                <strong class="banner-zonas-title font-semibold">Filtrado por zonas autorizadas:</strong>
+                <span class="banner-zonas-text ml-1" x-text="plantasUsuarioNombres ? ('Mostrando solicitudes vinculadas a: ' + plantasUsuarioNombres) : 'No tienes plantas asignadas actualmente.'"></span>
               </div>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold text-[11px]" x-text="sesionUsuario?.rol || 'Auditor'"></span>
+            <span class="banner-zonas-badge px-2.5 py-0.5 rounded-full font-bold text-[11px]" x-text="sesionUsuario?.rol || 'Auditor'"></span>
           </div>
 
           <!-- ===== Filtros / buscador ===== -->
@@ -157,6 +157,7 @@
               </button>
             </div>
             <a href="/solicitudes/nueva"
+              x-show="puedeAccion('solicitudes', 'crear') && puedeModulo('nueva_solicitud')"
               class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 w-full lg:w-auto flex-shrink-0">
               <i class="fa fa-plus text-xs"></i> Nueva solicitud
             </a>
@@ -205,48 +206,73 @@
                       <!-- Columna Observaciones -->
                       <td class="px-4 py-3 text-center">
                         <template x-if="s.observaciones && s.observaciones.trim() !== ''">
-                          <button type="button" @click="openObservacionModal(s)" 
-                            class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-all text-left"
-                            :data-tooltip="'Editar: ' + s.observaciones">
-                            <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
-                            <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
-                          </button>
+                          <div>
+                            <button type="button" x-show="puedeAccion('solicitudes', 'editar')" @click="openObservacionModal(s)" 
+                              class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-all text-left"
+                              :data-tooltip="'Editar: ' + s.observaciones">
+                              <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
+                              <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
+                            </button>
+                            <span x-show="!puedeAccion('solicitudes', 'editar')"
+                              class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 text-left select-none"
+                              :data-tooltip="s.observaciones">
+                              <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
+                              <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
+                            </span>
+                          </div>
                         </template>
                         <template x-if="!s.observaciones || s.observaciones.trim() === ''">
-                          <button type="button" @click="openObservacionModal(s)" 
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-[var(--signal-500)] hover:bg-slate-100 border border-dashed border-slate-300 transition-colors"
-                            data-tooltip="Agregar observación">
-                            <i class="fa-solid fa-plus text-[9px]"></i>
-                            <span>Observación</span>
-                          </button>
+                          <div>
+                            <button type="button" x-show="puedeAccion('solicitudes', 'editar')" @click="openObservacionModal(s)" 
+                              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-[var(--signal-500)] hover:bg-slate-100 border border-dashed border-slate-300 transition-colors"
+                              data-tooltip="Agregar observación">
+                              <i class="fa-solid fa-plus text-[9px]"></i>
+                              <span>Observación</span>
+                            </button>
+                            <span x-show="!puedeAccion('solicitudes', 'editar')" class="text-xs text-[var(--text-muted)] select-none">—</span>
+                          </div>
                         </template>
                       </td>
 
                       <td class="px-3 py-3 text-center">
-                        <button type="button" @click="toggleActivo(s)"
+                        <button type="button" x-show="puedeAccion('solicitudes', 'editar')" @click="toggleActivo(s)"
                           class="status-pill cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 shadow-sm"
                           :class="s.is_active ? 'status-usuario-activo' : 'status-usuario-inactivo bg-red-100 text-red-600'"
                           :data-tooltip="s.is_active ? 'Clic para desactivar' : 'Clic para activar'">
                           <span x-text="s.is_active ? 'Activo' : 'Inactivo'"></span>
                         </button>
+                        <span x-show="!puedeAccion('solicitudes', 'editar')"
+                          class="status-pill select-none opacity-80 cursor-default"
+                          :class="s.is_active ? 'status-usuario-activo' : 'status-usuario-inactivo bg-red-100 text-red-600'">
+                          <span x-text="s.is_active ? 'Activo' : 'Inactivo'"></span>
+                        </span>
                       </td>
 
                       <td class="px-4 py-3">
                         <div class="flex items-center justify-center gap-1">
-                          <a :href="'/solicitudes/revision/' + (s.codigo || s.id)" class="action-icon-btn text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
+                          <a :href="'/solicitudes/revision/' + (s.codigo || s.id)" 
+                            x-show="puedeAccion('solicitudes', 'aprobar')"
+                            class="action-icon-btn text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
                             data-tooltip="Revisar expediente">
                             <i class="fa-solid fa-clipboard-check"></i>
                           </a>
-                          <button type="button" @click="openView(s)" class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                          <button type="button" 
+                            x-show="puedeAccion('solicitudes', 'ver')"
+                            @click="openView(s)" 
+                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
                             data-tooltip="Ver">
                             <i class="fa-solid fa-eye"></i>
                           </button>
-                          <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                          <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" 
+                            x-show="puedeAccion('solicitudes', 'editar')"
+                            class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
                             data-tooltip="Editar">
                             <i class="fa-solid fa-pen-to-square"></i>
                           </a>
-                          
-                          <button type="button" @click="confirmarEliminar(s)" class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          <button type="button" 
+                            x-show="puedeAccion('solicitudes', 'eliminar')"
+                            @click="confirmarEliminar(s)" 
+                            class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                             data-tooltip="Eliminar">
                             <i class="fa-solid fa-trash-can"></i>
                           </button>
@@ -488,6 +514,7 @@
                       Cerrar
                     </button>
                     <a :href="'/solicitudes/editar/' + (selected.codigo || selected.id)"
+                      x-show="puedeAccion('solicitudes', 'editar')"
                       class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
                       <i class="fa-solid fa-pen-to-square text-xs"></i>
                       <span>Editar solicitud</span>

@@ -862,6 +862,12 @@ function revisionSolicitudApp() {
     },
 
     get puedeDictaminar() {
+      if (typeof window.puedeAccion === "function") {
+        if (!window.puedeAccion("solicitudes", "aprobar") && !window.puedeAccion("revision_solicitud", "aprobar")) {
+          return false;
+        }
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
 
       if (estado === "RECHAZADO" || estado === "APROBADO") {

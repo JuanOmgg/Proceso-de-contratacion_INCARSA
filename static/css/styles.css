@@ -2694,6 +2694,206 @@ table td .inline-flex {
   font-weight: 700 !important;
 }
 
+/* =========================================================
+   BADGES DE PERFIL Y USUARIO (MODAL Y TABLA)
+   ========================================================= */
+.user-status-modal-activo {
+  background: #e3f3e8;
+  color: #2f8f5b;
+  border: 1px solid #bfe3cc;
+}
+
+.user-status-modal-inactivo {
+  background: #fbe6e3;
+  color: #c1443c;
+  border: 1px solid #f5cac4;
+}
+
+.user-role-modal-badge {
+  background: #efe9dc;
+  color: #555048;
+  border: 1px solid var(--paper-shadow, #ded8ca);
+}
+
+.user-planta-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.user-planta-badge i,
+.user-planta-badge span.bullet-dot {
+  background-color: #f59e0b;
+  color: #d97706;
+}
+
+.user-table-planta-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.user-table-planta-badge i {
+  color: #d97706;
+}
+
+/* =========================================================
+   BANNER ZONAS AUTORIZADAS (SOLICITUDES)
+   ========================================================= */
+.banner-zonas-autorizadas {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  color: #78350f;
+}
+
+.banner-zonas-autorizadas .banner-zonas-icon {
+  background: #fef08a;
+  color: #b45309;
+}
+
+.banner-zonas-autorizadas .banner-zonas-title {
+  color: #78350f;
+}
+
+.banner-zonas-autorizadas .banner-zonas-text {
+  color: #92400e;
+}
+
+.banner-zonas-autorizadas .banner-zonas-badge {
+  background: #fde047;
+  color: #713f12;
+  border: 1px solid #facc15;
+}
+
+/* =========================================================
+   SWEETALERT2 PERSONALIZADO (BASE & MODO CLARO)
+   ========================================================= */
+.swal2-container {
+  z-index: 100000 !important;
+}
+
+/* Toasts flotantes */
+.swal2-popup.swal2-toast {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 14px !important;
+  padding: 12px 18px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.25s ease !important;
+}
+
+.swal2-toast .swal2-title {
+  color: #0f172a !important;
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding: 0 0 0 6px !important;
+  letter-spacing: -0.01em !important;
+}
+
+.swal2-toast .swal2-html-container {
+  color: #64748b !important;
+  font-size: 12.5px !important;
+  margin-top: 4px !important;
+}
+
+/* Toasts según tipo en modo claro */
+.swal2-toast.swal2-icon-success,
+.swal2-toast:has(.swal2-success) {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.18), 0 4px 12px rgba(16, 185, 129, 0.08) !important;
+}
+.swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-success .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  height: 3px !important;
+}
+
+.swal2-toast.swal2-icon-error,
+.swal2-toast:has(.swal2-error) {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.18), 0 4px 12px rgba(239, 68, 68, 0.08) !important;
+}
+.swal2-toast:has(.swal2-error) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-error .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
+  height: 3px !important;
+}
+
+.swal2-toast.swal2-icon-warning,
+.swal2-toast:has(.swal2-warning) {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.18), 0 4px 12px rgba(245, 158, 11, 0.08) !important;
+}
+.swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-warning .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+  height: 3px !important;
+}
+
+.swal2-toast.swal2-icon-info,
+.swal2-toast:has(.swal2-info) {
+  border-color: rgba(6, 182, 212, 0.35) !important;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.18), 0 4px 12px rgba(6, 182, 212, 0.08) !important;
+}
+.swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-info .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #06b6d4, #0284c7) !important;
+  height: 3px !important;
+}
+
+/* Modales completos SweetAlert2 modo claro */
+.swal2-popup:not(.swal2-toast) {
+  background: #ffffff !important;
+  border: 1px solid var(--border-subtle, #e2e8f0) !important;
+  border-radius: 20px !important;
+  padding: 28px 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-title {
+  color: var(--ink-900, #0f172a) !important;
+  font-family: var(--font-display, 'Space Grotesk', sans-serif) !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-html-container {
+  color: var(--text-muted, #64748b) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-confirm {
+  background: var(--signal-500, #fa051a) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 24px !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.28) !important;
+  transition: all 0.2s ease !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(250, 5, 26, 0.38) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-cancel {
+  background: var(--steel-100, #f1f5f9) !important;
+  color: var(--ink-800, #1e293b) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 22px !important;
+  transition: all 0.2s ease !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+  background: #e2e8f0 !important;
+}
+
 
 
 

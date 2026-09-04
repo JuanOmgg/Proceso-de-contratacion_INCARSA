@@ -30,10 +30,10 @@ def upgrade() -> None:
 
     op.execute("""
         INSERT INTO roles (nombre_rol, descripcion) VALUES
-        ('Administrador', ''),
-        ('SuperAdmin', ''),
-        ('Vigilante', ''),
-        ('Gestion documental', ''),
+        ('ADMINISTRADOR', ''),
+        ('SUPERADMIN', ''),
+        ('VIGILANTE', ''),
+        ('GESTION DOCUMENTAL', ''),
         ('SST', 'Seguridad y Salud en el Trabajo'),
         ('GESCO', 'Gestión del conocimiento'),
         ('SCR', 'Segurdad corporativa y riesgo')

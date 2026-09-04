@@ -456,7 +456,7 @@
             class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
             @keydown.escape.window="closeUser()">
             <div x-show="modalOpen" x-transition @click.outside="closeUser()"
-              class="modal-panel w-full max-w-md pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
+              class="modal-panel modal-ticket w-full max-w-md pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
               <template x-if="selectedUser">
                 <div>
                   <!-- Botón cerrar superior derecho -->
@@ -477,13 +477,13 @@
                     <div class="flex items-center justify-center gap-2 mt-1">
                       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
                         :class="(selectedUser?.is_active === 1 || selectedUser?.is_active === true || selectedUser?.is_active === '1') 
-                          ? 'bg-[#e3f3e8] text-[#2f8f5b]' 
-                          : 'bg-[#fbe6e3] text-[#c1443c]'">
+                          ? 'user-status-modal-activo' 
+                          : 'user-status-modal-inactivo'">
                         <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                          :class="(selectedUser?.is_active === 1 || selectedUser?.is_active === true || selectedUser?.is_active === '1') ? 'bg-[#2f8f5b]' : 'bg-[#c1443c]'"></span>
+                          :class="(selectedUser?.is_active === 1 || selectedUser?.is_active === true || selectedUser?.is_active === '1') ? 'bg-emerald-500' : 'bg-rose-500'"></span>
                         <span x-text="(selectedUser?.is_active === 1 || selectedUser?.is_active === true || selectedUser?.is_active === '1') ? 'Usuario Activo' : 'Usuario Inactivo'"></span>
                       </span>
-                      <span class="text-xs text-[var(--paper-text)] font-semibold bg-[#efe9dc] px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+                      <span class="user-role-modal-badge text-xs font-semibold px-2.5 py-0.5 rounded-md"
                         x-text="selectedUser.rol || 'Sin rol'"></span>
                     </div>
                   </div>

@@ -98,3 +98,28 @@ def require_role(roles_permitidos: list[str | int]):
             )
         return current_user
     return rol_checker
+
+def require_permission(modulo: str, accion: str):
+    """Dependencia para validar permisos granulares por módulo y acción según DB."""
+    def permission_checker(current_user: dict = Depends(get_current_user)):
+        user_rol = str(current_user.get("rol", "")).strip().lower()
+        if user_rol in ("superadmin", "super admin", "super_admin"):
+            return current_user
+
+        id_rol = current_user.get("id_rol")
+        if not id_rol:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acceso denegado: El usuario no tiene un rol asignado."
+            )
+
+        from src.loaders.superadmin_loader import GET_permisos_rol_db
+        perm_data = GET_permisos_rol_db(int(id_rol))
+        permisos = perm_data.get("permisos", {})
+        if not permisos.get(modulo, {}).get(accion, False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"No tienes permisos suficientes para '{accion}' en el módulo '{modulo}'."
+            )
+        return current_user
+    return permission_checker

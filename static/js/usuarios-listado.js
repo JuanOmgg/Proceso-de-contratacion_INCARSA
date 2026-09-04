@@ -114,7 +114,9 @@ function usuariosTable() {
         const user = await fetch(`${API.usuarios}/getall`);
         if(!user.ok) throw new Error(`HTTP ${user.status}`);
         const data = await user.json();
-        this.usuarios = Array.isArray(data) ? data : (data.datos || data.data || []);
+        const raw = Array.isArray(data) ? data : (data.datos || data.data || []);
+        // Excluir cuentas SUPERADMIN del listado estándar de usuarios
+        this.usuarios = raw.filter(u => String(u.rol || '').trim().toUpperCase() !== 'SUPERADMIN');
         this.notificarCambio();
       } catch (error) {
         console.error("Error al cargar usuarios: ", error);
@@ -126,7 +128,9 @@ function usuariosTable() {
         const response = await fetch(`${API.roles}/getall`);
         if(!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        this.roles = Array.isArray(data) ? data : (data.data || []);
+        const rawRoles = Array.isArray(data) ? data : (data.data || []);
+        // Excluir rol SUPERADMIN del filtro de roles de usuarios
+        this.roles = rawRoles.filter(r => String(r.nombre_rol || '').trim().toUpperCase() !== 'SUPERADMIN');
       } catch (error) {
         console.error("Error al cargar roles: ", error);
       }
@@ -198,6 +202,27 @@ function usuariosTable() {
     // ---------------------------------------------------
     // Helpers
     // ---------------------------------------------------
+    puedeGestionar(usuario) {
+      if (!usuario) return false;
+      const rolTarget = String(usuario.rol || usuario.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(usuario.id_rol);
+      const esAdminTarget = rolTarget === "ADMINISTRADOR" || idRol === 1 || rolTarget === "SUPERADMIN" || idRol === 2;
+      
+      // Los roles regulares (GESCO, SST, VIGILANTE, GESTIÓN DOCUMENTAL, SCR, etc.)
+      // SIEMPRE pueden ser gestionados (editados, eliminados, activados/desactivados) por el Administrador
+      if (!esAdminTarget) return true;
+
+      // Si el usuario en la fila es un Administrador, función ÚNICA de SUPERADMIN
+      let miRol = "";
+      try {
+        const sesion = (typeof getAuthSession === "function") ? getAuthSession() : 
+                       JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        miRol = String(sesion?.rol || "").trim().toUpperCase();
+      } catch (e) {
+        miRol = "";
+      }
+      return miRol === "SUPERADMIN";
+    },
     rolNombre(idRol) {
       const rol = this.roles.find(r => r.id === Number(idRol));
       return rol ? rol.nombre_rol : "—";
@@ -212,10 +237,10 @@ function usuariosTable() {
     },
     esRolSSToGESCO(usuario) {
       if (!usuario) return false;
-      const rolId = Number(usuario.id_rol);
-      if (rolId === 3 || rolId === 4) return true;
       const rolTexto = String(usuario.rol || usuario.nombre_rol || "").toUpperCase();
-      return rolTexto.includes("SST") || rolTexto.includes("GESCO");
+      if (rolTexto.includes("SST") || rolTexto.includes("GESCO")) return true;
+      const rolId = Number(usuario.id_rol);
+      return rolId === 5 || rolId === 6;
     },
     formatearFecha(fechaStr) {
       if (!fechaStr) return "No registrada";
@@ -264,6 +289,15 @@ function usuariosTable() {
     // Acciones
     // ---------------------------------------------------
     async toggleActivo(usuario) {
+      if (!this.puedeGestionar(usuario)) {
+        if (typeof window.showToast === "function") {
+          window.showToast("Solo un usuario con rol SUPERADMIN puede modificar administradores.", "warning");
+        } else {
+          alert("Solo un usuario con rol SUPERADMIN puede modificar administradores.");
+        }
+        return;
+      }
+
       const nuevoEstado = !(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === "1");
       usuario.is_active = nuevoEstado;
       const idx = this.usuarios.findIndex(u => u.id === usuario.id);
@@ -278,7 +312,15 @@ function usuariosTable() {
           body: JSON.stringify({ is_active: nuevoEstado })
         });
         if (!res.ok) {
-          console.warn(`Error al actualizar estado en backend (HTTP ${res.status})`);
+          const errData = await res.json().catch(() => ({}));
+          console.warn(`Error al actualizar estado en backend (HTTP ${res.status}):`, errData);
+          if (typeof window.showToast === "function") {
+            window.showToast(errData.detail || "No se pudo actualizar el estado del usuario.", "error");
+          }
+          // Revertir cambio local
+          usuario.is_active = !nuevoEstado;
+          if (idx > -1) this.usuarios[idx].is_active = !nuevoEstado;
+          this.notificarCambio();
         }
       } catch (err) {
         console.error("Error en PATCH de usuario:", err);
@@ -295,6 +337,14 @@ function usuariosTable() {
     },
 
     confirmarEliminar(usuario) {
+      if (!this.puedeGestionar(usuario)) {
+        if (typeof window.showToast === "function") {
+          window.showToast("Solo un usuario con rol SUPERADMIN puede eliminar administradores.", "warning");
+        } else {
+          alert("Solo un usuario con rol SUPERADMIN puede eliminar administradores.");
+        }
+        return;
+      }
       this.usuarioAEliminar = usuario;
       this.showDeleteModal = true;
     },
@@ -304,6 +354,15 @@ function usuariosTable() {
     },
     async eliminarUsuario() {
       if (!this.usuarioAEliminar) return;
+      if (!this.puedeGestionar(this.usuarioAEliminar)) {
+        if (typeof window.showToast === "function") {
+          window.showToast("Solo un usuario con rol SUPERADMIN puede eliminar administradores.", "error");
+        } else {
+          alert("Solo un usuario con rol SUPERADMIN puede eliminar administradores.");
+        }
+        this.cancelarEliminar();
+        return;
+      }
       const id = this.usuarioAEliminar.id;
       
       // Eliminación optimista local
@@ -318,7 +377,12 @@ function usuariosTable() {
           method: "DELETE"
         });
         if (!res.ok) {
-          console.warn(`Error al eliminar usuario en backend (HTTP ${res.status})`);
+          const errData = await res.json().catch(() => ({}));
+          console.warn(`Error al eliminar usuario en backend (HTTP ${res.status}):`, errData);
+          if (typeof window.showToast === "function") {
+            window.showToast(errData.detail || "No se pudo eliminar el usuario.", "error");
+          }
+          await this.getUsers();
         }
       } catch (err) {
         console.error("Error en DELETE de usuario:", err);

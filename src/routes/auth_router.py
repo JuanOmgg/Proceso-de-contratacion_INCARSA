@@ -26,6 +26,7 @@ from src.loaders.auth_loader import (
 )
 
 from src.utils.security import verify_password, create_access_token, get_current_user
+from src.loaders.superadmin_loader import GET_permisos_rol_db
 
 resend.api_key = os.getenv("RESEND_API_KEY", "")
 
@@ -105,11 +106,14 @@ def login(payload: LoginInput):
     token = create_access_token(data=token_data)
     nombre_completo = f"{usuario.get('nombres', '')} {usuario.get('apellidos', '')}".strip()
 
+    permisos_info = GET_permisos_rol_db(int(usuario["id_rol"])) if usuario.get("id_rol") else {}
+
     return {
         "exito": True,
         "mensaje": "Inicio de sesión exitoso.",
         "access_token": token,
         "token_type": "bearer",
+        "permisos": permisos_info.get("permisos", {}),
         "usuario": {
             "id": usuario["id"],
             "nombre": nombre_completo,

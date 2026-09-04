@@ -524,7 +524,7 @@
                                     Conductor asignado
                                   </label>
                                   <template x-if="personas.length > 0">
-                                    <select x-model="v.conductor" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                    <select x-model="v.conductor" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
                                       <option value="">-- Seleccionar conductor --</option>
                                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -534,7 +534,7 @@
                                   </template>
                                   <template x-if="personas.length === 0">
                                     <input type="text" x-model="v.conductor" placeholder="Nombre del conductor..."
-                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
                                   </template>
                                 </div>
 
@@ -994,7 +994,7 @@
                 <div>
                   <label class="form-label">Tipo de vehículo</label>
                   <select x-model="nuevoVehiculo.tipo"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
                     :class="vehiculoModalErrors.tipo ? 'has-error' : ''">
                     <template x-for="tipo in tiposVehiculo" :key="tipo">
                       <option :value="tipo" x-text="tipo"></option>
@@ -1017,7 +1017,7 @@
                   <label class="form-label">Conductor asignado (Opcional)</label>
                   <template x-if="personas.length > 0">
                     <select x-model="nuevoVehiculo.conductor"
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
                       <option value="">-- Seleccionar de personas de la solicitud --</option>
                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -1027,7 +1027,7 @@
                   </template>
                   <template x-if="personas.length === 0">
                     <input type="text" x-model="nuevoVehiculo.conductor" placeholder="Nombre completo del conductor..."
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
                   </template>
                 </div>
 

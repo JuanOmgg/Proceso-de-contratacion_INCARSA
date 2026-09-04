@@ -1,3 +1,11 @@
+import sys
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 from fastapi.responses import JSONResponse
 import os
 import uvicorn
@@ -20,6 +28,9 @@ from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
+from src.routes.superadmin_router import router as superadmin_router
+from src.loaders.superadmin_loader import GET_mantenimiento_status
+from src.utils.security import decode_access_token
 
 app = FastAPI(
     title="API - Proceso de Contratos",
@@ -73,6 +84,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Middleware de modo mantenimiento (Error 503)
+@app.middleware("http")
+async def modo_mantenimiento_middleware(request: Request, call_next):
+    mantenimiento = GET_mantenimiento_status()
+    if mantenimiento and mantenimiento.get("activo"):
+        path = request.url.path
+        rutas_permitidas = [
+            "/static",
+            "/uploads",
+            "/favicon.ico",
+            "/login",
+            "/auth",
+            "/api/v1/auth",
+            "/superadmin",
+            "/api/v1/superadmin",
+            "/docs",
+            "/openapi.json"
+        ]
+        
+        # Permitir rutas estáticas, login y panel administrativo de SuperAdmin
+        if any(path == r or path.startswith(r + "/") or path.startswith(r + "?") for r in rutas_permitidas):
+            return await call_next(request)
+
+        # Si el usuario es SUPERADMIN mediante token Bearer o cookie, permitir acceso
+        auth_header = request.headers.get("Authorization") or ""
+        token = None
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+        elif "token" in request.cookies:
+            token = request.cookies.get("token")
+
+        if token:
+            payload = decode_access_token(token)
+            if payload and payload.get("rol") == "SUPERADMIN":
+                return await call_next(request)
+
+        # Retornar vista 503 o JSON 503
+        if "text/html" in request.headers.get("Accept", ""):
+            return templates.TemplateResponse(
+                name="errors/error-503.html",
+                request=request,
+                status_code=503,
+                context={
+                    "mensaje": mantenimiento.get("mensaje"),
+                    "tiempo": mantenimiento.get("tiempo")
+                }
+            )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": "Sistema en mantenimiento",
+                "mensaje": mantenimiento.get("mensaje"),
+                "tiempo": mantenimiento.get("tiempo"),
+                "status_code": 503
+            }
+        )
+
+    return await call_next(request)
+
 app.include_router(solicitud_router)
 app.include_router(usuario_router, prefix="/api/v1")
 app.include_router(emp_contratista_router)
@@ -85,6 +155,7 @@ app.include_router(antecedentes_router, prefix="/api/v1")
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(notificacion_router, prefix="/api/v1")
+app.include_router(superadmin_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -172,15 +243,30 @@ async def get_revision_solicitud(request: Request, codigo: str = ""):
 # Manejo de errores
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if "text/html" in request.headers.get("Accept", "") and exc.status_code == 404:
-        try:
-            return templates.TemplateResponse(
-                name="errors/error-404.html",
-                request=request,
-                status_code=404
-            )
-        except Exception:
-            pass
+    if "text/html" in request.headers.get("Accept", ""):
+        if exc.status_code == 404:
+            try:
+                return templates.TemplateResponse(
+                    name="errors/error-404.html",
+                    request=request,
+                    status_code=404
+                )
+            except Exception:
+                pass
+        elif exc.status_code == 503:
+            try:
+                mantenimiento = GET_mantenimiento_status()
+                return templates.TemplateResponse(
+                    name="errors/error-503.html",
+                    request=request,
+                    status_code=503,
+                    context={
+                        "mensaje": mantenimiento.get("mensaje") if mantenimiento else exc.detail,
+                        "tiempo": mantenimiento.get("tiempo") if mantenimiento else None
+                    }
+                )
+            except Exception:
+                pass
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail, "status_code": exc.status_code},

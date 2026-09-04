@@ -1191,6 +1191,17 @@ html.dark select option:checked {
    ESTILOS COMPLETOS DEL MODAL EN MODO OSCURO (ESTILO TICKET)
    ========================================================= */
 
+/* 0. Backdrop con patrón de puntos sutil en modo oscuro */
+:root.dark .modal-backdrop,
+:root.dark .modal-overlay,
+:root.dark .al-overlay {
+  background: 
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.22) 1px, transparent 0) 0 0/22px 22px,
+    rgba(10, 12, 18, 0.72) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
 /* 1. Panel principal del modal */
 :root.dark .modal-panel,
 :root.dark .al-card,
@@ -1411,15 +1422,23 @@ html.dark select option:checked {
 /* 12. Inputs y selects dentro de modales estilo ticket */
 :root.dark .modal-panel input.input-field,
 :root.dark .modal-panel select.input-field {
-  background: #181818 !important;
+  background: #18181b !important;
   color: #f1f5f9 !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:root.dark .modal-panel input.input-field:hover,
+:root.dark .modal-panel select.input-field:hover {
+  border-color: rgba(255, 255, 255, 0.28) !important;
 }
 
 :root.dark .modal-panel input.input-field:focus,
 :root.dark .modal-panel select.input-field:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+  border-color: var(--signal-500, #fa051a) !important;
+  box-shadow: 0 0 12px rgba(250, 5, 26, 0.35), 0 0 0 2px rgba(250, 5, 26, 0.2) !important;
+  outline: none !important;
 }
 
 :root.dark .modal-panel .bg-\[\#efe9dc\]\/20,
@@ -3915,4 +3934,392 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   display: none !important;
   content: none !important;
 }
+
+/* =========================================================
+   BADGES DE PERFIL Y USUARIO EN MODO OSCURO (NEÓN ELEGANTE)
+   ========================================================= */
+:root.dark .user-status-modal-activo {
+  background: rgba(0, 255, 157, 0.12) !important;
+  color: #00ff9d !important;
+  border: 1px solid rgba(0, 255, 157, 0.35) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.2) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.5) !important;
+}
+
+:root.dark .user-status-modal-inactivo {
+  background: rgba(255, 42, 85, 0.12) !important;
+  color: #ff4d73 !important;
+  border: 1px solid rgba(255, 42, 85, 0.4) !important;
+  box-shadow: 0 0 10px rgba(255, 42, 85, 0.2) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.5) !important;
+}
+
+:root.dark .user-role-modal-badge {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2) !important;
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.4) !important;
+}
+
+:root.dark .user-planta-badge {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.12) !important;
+}
+:root.dark .user-planta-badge i,
+:root.dark .user-planta-badge span.bullet-dot {
+  background-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+:root.dark .user-table-planta-badge {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.32) !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.12) !important;
+}
+:root.dark .user-table-planta-badge i {
+  color: #f59e0b !important;
+}
+
+/* =========================================================
+   BANNER ZONAS AUTORIZADAS EN MODO OSCURO (NEÓN ÁMBAR)
+   ========================================================= */
+:root.dark .banner-zonas-autorizadas {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.09) 0%, rgba(26, 22, 16, 0.95) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(245, 158, 11, 0.15) !important;
+  color: #f1f5f9 !important;
+}
+
+:root.dark .banner-zonas-autorizadas .banner-zonas-icon {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2) !important;
+}
+
+:root.dark .banner-zonas-autorizadas .banner-zonas-title {
+  color: #fde68a !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
+}
+
+:root.dark .banner-zonas-autorizadas .banner-zonas-text {
+  color: #f3f4f6 !important;
+}
+
+:root.dark .banner-zonas-autorizadas .banner-zonas-badge {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25) !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important;
+}
+
+/* =========================================================
+   SELECTORES ESTILIZADOS EN MODO OSCURO (WIZARD & MODALES)
+   ========================================================= */
+:root.dark select,
+:root.dark select.input-field,
+html.dark select,
+html.dark select.input-field {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 0.75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.15em 1.15em !important;
+  padding-right: 2.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:root.dark select:hover,
+:root.dark select.input-field:hover,
+html.dark select:hover,
+html.dark select.input-field:hover {
+  border-color: rgba(250, 5, 26, 0.45) !important;
+  box-shadow: 0 0 10px rgba(250, 5, 26, 0.18) !important;
+}
+
+:root.dark select:focus,
+:root.dark select.input-field:focus,
+html.dark select:focus,
+html.dark select.input-field:focus {
+  border-color: var(--signal-500, #fa051a) !important;
+  box-shadow: 0 0 14px rgba(250, 5, 26, 0.35), 0 0 0 2px rgba(250, 5, 26, 0.18) !important;
+  outline: none !important;
+}
+
+:root.dark select option,
+html.dark select option {
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+}
+
+:root.dark select option:checked,
+html.dark select option:checked {
+  background: linear-gradient(135deg, #fa051a, #dc2626) !important;
+  background-color: #fa051a !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* =========================================================
+   SWEETALERT2 CON NEONES (MODO OSCURO)
+   ========================================================= */
+:root.dark .swal2-container,
+html.dark .swal2-container {
+  z-index: 100000 !important;
+}
+
+/* 1. Toasts flotantes con Glassmorphism oscuro */
+:root.dark .swal2-popup.swal2-toast,
+html.dark .swal2-popup.swal2-toast {
+  background: rgba(18, 18, 24, 0.94) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 14px !important;
+  padding: 12px 18px !important;
+  color: #f8fafc !important;
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 0, 0, 0.6) !important;
+  transition: all 0.25s ease !important;
+}
+
+:root.dark .swal2-toast .swal2-title,
+html.dark .swal2-toast .swal2-title {
+  color: #f8fafc !important;
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding: 0 0 0 8px !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root.dark .swal2-toast .swal2-html-container,
+html.dark .swal2-toast .swal2-html-container {
+  color: #94a3b8 !important;
+  font-size: 12.5px !important;
+}
+
+/* 2. Neones en Toasts según tipo */
+/* --- ÉXITO (Neón Verde Esmeralda) --- */
+:root.dark .swal2-toast.swal2-icon-success,
+:root.dark .swal2-toast:has(.swal2-success),
+html.dark .swal2-toast.swal2-icon-success,
+html.dark .swal2-toast:has(.swal2-success) {
+  border-color: rgba(16, 185, 129, 0.55) !important;
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
+              0 0 20px rgba(16, 185, 129, 0.38), 
+              inset 0 0 12px rgba(16, 185, 129, 0.12) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-success,
+html.dark .swal2-toast .swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85)) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'],
+html.dark .swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #10b981 !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-success .swal2-success-ring,
+html.dark .swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+:root.dark .swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
+:root.dark .swal2-toast.swal2-icon-success .swal2-timer-progress-bar,
+html.dark .swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
+html.dark .swal2-toast.swal2-icon-success .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #10b981, #34d399) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.9) !important;
+  height: 3px !important;
+}
+
+/* --- ERROR (Neón Rojo Carmesí / Signal) --- */
+:root.dark .swal2-toast.swal2-icon-error,
+:root.dark .swal2-toast:has(.swal2-error),
+html.dark .swal2-toast.swal2-icon-error,
+html.dark .swal2-toast:has(.swal2-error) {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
+              0 0 22px rgba(239, 68, 68, 0.45), 
+              inset 0 0 12px rgba(239, 68, 68, 0.15) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-error,
+html.dark .swal2-toast .swal2-icon.swal2-error {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'],
+html.dark .swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #ef4444 !important;
+}
+:root.dark .swal2-toast:has(.swal2-error) .swal2-timer-progress-bar,
+:root.dark .swal2-toast.swal2-icon-error .swal2-timer-progress-bar,
+html.dark .swal2-toast:has(.swal2-error) .swal2-timer-progress-bar,
+html.dark .swal2-toast.swal2-icon-error .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #ef4444, #f87171) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.9) !important;
+  height: 3px !important;
+}
+
+/* --- ADVERTENCIA (Neón Ámbar / Dorado) --- */
+:root.dark .swal2-toast.swal2-icon-warning,
+:root.dark .swal2-toast:has(.swal2-warning),
+html.dark .swal2-toast.swal2-icon-warning,
+html.dark .swal2-toast:has(.swal2-warning) {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
+              0 0 20px rgba(245, 158, 11, 0.42), 
+              inset 0 0 12px rgba(245, 158, 11, 0.15) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-warning,
+html.dark .swal2-toast .swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.9)) !important;
+}
+:root.dark .swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
+:root.dark .swal2-toast.swal2-icon-warning .swal2-timer-progress-bar,
+html.dark .swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
+html.dark .swal2-toast.swal2-icon-warning .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.9) !important;
+  height: 3px !important;
+}
+
+/* --- INFORMACIÓN (Neón Cian Eléctrico) --- */
+:root.dark .swal2-toast.swal2-icon-info,
+:root.dark .swal2-toast:has(.swal2-info),
+html.dark .swal2-toast.swal2-icon-info,
+html.dark .swal2-toast:has(.swal2-info) {
+  border-color: rgba(6, 182, 212, 0.6) !important;
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
+              0 0 20px rgba(6, 182, 212, 0.42), 
+              inset 0 0 12px rgba(6, 182, 212, 0.15) !important;
+}
+:root.dark .swal2-toast .swal2-icon.swal2-info,
+html.dark .swal2-toast .swal2-icon.swal2-info {
+  border-color: #06b6d4 !important;
+  color: #06b6d4 !important;
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.9)) !important;
+}
+:root.dark .swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
+:root.dark .swal2-toast.swal2-icon-info .swal2-timer-progress-bar,
+html.dark .swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
+html.dark .swal2-toast.swal2-icon-info .swal2-timer-progress-bar {
+  background: linear-gradient(90deg, #06b6d4, #22d3ee) !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.9) !important;
+  height: 3px !important;
+}
+
+/* 3. Modales completos SweetAlert2 en Modo Oscuro con resplandor */
+:root.dark .swal2-popup:not(.swal2-toast),
+html.dark .swal2-popup:not(.swal2-toast) {
+  background: rgba(18, 18, 24, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 20px !important;
+  padding: 30px 26px !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 28px rgba(250, 5, 26, 0.2) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-title,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-title {
+  color: #ffffff !important;
+  font-family: var(--font-display, 'Space Grotesk', sans-serif) !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-html-container,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-html-container {
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm {
+  background: linear-gradient(135deg, #fa051a, #dc2626) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 24px !important;
+  box-shadow: 0 4px 16px rgba(250, 5, 26, 0.45) !important;
+  transition: all 0.2s ease !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(250, 5, 26, 0.6) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-cancel,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-cancel {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 22px !important;
+  transition: all 0.2s ease !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-cancel:hover,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.6)) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.6)) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.6)) !important;
+}
+
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
+html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
+  border-color: #06b6d4 !important;
+  color: #06b6d4 !important;
+  filter: drop-shadow(0 0 14px rgba(6, 182, 212, 0.6)) !important;
+}
+
 

@@ -10,7 +10,7 @@ load_dotenv()
 # Crear el POOL de conexiones al arrancar la app
 POOL = PooledDB(
     creator=pymysql,
-    maxconnections=15,
+    maxconnections=20,
     mincached=2, 
     host=os.getenv("DB_HOST", "localhost"),
     port=int(os.getenv("DB_PORT", 3306)),
@@ -31,7 +31,7 @@ def GET_conexion():
         yield conexion
     except Exception as e:
         conexion.rollback()
-        print(f"❌❌ Error en la conexión a la base de datos desde database: {e} ❌❌")
+        print(f"[ERROR] Error en la conexion a la base de datos desde database: {e}")
         raise e
     finally:
         conexion.close() #devuelve conecion al pool sin destruirla
