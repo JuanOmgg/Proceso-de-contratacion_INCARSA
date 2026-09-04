@@ -374,6 +374,7 @@ function solicitudesTable() {
     sortKey: "id",
     sortAsc: true,
     cargando: true,
+    permisosVersion: 0,
 
     // Modal state
     viewModalOpen: false,
@@ -381,7 +382,28 @@ function solicitudesTable() {
     selected: null,
     pendingDeleteId: null,
 
+    puedeAccion(mod, acc) {
+      // Dependencia reactiva para Alpine.js
+      const _v = this.permisosVersion;
+      if (typeof window.puedeAccion === 'function') {
+        return window.puedeAccion(mod, acc);
+      }
+      return false;
+    },
+
     async init() {
+      // Escuchar actualizaciones dinámicas de permisos en vivo
+      window.addEventListener("permisos-actualizados", () => {
+        this.permisosVersion++;
+      });
+
+      // Asegurar permisos sincronizados si aún no están cargados
+      if (typeof window.recargarMisPermisos === 'function') {
+        window.recargarMisPermisos().then(() => {
+          this.permisosVersion++;
+        });
+      }
+
       // 1. Usar datos precargados desde el splash inmediatamente
       try {
         const pre = sessionStorage.getItem("incarsa_preloaded_solicitudes");

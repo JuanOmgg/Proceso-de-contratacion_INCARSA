@@ -1744,11 +1744,13 @@ function solicitudWizard() {
       }));
 
       // Equipos de Cómputo
-      const equiposPayload = this.equipos.map(e => ({
-        marca: e.marca || "Genérica",
-        modelo: e.modelo || "General",
-        serie: e.serie || "S/N"
-      }));
+      const equiposPayload = (this.equipos || [])
+        .filter(e => (e.marca && e.marca.trim()) || (e.modelo && e.modelo.trim()) || (e.serie && e.serie.trim()))
+        .map(e => ({
+          marca: (e.marca || "").trim() || "Genérica",
+          modelo: (e.modelo || "").trim() || "General",
+          serie: (e.serie || "").trim() || "S/N"
+        }));
 
       // Payload para la API
       const payloadApi = {
@@ -1767,7 +1769,9 @@ function solicitudWizard() {
         actividad: this.form.actividad,
         is_active: true,
         vehiculo: vehiculosPayload,
-        eq_computo: equiposPayload
+        vehiculos: vehiculosPayload,
+        eq_computo: equiposPayload,
+        equipos: equiposPayload
       };
 
       // ========================================================================
@@ -1775,16 +1779,16 @@ function solicitudWizard() {
       // ========================================================================
       if (this.isEdit && this.editId) {
         try {
-          console.log(`📤 [PUT/PATCH] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
+          console.log(`📤 [PATCH/PUT] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
           
           let response = await fetch(`${API.solicitudes}/${this.editId}`, {
-            method: "PUT",
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payloadApi)
           });
 
           if (!response.ok) {
-            response = await fetch(`${API.solicitudes}/update/${this.editId}`, {
+            response = await fetch(`${API.solicitudes}/${this.editId}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payloadApi)
@@ -1792,11 +1796,8 @@ function solicitudWizard() {
           }
 
           if (!response.ok) {
-            response = await fetch(`${API.solicitudes}/${this.editId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payloadApi)
-            });
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
           }
 
           // Actualizar en localStorage si existe allí

@@ -45,17 +45,47 @@ function usuarioForm() {
     },
 
     // ---------------------------------------------------
-    // Getter: Roles que requieren asignación de plantas (SST=5, GESCO=6)
+    // Roles que requieren asignación de plantas (ÚNICAMENTE SST=5 y GESCO=6)
     // ---------------------------------------------------
-    get esRolConPlantas() {
-      const rolId = Number(this.form.rol);
+    esRolConPlantas() {
+      const rolVal = this.form.rol;
+      if (!rolVal && rolVal !== 0) return false;
+
+      const rolId = Number(rolVal);
+      // SST = 5, GESCO = 6
       if (rolId === 5 || rolId === 6) return true;
-      const rolObj = this.roles.find(r => Number(r.id) === rolId);
-      if (rolObj) {
-        const nombre = String(rolObj.nombre_rol || "").toUpperCase();
-        return nombre.includes("SST") || nombre.includes("GESCO");
+
+      // Si es un ID numérico de otro rol (1=ADMINISTRADOR, 2=SUPERADMIN, 3=VIGILANTE, 4=GESTION DOCUMENTAL, 7=SCR)
+      if (!isNaN(rolId) && rolId > 0 && rolId !== 5 && rolId !== 6) {
+        return false;
       }
+
+      // Si viene por nombre de rol en string
+      const strVal = String(rolVal).trim().toUpperCase();
+      if (strVal === "SST" || strVal === "GESCO") return true;
+
+      // Buscar en el catálogo de roles cargados
+      const rolObj = (this.roles || []).find(r => 
+        Number(r.id) === rolId || 
+        String(r.nombre_rol || "").trim().toUpperCase() === strVal
+      );
+
+      if (rolObj) {
+        const nom = String(rolObj.nombre_rol || "").trim().toUpperCase();
+        const objId = Number(rolObj.id);
+        return objId === 5 || objId === 6 || nom === "SST" || nom === "GESCO";
+      }
+
       return false;
+    },
+
+    onRolChange() {
+      if (this.errors.rol) delete this.errors.rol;
+      if (this.errors.id_rol) delete this.errors.id_rol;
+      if (!this.esRolConPlantas()) {
+        this.form.plantas_ids = [];
+        if (this.errors.plantas_ids) delete this.errors.plantas_ids;
+      }
     },
 
     // ---------------------------------------------------
@@ -154,12 +184,14 @@ function usuarioForm() {
           this.form.rol = found.id_rol || (found.rol && found.rol.id ? found.rol.id : found.rol) || "";
           this.form.is_active = found.is_active === 1 || found.is_active === true || found.is_active === "1";
 
-          // Cargar plantas asignadas
+          // Cargar plantas asignadas (ÚNICAMENTE si el rol es SST o GESCO)
           let pIds = [];
-          if (Array.isArray(found.plantas_ids) && found.plantas_ids.length > 0) {
-            pIds = found.plantas_ids.map(Number);
-          } else if (Array.isArray(found.plantas) && found.plantas.length > 0) {
-            pIds = found.plantas.map(p => Number(p.id || p.id_planta || p)).filter(Boolean);
+          if (this.esRolConPlantas()) {
+            if (Array.isArray(found.plantas_ids) && found.plantas_ids.length > 0) {
+              pIds = found.plantas_ids.map(Number);
+            } else if (Array.isArray(found.plantas) && found.plantas.length > 0) {
+              pIds = found.plantas.map(p => Number(p.id || p.id_planta || p)).filter(Boolean);
+            }
           }
           this.form.plantas_ids = pIds;
         }
@@ -227,7 +259,7 @@ function usuarioForm() {
       const correo = String(this.form.correo || "").trim();
       const id_rol = Number(this.form.rol);
       const contrasena = String(this.form.contrasena || "").trim();
-      const plantas_ids = this.esRolConPlantas ? this.form.plantas_ids.map(Number) : [];
+      const plantas_ids = this.esRolConPlantas() ? this.form.plantas_ids.map(Number) : [];
 
       this.guardandoUsuario = true;
 
@@ -349,11 +381,13 @@ function usuarioForm() {
         this.errors.rol = "Selecciona un rol.";
       }
 
-      // Validación de plantas obligatorias para SST y GESCO
-      if (this.esRolConPlantas) {
+      // Validación de plantas obligatorias ÚNICAMENTE para SST y GESCO
+      if (this.esRolConPlantas()) {
         if (!this.form.plantas_ids || this.form.plantas_ids.length === 0) {
           this.errors.plantas_ids = "Debes asignar al menos una planta para usuarios con rol SST o GESCO.";
         }
+      } else {
+        if (this.errors.plantas_ids) delete this.errors.plantas_ids;
       }
 
       // Validación de teléfono

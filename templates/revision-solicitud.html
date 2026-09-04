@@ -48,8 +48,8 @@
         <!-- Derecha: Selector de simulación, Estado, Modo oscuro y Perfil -->
         <div class="flex items-center gap-3 sm:gap-4">
           
-          <!-- Selector de Simulación de Rol (sin restricción de ancho que aplastaba el texto) -->
-          <div class="relative" x-data="{ openRoles: false }">
+          <!-- Selector de Simulación de Rol (Solo visible para SuperAdmin) -->
+          <div class="relative" x-data="{ openRoles: false }" x-show="esSuperAdmin" x-cloak>
             <button type="button" @click="openRoles = !openRoles" 
               class="h-9 px-3 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs font-medium flex items-center gap-2 transition-colors shadow-xs"
               title="Cambiar rol para simular dictamen">
@@ -318,7 +318,7 @@
                     </div>
 
                     <!-- Botones de Acción Masiva Rápida -->
-                    <div class="flex items-center gap-1.5" x-show="solicitud.personas && solicitud.personas.length > 1">
+                    <div class="flex items-center gap-1.5" x-show="solicitud.personas && solicitud.personas.length > 1 && puedeEditarAutorizacion">
                       <button type="button" @click="autorizarTodasPersonas()"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                         title="Autorizar a todas las personas de la lista">
@@ -353,6 +353,14 @@
                                   <span x-text="persona.autorizado ? 'Autorizado' : 'Acceso Denegado'"></span>
                                 </span>
 
+                                <!-- Indicador de Bloqueo tras Aprobación / Dictamen -->
+                                <span x-show="!puedeEditarAutorizacion"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 inline-flex items-center gap-1 select-none"
+                                  title="Autorización fijada: no editable tras haber emitido dictamen">
+                                  <i class="fa-solid fa-lock text-[9px]"></i>
+                                  <span>Fijado</span>
+                                </span>
+
                                 <!-- Botón / Chip de Antecedentes y Vigencia -->
                                 <button type="button" @click="abrirHistorialModal(persona)"
                                   class="btn-antecedente-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-500/30 transition-all shadow-2xs cursor-pointer"
@@ -369,19 +377,27 @@
                           </div>
 
                           <!-- Controles de Autorización Individual -->
-                          <div class="persona-controls-group flex items-center gap-1.5 self-end sm:self-center p-1 rounded-xl border">
+                          <div class="persona-controls-group flex items-center gap-1.5 self-end sm:self-center p-1 rounded-xl border transition-all"
+                            :class="!puedeEditarAutorizacion ? 'is-locked opacity-60 cursor-not-allowed pointer-events-none select-none' : ''"
+                            :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: ya has emitido dictamen para esta solicitud' : ''">
                             <!-- Botón: Autorizar -->
-                            <button type="button" @click="setAutorizacionPersona(persona, true)"
+                            <button type="button" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @click="puedeEditarAutorizacion && setAutorizacionPersona(persona, true)"
                               class="btn-autorizar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                              :class="persona.autorizado ? 'is-active' : 'is-inactive'">
+                              :class="[persona.autorizado ? 'is-active' : 'is-inactive', !puedeEditarAutorizacion ? 'cursor-not-allowed' : '']"
+                              :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: dictamen ya emitido' : 'Autorizar ingresante'">
                               <i class="fa-solid fa-circle-check text-[11px]"></i>
                               <span>Autorizar</span>
                             </button>
 
                             <!-- Botón: No Autorizar / Denegar -->
-                            <button type="button" @click="setAutorizacionPersona(persona, false)"
+                            <button type="button" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @click="puedeEditarAutorizacion && setAutorizacionPersona(persona, false)"
                               class="btn-denegar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                              :class="!persona.autorizado ? 'is-active' : 'is-inactive'">
+                              :class="[!persona.autorizado ? 'is-active' : 'is-inactive', !puedeEditarAutorizacion ? 'cursor-not-allowed' : '']"
+                              :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: dictamen ya emitido' : 'Denegar acceso'">
                               <i class="fa-solid fa-circle-xmark text-[11px]"></i>
                               <span>No Autorizar</span>
                             </button>
@@ -392,9 +408,11 @@
                         <div x-show="!persona.autorizado" x-transition class="pt-2 border-t border-red-200/70">
                           <div class="flex items-center gap-2">
                             <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
-                            <input type="text" x-model="persona.motivo_rechazo" @input.debounce.500ms="persistirPersonasEnStorage()"
+                            <input type="text" x-model="persona.motivo_rechazo" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @input.debounce.500ms="puedeEditarAutorizacion && persistirPersonasEnStorage()"
                               placeholder="Escriba el motivo de la no autorización..."
-                              class="input-field w-full px-3 py-1.5 text-xs rounded-lg border border-red-300 bg-white text-red-900 placeholder:text-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500">
+                              class="input-field w-full px-3 py-1.5 text-xs rounded-lg border border-red-300 bg-white text-red-900 placeholder:text-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed">
                           </div>
                         </div>
 

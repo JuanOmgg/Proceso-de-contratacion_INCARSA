@@ -87,6 +87,16 @@ function revisionSolicitudApp() {
     rolActual: "SST", // 'SST' | 'GESCO' | 'SCR' | 'Administrador' | 'Gestion documental'
     rolNombre: "SST",
 
+    get esSuperAdmin() {
+      if (typeof tieneRol === 'function' && tieneRol('SUPERADMIN')) {
+        return true;
+      }
+      if (!this.usuarioSesion) return false;
+      const rol = String(this.usuarioSesion.rol || this.usuarioSesion.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion.id_rol || 0);
+      return rol === "SUPERADMIN" || idRol === 2;
+    },
+
     get userDisplayName() {
       if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
         return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
@@ -350,7 +360,8 @@ function revisionSolicitudApp() {
         );
         if (sesion) {
           this.usuarioSesion = sesion;
-          const rol = sesion.rol || sesion.nombre_rol || (sesion.id_rol === 1 ? "Administrador" : sesion.id_rol === 3 ? "SST" : sesion.id_rol === 4 ? "GESCO" : sesion.id_rol === 5 ? "SCR" : "Gestion documental");
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Gestion documental", 5: "SST", 6: "GESCO", 7: "SCR" };
+          const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Gestion documental";
           this.rolActual = rol;
           this.rolNombre = rol;
         }
@@ -630,7 +641,51 @@ function revisionSolicitudApp() {
       return this.solicitud?.personas?.filter(p => p.autorizado === false).length || 0;
     },
 
+    get yaAproboRolActual() {
+      const estado = String(this.solicitud?.estado || "").toUpperCase();
+      if (estado === "APROBADO") return true;
+
+      // Si el rol es SST o GESCO, verificar si ya emitió dictamen en su planta o en la solicitud
+      if (this.rolActual === "SST" || this.rolActual === "GESCO") {
+        if (this.miPlantaYaFirmada) return true;
+        const revs = this.revisionesHistorial || [];
+        const tieneDictamen = revs.some(
+          r => String(r.rol).toUpperCase() === this.rolActual.toUpperCase() && 
+               (r.decision === "APROBADO" || r.decision === "RECHAZADO")
+        );
+        if (tieneDictamen && !this.puedeDictaminar) return true;
+        return false;
+      }
+
+      // Si el rol es SCR
+      if (this.rolActual === "SCR") {
+        return Boolean(this.dictamenSCR?.aprobado || this.dictamenSCR?.rechazado);
+      }
+
+      return false;
+    },
+
+    get puedeEditarAutorizacion() {
+      const estado = String(this.solicitud?.estado || "").toUpperCase();
+      // Si la solicitud ya está en estado final APROBADO o RECHAZADO
+      if (estado === "APROBADO" || estado === "RECHAZADO") {
+        return false;
+      }
+
+      // Si el usuario con su rol actual ya aprobó o emitió dictamen
+      if (this.yaAproboRolActual) {
+        return false;
+      }
+
+      // Solo puede editar quien tiene permisos y acciones activas para dictaminar en esta etapa
+      return Boolean(this.puedeDictaminar);
+    },
+
     setAutorizacionPersona(persona, estaAutorizado, motivo = "") {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
       persona.autorizado = estaAutorizado;
       if (!estaAutorizado && motivo) {
         persona.motivo_rechazo = motivo;
@@ -646,10 +701,15 @@ function revisionSolicitudApp() {
     },
 
     toggleAutorizacionPersona(persona) {
+      if (!this.puedeEditarAutorizacion) return;
       this.setAutorizacionPersona(persona, !persona.autorizado);
     },
 
     autorizarTodasPersonas() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = true;
@@ -660,6 +720,10 @@ function revisionSolicitudApp() {
     },
 
     denegarTodasPersonas() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = false;
@@ -669,6 +733,7 @@ function revisionSolicitudApp() {
     },
 
     async persistirPersonasEnStorage() {
+      if (!this.puedeEditarAutorizacion) return;
       try {
         const storageKey = `incarsa_solicitud_${this.solicitudId}_personas`;
         localStorage.setItem(storageKey, JSON.stringify(this.solicitud.personas));
@@ -820,11 +885,18 @@ function revisionSolicitudApp() {
 
     get miPlantaYaFirmada() {
       if (this.rolActual !== 'SST' && this.rolActual !== 'GESCO') return false;
-      const pid = Number(this.plantaSeleccionadaDictamen);
-      if (!pid) return false;
+      let pid = Number(this.plantaSeleccionadaDictamen);
+      if (!pid && this.misPlantasDictaminables.length > 0) {
+        pid = Number(this.misPlantasDictaminables[0].id);
+      } else if (!pid && this.plantasSolicitud.length > 0) {
+        pid = Number(this.plantasSolicitud[0].id);
+      }
+      const rolKey = this.rolActual.toLowerCase();
+      if (!pid) {
+        return this.matrizRevisionesPorPlanta.some(item => Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado));
+      }
       const item = this.matrizRevisionesPorPlanta.find(p => p.id === pid);
       if (!item) return false;
-      const rolKey = this.rolActual.toLowerCase();
       return Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado);
     },
 

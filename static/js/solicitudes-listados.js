@@ -237,7 +237,7 @@ function solicitudesCards() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 3 || Number(sesion.id_rol) === 4 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -331,7 +331,7 @@ function solicitudesTable() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 3 || Number(sesion.id_rol) === 4 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -425,9 +425,12 @@ function solicitudesTable() {
             const sesion = this.sesionUsuario;
             if (!sesion) return false;
             const rolId = Number(sesion.id_rol);
-            if (rolId === 3 || rolId === 4) return true;
-            const rolTexto = String(sesion.rol || "").toUpperCase();
-            return rolTexto.includes("SST") || rolTexto.includes("GESCO");
+            // ÚNICAMENTE SST (ID 5) y GESCO (ID 6) filtran por plantas
+            if (rolId === 5 || rolId === 6) return true;
+            // Otros roles conocidos (1=ADMIN, 2=SUPERADMIN, 3=VIGILANTE, 4=GESTION DOCUMENTAL, 7=SCR)
+            if (!isNaN(rolId) && rolId > 0 && rolId !== 5 && rolId !== 6) return false;
+            const rolTexto = String(sesion.rol || "").trim().toUpperCase();
+            return rolTexto === "SST" || rolTexto === "GESCO";
         },
 
         get plantasUsuario() {

@@ -10,7 +10,7 @@ function procesamientoBoard() {
   return {
     search: "",
     filtroEstado: "TODOS",
-    filtroActivo: "activos", // "activos" | "inactivos" | "todos"
+    filtroActivo: "todos", // "todos" | "activos" | "inactivos"
     userRole: "",
 
     // Roles autorizados para filtrar entre activos, inactivos o ver todos
@@ -19,13 +19,16 @@ function procesamientoBoard() {
       "ADMINISTRADOR",
       "SUPERADMIN",
       "DIRECTOR",
-      "GERENTE"
+      "GERENTE",
+      "SST",
+      "GESCO",
+      "SCR",
+      "GESTION DOCUMENTAL"
     ],
 
     get puedeVerInactivos() {
-      if (!this.userRole) return true; // Por defecto en desarrollo/sin sesión
-      const rol = this.userRole.trim().toUpperCase();
-      return this.rolesPermitidosInactivos.some(r => rol === r || rol.includes(r));
+      // Todos los roles con acceso al módulo pueden visualizar y alternar entre activos, inactivos y todos
+      return true;
     },
 
     estadosFiltro: [
@@ -271,7 +274,17 @@ function procesamientoBoard() {
 
     async getSolicitudes(){
       try {
-        const response = await fetch(`${API.solicitudes}/getall`);
+        let sesion = null;
+        try {
+          sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        } catch (e) {}
+
+        let url = `${API.solicitudes}/getall`;
+        if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+          url += `?id_usuario=${sesion.id}`;
+        }
+
+        const response = await fetch(url);
         if(!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         this.solicitudes = Array.isArray(data) ? data : (data.datos || data.data || []);

@@ -7,6 +7,7 @@ function superAdminPanel() {
     cargando: true,
     guardandoMantenimiento: false,
     guardandoPermisos: false,
+    hayCambiosPendientes: false,
     
     // Modo mantenimiento
     mantenimiento: {
@@ -28,10 +29,18 @@ function superAdminPanel() {
       return this.roles.find(r => r.id === this.rolSeleccionadoId) || null;
     },
 
+    get esRolSuperAdmin() {
+      const r = this.rolActual;
+      return !!(r && (r.is_superadmin || (r.nombre_rol || '').trim().toUpperCase() === 'SUPERADMIN'));
+    },
+
     get modulosFiltrados() {
       if (!this.busquedaModulo.trim()) return this.modulos;
       const q = this.busquedaModulo.toLowerCase();
-      return this.modulos.filter(m => m.toLowerCase().includes(q));
+      return this.modulos.filter(m => {
+        const nombreHumano = this.formatoModulo(m).toLowerCase();
+        return m.toLowerCase().includes(q) || nombreHumano.includes(q);
+      });
     },
 
     async init() {
@@ -161,72 +170,161 @@ function superAdminPanel() {
       }
     },
 
-    seleccionarRol(idRol) {
+    async seleccionarRol(idRol) {
+      if (this.rolSeleccionadoId === idRol) return;
+
+      // Si hay cambios pendientes en el rol actual, confirmar antes de cambiar
+      if (this.hayCambiosPendientes && !this.esRolSuperAdmin) {
+        if (typeof Swal !== 'undefined') {
+          const res = await Swal.fire({
+            title: '¿Guardar cambios pendientes?',
+            text: `Tienes cambios sin guardar para el rol ${this.rolActual?.nombre_rol || ''}. ¿Deseas guardarlos antes de cambiar de rol?`,
+            icon: 'warning',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar y cambiar',
+            denyButtonText: 'Descartar cambios',
+            cancelButtonText: 'Permanecer aquí',
+            confirmButtonColor: '#f59e0b',
+            denyButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b'
+          });
+
+          if (res.isConfirmed) {
+            await this.guardarPermisosRol();
+          } else if (!res.isDenied) {
+            return; // Cancelado, no cambia de rol
+          }
+        }
+      }
+
       this.rolSeleccionadoId = idRol;
+      this.hayCambiosPendientes = false;
     },
 
     getPermiso(modulo, accion) {
-      const rolId = this.rolSeleccionadoId;
-      if (!this.matriz[rolId] || !this.matriz[rolId][modulo]) return false;
-      return !!this.matriz[rolId][modulo][accion];
+      if (this.esRolSuperAdmin) return true;
+
+      const rolId = String(this.rolSeleccionadoId);
+      const rolData = this.matriz[rolId] || this.matriz[this.rolSeleccionadoId] || {};
+      if (!rolData[modulo]) return false;
+      return !!rolData[modulo][accion];
     },
 
     togglePermiso(modulo, accion) {
-      const rolId = this.rolSeleccionadoId;
+      if (this.esRolSuperAdmin) {
+        this.notificar('Los permisos de SUPERADMIN son irrestrictos por seguridad.', 'info');
+        return;
+      }
+
+      const rolId = String(this.rolSeleccionadoId);
       if (!this.matriz[rolId]) this.matriz[rolId] = {};
       if (!this.matriz[rolId][modulo]) {
         this.matriz[rolId][modulo] = { ver: false, crear: false, editar: false, eliminar: false, aprobar: false };
       }
       
       const valorActual = !!this.matriz[rolId][modulo][accion];
-      this.matriz[rolId][modulo][accion] = !valorActual;
+      const nuevoValor = !valorActual;
+
+      // Clonar para asegurar reactividad profunda en Alpine
+      const modObj = { ...this.matriz[rolId][modulo], [accion]: nuevoValor };
 
       // Si se desactiva "ver", desactivar automáticamente las demás acciones dependientes
-      if (accion === 'ver' && valorActual === true) {
-        this.matriz[rolId][modulo].crear = false;
-        this.matriz[rolId][modulo].editar = false;
-        this.matriz[rolId][modulo].eliminar = false;
-        this.matriz[rolId][modulo].aprobar = false;
+      if (accion === 'ver' && !nuevoValor) {
+        modObj.crear = false;
+        modObj.editar = false;
+        modObj.eliminar = false;
+        modObj.aprobar = false;
       }
       // Si se activa cualquier acción operativa, asegurar que "ver" esté activo
-      if (accion !== 'ver' && !valorActual === true) {
-        this.matriz[rolId][modulo].ver = true;
+      if (accion !== 'ver' && nuevoValor) {
+        modObj.ver = true;
       }
+
+      this.matriz[rolId][modulo] = modObj;
+      this.matriz = { ...this.matriz };
+      this.hayCambiosPendientes = true;
     },
 
     marcarTodosModulo(modulo, habilitar) {
-      const rolId = this.rolSeleccionadoId;
+      if (this.esRolSuperAdmin) {
+        this.notificar('Los permisos de SUPERADMIN no admiten modificaciones.', 'info');
+        return;
+      }
+
+      const rolId = String(this.rolSeleccionadoId);
       if (!this.matriz[rolId]) this.matriz[rolId] = {};
-      this.matriz[rolId][modulo] = {
-        ver: habilitar,
-        crear: habilitar,
-        editar: habilitar,
-        eliminar: habilitar,
-        aprobar: habilitar
+
+      const nuevoModulo = {
+        ver: !!habilitar,
+        crear: !!habilitar,
+        editar: !!habilitar,
+        eliminar: !!habilitar,
+        aprobar: !!habilitar
       };
+
+      this.matriz[rolId][modulo] = nuevoModulo;
+      this.matriz = { ...this.matriz };
+      this.hayCambiosPendientes = true;
+
+      const nom = this.formatoModulo(modulo);
+      this.notificar(
+        `${nom}: Todas las acciones ${habilitar ? 'HABILITADAS' : 'BLOQUEADAS'}`,
+        habilitar ? 'success' : 'warning'
+      );
     },
 
     marcarTodosRol(habilitar) {
-      const rolId = this.rolSeleccionadoId;
+      if (this.esRolSuperAdmin) {
+        this.notificar('Los permisos de SUPERADMIN no admiten modificaciones.', 'info');
+        return;
+      }
+
+      const rolId = String(this.rolSeleccionadoId);
       if (!this.matriz[rolId]) this.matriz[rolId] = {};
+
+      const nuevoRolObj = {};
       this.modulos.forEach(mod => {
-        this.matriz[rolId][mod] = {
-          ver: habilitar,
-          crear: habilitar,
-          editar: habilitar,
-          eliminar: habilitar,
-          aprobar: habilitar
+        nuevoRolObj[mod] = {
+          ver: !!habilitar,
+          crear: !!habilitar,
+          editar: !!habilitar,
+          eliminar: !!habilitar,
+          aprobar: !!habilitar
         };
       });
+
+      this.matriz[rolId] = nuevoRolObj;
+      this.matriz = { ...this.matriz };
+      this.hayCambiosPendientes = true;
+
+      const nombreRol = this.rolActual ? this.rolActual.nombre_rol : 'Rol';
+      this.notificar(
+        `${nombreRol}: Todos los módulos ${habilitar ? 'HABILITADOS' : 'BLOQUEADOS'}`,
+        habilitar ? 'success' : 'warning'
+      );
     },
 
     async guardarPermisosRol() {
       const rol = this.rolActual;
       if (!rol) return;
 
+      if (this.esRolSuperAdmin) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'info',
+            title: 'Acceso Irrestricto',
+            text: 'El rol SUPERADMIN posee control maestro permanente. Sus permisos no requieren ser guardados.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+
       this.guardandoPermisos = true;
       const permisosArray = [];
-      const datosRol = this.matriz[rol.id] || {};
+      const rolId = String(rol.id);
+      const datosRol = this.matriz[rolId] || this.matriz[rol.id] || {};
 
       this.modulos.forEach(modulo => {
         const accionesModulo = datosRol[modulo] || {};
@@ -248,16 +346,21 @@ function superAdminPanel() {
 
         const data = await res.json();
         if (res.ok && data.exito) {
+          this.hayCambiosPendientes = false;
+
           if (typeof Swal !== 'undefined') {
             Swal.fire({
               icon: 'success',
-              title: 'Permisos Actualizados',
-              text: `Se han actualizado los permisos del rol ${rol.nombre_rol} correctamente.`,
-              timer: 2000,
-              showConfirmButton: false
+              title: '¡Permisos Guardados al 100%!',
+              html: `La matriz de permisos para <strong>${rol.nombre_rol}</strong> se sincronizó en base de datos correctamente.`,
+              timer: 2200,
+              showConfirmButton: false,
+              background: '#0f172a',
+              color: '#f8fafc'
             });
           }
-          // Si el usuario actual tiene este rol, refrescar sus permisos locales
+
+          // Si el usuario actual tiene este rol, refrescar sus permisos locales en tiempo real
           const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
           if (sesion && sesion.id_rol === rol.id && typeof window.recargarMisPermisos === 'function') {
             await window.recargarMisPermisos();
@@ -272,6 +375,26 @@ function superAdminPanel() {
         }
       } finally {
         this.guardandoPermisos = false;
+      }
+    },
+
+    notificar(mensaje, tipo = 'info') {
+      if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+          background: '#1e293b',
+          color: '#f8fafc'
+        });
+        Toast.fire({
+          icon: tipo,
+          title: mensaje
+        });
+      } else {
+        console.log(`[NOTIFICACIÓN] ${mensaje}`);
       }
     },
 

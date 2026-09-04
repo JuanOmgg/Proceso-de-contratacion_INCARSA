@@ -183,13 +183,17 @@
               <button
                 type="button"
                 @click="marcarTodosRol(true)"
-                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all inline-flex items-center gap-1.5">
+                :disabled="esRolSuperAdmin"
+                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-emerald-500/20 active:scale-95'"
+                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-all inline-flex items-center gap-1.5">
                 <i class="fa-solid fa-check-double text-[10px]"></i> Habilitar Todo
               </button>
               <button
                 type="button"
                 @click="marcarTodosRol(false)"
-                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all inline-flex items-center gap-1.5">
+                :disabled="esRolSuperAdmin"
+                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-rose-500/20 active:scale-95'"
+                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 transition-all inline-flex items-center gap-1.5">
                 <i class="fa-solid fa-ban text-[10px]"></i> Bloquear Todo
               </button>
             </div>
@@ -212,10 +216,48 @@
           </div>
 
           <!-- Banner Informativo para SUPERADMIN -->
-          <template x-if="rolActual && rolActual.nombre_rol === 'SUPERADMIN'">
-            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
-              <i class="fa-solid fa-circle-info text-base"></i>
-              <span>El rol <strong>SUPERADMIN</strong> posee acceso irrestricto a nivel de arquitectura en todas las vistas y acciones del sistema. Esta matriz es ilustrativa para dicho rol.</span>
+          <template x-if="esRolSuperAdmin">
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3 shadow-inner">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-crown text-amber-400 text-sm"></i>
+              </div>
+              <div>
+                <p class="font-bold text-amber-400">Rol Maestro SUPERADMIN (Acceso Total Permanente)</p>
+                <p class="text-amber-200/80 mt-0.5">Este rol posee acceso irrestricto en todas las vistas y acciones del sistema a nivel arquitectónico. Los permisos permanecen activos y bloqueados por seguridad.</p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Barra de Alerta: Cambios Pendientes de Guardar -->
+          <template x-if="hayCambiosPendientes && !esRolSuperAdmin">
+            <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-lg shadow-amber-500/10 animate-pulse">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/30 flex items-center justify-center text-amber-300 flex-shrink-0">
+                  <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                </div>
+                <div>
+                  <span class="font-bold text-white">Tienes cambios sin guardar para el rol:</span>
+                  <span class="ml-1 px-2 py-0.5 rounded bg-amber-500/30 text-amber-300 font-bold" x-text="rolActual?.nombre_rol"></span>
+                  <p class="text-xs text-amber-200/80 mt-0.5">Recuerda pulsar "Guardar Cambios" para aplicar esta configuración a la base de datos.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  @click="cargarMatrizPermisos(); hayCambiosPendientes = false;"
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
+                  Descartar
+                </button>
+                <button
+                  type="button"
+                  @click="guardarPermisosRol()"
+                  :disabled="guardandoPermisos"
+                  class="px-4 py-2 rounded-lg text-xs font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition-all shadow-md shadow-amber-500/20 inline-flex items-center gap-1.5">
+                  <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
+                  <span x-text="guardandoPermisos ? 'Guardando...' : 'Guardar Ahora'"></span>
+                </button>
+              </div>
             </div>
           </template>
 
@@ -230,11 +272,15 @@
                 class="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500">
             </div>
 
-            <span class="text-xs text-[var(--text-muted)]" x-text="`Configurando rol: ${rolActual ? rolActual.nombre_rol : ''}`"></span>
+            <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+              <span>Configurando rol:</span>
+              <span class="font-bold text-[var(--text-primary)]" x-text="rolActual ? rolActual.nombre_rol : ''"></span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 font-mono" x-text="`${modulosFiltrados.length} módulos`"></span>
+            </div>
           </div>
 
           <!-- TABLA MATRIZ DE PERMISOS -->
-          <div class="overflow-x-auto rounded-xl border border-[var(--border-color,#334155)]">
+          <div class="overflow-x-auto rounded-xl border border-[var(--border-color,#334155)] shadow-lg">
             <table class="w-full text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr class="bg-[var(--table-header,#0f172a)] text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-semibold border-b border-[var(--border-color,#334155)]">
@@ -254,7 +300,7 @@
                     <!-- Nombre del Módulo -->
                     <td class="p-3.5 sm:p-4 font-medium text-[var(--text-primary)]">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center flex-shrink-0">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center flex-shrink-0 shadow-sm">
                           <i class="fa-solid text-xs" :class="iconoModulo(mod)"></i>
                         </div>
                         <div>
@@ -268,9 +314,14 @@
                     <td class="p-3.5 sm:p-4 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'ver')"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
-                        :class="getPermiso(mod, 'ver') ? 'bg-emerald-500' : 'bg-slate-700'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                        :disabled="esRolSuperAdmin"
+                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de visualización'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                        :class="[
+                          getPermiso(mod, 'ver') ? 'bg-emerald-500' : 'bg-slate-700',
+                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        ]">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                           :class="getPermiso(mod, 'ver') ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </td>
@@ -279,9 +330,14 @@
                     <td class="p-3.5 sm:p-4 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'crear')"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
-                        :class="getPermiso(mod, 'crear') ? 'bg-sky-500' : 'bg-slate-700'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                        :disabled="esRolSuperAdmin"
+                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de creación'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                        :class="[
+                          getPermiso(mod, 'crear') ? 'bg-sky-500' : 'bg-slate-700',
+                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        ]">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                           :class="getPermiso(mod, 'crear') ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </td>
@@ -290,9 +346,14 @@
                     <td class="p-3.5 sm:p-4 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'editar')"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
-                        :class="getPermiso(mod, 'editar') ? 'bg-amber-500' : 'bg-slate-700'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                        :disabled="esRolSuperAdmin"
+                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de edición'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                        :class="[
+                          getPermiso(mod, 'editar') ? 'bg-amber-500' : 'bg-slate-700',
+                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        ]">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                           :class="getPermiso(mod, 'editar') ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </td>
@@ -301,9 +362,14 @@
                     <td class="p-3.5 sm:p-4 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'eliminar')"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
-                        :class="getPermiso(mod, 'eliminar') ? 'bg-rose-500' : 'bg-slate-700'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                        :disabled="esRolSuperAdmin"
+                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de eliminación'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                        :class="[
+                          getPermiso(mod, 'eliminar') ? 'bg-rose-500' : 'bg-slate-700',
+                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        ]">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                           :class="getPermiso(mod, 'eliminar') ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </td>
@@ -312,29 +378,53 @@
                     <td class="p-3.5 sm:p-4 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'aprobar')"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out"
-                        :class="getPermiso(mod, 'aprobar') ? 'bg-purple-500' : 'bg-slate-700'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-150 ease-in-out"
+                        :disabled="esRolSuperAdmin"
+                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso especial de aprobación'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                        :class="[
+                          getPermiso(mod, 'aprobar') ? 'bg-purple-500' : 'bg-slate-700',
+                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                        ]">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                           :class="getPermiso(mod, 'aprobar') ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </td>
 
                     <!-- Acciones Rápidas del Módulo -->
                     <td class="p-3.5 sm:p-4 text-center">
-                      <div class="flex items-center justify-center gap-1.5">
+                      <div class="flex items-center justify-center gap-2">
                         <button type="button"
                           @click="marcarTodosModulo(mod, true)"
-                          title="Habilitar todas las acciones de este módulo"
-                          class="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10">
-                          <i class="fa-solid fa-circle-check text-xs"></i>
+                          :disabled="esRolSuperAdmin"
+                          title="Habilitar todas las acciones de esta fila"
+                          class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/40 transition-all shadow-sm"
+                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'hover:scale-110 active:scale-95'">
+                          <i class="fa-solid fa-check text-[10px]"></i>
                         </button>
                         <button type="button"
                           @click="marcarTodosModulo(mod, false)"
-                          title="Deshabilitar todas las acciones de este módulo"
-                          class="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10">
-                          <i class="fa-solid fa-circle-xmark text-xs"></i>
+                          :disabled="esRolSuperAdmin"
+                          title="Deshabilitar todas las acciones de esta fila"
+                          class="w-7 h-7 rounded-full flex items-center justify-center bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 transition-all shadow-sm"
+                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'hover:scale-110 active:scale-95'">
+                          <i class="fa-solid fa-xmark text-[10px]"></i>
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                </template>
+
+                <!-- Estado vacío si el filtro no coincide -->
+                <template x-if="modulosFiltrados.length === 0">
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-[var(--text-muted)]">
+                      <div class="w-12 h-12 rounded-full bg-slate-800/80 mx-auto flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-magnifying-glass text-base opacity-60"></i>
+                      </div>
+                      <p class="font-medium">No se encontraron módulos con el término "<span class="text-amber-400" x-text="busquedaModulo"></span>"</p>
+                      <button type="button" @click="busquedaModulo = ''" class="mt-2 text-xs text-amber-400 hover:underline">
+                        Limpiar filtro de búsqueda
+                      </button>
                     </td>
                   </tr>
                 </template>
@@ -343,15 +433,31 @@
           </div>
 
           <!-- BOTÓN GUARDAR CAMBIOS -->
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color,#334155)]">
-            <button
-              type="button"
-              @click="guardarPermisosRol()"
-              :disabled="guardandoPermisos"
-              class="px-6 py-3 rounded-xl text-sm font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 active:scale-95 transition-all shadow-lg shadow-amber-500/20 inline-flex items-center gap-2">
-              <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : 'fa-check'"></i>
-              <span x-text="guardandoPermisos ? 'Guardando en Base de Datos...' : `Guardar Permisos para ${rolActual ? rolActual.nombre_rol : 'Rol'}`"></span>
-            </button>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-[var(--border-color,#334155)]">
+            <div class="text-xs text-[var(--text-muted)]">
+              <span x-show="hayCambiosPendientes" class="inline-flex items-center gap-1.5 text-amber-400 font-semibold">
+                <i class="fa-solid fa-circle-dot text-[8px] animate-ping"></i> Tienes cambios pendientes por guardar
+              </span>
+              <span x-show="!hayCambiosPendientes" class="inline-flex items-center gap-1.5 text-emerald-400 font-semibold">
+                <i class="fa-solid fa-circle-check text-[10px]"></i> Configuración sincronizada con la base de datos
+              </span>
+            </div>
+
+            <div class="flex items-center gap-3 justify-end">
+              <button
+                type="button"
+                @click="guardarPermisosRol()"
+                :disabled="guardandoPermisos || esRolSuperAdmin"
+                class="px-6 py-3 rounded-xl text-sm font-bold transition-all inline-flex items-center gap-2"
+                :class="[
+                  esRolSuperAdmin 
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-60' 
+                    : (hayCambiosPendientes ? 'bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg shadow-amber-500/30 scale-105 active:scale-95' : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700')
+                ]">
+                <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : (hayCambiosPendientes ? 'fa-floppy-disk' : 'fa-check')"></i>
+                <span x-text="guardandoPermisos ? 'Guardando en Base de Datos...' : (esRolSuperAdmin ? 'Permisos Fijos (SuperAdmin)' : `Guardar Permisos para ${rolActual ? rolActual.nombre_rol : 'Rol'}`)"></span>
+              </button>
+            </div>
           </div>
         </section>
 

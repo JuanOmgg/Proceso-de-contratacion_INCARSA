@@ -81,6 +81,12 @@ function usuariosTable() {
     usuarioDetalle: null,
 
     // ---------------------------------------------------
+    // Modal de Plantas
+    // ---------------------------------------------------
+    showPlantasModal: false,
+    usuarioPlantasModal: null,
+
+    // ---------------------------------------------------
     // Eliminación
     // ---------------------------------------------------
     showDeleteModal: false,
@@ -223,9 +229,28 @@ function usuariosTable() {
       }
       return miRol === "SUPERADMIN";
     },
-    rolNombre(idRol) {
-      const rol = this.roles.find(r => r.id === Number(idRol));
-      return rol ? rol.nombre_rol : "—";
+    rolNombre(idRolONombre) {
+      if (!idRolONombre && idRolONombre !== 0) return "—";
+      if (typeof idRolONombre === "string" && isNaN(Number(idRolONombre))) {
+        return idRolONombre;
+      }
+      const rol = this.roles.find(r => r.id === Number(idRolONombre));
+      return rol ? rol.nombre_rol : (typeof idRolONombre === "string" ? idRolONombre : "—");
+    },
+    rolClase(rolONombre) {
+      const r = String(rolONombre || "").toUpperCase();
+      if (r.includes("ADMIN")) return "status-rol-admin";
+      if (r.includes("GESCO")) return "status-rol-gesco";
+      if (r.includes("SST")) return "status-rol-sst";
+      if (r.includes("VIGILANTE")) return "status-rol-vigilante";
+      if (r.includes("SCR")) return "status-rol-scr";
+      if (r.includes("DOCUMENTAL")) return "status-rol-documental";
+      return "status-rol-default";
+    },
+    getPlantasUsuario(usuario) {
+      if (!usuario) return [];
+      if (Array.isArray(usuario.plantas)) return usuario.plantas;
+      return [];
     },
     rolDescripcion(idRolONombre) {
       if (!idRolONombre && idRolONombre !== 0) return "—";
@@ -334,6 +359,15 @@ function usuariosTable() {
     cerrarDetalle() {
       this.showDetailModal = false;
       this.usuarioDetalle = null;
+    },
+
+    abrirModalPlantas(usuario) {
+      this.usuarioPlantasModal = usuario;
+      this.showPlantasModal = true;
+    },
+    cerrarModalPlantas() {
+      this.showPlantasModal = false;
+      this.usuarioPlantasModal = null;
     },
 
     confirmarEliminar(usuario) {

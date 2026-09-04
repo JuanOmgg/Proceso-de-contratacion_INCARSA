@@ -75,8 +75,6 @@ def SET_mantenimiento_status(activo: bool, mensaje: Optional[str] = None, tiempo
         print(f"❌ Error al actualizar modo mantenimiento: {e}")
         raise e
 
-def GET_matriz_permisos_db() -> Dict[str, Any]:
-    """Obtiene la matriz completa de roles y sus permisos configurados."""
 MODULOS_SISTEMA = [
     "dashboard",
     "solicitudes",

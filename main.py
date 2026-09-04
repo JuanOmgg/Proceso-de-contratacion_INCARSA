@@ -275,4 +275,5 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host=host, port=port, reload=False)
+    reload_env = os.getenv("RELOAD", "True").lower() in ("true", "1", "yes")
+    uvicorn.run("main:app", host=host, port=port, reload=reload_env)

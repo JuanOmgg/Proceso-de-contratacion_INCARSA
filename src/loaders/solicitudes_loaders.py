@@ -474,10 +474,13 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
 
                 # 6. Obtener los equipos asociados
                 cursor.execute(
-                    "SELECT marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
+                    "SELECT id, marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
                     (real_id,),
                 )
-                solicitud["eq_computo"] = cursor.fetchall() or []
+                eqs = cursor.fetchall() or []
+                solicitud["eq_computo"] = eqs
+                solicitud["equipos"] = eqs
+                solicitud["computos"] = eqs
 
                 # 7. Obtener revisiones / dictámenes por planta
                 cursor.execute(
@@ -735,11 +738,16 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                 elif only_active is False:
                     condiciones.append(f"{is_active_expr} = 0")
 
-                # Si se provee id_usuario, verificar si tiene rol SST (3) o GESCO (4)
+                # Si se provee id_usuario, verificar si tiene rol SST (5) o GESCO (6)
                 if id_usuario:
-                    cursor.execute("SELECT id_rol FROM usuarios WHERE id = %s", (id_usuario,))
+                    cursor.execute("SELECT u.id_rol, r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
                     u_row = cursor.fetchone()
-                    if u_row and int(u_row.get("id_rol", 0)) in (3, 4):
+                    es_sst_gesco = False
+                    if u_row:
+                        r_id = int(u_row.get("id_rol") or 0)
+                        r_nom = str(u_row.get("nombre_rol") or "").strip().upper()
+                        es_sst_gesco = (r_id in (5, 6)) or (r_nom in ("SST", "GESCO"))
+                    if es_sst_gesco:
                         cursor.execute("SELECT id_planta FROM usuario_plantas WHERE id_usuario = %s", (id_usuario,))
                         p_rows = cursor.fetchall() or []
                         p_ids = [int(pr["id_planta"]) for pr in p_rows if pr.get("id_planta")]
@@ -891,16 +899,40 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                             row['vehiculos'] = [v for v in val_vehiculos if v is not None]
                             row['vehiculo'] = row['vehiculos']
                     
-                    if isinstance(row, dict) and 'eq_computo' in row:
+                    if isinstance(row, dict) and 'computos' in row:
+                        val_c = row['computos']
+                        if isinstance(val_c, str):
+                            if val_c.strip() == "":
+                                val_c = []
+                            else:
+                                c_list = []
+                                for item in val_c.split('###'):
+                                    if not item:
+                                        continue
+                                    partes = item.split('|||')
+                                    if len(partes) < 4:
+                                        continue
+                                    c_id = int(partes[0]) if partes[0].isdigit() else None
+                                    c_list.append({
+                                        'id': c_id,
+                                        'marca': partes[1] or "",
+                                        'modelo': partes[2] or "",
+                                        'serie': partes[3] or ""
+                                    })
+                                val_c = c_list
+                        row['computos'] = val_c if isinstance(val_c, list) else []
+                        row['eq_computo'] = row['computos']
+                        row['equipos'] = row['computos']
+                    elif isinstance(row, dict) and 'eq_computo' in row:
                         val_eq_computo = row['eq_computo']
                         if isinstance(val_eq_computo, str):
                             try:
                                 val_eq_computo = json.loads(val_eq_computo)
                             except Exception:
                                 val_eq_computo = []
-                        
-                        if isinstance(val_eq_computo, list):
-                            row['eq_computo'] = [e for e in val_eq_computo if e is not None]
+                        row['eq_computo'] = val_eq_computo if isinstance(val_eq_computo, list) else []
+                        row['computos'] = row['eq_computo']
+                        row['equipos'] = row['eq_computo']
 
                 # Asociar documentos de vehículos si existen
                 try:
@@ -972,106 +1004,119 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, estado FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
                 real_id = int(sol["id"])
+                estado_actual = str(sol.get("estado") or "").strip().upper()
 
+                # Extraer y limpiar subtablas / relaciones
                 personas = campos.pop("personas", None)
                 if personas is None:
                     personas = campos.pop("ingresantes", None)
-                eq_computo = campos.pop("eq_computo", None)
+                raw_personas_ids = campos.pop("personas_ids", None)
+
+                plantas = campos.pop("plantas", None)
+                raw_plantas_ids = campos.pop("plantas_ids", None)
+
                 vehiculo = campos.pop("vehiculo", None)
                 if vehiculo is None:
                     vehiculo = campos.pop("vehiculos", None)
+                raw_vehiculos_ids = campos.pop("vehiculos_ids", None)
 
-                # Sincronizar personas e ingresantes (con estado autorizado y motivo)
-                if personas is not None or "personas_ids" in campos:
+                eq_computo = campos.pop("eq_computo", None)
+                if eq_computo is None:
+                    eq_computo = campos.pop("equipos", None)
+                if eq_computo is None:
+                    eq_computo = campos.pop("computos", None)
+
+                # 1. Sincronizar personas / ingresantes
+                resolved_personas_ids = []
+                if personas is not None or raw_personas_ids is not None:
                     lista_p = personas
-                    if lista_p is None and "personas_ids" in campos:
-                        raw_pids = campos["personas_ids"]
-                        if isinstance(raw_pids, list):
-                            campos["personas_ids"] = ",".join(map(str, raw_pids))
-                            lista_p = [{"id": pid, "autorizado": True, "motivo": None} for pid in raw_pids]
-                        elif isinstance(raw_pids, str):
-                            lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_pids.split(",") if x.strip().isdigit()]
+                    if lista_p is None and raw_personas_ids is not None:
+                        if isinstance(raw_personas_ids, list):
+                            lista_p = [{"id": pid, "autorizado": True, "motivo": None} for pid in raw_personas_ids]
+                        elif isinstance(raw_personas_ids, str):
+                            lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_personas_ids.split(",") if x.strip().isdigit()]
 
                     if isinstance(lista_p, list):
-                        cursor.execute(
-                            "DELETE FROM ingresantes WHERE id_solicitud = %s",
-                            (real_id,),
+                        # Si no está aprobada/rechazada, actualizar tabla ingresantes
+                        if estado_actual not in ("APROBADO", "RECHAZADO"):
+                            cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
+                            valores_ing = []
+                            for item_p in lista_p:
+                                if isinstance(item_p, dict):
+                                    p_id = item_p.get("id") or item_p.get("id_persona")
+                                    aut = item_p.get("autorizado", True)
+                                    aut_val = False if aut in (False, 0, "0", "false") else True
+                                    mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
+                                    if p_id and str(p_id).isdigit():
+                                        valores_ing.append((real_id, int(p_id), aut_val, mot))
+                                        resolved_personas_ids.append(int(p_id))
+                                elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
+                                    valores_ing.append((real_id, int(item_p), True, None))
+                                    resolved_personas_ids.append(int(item_p))
+
+                            if valores_ing:
+                                cursor.executemany(
+                                    "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
+                                    valores_ing,
+                                )
+
+                        if resolved_personas_ids:
+                            campos["personas_ids"] = ",".join(map(str, resolved_personas_ids))
+                        elif isinstance(raw_personas_ids, list):
+                            campos["personas_ids"] = ",".join(map(str, raw_personas_ids))
+                        elif isinstance(raw_personas_ids, str):
+                            campos["personas_ids"] = raw_personas_ids
+
+                # 2. Sincronizar plantas / visita
+                if raw_plantas_ids is not None or plantas is not None:
+                    pids = []
+                    if raw_plantas_ids is not None:
+                        if isinstance(raw_plantas_ids, list):
+                            pids = [int(x) for x in raw_plantas_ids if str(x).isdigit()]
+                        elif isinstance(raw_plantas_ids, str):
+                            pids = [int(x.strip()) for x in raw_plantas_ids.split(",") if x.strip().isdigit()]
+                    elif isinstance(plantas, list):
+                        for pl in plantas:
+                            if isinstance(pl, dict) and pl.get("id"):
+                                pids.append(int(pl["id"]))
+                            elif isinstance(pl, (int, str)) and str(pl).isdigit():
+                                pids.append(int(pl))
+
+                    if pids:
+                        cursor.execute("DELETE FROM visita WHERE id_solicitud = %s", (real_id,))
+                        cursor.executemany(
+                            "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)",
+                            [(real_id, p_id) for p_id in pids],
                         )
-                        valores_ing = []
-                        for item_p in lista_p:
-                            if isinstance(item_p, dict):
-                                p_id = item_p.get("id") or item_p.get("id_persona")
-                                aut = item_p.get("autorizado", True)
-                                if aut is False or aut == 0 or aut == "0" or aut == "false":
-                                    aut_val = False
-                                else:
-                                    aut_val = True
-                                mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
-                                if p_id:
-                                    valores_ing.append((real_id, int(p_id), aut_val, mot))
-                            elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
-                                valores_ing.append((real_id, int(item_p), True, None))
+                        campos["plantas_ids"] = ",".join(map(str, pids))
 
-                        if valores_ing:
-                            cursor.executemany(
-                                "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
-                                valores_ing,
-                            )
-
-                # Sincronizar plantas_ids y tabla intermedia visita si vienen en el payload
-                if "plantas_ids" in campos:
-                    raw_plids = campos["plantas_ids"]
-                    if isinstance(raw_plids, list):
-                        campos["plantas_ids"] = ",".join(map(str, raw_plids))
-                        cursor.execute(
-                            "DELETE FROM visita WHERE id_solicitud = %s",
-                            (real_id,),
-                        )
-                        if raw_plids:
-                            cursor.executemany(
-                                "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)",
-                                [(real_id, p_id) for p_id in raw_plids],
-                            )
-
-                if campos:
-                    columnas = [f"{col} = %s" for col in campos.keys()]
-                    sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
-                    valores = list(campos.values()) + [real_id]
-                    cursor.execute(sql_update, valores)
-
-                if vehiculo is not None:
-                    cursor.execute(
-                        "DELETE FROM Veh_ingreso WHERE id_solicitud = %s",
-                        (real_id,),
-                    )
-                    if vehiculo:
+                # 3. Sincronizar vehículos / Veh_ingreso
+                if vehiculo is not None or raw_vehiculos_ids is not None:
+                    cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                    resolved_vids = []
+                    if vehiculo and isinstance(vehiculo, list):
                         for v in vehiculo:
                             id_v = None
-                            lic_doc = (
-                                int(v.get("licencia_doc") or 0)
-                                if isinstance(v, dict)
-                                else 0
-                            )
+                            lic_doc = int(v.get("licencia_doc") or 0) if isinstance(v, dict) else 0
 
-                            if isinstance(v, int):
-                                id_v = v
+                            if isinstance(v, (int, str)) and str(v).isdigit():
+                                id_v = int(v)
                             elif isinstance(v, dict):
                                 if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
                                     id_v = int(v["id_vehiculo"])
+                                elif v.get("id") and str(v.get("id")).isdigit():
+                                    id_v = int(v["id"])
                                 elif v.get("placa"):
-                                    placa_norm = v.get("placa")
-                                    tipo_norm = v.get("tipo", "VEHICULO")
-                                    cursor.execute(
-                                        "SELECT id FROM vehiculos WHERE placa = %s",
-                                        (placa_norm,),
-                                    )
+                                    placa_norm = str(v.get("placa")).strip().upper()
+                                    tipo_norm = str(v.get("tipo", "Camioneta")).strip()
+                                    cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
                                     vehi_existente = cursor.fetchone()
                                     if vehi_existente:
                                         id_v = vehi_existente["id"]
@@ -1083,34 +1128,85 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                         id_v = cursor.lastrowid
 
                             if id_v:
-                                sql_vehingreso = """
-                                    INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc)
-                                    VALUES (%s, %s, %s)
-                                """
+                                resolved_vids.append(id_v)
                                 cursor.execute(
-                                    sql_vehingreso, (real_id, id_v, lic_doc)
+                                    "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc) VALUES (%s, %s, %s)",
+                                    (real_id, id_v, lic_doc)
                                 )
 
+                    if resolved_vids:
+                        campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
+                    elif raw_vehiculos_ids:
+                        if isinstance(raw_vehiculos_ids, list):
+                            campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
+                        elif isinstance(raw_vehiculos_ids, str):
+                            campos["vehiculos_ids"] = raw_vehiculos_ids
+
+                # 4. Sincronizar equipos de cómputo
                 if eq_computo is not None:
-                    cursor.execute(
-                        "DELETE FROM equipos_solicitud WHERE solicitud_id = %s",
-                        (real_id,),
-                    )
-                    if eq_computo:
-                        sql_eq = """
-                            INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
-                            VALUES (%s, %s, %s, %s)
-                        """
-                        valores_eq = [
-                            (
-                                real_id,
-                                eq.get("marca", ""),
-                                eq.get("modelo", ""),
-                                eq.get("serie", ""),
+                    cursor.execute("DELETE FROM equipos_solicitud WHERE solicitud_id = %s", (real_id,))
+                    if isinstance(eq_computo, list) and eq_computo:
+                        valores_eq = []
+                        for eq in eq_computo:
+                            if isinstance(eq, dict):
+                                m = str(eq.get("marca") or "").strip().upper()
+                                mod = str(eq.get("modelo") or "").strip().upper()
+                                s = str(eq.get("serie") or "").strip().upper()
+                                if m or mod or s:
+                                    valores_eq.append((real_id, m, mod, s))
+                        if valores_eq:
+                            cursor.executemany(
+                                "INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie) VALUES (%s, %s, %s, %s)",
+                                valores_eq
                             )
-                            for eq in eq_computo
-                        ]
-                        cursor.executemany(sql_eq, valores_eq)
+
+                # 5. Normalizar FKs de empresa y contratista para solicitudes
+                if "empresa_origen" in campos:
+                    raw_eo = campos["empresa_origen"]
+                    if str(raw_eo).isdigit():
+                        campos["empresa_origen"] = int(raw_eo)
+                    elif raw_eo:
+                        cursor.execute("SELECT id FROM empresa WHERE nombre_empresa = %s LIMIT 1", (str(raw_eo),))
+                        row_e = cursor.fetchone()
+                        if row_e:
+                            campos["empresa_origen"] = int(row_e["id"])
+
+                if "empresa_contratista" in campos:
+                    raw_ec = campos["empresa_contratista"]
+                    if str(raw_ec).isdigit():
+                        campos["empresa_contratista"] = int(raw_ec)
+                    elif raw_ec:
+                        cursor.execute("SELECT id FROM emp_contratista WHERE nombre = %s LIMIT 1", (str(raw_ec),))
+                        row_c = cursor.fetchone()
+                        if row_c:
+                            campos["empresa_contratista"] = int(row_c["id"])
+
+                if "diligenciado_por" in campos:
+                    raw_dp = campos["diligenciado_por"]
+                    if str(raw_dp).isdigit():
+                        campos["diligenciado_por"] = int(raw_dp)
+
+                # 6. Filtrar solo columnas válidas escalares para la tabla solicitudes
+                valid_cols = {
+                    "codigo", "empresa_origen", "diligenciado_por", "nivel_de_riesgo",
+                    "tipo_personal", "empresa_contratista", "plantas_ids", "personas_ids",
+                    "vehiculos_ids", "fecha_inicio", "fecha_fin", "actividad",
+                    "observaciones", "estado", "is_active"
+                }
+
+                campos_filtrados = {}
+                for k, v in campos.items():
+                    if k in valid_cols:
+                        if isinstance(v, list):
+                            campos_filtrados[k] = ",".join(map(str, v))
+                        else:
+                            campos_filtrados[k] = v
+
+                if campos_filtrados:
+                    columnas = [f"{col} = %s" for col in campos_filtrados.keys()]
+                    sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
+                    valores = list(campos_filtrados.values()) + [real_id]
+                    cursor.execute(sql_update, valores)
 
                 conexion.commit()
 

@@ -2,6 +2,161 @@
 
 {% block title %}Usuarios · INCARSA{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Pills de Roles en Tabla de Usuarios */
+  .status-usuario-rol {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .status-usuario-rol::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  /* Roles Modo Claro */
+  .status-rol-admin {
+    background: #eef2ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+  }
+  .status-rol-gesco {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+  .status-rol-sst {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+  .status-rol-vigilante {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+  }
+  .status-rol-scr {
+    background: #f0fdfa;
+    color: #0d9488;
+    border: 1px solid #99f6e4;
+  }
+  .status-rol-documental {
+    background: #fdf2f8;
+    color: #db2777;
+    border: 1px solid #fbcfe8;
+  }
+  .status-rol-default {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Roles Modo Oscuro */
+  :root.dark .status-rol-admin {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(129, 140, 248, 0.35) !important;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.2) !important;
+  }
+  :root.dark .status-rol-gesco {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #6ee7b7 !important;
+    border: 1px solid rgba(52, 211, 153, 0.35) !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.2) !important;
+  }
+  :root.dark .status-rol-sst {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fcd34d !important;
+    border: 1px solid rgba(251, 191, 36, 0.35) !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.2) !important;
+  }
+  :root.dark .status-rol-vigilante {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #7dd3fc !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.2) !important;
+  }
+  :root.dark .status-rol-scr {
+    background: rgba(45, 212, 191, 0.15) !important;
+    color: #5eead4 !important;
+    border: 1px solid rgba(45, 212, 191, 0.35) !important;
+    box-shadow: 0 0 8px rgba(45, 212, 191, 0.2) !important;
+  }
+  :root.dark .status-rol-documental {
+    background: rgba(236, 72, 153, 0.15) !important;
+    color: #f472b6 !important;
+    border: 1px solid rgba(244, 114, 182, 0.35) !important;
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.2) !important;
+  }
+  :root.dark .status-rol-default {
+    background: rgba(148, 163, 184, 0.12) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  }
+
+  /* Botón interactivo de Plantas Asignadas */
+  .user-plantas-btn {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    transition: all 0.18s ease;
+  }
+  .user-plantas-btn:hover {
+    background: #fde68a;
+    color: #78350f;
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+  }
+
+  /* Modo Oscuro para Botón de Plantas */
+  :root.dark .user-plantas-btn {
+    background: rgba(245, 158, 11, 0.14) !important;
+    color: #fcd34d !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.12) !important;
+  }
+  :root.dark .user-plantas-btn:hover {
+    background: rgba(245, 158, 11, 0.25) !important;
+    color: #fef08a !important;
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.35) !important;
+  }
+
+  /* Modal stamp Ámbar para Plantas */
+  .modal-stamp.amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+  :root.dark .modal-stamp.amber {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  }
+
+  /* Ajustes estructurales de la Tabla de Usuarios - Todo centrado */
+  .usuarios-tabla th,
+  .usuarios-tabla td {
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
+</style>
+{% endblock %}
+
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/usuarios-listado.js') }}"></script>
 {% endblock %}
@@ -26,7 +181,7 @@
 
       <!-- ---------- CONTENT ---------- -->
       <main class="flex-1 p-6">
-        <div class="max-w-6xl mx-auto space-y-6">
+        <div class="max-w-7xl mx-auto space-y-6">
 
           <!-- ===== Contadores ===== -->
           <section x-data="usuariosCards()" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -151,18 +306,17 @@
 
           <!-- ===== Tabla ===== -->
           <div class="wizard-card overflow-hidden">
-            <div class="w-full overflow-x-auto xl:overflow-x-visible">
-              <table class="w-full text-sm data-table text-center">
+            <div class="w-full">
+              <table class="w-full text-sm data-table usuarios-tabla align-middle">
                 <thead>
-                  <tr>
-                    <th class="px-4 py-3 text-center">Nombre completo</th>
-                    <th class="px-4 py-3 text-center">Documento</th>
-                    <th class="px-4 py-3 text-center">Correo</th>
-                    <th class="px-4 py-3 text-center">Teléfono</th>
-                    <th class="px-4 py-3 text-center">Rol del sistema</th>
-                    <th class="px-4 py-3 text-center">Plantas asignadas</th>
-                    <th class="px-4 py-3 text-center">Modo</th>
-                    <th class="px-4 py-3 text-center">Acciones</th>
+                  <tr class="border-b border-[var(--border-subtle)]">
+                    <th class="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
+                    <th class="px-4 py-3 text-center whitespace-nowrap">Nombre</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Documento</th>
+                    <th class="px-4 py-3 text-center whitespace-nowrap">Correo</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Rol</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Modo</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,51 +324,40 @@
                     <tr x-transition:enter="transition ease-out duration-[200ms]" x-transition:enter-start="opacity-0"
                       x-transition:enter-end="opacity-100">
                       
-                      <td class="px-4 py-3 font-medium text-[var(--text-primary)]"
+                      <!-- Columna Contador de Fila -->
+                      <td class="w-12 px-3 py-3 text-center font-medium text-xs text-[var(--text-muted)] whitespace-nowrap"
+                        x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                      <td class="px-4 py-3 text-center font-medium text-[var(--text-primary)] whitespace-nowrap"
                         x-text="usuario.nombre_completo || ((usuario.nombres || '') + ' ' + (usuario.apellidos || '')).trim()"></td>
-                      <td class="px-4 py-3 text-xs font-mono text-[var(--text-muted)]"
-                        x-text="usuario.identificacion || '—'"></td>
-                      <td class="px-4 py-3 text-xs font-mono text-[var(--text-muted)]"
+                      <td class="px-3 py-3 text-center text-sm text-[var(--text-muted)] whitespace-nowrap"
+                        x-text="usuario.num_documento || usuario.identificacion || '—'"></td>
+                      <td class="px-4 py-3 text-center text-sm text-[var(--text-muted)] whitespace-nowrap"
                         x-text="usuario.correo || '—'"></td>
-                      <td class="px-4 py-3 text-xs text-[var(--text-muted)]"
-                        x-text="usuario.telefono || '—'"></td>
-                      <td class="px-4 py-3">
-                        <span class="status-pill status-usuario-rol select-none"
-                          :class="rolClase(usuario.rol || usuario.id_rol)"
-                          x-text="rolNombre(usuario.rol || usuario.id_rol)"></span>
+                      <td class="px-3 py-3 text-center whitespace-nowrap">
+                        <span class="status-pill status-usuario-rol select-none whitespace-nowrap"
+                          :class="rolClase(usuario.rol || usuario.nombre_rol || usuario.id_rol)"
+                          x-text="usuario.rol || usuario.nombre_rol || rolNombre(usuario.id_rol) || '—'"></span>
                       </td>
-                      <td class="px-4 py-3 text-center">
-                        <div class="flex flex-wrap items-center justify-center gap-1 max-w-[200px] mx-auto">
-                          <template x-for="(planta, pIndex) in getPlantasUsuario(usuario)" :key="pIndex">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10"
-                              x-text="typeof planta === 'string' ? planta : (planta.nombre || planta.nombre_planta)"></span>
-                          </template>
-                          <span x-show="!getPlantasUsuario(usuario) || getPlantasUsuario(usuario).length === 0"
-                            class="text-[11px] text-[var(--text-muted)] italic flex items-center gap-1">
-                            <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
-                            <span>Sin plantas</span>
-                          </span>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3 text-center">
+                      <td class="px-3 py-3 text-center whitespace-nowrap">
                         <button type="button" 
                           x-show="puedeGestionar(usuario) && puedeAccion('usuarios', 'editar')"
                           @click="toggleActivo(usuario)"
-                          class="status-pill cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 shadow-sm"
+                          class="status-pill cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 shadow-sm whitespace-nowrap"
                           :class="(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === '1') ? 'status-usuario-activo' : 'status-usuario-inactivo bg-red-100 text-red-600'"
                           :data-tooltip="(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === '1') ? 'Clic para desactivar' : 'Clic para activar'">
                           <span x-text="(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === '1') ? 'Activo' : 'Inactivo'"></span>
                         </button>
                         <span 
                           x-show="!puedeGestionar(usuario) || !puedeAccion('usuarios', 'editar')"
-                          class="status-pill cursor-not-allowed opacity-75 select-none shadow-sm"
+                          class="status-pill cursor-not-allowed opacity-75 select-none shadow-sm whitespace-nowrap"
                           :class="(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === '1') ? 'status-usuario-activo' : 'status-usuario-inactivo bg-red-100 text-red-600'"
                           :data-tooltip="!puedeGestionar(usuario) ? 'Solo SUPERADMIN puede modificar administradores' : 'Sin permisos de edición'">
                           <span x-text="(usuario.is_active === 1 || usuario.is_active === true || usuario.is_active === '1') ? 'Activo' : 'Inactivo'"></span>
                         </span>
                       </td>
-                      <td class="px-4 py-3">
-                        <div class="flex items-center justify-center gap-1 text-center">
+                      <td class="px-3 py-3 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5 text-center whitespace-nowrap">
 
                           <button type="button" 
                             x-show="puedeAccion('usuarios', 'ver')"
@@ -469,6 +612,103 @@
               Eliminar
             </button>
           </div>
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL: Plantas Asignadas del usuario (Ticket Style)
+      ============================================================= -->
+      <div x-show="showPlantasModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarModalPlantas()">
+
+        <div x-show="showPlantasModal"
+          @click.outside="cerrarModalPlantas()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="modal-panel modal-ticket w-full max-w-md pt-7 px-6 sm:px-8 pb-8 relative text-center" x-cloak>
+
+          <!-- Botón cerrar superior derecho -->
+          <button type="button" @click="cerrarModalPlantas()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+          
+          <!-- Encabezado estilo Ticket / Sello Ámbar Neón -->
+          <div class="text-center mb-4">
+            <div class="modal-stamp amber mb-3">
+              <i class="fa-solid fa-industry text-2xl text-amber-500"></i>
+            </div>
+            <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+              Plantas Asignadas
+            </h2>
+            <p class="text-sm font-medium text-[var(--paper-text)]"
+              x-text="usuarioPlantasModal ? (usuarioPlantasModal.nombre_completo || ((usuarioPlantasModal.nombres || '') + ' ' + (usuarioPlantasModal.apellidos || '')).trim()) : ''"></p>
+            
+            <div class="flex items-center justify-center gap-2 mt-2">
+              <span class="status-pill status-usuario-rol text-xs select-none"
+                :class="rolClase(usuarioPlantasModal?.rol || usuarioPlantasModal?.id_rol)"
+                x-text="usuarioPlantasModal?.rol || rolNombre(usuarioPlantasModal?.id_rol) || '—'"></span>
+              <span class="text-xs text-[var(--paper-muted)] font-medium">
+                • <span x-text="getPlantasUsuario(usuarioPlantasModal).length"></span> asignada(s)
+              </span>
+            </div>
+          </div>
+
+          <!-- Listado de plantas con scroll y tarjetas estilizadas -->
+          <div class="border-y border-dashed border-[var(--paper-shadow)] py-3 my-4 max-h-64 overflow-y-auto custom-scroll space-y-2.5 text-left">
+            <template x-for="(planta, idx) in getPlantasUsuario(usuarioPlantasModal)" :key="idx">
+              <div class="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 flex items-center justify-between gap-3 shadow-xs">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-industry text-xs"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="text-xs font-bold text-[var(--paper-ink)] uppercase tracking-wide truncate block"
+                      x-text="typeof planta === 'string' ? planta : (planta.nombre || planta.nombre_planta || 'Planta')"></span>
+                    <span class="text-[10.5px] text-[var(--paper-muted)] block">Sede / Zona habilitada</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/15 dark:bg-amber-500/25 px-2 py-0.5 rounded-full uppercase flex-shrink-0">
+                  Activa
+                </span>
+              </div>
+            </template>
+            
+            <template x-if="getPlantasUsuario(usuarioPlantasModal).length === 0">
+              <div class="text-center py-6 text-[var(--paper-muted)] text-sm">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mb-1.5 block"></i>
+                <span>Este usuario no tiene ninguna planta asignada.</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- Pie del modal -->
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button type="button" @click="cerrarModalPlantas()"
+              class="modal-btn-cancel px-6 py-2.5">
+              Cerrar
+            </button>
+            <a x-show="usuarioPlantasModal?.id && puedeGestionar(usuarioPlantasModal) && puedeAccion('usuarios', 'editar')"
+              :href="'/usuarios/editar/' + encodeURIComponent(usuarioPlantasModal ? (usuarioPlantasModal.nombre_completo || ((usuarioPlantasModal.nombres || '') + ' ' + (usuarioPlantasModal.apellidos || '')).trim() || usuarioPlantasModal.id) : '')"
+              class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
+              <i class="fa-solid fa-pen-to-square text-xs"></i>
+              <span>Editar plantas</span>
+            </a>
+          </div>
+
           <div class="modal-serrated"></div>
         </div>
       </div>

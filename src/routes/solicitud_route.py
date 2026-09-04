@@ -113,8 +113,9 @@ def GET_ALL_solicitudes(
     id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO"),
     current_user: dict = Depends(get_current_user)
 ):
-    # Si no se envió id_usuario y el usuario es SST (3) o GESCO (4), filtrar por su id
-    if id_usuario is None and current_user.get("id_rol") in (3, 4):
+    # Si no se envió id_usuario y el usuario es SST (5) o GESCO (6), filtrar por su id
+    rol_user = str(current_user.get("rol", "")).strip().upper()
+    if id_usuario is None and (current_user.get("id_rol") in (5, 6) or rol_user in ("SST", "GESCO")):
         id_usuario = current_user.get("id")
 
     print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario})...")
@@ -164,6 +165,7 @@ def REGISTRAR_dictamen_rt(
     return resultado
 
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
+@router.put("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, current_user: dict = Depends(require_permission("solicitudes", "editar"))):
 
     print(f"📝 [PATCH] Tomando los campos enviados para actualizar la solicitud #{solicitud_id}...")

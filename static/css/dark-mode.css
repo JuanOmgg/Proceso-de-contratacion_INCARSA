@@ -3579,6 +3579,14 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+:root.dark .persona-controls-group.is-locked {
+  opacity: 0.55 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
 :root.dark .btn-autorizar-action.is-active {
   background: linear-gradient(135deg, rgba(0, 255, 136, 0.3) 0%, rgba(5, 150, 105, 0.55) 100%) !important;
   border: 1px solid rgba(0, 255, 136, 0.8) !important;

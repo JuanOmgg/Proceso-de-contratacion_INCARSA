@@ -137,14 +137,45 @@
                     <td class="px-4 py-3 text-center" x-text="s.diligenciador"></td>
                     <td class="px-4 py-3">
                       <div class="flex items-center justify-center gap-1">
-                        <button @click="openView(s)" data-tooltip="Ver detalles" class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"><i
-                            class="fa-solid fa-eye"></i></button>
-                        <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" data-tooltip="Editar"
+                        <!-- 1. Revisar / Aprobar expediente (controlado por fila Dashboard / Estadísticas) -->
+                        <a :href="'/solicitudes/revision/' + (s.codigo || s.id)"
+                          x-show="puedeAccion('dashboard', 'aprobar')"
+                          data-tooltip="Revisar expediente"
+                          class="action-icon-btn text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                          <i class="fa-solid fa-clipboard-check"></i>
+                        </a>
+
+                        <!-- 2. Ver detalles (controlado por fila Dashboard / Estadísticas) -->
+                        <button type="button"
+                          @click="openView(s)" 
+                          x-show="puedeAccion('dashboard', 'ver')"
+                          data-tooltip="Ver detalles" 
+                          class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors">
+                          <i class="fa-solid fa-eye"></i>
+                        </button>
+
+                        <!-- 3. Editar solicitud (controlado por fila Dashboard / Estadísticas) -->
+                        <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" 
+                          x-show="puedeAccion('dashboard', 'editar')"
+                          data-tooltip="Editar solicitud"
                           class="action-icon-btn text-yellow-400 hover:text-yellow-600 hover:bg-yellow-50 transition-colors">
                           <i class="fa-solid fa-pen-to-square"></i>
                         </a>
-                        <button @click="confirmDelete(s)" data-tooltip="Eliminar" class="action-icon-btn text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"><i
-                            class="fa-solid fa-trash-can"></i></button>
+
+                        <!-- 4. Eliminar solicitud (controlado por fila Dashboard / Estadísticas) -->
+                        <button type="button"
+                          @click="confirmDelete(s)" 
+                          x-show="puedeAccion('dashboard', 'eliminar')"
+                          data-tooltip="Eliminar solicitud" 
+                          class="action-icon-btn text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+
+                        <!-- Sin permisos de acción -->
+                        <span x-show="!puedeAccion('dashboard', 'ver') && !puedeAccion('dashboard', 'editar') && !puedeAccion('dashboard', 'eliminar') && !puedeAccion('dashboard', 'aprobar')"
+                          class="text-xs text-[var(--text-muted)] opacity-50 italic">
+                          Sin acceso
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -363,7 +394,14 @@
                     <button type="button" @click="closeView()" class="modal-btn-cancel px-6 py-2.5">
                       Cerrar
                     </button>
+                    <a :href="selected ? ('/solicitudes/revision/' + (selected.codigo || selected.id)) : '#'"
+                      x-show="puedeAccion('dashboard', 'aprobar')"
+                      class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm">
+                      <i class="fa-solid fa-clipboard-check text-xs"></i>
+                      <span>Revisar expediente</span>
+                    </a>
                     <a :href="selected ? ('/solicitudes/editar/' + (selected.codigo || selected.id)) : '#'"
+                      x-show="puedeAccion('dashboard', 'editar')"
                       class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
                       <i class="fa-solid fa-pen-to-square text-xs"></i>
                       <span>Editar solicitud</span>
