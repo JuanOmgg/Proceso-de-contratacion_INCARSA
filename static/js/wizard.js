@@ -29,6 +29,9 @@ function solicitudWizard() {
     // ========================================================================
     isEdit: false, // True si se ingresó con el parámetro ?edit=SOL-XXXX
     editId: null, // ID de la solicitud que se está editando
+    solicitudDevuelta: false, // True si la solicitud fue devuelta por SCR para corrección única
+    motivoDevolucion: "", // Motivo o inconsistencias descritas por SCR
+    tokenEdicion: null, // Token de acceso único provisto por la notificación
 
     // ========================================================================
     // 3. CATÁLOGOS Y ARRAYS DE DATOS ACTIVOS
@@ -277,6 +280,8 @@ function solicitudWizard() {
         "ENVIADO": "status-enviado",
         "EN REVISIÓN": "status-revision",
         "EN REVISION": "status-revision",
+        "DEVUELTO PARA CORRECCIÓN": "status-devuelto",
+        "DEVUELTO": "status-devuelto",
         "POR APROBAR": "status-aprobar",
         "APROBADO": "status-aprobado",
         "PRE-APROBADO": "status-aprobado",
@@ -361,9 +366,61 @@ function solicitudWizard() {
         const miRol = (miSesion?.rol || "").trim().toUpperCase();
         const esSuper = (miRol === "SUPERADMIN");
         const estadoSol = String(found.estado || "").trim().toUpperCase();
+        const tokenParam = params.get("token");
 
-        // Si NO es SuperAdmin, solo puede editar si la solicitud está en estado 'ENVIADO'
-        if (!esSuper && estadoSol !== "ENVIADO") {
+        // Caso: Solicitud devuelta por SCR para corrección única
+        if (estadoSol === "DEVUELTO PARA CORRECCIÓN") {
+          if (!tokenParam && !esSuper) {
+            console.warn(`Acceso restringido: La solicitud ${editParam} fue devuelta para corrección única y requiere token de la notificación.`);
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "warning",
+                title: "Edición Única Restringida",
+                text: "Esta solicitud fue devuelta por SCR para corrección. Solo puedes ingresar a editarla a través del enlace de la notificación.",
+                confirmButtonColor: "#f59e0b"
+              });
+            } else if (typeof alert === "function") {
+              alert("Esta solicitud fue devuelta por SCR para corrección. Solo puedes ingresar a editarla a través del enlace de la notificación.");
+            }
+            window.location.replace("/solicitudes");
+            return;
+          }
+
+          if (tokenParam) {
+            try {
+              const targetId = found.id || editParam;
+              const resToken = await fetch(`${API.solicitudes}/${targetId}/validar-token-edicion?token=${encodeURIComponent(tokenParam)}`);
+              if (!resToken.ok) {
+                const errData = await resToken.json().catch(() => ({}));
+                const msgError = errData.detail || "El enlace de edición única no es válido o ya fue utilizado previamente.";
+                if (typeof Swal !== "undefined") {
+                  await Swal.fire({
+                    icon: "error",
+                    title: "Acceso denegado",
+                    text: msgError,
+                    confirmButtonColor: "#ef4444"
+                  });
+                } else if (typeof alert === "function") {
+                  alert(msgError);
+                }
+                window.location.replace("/solicitudes");
+                return;
+              }
+              const dataToken = await resToken.json();
+              this.tokenEdicion = tokenParam;
+              this.solicitudDevuelta = true;
+              this.motivoDevolucion = dataToken.motivo_devolucion || found.motivo_devolucion || "";
+            } catch (errToken) {
+              console.error("Error al validar token de edición única:", errToken);
+              if (typeof alert === "function") {
+                alert("Error de conexión al verificar el enlace de edición única.");
+              }
+              window.location.replace("/solicitudes");
+              return;
+            }
+          }
+        } else if (!esSuper && estadoSol !== "ENVIADO") {
+          // Si NO es SuperAdmin y no es DEVUELTO, solo puede editar en estado 'ENVIADO'
           console.warn(`Acceso restringido: La solicitud ${editParam} está en estado '${estadoSol}'. Solo puede ser editada en estado 'ENVIADO', o por un usuario SUPERADMIN.`);
           if (typeof alert === "function") {
             alert(`La solicitud se encuentra en estado "${estadoSol}". Solo puede ser editada mientras esté en estado "ENVIADO", o por un usuario SUPERADMIN.`);
@@ -1814,7 +1871,8 @@ function solicitudWizard() {
         vehiculo: vehiculosPayload,
         vehiculos: vehiculosPayload,
         eq_computo: equiposPayload,
-        equipos: equiposPayload
+        equipos: equiposPayload,
+        token_edicion: this.tokenEdicion || undefined
       };
 
       // ========================================================================
@@ -1841,7 +1899,7 @@ function solicitudWizard() {
             const idx = guardadas.findIndex(s => String(s.id) === String(this.editId));
             const solicitudActualizada = {
               id: this.editId,
-              estado: this.form.estado || this.solicitudOriginal?.estado || "ENVIADO",
+              estado: this.solicitudDevuelta ? "POR APROBAR" : (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO"),
               contratista: this.form.contratista,
               empresaOrigen: this.empresaNombre(this.form.empresas[0]),
               plantas: plantasIds,
@@ -1865,7 +1923,7 @@ function solicitudWizard() {
           // Sincronizar almacenamiento local de revisiones según nuevo estado
           try {
             const storageKeyRev = `incarsa_revisiones_${this.editId}`;
-            const nuevoEstado = String(this.form.estado || "").trim().toUpperCase();
+            const nuevoEstado = this.solicitudDevuelta ? "POR APROBAR" : String(this.form.estado || "").trim().toUpperCase();
             if (["EN REVISIÓN", "EN REVISION", "ENVIADO"].includes(nuevoEstado)) {
               localStorage.removeItem(storageKeyRev);
             } else if (nuevoEstado === "POR APROBAR") {

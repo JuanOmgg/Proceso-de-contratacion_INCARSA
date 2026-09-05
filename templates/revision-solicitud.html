@@ -856,69 +856,103 @@
                       </div>
 
                       <!-- Selección Decisión -->
-                      <div class="grid grid-cols-2 gap-2">
-                        <label class="decision-card decision-card-aprobar p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
-                          :class="dictamenForm.decision === 'aprobar' ? 'is-selected bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                      <div :class="(rolActual === 'SCR' || esSuperAdmin) ? 'grid grid-cols-3 gap-1.5 sm:gap-2' : 'grid grid-cols-2 gap-2'">
+                        <!-- Aprobar -->
+                        <label class="decision-card decision-card-aprobar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
+                          :class="dictamenForm.decision === 'aprobar' ? 'is-selected bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-300/60 dark:bg-emerald-950/40 dark:border-emerald-400 dark:text-emerald-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
                           <input type="radio" name="decision" value="aprobar" x-model="dictamenForm.decision" class="hidden">
-                          <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
-                          <span>Aprobar</span>
+                          <i class="fa-solid fa-circle-check text-emerald-500 text-sm sm:text-base mb-1"></i>
+                          <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Aprobar</span>
                         </label>
 
-                        <label class="decision-card decision-card-rechazar p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all text-xs font-semibold select-none"
-                          :class="dictamenForm.decision === 'rechazar' ? 'is-selected bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                        <!-- Rechazar -->
+                        <label class="decision-card decision-card-rechazar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
+                          :class="dictamenForm.decision === 'rechazar' ? 'is-selected bg-red-50 border-red-500 text-red-900 ring-2 ring-red-300/60 dark:bg-red-950/40 dark:border-red-400 dark:text-red-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
                           <input type="radio" name="decision" value="rechazar" x-model="dictamenForm.decision" class="hidden">
-                          <i class="fa-solid fa-circle-xmark text-red-600 text-sm"></i>
-                          <span>Rechazar</span>
+                          <i class="fa-solid fa-circle-xmark text-red-500 text-sm sm:text-base mb-1"></i>
+                          <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Rechazar</span>
+                        </label>
+
+                        <!-- Opción Devolver para Corrección Única (SCR / SuperAdmin) -->
+                        <label x-show="rolActual === 'SCR' || esSuperAdmin" class="decision-card decision-card-devolver py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
+                          :class="dictamenForm.decision === 'devolver' ? 'is-selected bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-300/60 dark:bg-amber-950/40 dark:border-amber-400 dark:text-amber-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
+                          <input type="radio" name="decision" value="devolver" x-model="dictamenForm.decision" class="hidden">
+                          <i class="fa-solid fa-rotate-left text-amber-500 text-sm sm:text-base mb-1"></i>
+                          <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Devolver</span>
                         </label>
                       </div>
 
                       <!-- Motivo de Rechazo (Solo si se selecciona Rechazar) -->
                       <div x-show="dictamenForm.decision === 'rechazar'" class="space-y-1.5" x-cloak>
-                        <label class="form-label text-xs font-bold text-red-900">Motivo del Rechazo (Obligatorio) *</label>
+                        <label class="form-label text-xs font-bold text-red-900 dark:text-red-400 flex items-center gap-1.5">
+                          <i class="fa-solid fa-circle-exclamation text-red-500 text-xs"></i>
+                          <span>Motivo del Rechazo (Obligatorio) *</span>
+                        </label>
                         <textarea x-model="dictamenForm.motivoRechazo" rows="3"
                           placeholder="Indica la razón por la cual no se aprueba la solicitud (ej: ARL vencida, falta inducción)..."
-                          class="input-field w-full rounded-xl p-3 text-xs resize-none border-red-300 focus:ring-red-200"></textarea>
+                          class="input-field w-full rounded-xl p-3 text-xs resize-none border-red-300 focus:ring-red-200 dark:border-red-700 dark:bg-slate-900/80 dark:text-white"></textarea>
+                      </div>
+
+                      <!-- Motivo de Devolución para Corrección (SCR) -->
+                      <div x-show="dictamenForm.decision === 'devolver'" class="space-y-2" x-cloak>
+                        <label class="form-label text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                          <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xs"></i>
+                          <span>Motivo de Devolución para Corrección (Obligatorio) *</span>
+                        </label>
+                        <textarea x-model="dictamenForm.motivoDevolucion" rows="3"
+                          placeholder="Describe con claridad los errores o inconsistencias que Gestión Documental debe corregir (ej: Cédula mal digitada, nombre incorrecto, etc.)..."
+                          class="input-field w-full rounded-xl p-3 text-xs resize-none border-amber-300 focus:ring-amber-200 dark:border-amber-600/70 dark:bg-slate-900/80 dark:text-white dark:focus:ring-amber-500/20"></textarea>
+                        <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 font-medium flex items-start gap-2">
+                          <i class="fa-solid fa-circle-info text-amber-500 text-xs mt-0.5 flex-shrink-0"></i>
+                          <span class="text-[11px] leading-relaxed">Se notificará a Gestión Documental con este motivo y se le habilitará un enlace de <strong>edición única</strong>. Al corregirse, retornará directo a tu bandeja.</span>
+                        </div>
                       </div>
 
                       <!-- Observaciones adicionales -->
                       <div class="space-y-1.5">
-                        <label class="form-label text-xs font-semibold text-slate-700">Observaciones adicionales</label>
+                        <label class="form-label text-xs font-semibold text-slate-700 dark:text-slate-300">Observaciones adicionales</label>
                         <textarea x-model="dictamenForm.observaciones" rows="3"
                           placeholder="Notas complementarias para el expediente..."
-                          class="input-field w-full rounded-xl p-3 text-xs resize-none"></textarea>
+                          class="input-field w-full rounded-xl p-3 text-xs resize-none dark:bg-slate-900/80 dark:text-white"></textarea>
                       </div>
 
                       <!-- Resumen de Personal Autorizado -->
-                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between" x-show="totalPersonas > 0">
-                        <div class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-700/60 text-xs flex items-center justify-between" x-show="totalPersonas > 0">
+                        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
                           <i class="fa-solid fa-users text-blue-500 text-xs"></i>
                           <span>Personal con acceso permitido:</span>
                         </div>
                         <div class="flex items-center gap-1.5 font-bold">
-                          <span class="text-emerald-700" x-text="totalPersonasAutorizadas + ' / ' + totalPersonas"></span>
+                          <span class="text-emerald-700 dark:text-emerald-400" x-text="totalPersonasAutorizadas + ' / ' + totalPersonas"></span>
                           <span class="text-[10px] text-slate-400">ingresantes</span>
                         </div>
                       </div>
 
                       <!-- Resumen de Vehículos Autorizados -->
-                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between" x-show="totalVehiculos > 0">
-                        <div class="flex items-center gap-1.5 text-slate-600 font-medium">
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-700/60 text-xs flex items-center justify-between" x-show="totalVehiculos > 0">
+                        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
                           <i class="fa-solid fa-truck-front text-amber-500 text-xs"></i>
                           <span>Vehículos con acceso permitido:</span>
                         </div>
                         <div class="flex items-center gap-1.5 font-bold">
-                          <span class="text-emerald-700" x-text="totalVehiculosAutorizados + ' / ' + totalVehiculos"></span>
+                          <span class="text-emerald-700 dark:text-emerald-400" x-text="totalVehiculosAutorizados + ' / ' + totalVehiculos"></span>
                           <span class="text-[10px] text-slate-400">vehículos</span>
                         </div>
                       </div>
 
                       <!-- Botón de Envío -->
                       <button type="submit" :disabled="guardando"
-                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
-                        :class="dictamenForm.decision === 'rechazar' ? 'bg-red-600 hover:bg-red-700 text-white' : 'btn-signal'">
+                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 select-none"
+                        :class="dictamenForm.decision === 'rechazar' ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/20' : (dictamenForm.decision === 'devolver' ? 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-amber-900/20' : 'btn-signal')">
                         <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
-                        <i class="fa-solid fa-paper-plane text-xs" x-show="!guardando"></i>
-                        <span x-text="guardando ? 'Procesando dictamen...' : (dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : 'Aprobar Solicitud')"></span>
+                        <template x-if="!guardando">
+                          <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check text-xs" x-show="dictamenForm.decision === 'aprobar'"></i>
+                            <i class="fa-solid fa-circle-xmark text-xs" x-show="dictamenForm.decision === 'rechazar'"></i>
+                            <i class="fa-solid fa-rotate-left text-xs" x-show="dictamenForm.decision === 'devolver'"></i>
+                            <span x-text="dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : (dictamenForm.decision === 'devolver' ? 'Devolver para Corrección' : 'Aprobar Solicitud')"></span>
+                          </span>
+                        </template>
                       </button>
                     </form>
                   </template>

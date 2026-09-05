@@ -146,6 +146,31 @@
       <main class="flex-1 p-3 sm:p-6 min-w-0 max-w-full">
         <div class="max-w-4xl mx-auto space-y-4 sm:space-y-6 min-w-0 max-w-full">
 
+          <!-- ===== Banner de Solicitud Devuelta para Corrección Única ===== -->
+          <div x-show="solicitudDevuelta" x-cloak
+            class="p-4 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-700/60 shadow-sm flex items-start gap-3.5 transition-all">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
+                  Edición Única Habilitada
+                </span>
+                <span class="text-xs text-amber-700 dark:text-amber-300 font-medium">Devuelta por SCR para Corrección</span>
+              </div>
+              <h4 class="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">
+                Motivo de la Devolución:
+              </h4>
+              <p class="text-xs sm:text-sm text-amber-900 dark:text-amber-200 bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 font-medium leading-relaxed"
+                x-text="motivoDevolucion || 'Por favor corrige los datos inconsistentes de la solicitud identificados por SCR.'"></p>
+              <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-2 font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Esta sesión de edición es de <strong>un solo uso</strong>. Al guardar y enviar los cambios, la solicitud retornará directamente a <strong>SCR</strong> (Por Aprobar) para su dictamen final, sin repetir las revisiones de SST y GESCO.</span>
+              </p>
+            </div>
+          </div>
+
           <!-- ===== Stepper ===== -->
           <div class="wizard-stepper-container flex items-start justify-between sm:justify-start overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 scrollbar-none max-w-full" x-cloak>
             <template x-for="(step, idx) in steps" :key="idx">
@@ -173,7 +198,7 @@
               <i class="fa-solid fa-check text-2xl"></i>
             </div>
             <h2 class="font-display font-semibold text-xl mb-1"
-              x-text="isEdit ? 'Solicitud actualizada' : 'Solicitud enviada'"></h2>
+              x-text="solicitudDevuelta ? 'Solicitud corregida y retornada a SCR' : (isEdit ? 'Solicitud actualizada' : 'Solicitud enviada')"></h2>
             <p class="text-sm text-[var(--text-muted)]">Redirigiendo al dashboard…</p>
           </div>
 

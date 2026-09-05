@@ -449,6 +449,11 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--state-rechazado);
 }
 
+.status-devuelto {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
 .status-usuario-activo {
   background: var(--state-aprobado-bg);
   color: var(--state-aprobado);
@@ -457,6 +462,72 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 .status-usuario-inactivo {
   background: var(--state-rechazado-bg);
   color: var(--text-muted);
+}
+
+/* =========================================================
+   TARJETAS DE DECISIÓN DEL DICTAMEN (APROBAR / RECHAZAR / DEVOLVER)
+   ========================================================= */
+.decision-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.625rem 0.375rem;
+  min-height: 3.75rem;
+}
+
+.decision-card:hover {
+  transform: translateY(-1px);
+}
+
+.decision-card:active {
+  transform: translateY(0);
+}
+
+.decision-card i {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.decision-card:hover i {
+  transform: scale(1.1);
+}
+
+.decision-card-aprobar.is-selected {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.decision-card-aprobar.is-selected i {
+  color: #059669;
+}
+
+.decision-card-rechazar.is-selected {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #991b1b;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.decision-card-rechazar.is-selected i {
+  color: #dc2626;
+}
+
+.decision-card-devolver.is-selected {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.decision-card-devolver.is-selected i {
+  color: #d97706;
 }
 
 .action-icon-btn {

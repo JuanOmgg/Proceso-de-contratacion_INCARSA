@@ -144,8 +144,9 @@ function revisionSolicitudApp() {
 
     // Formulario de dictamen del rol activo
     dictamenForm: {
-      decision: "aprobar", // 'aprobar' | 'rechazar'
+      decision: "aprobar", // 'aprobar' | 'rechazar' | 'devolver'
       motivoRechazo: "",
+      motivoDevolucion: "",
       observaciones: ""
     },
 
@@ -1111,10 +1112,16 @@ function revisionSolicitudApp() {
 
       const decision = this.dictamenForm.decision;
       const motivo = this.dictamenForm.motivoRechazo.trim();
+      const motivoDev = (this.dictamenForm.motivoDevolucion || "").trim();
       const obs = this.dictamenForm.observaciones.trim();
 
       if (decision === "rechazar" && !motivo) {
         this.mostrarToast("Debes ingresar el motivo del rechazo.", "error");
+        return;
+      }
+
+      if (decision === "devolver" && !motivoDev) {
+        this.mostrarToast("Debes ingresar el motivo de la devolución para corrección.", "error");
         return;
       }
 
@@ -1124,11 +1131,16 @@ function revisionSolicitudApp() {
         : `Auditor (${this.rolActual})`;
 
       try {
+        let decisionBackend = "APROBADO";
+        if (decision === "rechazar") decisionBackend = "RECHAZADO";
+        else if (decision === "devolver") decisionBackend = "DEVUELTO";
+
         const payloadDictamen = {
           id_planta: (this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null,
           rol: this.rolActual,
-          decision: decision === "rechazar" ? "RECHAZADO" : "APROBADO",
-          motivo_rechazo: decision === "rechazar" ? motivo : null,
+          decision: decisionBackend,
+          motivo_rechazo: decision === "rechazar" ? motivo : (decision === "devolver" ? motivoDev : null),
+          motivo_devolucion: decision === "devolver" ? motivoDev : null,
           observacion: obs || null,
           id_usuario: this.usuarioSesion?.id || null,
           nombre_revisor: nombreUsuario
@@ -1150,7 +1162,10 @@ function revisionSolicitudApp() {
           this.solicitud.estado = dataRes.nuevo_estado;
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
-          this.mostrarToast(`Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`, "success");
+          const mensajeToast = decision === "devolver"
+            ? `Solicitud devuelta a Gestión Documental con enlace de edición única.`
+            : `Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`;
+          this.mostrarToast(mensajeToast, "success");
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -1162,6 +1177,7 @@ function revisionSolicitudApp() {
 
         // Limpiar formulario
         this.dictamenForm.motivoRechazo = "";
+        this.dictamenForm.motivoDevolucion = "";
         this.dictamenForm.observaciones = "";
 
       } catch (err) {
@@ -1267,6 +1283,7 @@ function revisionSolicitudApp() {
     estadoEstilos(estado) {
       const e = (estado || "").toUpperCase();
       if (e === "ENVIADO") return "status-enviado";
+      if (e.includes("DEVUELTO") || e.includes("CORRECCI")) return "status-devuelto";
       if (e.includes("REVISI")) return "status-revision";
       if (e === "POR APROBAR") return "status-aprobar";
       if (e === "APROBADO") return "status-aprobado";

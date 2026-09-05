@@ -10,7 +10,9 @@ from src.loaders.solicitudes_loaders import (
     UPDATE_solicitud_bd,
     GET_ALL_solicitudes_bd,
     GET_date_count_db,
-    REGISTRAR_dictamen_db
+    REGISTRAR_dictamen_db,
+    VALIDAR_token_edicion_db,
+    CONSUMIR_token_edicion_db
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
@@ -164,6 +166,21 @@ def REGISTRAR_dictamen_rt(
         )
     return resultado
 
+@router.get("/{solicitud_id}/validar-token-edicion", status_code=status.HTTP_200_OK)
+def VALIDAR_token_edicion_rt(
+    solicitud_id: str,
+    token: str = Query(..., description="Token de edición única"),
+    current_user: dict = Depends(require_permission("solicitudes", "editar"))
+):
+    resultado = VALIDAR_token_edicion_db(solicitud_id, token)
+    if not resultado.get("valido"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=resultado.get("mensaje", "El token de edición no es válido o ha expirado.")
+        )
+    return resultado
+
+
 @router.patch("/{solicitud_id}", status_code=status.HTTP_200_OK)
 @router.put("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, current_user: dict = Depends(require_permission("solicitudes", "editar"))):
@@ -182,21 +199,53 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
     user_rol = str(current_user.get("rol", "")).strip().lower()
     es_super = user_rol in ("superadmin", "super admin", "super_admin")
 
-    if not es_super:
-        # 1. Los usuarios sin rol SUPERADMIN no pueden cambiar el estado de la solicitud
-        if "estado" in new_updates:
-            del new_updates["estado"]
+    token_edicion = new_updates.pop("token_edicion", None)
+    consumir_token = False
 
-        # 2. Solo pueden editar si la solicitud se encuentra en estado 'ENVIADO'
-        actual = GET_solicitud_bd(solicitud_id)
-        if actual.get("exito"):
-            estado_actual = str(actual.get("datos", {}).get("estado") or "").strip().upper()
-            if estado_actual != "ENVIADO":
-                print(f"🚫 [PATCH] Usuario con rol '{user_rol}' intentó editar la solicitud #{solicitud_id} en estado '{estado_actual}'. Solo SUPERADMIN puede editar fuera de 'ENVIADO'.")
+    # 1. Los usuarios sin rol SUPERADMIN no pueden cambiar el estado de la solicitud directamente
+    if not es_super and "estado" in new_updates:
+        del new_updates["estado"]
+
+    # 2. Obtener estado actual de la solicitud
+    actual = GET_solicitud_bd(solicitud_id)
+    if not actual.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solicitud #{solicitud_id} no encontrada."
+        )
+
+    datos_actuales = actual.get("datos", {})
+    estado_actual = str(datos_actuales.get("estado") or "").strip().upper()
+    real_id = datos_actuales.get("id", solicitud_id)
+
+    if estado_actual == "DEVUELTO PARA CORRECCIÓN":
+        if not token_edicion and not es_super:
+            print(f"🚫 [PATCH] Usuario '{user_rol}' intentó editar la solicitud #{solicitud_id} en estado '{estado_actual}' sin token de edición única.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Esta solicitud fue devuelta para corrección única. Solo puedes editarla accediendo mediante el enlace de la notificación con un token válido."
+            )
+
+        if token_edicion:
+            val_token = VALIDAR_token_edicion_db(real_id, token_edicion)
+            if not val_token.get("valido"):
+                print(f"🚫 [PATCH] Token de edición inválido o consumido para #{solicitud_id}: {val_token.get('mensaje')}")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Acceso denegado: La solicitud se encuentra en estado '{estado_actual}'. Solo puede ser editada mientras esté en estado 'ENVIADO', o por un usuario con rol SUPERADMIN."
+                    detail=val_token.get("mensaje", "El enlace de edición única no es válido o ya fue utilizado.")
                 )
+            consumir_token = True
+        elif es_super:
+            new_updates["estado"] = "POR APROBAR"
+
+    elif not es_super:
+        # Solo pueden editar si la solicitud se encuentra en estado 'ENVIADO'
+        if estado_actual != "ENVIADO":
+            print(f"🚫 [PATCH] Usuario con rol '{user_rol}' intentó editar la solicitud #{solicitud_id} en estado '{estado_actual}'. Solo SUPERADMIN puede editar fuera de 'ENVIADO'.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Acceso denegado: La solicitud se encuentra en estado '{estado_actual}'. Solo puede ser editada mientras esté en estado 'ENVIADO', o por un usuario con rol SUPERADMIN."
+            )
 
     print(f"⚙️ [TRANSFORMER] Aplicando transformaciones de PATCH para la solicitud #{solicitud_id}...")
     datos_transformados = transformar_solicitud_patch(new_updates)
@@ -210,6 +259,17 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje"),
         )
+
+    # Si se realizó mediante edición única con token, consumir token y registrar auditoría + notificación a SCR
+    if consumir_token and token_edicion:
+        res_consumo = CONSUMIR_token_edicion_db(
+            solicitud_id=real_id,
+            token=token_edicion,
+            id_usuario=current_user.get("id"),
+            nombre_usuario=current_user.get("nombre") or current_user.get("usuario")
+        )
+        if not res_consumo.get("exito"):
+            print(f"⚠️ Aviso al consumir token de edición: {res_consumo.get('mensaje')}")
 
     print(f"✨ Solicitud #{solicitud_id} actualizada correctamente en la base de datos.")
     return {"estado": "success", "mensaje": resultado["mensaje"]}

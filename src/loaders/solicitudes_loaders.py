@@ -516,8 +516,14 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
         id_planta = dictamen.get("id_planta")
         rol = str(dictamen.get("rol", "")).strip().upper()
         decision_raw = str(dictamen.get("decision", "")).strip().lower()
-        decision = "RECHAZADO" if "rechaz" in decision_raw else "APROBADO"
-        motivo_rechazo = dictamen.get("motivo_rechazo") or ""
+        if "devolv" in decision_raw or "devuelt" in decision_raw or "correcci" in decision_raw:
+            decision = "DEVUELTO"
+        elif "rechaz" in decision_raw:
+            decision = "RECHAZADO"
+        else:
+            decision = "APROBADO"
+
+        motivo_rechazo = dictamen.get("motivo_rechazo") or dictamen.get("motivo_devolucion") or ""
         observacion = dictamen.get("observacion") or ""
         id_usuario = dictamen.get("id_usuario")
         nombre_revisor = dictamen.get("nombre_revisor") or ""
@@ -528,9 +534,9 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
@@ -593,8 +599,25 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
 
                 # 4. Determinar nuevo estado global de la solicitud
                 nuevo_estado = sol.get("estado", "EN REVISIÓN")
+                token_edicion = None
 
-                if decision == "RECHAZADO":
+                if decision == "DEVUELTO":
+                    nuevo_estado = "DEVUELTO PARA CORRECCIÓN"
+                    token_edicion = secrets.token_urlsafe(32)
+                    obs_devolucion = f"[DEVUELTO por {rol} para corrección]: {motivo_rechazo}. {observacion}".strip()
+                    cursor.execute(
+                        """
+                        UPDATE solicitudes 
+                        SET estado = 'DEVUELTO PARA CORRECCIÓN',
+                            token_edicion = %s,
+                            token_edicion_usado = FALSE,
+                            motivo_devolucion = %s,
+                            observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                        WHERE id = %s
+                        """,
+                        (token_edicion, motivo_rechazo or observacion, obs_devolucion, real_id)
+                    )
+                elif decision == "RECHAZADO":
                     nuevo_estado = "RECHAZADO"
                     obs_rechazo = f"[RECHAZADO por {rol}]: {motivo_rechazo}. {observacion}".strip()
                     cursor.execute(
@@ -648,7 +671,33 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                     cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
                     id_creador = sol.get("diligenciado_por")
                     
-                    if id_creador:
+                    if decision == "DEVUELTO":
+                        tit = f"⚠️ Solicitud {cod_sol} devuelta para corrección"
+                        msg = f"SCR ha devuelto la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Inconsistencias detectadas'}. Haz clic para ingresar a la edición única."
+                        tipo_notif = "warning"
+                        link_edicion = f"/solicitudes/editar/{cod_sol}?token={token_edicion}"
+                        
+                        if id_creador:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (id_creador, tit, msg, tipo_notif, link_edicion)
+                            )
+                        
+                        # También alertar al rol GESTION DOCUMENTAL
+                        cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) LIKE '%DOCUMENTAL%' LIMIT 1")
+                        r_gd = cursor.fetchone()
+                        if r_gd:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (r_gd["id"], tit, msg, tipo_notif, link_edicion)
+                            )
+                    elif id_creador:
                         if decision == "RECHAZADO":
                             tit = f"Solicitud {cod_sol} Rechazada"
                             msg = f"{rol} ha rechazado la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Sin motivo detallado'}"
@@ -721,6 +770,136 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
     except Exception as e:
         print(f"❌ Error al registrar dictamen para solicitud #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al registrar dictamen: {e}"}
+
+
+def VALIDAR_token_edicion_db(solicitud_id: Any, token: str) -> dict:
+    try:
+        if not token or not str(token).strip():
+            return {"valido": False, "mensaje": "Token de edición no proporcionado."}
+        
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"valido": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+                
+                estado = str(sol.get("estado") or "").strip().upper()
+                if estado != "DEVUELTO PARA CORRECCIÓN":
+                    return {"valido": False, "mensaje": f"La solicitud no se encuentra en estado de corrección (estado actual: {estado})."}
+                
+                if sol.get("token_edicion_usado"):
+                    return {"valido": False, "mensaje": "El enlace de edición única ya fue utilizado previamente para esta solicitud."}
+                
+                stored_token = sol.get("token_edicion")
+                if not stored_token or stored_token != str(token).strip():
+                    return {"valido": False, "mensaje": "El token de edición no es válido o ha expirado."}
+                
+                return {
+                    "valido": True,
+                    "id": sol["id"],
+                    "codigo": sol.get("codigo"),
+                    "motivo_devolucion": sol.get("motivo_devolucion") or ""
+                }
+    except Exception as e:
+        print(f"❌ Error al validar token de edición: {e}")
+        return {"valido": False, "mensaje": f"Error interno al validar token: {e}"}
+
+
+def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optional[int] = None, nombre_usuario: Optional[str] = None) -> dict:
+    try:
+        if not token or not str(token).strip():
+            return {"exito": False, "mensaje": "Token de edición no proporcionado."}
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                real_id = int(sol["id"])
+                cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
+                stored_token = sol.get("token_edicion")
+
+                if sol.get("token_edicion_usado"):
+                    return {"exito": False, "mensaje": "El token de edición ya fue utilizado previamente para esta solicitud."}
+                if not stored_token or stored_token != str(token).strip():
+                    return {"exito": False, "mensaje": "Token de edición no válido o expirado."}
+
+                # 1. Consumir token y pasar estado a 'POR APROBAR' (retorna directo a SCR)
+                cursor.execute(
+                    """
+                    UPDATE solicitudes 
+                    SET token_edicion_usado = TRUE,
+                        token_edicion = NULL,
+                        estado = 'POR APROBAR'
+                    WHERE id = %s
+                    """,
+                    (real_id,)
+                )
+
+                # 2. Limpiar el dictamen previo de SCR para permitir nueva aprobación directa
+                cursor.execute(
+                    "DELETE FROM solicitud_revisiones WHERE id_solicitud = %s AND UPPER(rol) = 'SCR'",
+                    (real_id,)
+                )
+
+                # 3. Registrar en auditoría de revisiones
+                cursor.execute(
+                    """
+                    INSERT INTO solicitud_revisiones (
+                        id_solicitud, rol, id_usuario, nombre_revisor,
+                        decision, observacion, fecha_revision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                    """,
+                    (
+                        real_id,
+                        "GESTION DOCUMENTAL",
+                        id_usuario,
+                        nombre_usuario or "Gestión Documental",
+                        "CORREGIDO",
+                        "Solicitud corregida mediante enlace de edición única y retornada directamente a SCR para aprobación final."
+                    )
+                )
+
+                # 4. Notificar a SCR que la solicitud fue corregida y está lista para su aprobación final
+                try:
+                    cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
+                    r_scr = cursor.fetchone()
+                    if r_scr:
+                        cursor.execute(
+                            """
+                            INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            (
+                                r_scr["id"],
+                                f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR",
+                                f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final.",
+                                "warning",
+                                f"/solicitudes/revision/{cod_sol}"
+                            )
+                        )
+                except Exception as e_notif:
+                    print(f"⚠️ Aviso al registrar notificación a SCR tras corrección: {e_notif}")
+
+                conexion.commit()
+                return {"exito": True, "mensaje": "Token consumido y solicitud retornada directamente a SCR (POR APROBAR) con éxito."}
+    except Exception as e:
+        print(f"❌ Error al consumir token de edición: {e}")
+        return {"exito": False, "mensaje": f"Error interno al consumir token: {e}"}
+
 
 def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optional[int] = None):
 
@@ -1266,7 +1445,8 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                     "codigo", "empresa_origen", "diligenciado_por", "nivel_de_riesgo",
                     "tipo_personal", "empresa_contratista", "plantas_ids", "personas_ids",
                     "vehiculos_ids", "fecha_inicio", "fecha_fin", "actividad",
-                    "observaciones", "estado", "is_active"
+                    "observaciones", "estado", "is_active",
+                    "token_edicion", "token_edicion_usado", "motivo_devolucion"
                 }
 
                 campos_filtrados = {}

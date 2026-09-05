@@ -139,7 +139,9 @@
 /* 3. ETIQUETA ÁMBAR / DORADO NEÓN (STATUS-APROBAR) */
 :root.dark .status-aprobar,
 :root.dark .status-pill.status-aprobar,
-:root.dark .status-pill.is-aprobar {
+:root.dark .status-pill.is-aprobar,
+:root.dark .status-devuelto,
+:root.dark .status-pill.status-devuelto {
   background-color: rgba(245, 158, 11, 0.16) !important;
   color: #fffbeb !important;
   border: 1px solid rgba(245, 158, 11, 0.7) !important;
@@ -148,12 +150,15 @@
 }
 
 :root.dark .status-aprobar::before,
-:root.dark .status-pill.status-aprobar::before {
+:root.dark .status-pill.status-aprobar::before,
+:root.dark .status-devuelto::before,
+:root.dark .status-pill.status-devuelto::before {
   background-color: #ffb700 !important;
   box-shadow: 0 0 6px #ffb700, 0 0 12px #f59e0b !important;
 }
 
-:root.dark .status-aprobar i {
+:root.dark .status-aprobar i,
+:root.dark .status-devuelto i {
   color: #ffffff !important;
   filter: drop-shadow(0 0 6px rgba(255, 183, 0, 1)) drop-shadow(0 0 12px rgba(245, 158, 11, 0.8)) !important;
 }
@@ -3798,6 +3803,18 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   filter: drop-shadow(0 0 8px #ff2a55) !important;
 }
 
+:root.dark .decision-card.decision-card-devolver.is-selected {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.35), inset 0 0 8px rgba(245, 158, 11, 0.1) !important;
+}
+
+:root.dark .decision-card.decision-card-devolver.is-selected i {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 8px #f59e0b) !important;
+}
+
 /* =========================================================
    MODAL DE DOCUMENTOS ADJUNTOS EN FORMULARIO SOLICITUD (WIZARD)
    ========================================================= */
@@ -4549,6 +4566,18 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root.dark .decision-card-rechazar.is-selected i {
   color: #ff2a55 !important;
   filter: drop-shadow(0 0 6px #ff2a55) !important;
+}
+
+:root.dark .decision-card-devolver.is-selected {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.3), inset 0 0 8px rgba(245, 158, 11, 0.1) !important;
+}
+
+:root.dark .decision-card-devolver.is-selected i {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 6px #f59e0b) !important;
 }
 
 /* =========================================================

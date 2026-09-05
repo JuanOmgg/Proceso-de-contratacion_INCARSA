@@ -6,7 +6,10 @@ from .solicitudes_loaders import (
     GET_solicitud_bd,
     DELETE_solicitud_bd,
     GET_ALL_solicitudes_bd,
-    GET_date_count_db
+    GET_date_count_db,
+    REGISTRAR_dictamen_db,
+    VALIDAR_token_edicion_db,
+    CONSUMIR_token_edicion_db
 )
 
 from .usuario_loader import  (

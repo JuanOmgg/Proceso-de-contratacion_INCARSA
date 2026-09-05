@@ -655,6 +655,7 @@ function solicitudesTable() {
         estadoClass(estado) {
             const e = (estado || "").toUpperCase();
             if (e === "ENVIADO") return "status-enviado";
+            if (e.includes("DEVUELTO") || e.includes("CORRECCI")) return "status-devuelto";
             if (e.includes("REVISION")) return "status-revision";
             if (e === "POR APROBAR") return "status-aprobar";
             if (e === "APROBADO" || e === "PRE-APROBADO") return "status-aprobado";

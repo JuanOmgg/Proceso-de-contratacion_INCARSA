@@ -43,6 +43,7 @@ function procesamientoBoard() {
   estadoEstilos(estado){
     const est = (estado || '').trim().toUpperCase();
     if (est === 'ENVIADO') return 'status-enviado';
+    if (est.includes('DEVUELTO') || est.includes('CORRECCI')) return 'status-devuelto';
     if (est.includes('REVISI')) return 'status-revision';
     if (est.includes('APROBAR') || est === 'POR APROBAR') return 'status-aprobar';
     if (est === 'APROBADO') return 'status-aprobado';

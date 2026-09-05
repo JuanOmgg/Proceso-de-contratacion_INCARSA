@@ -117,6 +117,7 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     eq_computo: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
     equipos: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
     computos: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
+    token_edicion: Optional[str] = None
 
 
 class DictamenInput(BaseModel):
@@ -124,6 +125,7 @@ class DictamenInput(BaseModel):
     rol: str
     decision: str
     motivo_rechazo: Optional[str] = None
+    motivo_devolucion: Optional[str] = None
     observacion: Optional[str] = None
     id_usuario: Optional[int] = None
     nombre_revisor: Optional[str] = None

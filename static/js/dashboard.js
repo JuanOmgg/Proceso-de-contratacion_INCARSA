@@ -638,6 +638,8 @@ function solicitudesTable() {
         "ENVIADO": "status-enviado",
         "EN REVISIÓN": "status-revision",
         "EN REVISION": "status-revision",
+        "DEVUELTO PARA CORRECCIÓN": "status-devuelto",
+        "DEVUELTO": "status-devuelto",
         "POR APROBAR": "status-aprobar",
         "APROBADO": "status-aprobado",
         "PRE-APROBADO": "status-aprobado",
