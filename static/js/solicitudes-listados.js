@@ -302,6 +302,18 @@ function solicitudesTable() {
             const _v = this.permisosVersion;
             return window.puedeModulo(mod);
         },
+        puedeEditarSolicitud(s) {
+            const _v = this.permisosVersion;
+            if (typeof window.puedeEditarSolicitud === "function") {
+                return window.puedeEditarSolicitud(s);
+            }
+            const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+            const miRol = (sesion?.rol || "").trim().toUpperCase();
+            if (miRol === "SUPERADMIN") return true;
+            if (!this.puedeAccion("solicitudes", "editar")) return false;
+            if (!s) return false;
+            return String(s.estado || "").trim().toUpperCase() === "ENVIADO";
+        },
 
         async init() {
             window.addEventListener("permisos-actualizados", () => {

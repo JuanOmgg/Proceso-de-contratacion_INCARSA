@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Depends
 from src.schemas.antecedentes_schema import AntecedenteUpdate, HistorialSolicitudCreate
+from src.utils.security import get_current_user, require_permission
 from src.services.antecedentes import (
     OBTENER_ANTECEDENTE_PERSONA,
     ACTUALIZAR_ANTECEDENTE,
@@ -11,7 +12,11 @@ router = APIRouter(prefix="/antecedentes", tags=["Antecedentes"])
 
 
 @router.get("/persona/{persona_id}", status_code=status.HTTP_200_OK)
-def GET_antecedente_persona_endpoint(persona_id: int, actualizar_revision: bool = Query(False)):
+def GET_antecedente_persona_endpoint(
+    persona_id: int, 
+    actualizar_revision: bool = Query(False),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Obtiene los antecedentes y el historial consolidado de una persona.
     Si actualizar_revision=True, auto-actualiza ultima_revision y fecha_consulta (+1 año).
@@ -26,7 +31,11 @@ def GET_antecedente_persona_endpoint(persona_id: int, actualizar_revision: bool 
 
 
 @router.patch("/persona/{persona_id}", status_code=status.HTTP_200_OK)
-def PATCH_antecedente_persona_endpoint(persona_id: int, payload: AntecedenteUpdate):
+def PATCH_antecedente_persona_endpoint(
+    persona_id: int, 
+    payload: AntecedenteUpdate,
+    current_user: dict = Depends(require_permission("antecedentes", "editar"))
+):
     """
     Actualiza manualmente campos como responsable o anotaciones.
     """
@@ -40,7 +49,11 @@ def PATCH_antecedente_persona_endpoint(persona_id: int, payload: AntecedenteUpda
 
 
 @router.post("/persona/{persona_id}/historial", status_code=status.HTTP_201_CREATED)
-def POST_historial_solicitud_endpoint(persona_id: int, payload: HistorialSolicitudCreate):
+def POST_historial_solicitud_endpoint(
+    persona_id: int, 
+    payload: HistorialSolicitudCreate,
+    current_user: dict = Depends(require_permission("antecedentes", "crear"))
+):
     """
     Registra una solicitud en el historial de antecedentes de la persona.
     """
@@ -57,7 +70,7 @@ def POST_historial_solicitud_endpoint(persona_id: int, payload: HistorialSolicit
 @router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_antecedentes_endpoint():
+def GET_ALL_antecedentes_endpoint(current_user: dict = Depends(get_current_user)):
     """
     Lista todos los registros de antecedentes de las personas con su total de solicitudes.
     """

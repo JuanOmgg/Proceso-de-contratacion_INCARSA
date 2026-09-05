@@ -154,9 +154,9 @@
                           <i class="fa-solid fa-eye"></i>
                         </button>
 
-                        <!-- 3. Editar solicitud (controlado por fila Dashboard / Estadísticas) -->
+                        <!-- 3. Editar solicitud (solo si está en ENVIADO o SuperAdmin) -->
                         <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" 
-                          x-show="puedeAccion('dashboard', 'editar')"
+                          x-show="puedeEditarSolicitud(s)"
                           data-tooltip="Editar solicitud"
                           class="action-icon-btn text-yellow-400 hover:text-yellow-600 hover:bg-yellow-50 transition-colors">
                           <i class="fa-solid fa-pen-to-square"></i>
@@ -401,7 +401,7 @@
                       <span>Revisar expediente</span>
                     </a>
                     <a :href="selected ? ('/solicitudes/editar/' + (selected.codigo || selected.id)) : '#'"
-                      x-show="puedeAccion('dashboard', 'editar')"
+                      x-show="puedeEditarSolicitud(selected)"
                       class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
                       <i class="fa-solid fa-pen-to-square text-xs"></i>
                       <span>Editar solicitud</span>

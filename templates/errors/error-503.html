@@ -31,29 +31,69 @@
 
   <p class="error-code-hero">503</p>
 
-  <p class="error-code">Estado del Servicio</p>
-  <h1 class="error-title">Mantenimiento Programado</h1>
+  <div class="flex items-center justify-center gap-2 mb-2">
+    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+      <i class="fa-solid {% if nombre_modulo_afectado %}fa-layer-group{% else %}fa-server{% endif %}"></i>
+      {% if nombre_modulo_afectado %}
+        Módulo: {{ nombre_modulo_afectado }}
+      {% else %}
+        Mantenimiento Global
+      {% endif %}
+    </span>
+  </div>
+
+  <h1 class="error-title">
+    {% if nombre_modulo_afectado %}
+      Módulo en Mantenimiento
+    {% else %}
+      Mantenimiento Programado
+    {% endif %}
+  </h1>
+
   <p class="error-description">
-    {{ mensaje if mensaje else 'Estamos realizando actualizaciones y optimizaciones programadas en la plataforma. Los servicios habituales se reanudarán brevemente.' }}
+    {{ mensaje if mensaje else 'Estamos realizando actualizaciones y optimizaciones programadas. Los servicios habituales se reanudarán brevemente.' }}
   </p>
+
+  <!-- TEMPORIZADOR / CRONÓMETRO VISUAL DE CUENTA REGRESIVA -->
+  <div id="countdown-card" class="my-4 p-4 rounded-2xl bg-black/40 border border-amber-500/30 backdrop-blur-md max-w-sm mx-auto shadow-xl">
+    <p class="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 mb-2 flex items-center justify-center gap-1.5">
+      <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+    </p>
+    
+    <div class="grid grid-cols-3 gap-2 text-center my-1" id="timer-grid">
+      <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2">
+        <span id="timer-hours" class="block font-mono text-2xl font-black text-amber-400">00</span>
+        <span class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Horas</span>
+      </div>
+      <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2">
+        <span id="timer-minutes" class="block font-mono text-2xl font-black text-amber-400">00</span>
+        <span class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Minutos</span>
+      </div>
+      <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2">
+        <span id="timer-seconds" class="block font-mono text-2xl font-black text-amber-400">00</span>
+        <span class="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Segundos</span>
+      </div>
+    </div>
+
+    <div id="timer-status" class="mt-2 text-[11px] text-slate-300 font-medium flex items-center justify-center gap-1">
+      <i class="fa-regular fa-clock text-amber-400"></i>
+      <span>{{ tiempo if tiempo else 'Estimado según labores técnicas' }}</span>
+    </div>
+  </div>
 
   <div class="error-actions">
     <button type="button" onclick="location.reload()" class="w-full rounded-lg px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2 text-slate-900 transition-all active:scale-95 shadow-md" style="background:#f5c400;">
       <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
     </button>
-    <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
-      <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
-    </button>
-  </div>
-
-  <div class="error-info-card p-4 flex items-center gap-3 text-left">
-    <div class="error-info-icon w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
-      <i class="fa-regular fa-clock text-sm text-yellow-400"></i>
-    </div>
-    <div>
-      <p class="text-xs text-slate-400">Tiempo estimado</p>
-      <p class="text-sm font-medium text-slate-200">{{ tiempo if tiempo else 'Disponible en aproximadamente 30 minutos' }}</p>
-    </div>
+    {% if nombre_modulo_afectado %}
+      <a href="/dashboard" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+        <i class="fa-solid fa-gauge-high text-xs"></i> Ir al Dashboard
+      </a>
+    {% else %}
+      <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
+      </button>
+    {% endif %}
   </div>
 
   <div class="mt-4">
@@ -62,6 +102,108 @@
     </a>
   </div>
 </div>
+
+<script>
+(async function initTimer() {
+  let serverFinRaw = "{{ temporizador_fin if temporizador_fin else '' }}";
+  let minutos = parseInt("{{ temporizador_minutos if temporizador_minutos else 30 }}", 10) || 30;
+
+  // Si no vino del servidor en el template, consultar en vivo a la API
+  if (!serverFinRaw) {
+    try {
+      const res = await fetch('/api/v1/sistema/mantenimiento');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.temporizador_fin) serverFinRaw = data.temporizador_fin;
+        if (data.temporizador_minutos) minutos = parseInt(data.temporizador_minutos, 10) || minutos;
+      }
+    } catch (e) {}
+  }
+
+  // Parsear el target time del servidor (epoch ms o ISO)
+  let serverTarget = null;
+  if (serverFinRaw) {
+    const num = Number(serverFinRaw);
+    if (!isNaN(num) && num > 100000000000) {
+      serverTarget = num;
+    } else {
+      const parsed = new Date(serverFinRaw).getTime();
+      if (!isNaN(parsed)) serverTarget = parsed;
+    }
+  }
+
+  // Persistencia inteligente en sessionStorage:
+  // Almacena { target: timestamp, minutos: X } para no reiniciarse en recargas (F5),
+  // pero actualizándose si el SuperAdmin cambia los minutos o genera un nuevo periodo.
+  const STORAGE_KEY = 'incarsa_503_active_timer';
+  let targetTime = null;
+
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
+    
+    if (serverTarget) {
+      // Si el servidor entregó un timestamp fijo:
+      // Si difiere en más de 4 segundos o los minutos cambiaron, es un nuevo tiempo configurado
+      if (!saved || Math.abs(saved.target - serverTarget) > 4000 || saved.minutos !== minutos) {
+        targetTime = serverTarget;
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ target: targetTime, minutos: minutos }));
+      } else {
+        // Es la misma sesión activa: respetar la cuenta regresiva en curso al recargar
+        targetTime = saved.target;
+      }
+    } else {
+      // Modo previsualización local (sin timestamp en base de datos):
+      // Si los minutos son idénticos y el target no ha expirado, mantener la cuenta al recargar
+      if (saved && saved.target && saved.minutos === minutos && saved.target > Date.now()) {
+        targetTime = saved.target;
+      } else {
+        // Si se cambiaron los minutos, iniciar nueva cuenta con el nuevo tiempo
+        targetTime = Date.now() + (minutos * 60 * 1000);
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ target: targetTime, minutos: minutos }));
+      }
+    }
+  } catch (e) {
+    targetTime = serverTarget || (Date.now() + (minutos * 60 * 1000));
+  }
+
+  if (!targetTime) {
+    targetTime = Date.now() + (minutos * 60 * 1000);
+  }
+
+  function updateClock() {
+    const now = Date.now();
+    const diff = targetTime - now;
+
+    const elH = document.getElementById('timer-hours');
+    const elM = document.getElementById('timer-minutes');
+    const elS = document.getElementById('timer-seconds');
+    const elStatus = document.getElementById('timer-status');
+
+    if (!elH || !elM || !elS) return;
+
+    if (diff <= 0) {
+      elH.textContent = "00";
+      elM.textContent = "00";
+      elS.textContent = "00";
+      if (elStatus) {
+        elStatus.innerHTML = '<span class="text-amber-400 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Culminando labores finales. Reanudación inminente.</span>';
+      }
+      return;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    elH.textContent = String(hours).padStart(2, '0');
+    elM.textContent = String(minutes).padStart(2, '0');
+    elS.textContent = String(seconds).padStart(2, '0');
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
 
 <script src="/static/js/page-transition.js"></script>
 </body>

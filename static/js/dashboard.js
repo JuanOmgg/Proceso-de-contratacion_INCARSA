@@ -8,6 +8,11 @@ function appShell() {
     sidebarOpenMobile: false,
     profileMenuOpen: false,
     notificationsOpen: false,
+    modalTodasNotificacionesOpen: false,
+    filtroNotifTab: 'todas',
+    busquedaNotif: '',
+    notifPage: 1,
+    notifPageSize: 8,
     activeRole: "GESTOR DE DOCUMENTACIÓN",
     openModules: { procesamiento: false, formularios: false, tablas: false },
     darkMode: localStorage.getItem('darkMode') === 'true',
@@ -23,11 +28,71 @@ function appShell() {
       return false;
     },
 
+    puedeModulo(mod) {
+      if (this.activeRole === "SUPERADMIN") return true;
+      if (typeof window.puedeModulo === "function") {
+        return window.puedeModulo(mod);
+      }
+      return true;
+    },
+
+    puedeAccion(mod, acc) {
+      if (this.activeRole === "SUPERADMIN") return true;
+      if (typeof window.puedeAccion === "function") {
+        return window.puedeAccion(mod, acc);
+      }
+      return true;
+    },
+
     formatearTiempoRelativo(fechaStr) {
       if (typeof formatearTiempoRelativo === "function") {
         return formatearTiempoRelativo(fechaStr);
       }
       return fechaStr || "";
+    },
+
+    get notificacionesFiltradas() {
+      let lista = this.notifications || [];
+      if (this.filtroNotifTab === 'no_leidas') {
+        lista = lista.filter(n => !n.leido);
+      } else if (this.filtroNotifTab === 'info') {
+        lista = lista.filter(n => !n.tipo || n.tipo === 'info');
+      } else if (this.filtroNotifTab === 'alertas') {
+        lista = lista.filter(n => ['warning', 'error', 'danger'].includes(n.tipo));
+      }
+
+      if (this.busquedaNotif && this.busquedaNotif.trim()) {
+        const q = this.busquedaNotif.toLowerCase().trim();
+        lista = lista.filter(n => 
+          (n.titulo && n.titulo.toLowerCase().includes(q)) ||
+          (n.mensaje && n.mensaje.toLowerCase().includes(q))
+        );
+      }
+      return lista;
+    },
+
+    get notificacionesModalPagina() {
+      const filtradas = this.notificacionesFiltradas;
+      const start = (this.notifPage - 1) * this.notifPageSize;
+      return filtradas.slice(start, start + this.notifPageSize);
+    },
+
+    get notifTotalPaginas() {
+      return Math.ceil(this.notificacionesFiltradas.length / this.notifPageSize) || 1;
+    },
+
+    abrirModalTodasNotificaciones() {
+      this.modalTodasNotificacionesOpen = true;
+      this.notificationsOpen = false;
+      this.sidebarOpenMobile = false;
+      this.filtroNotifTab = 'todas';
+      this.busquedaNotif = '';
+      this.notifPage = 1;
+      this.cargarNotificaciones(100);
+    },
+
+    cerrarModalTodasNotificaciones() {
+      this.modalTodasNotificacionesOpen = false;
     },
 
     init() {
@@ -52,11 +117,16 @@ function appShell() {
         this._userInitials = (this._userName.split(" ").map(p => p[0]).join("")).substring(0, 2).toUpperCase();
       }
 
+      // Escuchar apertura remota de modal de notificaciones
+      window.addEventListener("open-notificaciones-modal", () => {
+        this.abrirModalTodasNotificaciones();
+      });
+
       this.cargarNotificaciones();
       setInterval(() => this.cargarNotificaciones(), 35000);
     },
 
-    async cargarNotificaciones() {
+    async cargarNotificaciones(limit = 50) {
       // Revisar si ya están precargadas desde el splash
       try {
         const preloadedNotifs = sessionStorage.getItem("incarsa_preloaded_notificaciones");
@@ -76,6 +146,7 @@ function appShell() {
         const params = new URLSearchParams();
         if (this.userId) params.append("id_usuario", this.userId);
         if (this.roleId) params.append("id_rol", this.roleId);
+        if (limit) params.append("limit", limit);
         const res = await fetch(`${notifUrl}?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
@@ -389,6 +460,19 @@ function solicitudesTable() {
         return window.puedeAccion(mod, acc);
       }
       return false;
+    },
+
+    puedeEditarSolicitud(s) {
+      const _v = this.permisosVersion;
+      if (typeof window.puedeEditarSolicitud === 'function') {
+        return window.puedeEditarSolicitud(s);
+      }
+      const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
+      const miRol = (sesion?.rol || '').trim().toUpperCase();
+      if (miRol === 'SUPERADMIN') return true;
+      if (!this.puedeAccion('dashboard', 'editar') && !this.puedeAccion('solicitudes', 'editar')) return false;
+      if (!s) return false;
+      return String(s.estado || '').trim().toUpperCase() === 'ENVIADO';
     },
 
     async init() {

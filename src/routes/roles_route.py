@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from src.loaders.roles_loader import GET_rol_by_id, GETALL_roles
+from src.utils.security import get_current_user
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
 
@@ -8,7 +9,7 @@ router = APIRouter(prefix="/roles", tags=["Roles"])
 @router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_roles_rt():
+def GET_ALL_roles_rt(current_user: dict = Depends(get_current_user)):
 
     print("[ROLES] Buscando todos los roles en la base de datos...")
     roles = GETALL_roles()
@@ -24,7 +25,7 @@ def GET_ALL_roles_rt():
 
 
 @router.get("/{id_rol}", status_code=status.HTTP_200_OK)
-def GET_rol_rt(id_rol: int):
+def GET_rol_rt(id_rol: int, current_user: dict = Depends(get_current_user)):
 
     print(f"[ROLES] Buscando rol con ID #{id_rol} en la base de datos...")
     resultado = GET_rol_by_id(id_rol)

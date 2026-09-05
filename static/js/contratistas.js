@@ -6,6 +6,15 @@ function contratistaManager() {
         mensajeExito: "",
         mensajeError: "",
 
+        isModuloMantenimiento(mod) {
+            return window.isModuloMantenimiento ? window.isModuloMantenimiento(mod || 'contratistas') : false;
+        },
+        get estadoMantenimiento() {
+            return (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('mantenimiento'))
+                ? Alpine.store('mantenimiento')
+                : (window.estadoMantenimiento || {});
+        },
+
         // Modo edición
         editandoId: null,
 

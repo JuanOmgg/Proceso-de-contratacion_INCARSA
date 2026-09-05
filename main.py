@@ -84,6 +84,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MODULO_NOMBRES = {
+    "dashboard": "Dashboard y Estadísticas",
+    "solicitudes": "Listado de Solicitudes",
+    "nueva_solicitud": "Nueva Solicitud",
+    "usuarios": "Listado de Usuarios",
+    "nuevo_usuario": "Formulario de Usuarios",
+    "plantas": "Gestión de Plantas y Zonas",
+    "contratistas": "Empresas Contratistas",
+    "vehiculos": "Vehículos y Maquinaria",
+    "personas": "Directorio de Personas",
+    "procesamiento": "Procesamiento de Solicitudes",
+    "antecedentes": "Verificación de Antecedentes",
+    "revision_solicitud": "Revisión y Aprobación de Solicitudes"
+}
+
+def obtener_modulo_de_ruta(path: str) -> Optional[str]:
+    """Determina a qué módulo del sistema pertenece una ruta de URL."""
+    p = path.rstrip("/")
+    if not p:
+        return None
+    if p == "/dashboard":
+        return "dashboard"
+    if p in ("/solicitudes/nueva", "/formulario-solicitudes"):
+        return "nueva_solicitud"
+    if p.startswith("/solicitudes/revision") or p == "/revision-solicitud":
+        return "revision_solicitud"
+    if p == "/solicitudes" or p.startswith("/api/v1/solicitudes") or p.startswith("/api/solicitudes"):
+        return "solicitudes"
+    if p in ("/usuarios/nuevo", "/usuarios/nueva", "/formulario-usuarios", "/usuario-formulario.html"):
+        return "nuevo_usuario"
+    if p == "/usuarios" or p.startswith("/api/v1/usuarios"):
+        return "usuarios"
+    if p.startswith("/planta") or p.startswith("/api/plantas") or p.startswith("/api/v1/plantas"):
+        return "plantas"
+    if p.startswith("/emp_contratista") or p.startswith("/api/contratistas") or p.startswith("/api/v1/contratistas"):
+        return "contratistas"
+    if p.startswith("/vehiculo") or p.startswith("/api/vehiculos") or p.startswith("/api/v1/vehiculos"):
+        return "vehiculos"
+    if p.startswith("/personas") or p.startswith("/api/v1/personas"):
+        return "personas"
+    if p.startswith("/procesamiento") or p.startswith("/api/v1/procesamiento"):
+        return "procesamiento"
+    if p.startswith("/antecedentes") or p.startswith("/api/v1/antecedentes"):
+        return "antecedentes"
+    return None
+
 # Middleware de modo mantenimiento (Error 503)
 @app.middleware("http")
 async def modo_mantenimiento_middleware(request: Request, call_next):
@@ -99,15 +145,16 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
             "/api/v1/auth",
             "/superadmin",
             "/api/v1/superadmin",
+            "/api/v1/sistema/mantenimiento",
             "/docs",
             "/openapi.json"
         ]
         
-        # Permitir rutas estáticas, login y panel administrativo de SuperAdmin
+        # Permitir rutas estáticas, login, estado de mantenimiento y panel administrativo de SuperAdmin
         if any(path == r or path.startswith(r + "/") or path.startswith(r + "?") for r in rutas_permitidas):
             return await call_next(request)
 
-        # Si el usuario es SUPERADMIN mediante token Bearer o cookie, permitir acceso
+        # Si el usuario es SUPERADMIN mediante token Bearer o cookie, permitir acceso irrestricto
         auth_header = request.headers.get("Authorization") or ""
         token = None
         if auth_header.startswith("Bearer "):
@@ -120,23 +167,52 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
             if payload and payload.get("rol") == "SUPERADMIN":
                 return await call_next(request)
 
+        tipo = mantenimiento.get("tipo", "general")
+        modulos_mantenimiento = mantenimiento.get("modulos") or []
+        modulo_afectado = None
+        nombre_modulo_afectado = None
+
+        if tipo == "modulos":
+            modulo_solicitado = obtener_modulo_de_ruta(path)
+            # Si la ruta pertenece a un módulo y dicho módulo está en mantenimiento, bloquear
+            if modulo_solicitado and modulo_solicitado in modulos_mantenimiento:
+                modulo_afectado = modulo_solicitado
+                nombre_modulo_afectado = MODULO_NOMBRES.get(modulo_solicitado, modulo_solicitado.replace("_", " ").title())
+            else:
+                # El módulo solicitado no está en mantenimiento; continuar normalmente
+                return await call_next(request)
+
         # Retornar vista 503 o JSON 503
+        mensaje = mantenimiento.get("mensaje")
+        tiempo = mantenimiento.get("tiempo")
+        temporizador_fin = mantenimiento.get("temporizador_fin")
+        temporizador_minutos = mantenimiento.get("temporizador_minutos")
+
         if "text/html" in request.headers.get("Accept", ""):
             return templates.TemplateResponse(
                 name="errors/error-503.html",
                 request=request,
                 status_code=503,
                 context={
-                    "mensaje": mantenimiento.get("mensaje"),
-                    "tiempo": mantenimiento.get("tiempo")
+                    "mensaje": mensaje,
+                    "tiempo": tiempo,
+                    "tipo_mantenimiento": tipo,
+                    "modulo_afectado": modulo_afectado,
+                    "nombre_modulo_afectado": nombre_modulo_afectado,
+                    "temporizador_fin": temporizador_fin,
+                    "temporizador_minutos": temporizador_minutos
                 }
             )
         return JSONResponse(
             status_code=503,
             content={
-                "detail": "Sistema en mantenimiento",
-                "mensaje": mantenimiento.get("mensaje"),
-                "tiempo": mantenimiento.get("tiempo"),
+                "detail": f"Módulo en mantenimiento: {nombre_modulo_afectado}" if modulo_afectado else "Sistema en mantenimiento",
+                "tipo_mantenimiento": tipo,
+                "modulo_afectado": modulo_afectado,
+                "nombre_modulo_afectado": nombre_modulo_afectado,
+                "mensaje": mensaje,
+                "tiempo": tiempo,
+                "temporizador_fin": temporizador_fin,
                 "status_code": 503
             }
         )

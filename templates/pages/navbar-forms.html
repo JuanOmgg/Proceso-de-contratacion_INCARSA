@@ -38,7 +38,7 @@
               </div>
 
               <div class="max-h-[55vh] sm:max-h-96 overflow-y-auto custom-scroll">
-                <template x-for="n in notifications" :key="n.id">
+                <template x-for="n in (notifications || []).slice(0, 3)" :key="n.id">
                   <div @click="marcarNotificacionLeida(n)"
                        class="notification-item flex items-start gap-3.5"
                        :class="!n.leido ? 'is-unread' : ''">
@@ -73,6 +73,19 @@
                   <i class="fa-regular fa-bell-slash text-3xl mb-2.5 opacity-40 block"></i>
                   No tienes notificaciones pendientes
                 </div>
+              </div>
+
+              <!-- Pie del Dropdown: Ver todas las notificaciones -->
+              <div class="p-2.5 bg-slate-50 dark:bg-black/30 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+                <span class="text-[11px] text-[var(--paper-muted)] font-medium pl-1.5"
+                      x-text="notifications.length > 3 ? ('Mostrando 3 de ' + notifications.length) : (notifications.length + ' en total')">
+                </span>
+                <button type="button" 
+                        @click="notificationsOpen = false; abrirModalTodasNotificaciones()"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-[var(--signal-500)] hover:bg-[var(--signal-500)]/10 transition-colors cursor-pointer">
+                  <span>Ver todas</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
               </div>
             </div>
           </div>

@@ -259,6 +259,11 @@ function solicitudWizard() {
         this.cargarVehiculos()
       ]);
 
+      // Escuchar eventos globales de sincronización de vehículos
+      window.addEventListener("vehiculos-actualizados", () => {
+        this.cargarVehiculos();
+      });
+
       // 2. Verificar si es modo edición
       await this.inicializarModoEdicion();
     },
@@ -332,6 +337,20 @@ function solicitudWizard() {
       }
 
       if (found) {
+        const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+        const miRol = (miSesion?.rol || "").trim().toUpperCase();
+        const esSuper = (miRol === "SUPERADMIN");
+        const estadoSol = String(found.estado || "").trim().toUpperCase();
+
+        if (!esSuper && estadoSol !== "ENVIADO") {
+          console.warn(`Acceso restringido: La solicitud ${editParam} está en estado '${estadoSol}' y solo puede editarse en estado 'ENVIADO' o por SUPERADMIN.`);
+          if (typeof alert === "function") {
+            alert(`La solicitud se encuentra en estado "${estadoSol}". Solo puede ser editada mientras esté en estado "ENVIADO", o por un usuario SUPERADMIN.`);
+          }
+          window.location.replace("/solicitudes");
+          return;
+        }
+
         console.log("✅ [MODO EDICIÓN] Solicitud encontrada para editar:", found);
         this.solicitudOriginal = found;
         this.cargarDatosEnFormulario(found);
@@ -1775,25 +1794,17 @@ function solicitudWizard() {
       };
 
       // ========================================================================
-      // MODO EDICIÓN (PUT / PATCH)
+      // MODO EDICIÓN (PATCH)
       // ========================================================================
       if (this.isEdit && this.editId) {
         try {
-          console.log(`📤 [PATCH/PUT] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
+          console.log(`📤 [PATCH] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
           
-          let response = await fetch(`${API.solicitudes}/${this.editId}`, {
+          const response = await fetch(`${API.solicitudes}/${this.editId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payloadApi)
           });
-
-          if (!response.ok) {
-            response = await fetch(`${API.solicitudes}/${this.editId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payloadApi)
-            });
-          }
 
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));

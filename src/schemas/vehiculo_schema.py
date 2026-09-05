@@ -10,11 +10,15 @@ class DocumentoVehiculoSchema(BaseModel):
     nombre_archivo: Optional[str] = Field(
         None, json_schema_extra={"example": "12345abcdef.pdf"}
     )
+    url_documento: Optional[str] = None
 
 
 class VehiculoInput(BaseModel):
     tipo: str = Field(..., json_schema_extra={"example": "Camioneta"})
     placa: str = Field(..., json_schema_extra={"example": "ABC-123"})
+    conductor: Optional[str] = Field(None, json_schema_extra={"example": "Juan Pérez"})
+    licencia_doc: Optional[str] = Field(None, json_schema_extra={"example": "licencia_123.pdf"})
+    licencia_url: Optional[str] = None
     documentos: Optional[List[DocumentoVehiculoSchema]] = Field(
         default_factory=list,
         json_schema_extra={
@@ -35,9 +39,12 @@ class VehiculoInput(BaseModel):
 class VehiculoUpdate(BaseModel):
     tipo: Optional[str] = None
     placa: Optional[str] = None
+    conductor: Optional[str] = None
+    licencia_doc: Optional[str] = None
+    licencia_url: Optional[str] = None
     documentos: Optional[List[DocumentoVehiculoSchema]] = None
     documentos_ids: Optional[List[DocumentoVehiculoSchema]] = None
 
 
 # Alias de retrocompatibilidad
-vehiculoInput = VehiculoInput
+vehiculoInput = VehiculoInput

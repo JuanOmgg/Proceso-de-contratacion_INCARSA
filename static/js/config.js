@@ -240,6 +240,124 @@ function puedeAccion(modulo, accion) {
 }
 window.puedeAccion = puedeAccion;
 
+function puedeEditarSolicitud(solicitud) {
+    let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+    const miRol = (sesion?.rol || "").trim().toUpperCase();
+    if (miRol === "SUPERADMIN") return true;
+
+    if (!solicitud) return false;
+
+    // Verificar si el usuario tiene permiso general de editar solicitudes
+    if (!puedeAccion("solicitudes", "editar") && !puedeAccion("dashboard", "editar")) {
+        return false;
+    }
+
+    const est = String(solicitud.estado || "").trim().toUpperCase();
+    return est === "ENVIADO";
+}
+window.puedeEditarSolicitud = puedeEditarSolicitud;
+
+// ============================================================================
+// ESTADO GLOBAL REACTIVO DE MANTENIMIENTO (SISTEMA Y MÓDULOS)
+// ============================================================================
+window.estadoMantenimiento = {
+    activo: false,
+    tipo: 'general',
+    modulos: [],
+    mensaje: '',
+    tiempo: '',
+    temporizador_minutos: 30,
+    temporizador_fin: null
+};
+
+window.isModuloMantenimiento = function(mod) {
+    let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+    if (!sesion) {
+        try {
+            sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        } catch(e) {}
+    }
+    const miRol = (sesion?.rol || "").trim().toUpperCase();
+    if (miRol === "SUPERADMIN") return false;
+
+    const est = (typeof Alpine !== "undefined" && Alpine.store && Alpine.store("mantenimiento"))
+        ? Alpine.store("mantenimiento")
+        : window.estadoMantenimiento;
+
+    if (!est || !est.activo) return false;
+    if (est.tipo === "general") return true;
+    if (est.tipo === "modulos") {
+        return (est.modulos || []).includes(mod);
+    }
+    return false;
+};
+
+async function cargarEstadoMantenimientoGlobal() {
+    try {
+        const res = await fetch("/api/v1/sistema/mantenimiento");
+        if (res.ok) {
+            const data = await res.json();
+            const nuevoEstado = {
+                activo: !!data.activo,
+                tipo: data.tipo || "general",
+                modulos: Array.isArray(data.modulos) ? data.modulos : [],
+                mensaje: data.mensaje || "",
+                tiempo: data.tiempo || "",
+                temporizador_minutos: data.temporizador_minutos || 30,
+                temporizador_fin: data.temporizador_fin || null
+            };
+            Object.assign(window.estadoMantenimiento, nuevoEstado);
+
+            if (typeof Alpine !== "undefined" && Alpine.store && Alpine.store("mantenimiento")) {
+                const store = Alpine.store("mantenimiento");
+                store.activo = nuevoEstado.activo;
+                store.tipo = nuevoEstado.tipo;
+                store.modulos = nuevoEstado.modulos;
+                store.mensaje = nuevoEstado.mensaje;
+                store.tiempo = nuevoEstado.tiempo;
+                store.temporizador_minutos = nuevoEstado.temporizador_minutos;
+                store.temporizador_fin = nuevoEstado.temporizador_fin;
+            }
+
+            window.dispatchEvent(new CustomEvent("mantenimiento-actualizado", { detail: nuevoEstado }));
+        }
+    } catch (e) {
+        console.warn("Aviso cargando estado de mantenimiento global:", e);
+    }
+}
+window.cargarEstadoMantenimientoGlobal = cargarEstadoMantenimientoGlobal;
+
+// Registrar Alpine store tan pronto Alpine se inicialice
+document.addEventListener("alpine:init", () => {
+    Alpine.store("mantenimiento", {
+        activo: window.estadoMantenimiento.activo,
+        tipo: window.estadoMantenimiento.tipo,
+        modulos: window.estadoMantenimiento.modulos,
+        mensaje: window.estadoMantenimiento.mensaje,
+        tiempo: window.estadoMantenimiento.tiempo,
+        temporizador_minutos: window.estadoMantenimiento.temporizador_minutos,
+        temporizador_fin: window.estadoMantenimiento.temporizador_fin,
+
+        isModuloMantenimiento(mod) {
+            return window.isModuloMantenimiento(mod);
+        },
+
+        async cargar() {
+            await window.cargarEstadoMantenimientoGlobal();
+        }
+    });
+
+    window.cargarEstadoMantenimientoGlobal();
+});
+
+// Cargar de inmediato
+cargarEstadoMantenimientoGlobal();
+
+// Polling periódico cada 25 segundos
+setInterval(() => {
+    cargarEstadoMantenimientoGlobal();
+}, 25000);
+
 // ============================================================================
 // Shell global de navegación y sesión de usuario para todas las vistas
 // ============================================================================
@@ -255,6 +373,11 @@ function appShellStub() {
         sidebarCollapsed: false,
         sidebarOpenMobile: false,
         notificationsOpen: false,
+        modalTodasNotificacionesOpen: false,
+        filtroNotifTab: 'todas',
+        busquedaNotif: '',
+        notifPage: 1,
+        notifPageSize: 8,
         userId: userId,
         roleId: roleId,
         activeRole: sesion?.rol || "ADMINISTRADOR",
@@ -264,6 +387,11 @@ function appShellStub() {
         userDisplayName: nombreUsuario,
         userInitials: iniciales,
         darkMode: localStorage.getItem('darkMode') === 'true',
+        get estadoMantenimiento() {
+            return (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('mantenimiento'))
+                ? Alpine.store('mantenimiento')
+                : window.estadoMantenimiento;
+        },
         permisos: (function() {
             try {
                 return window.permisosActivos || JSON.parse(sessionStorage.getItem("incarsa_permisos") || localStorage.getItem("incarsa_permisos") || "{}");
@@ -274,6 +402,35 @@ function appShellStub() {
 
         tieneRol(...roles) {
             return window.tieneRol(...roles);
+        },
+
+        isModuloMantenimiento(mod) {
+            return window.isModuloMantenimiento(mod);
+        },
+
+        advertirModuloMantenimiento(nombreModulo) {
+            if (typeof Swal !== 'undefined') {
+                const mensaje = this.estadoMantenimiento?.mensaje || 'Estamos realizando labores de optimización y mantenimiento programado.';
+                const tiempo = this.estadoMantenimiento?.tiempo || 'Disponible en breve';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Módulo en Mantenimiento',
+                    html: `<div class="text-left space-y-2">
+                        <p class="font-bold text-amber-400 text-sm">${nombreModulo}</p>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">${mensaje}</p>
+                        <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 mt-2 flex items-center gap-2">
+                            <i class="fa-regular fa-clock"></i>
+                            <span><strong>Tiempo estimado:</strong> ${tiempo}</span>
+                        </div>
+                    </div>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#f59e0b',
+                    background: '#0f172a',
+                    color: '#f8fafc'
+                });
+            } else {
+                alert(`El módulo ${nombreModulo} se encuentra en mantenimiento.`);
+            }
         },
 
         puedeModulo(mod) {
@@ -294,12 +451,85 @@ function appShellStub() {
 
         formatearTiempoRelativo: formatearTiempoRelativo,
 
+        get notificacionesFiltradas() {
+            let lista = this.notifications || [];
+            if (this.filtroNotifTab === 'no_leidas') {
+                lista = lista.filter(n => !n.leido);
+            } else if (this.filtroNotifTab === 'info') {
+                lista = lista.filter(n => !n.tipo || n.tipo === 'info');
+            } else if (this.filtroNotifTab === 'alertas') {
+                lista = lista.filter(n => ['warning', 'error', 'danger'].includes(n.tipo));
+            }
+
+            if (this.busquedaNotif && this.busquedaNotif.trim()) {
+                const q = this.busquedaNotif.toLowerCase().trim();
+                lista = lista.filter(n => 
+                    (n.titulo && n.titulo.toLowerCase().includes(q)) ||
+                    (n.mensaje && n.mensaje.toLowerCase().includes(q))
+                );
+            }
+            return lista;
+        },
+
+        get notificacionesModalPagina() {
+            const filtradas = this.notificacionesFiltradas;
+            const start = (this.notifPage - 1) * this.notifPageSize;
+            return filtradas.slice(start, start + this.notifPageSize);
+        },
+
+        get notifTotalPaginas() {
+            return Math.ceil(this.notificacionesFiltradas.length / this.notifPageSize) || 1;
+        },
+
+        abrirModalTodasNotificaciones() {
+            this.modalTodasNotificacionesOpen = true;
+            this.notificationsOpen = false;
+            this.sidebarOpenMobile = false;
+            this.filtroNotifTab = 'todas';
+            this.busquedaNotif = '';
+            this.notifPage = 1;
+            this.cargarNotificaciones(100);
+        },
+
+        cerrarModalTodasNotificaciones() {
+            this.modalTodasNotificacionesOpen = false;
+        },
+
+        async cargarEstadoMantenimientoGlobal() {
+            try {
+                const res = await fetch('/api/v1/sistema/mantenimiento');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.estadoMantenimiento = {
+                        activo: !!data.activo,
+                        tipo: data.tipo || 'general',
+                        modulos: Array.isArray(data.modulos) ? data.modulos : [],
+                        mensaje: data.mensaje || '',
+                        tiempo: data.tiempo || '',
+                        temporizador_minutos: data.temporizador_minutos,
+                        temporizador_fin: data.temporizador_fin
+                    };
+                }
+            } catch (e) {
+                console.warn('Aviso consultando estado de mantenimiento:', e);
+            }
+        },
+
         init() {
             // Aplicar el modo oscuro guardado al cargar la página
             document.documentElement.classList.toggle('dark', this.darkMode);
             this.cargarNotificaciones();
+            this.cargarEstadoMantenimientoGlobal();
             // Polling periódico cada 35 segundos
-            setInterval(() => this.cargarNotificaciones(), 35000);
+            setInterval(() => {
+                this.cargarNotificaciones();
+                this.cargarEstadoMantenimientoGlobal();
+            }, 35000);
+
+            // Escuchar apertura remota de modal de notificaciones
+            window.addEventListener("open-notificaciones-modal", () => {
+                this.abrirModalTodasNotificaciones();
+            });
 
             // Escuchar actualizaciones de permisos en vivo
             window.addEventListener("permisos-actualizados", (e) => {
@@ -316,11 +546,12 @@ function appShellStub() {
             }
         },
 
-        async cargarNotificaciones() {
+        async cargarNotificaciones(limit = 50) {
             try {
                 const params = new URLSearchParams();
                 if (this.userId) params.append("id_usuario", this.userId);
                 if (this.roleId) params.append("id_rol", this.roleId);
+                if (limit) params.append("limit", limit);
                 const res = await fetch(`${API.notificaciones}?${params.toString()}`);
                 if (res.ok) {
                     const data = await res.json();
@@ -471,9 +702,6 @@ async function confirmDemo() {
   });
 }
 
-// ============================================================================
-// HELPER GLOBAL: Toast con SweetAlert2 adaptable a Neón / Modo Activo
-// ============================================================================
 window.showToast = function(message, icon = 'info', duration = 3000) {
   if (typeof Swal !== 'undefined') {
     Swal.fire({
@@ -489,3 +717,63 @@ window.showToast = function(message, icon = 'info', duration = 3000) {
     console.log(`[TOAST ${String(icon).toUpperCase()}] ${message}`);
   }
 };
+
+// ============================================================================
+// COMPONENTE ALPINE: Temporizador Visual para Modales en Mantenimiento (503)
+// ============================================================================
+function modalTimerCountdown() {
+  return {
+    hours: '00',
+    minutes: '00',
+    seconds: '00',
+    timerId: null,
+    init() {
+      this.tick();
+      this.timerId = setInterval(() => this.tick(), 1000);
+    },
+    destroy() {
+      if (this.timerId) clearInterval(this.timerId);
+    },
+    tick() {
+      let target = null;
+      const est = (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('mantenimiento'))
+        ? Alpine.store('mantenimiento')
+        : window.estadoMantenimiento;
+
+      if (est && est.temporizador_fin) {
+        target = Number(est.temporizador_fin);
+      }
+
+      if (!target || isNaN(target)) {
+        try {
+          const saved = JSON.parse(sessionStorage.getItem('incarsa_503_active_timer') || 'null');
+          if (saved && saved.target) {
+            target = Number(saved.target);
+          }
+        } catch (e) {}
+      }
+
+      if (!target || isNaN(target)) {
+        const mins = (est && est.temporizador_minutos) ? Number(est.temporizador_minutos) : 30;
+        target = Date.now() + (mins * 60 * 1000);
+      }
+
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        this.hours = '00';
+        this.minutes = '00';
+        this.seconds = '00';
+        return;
+      }
+
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+      this.hours = String(h).padStart(2, '0');
+      this.minutes = String(m).padStart(2, '0');
+      this.seconds = String(s).padStart(2, '0');
+    }
+  };
+}
+window.modalTimerCountdown = modalTimerCountdown;

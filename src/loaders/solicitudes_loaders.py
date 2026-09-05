@@ -954,6 +954,31 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                 v["documentos"] = docs_por_veh[v["id"]]
                 except Exception:
                     pass
+
+                # Asociar revisiones y visto bueno por solicitud
+                try:
+                    cursor.execute("""
+                        SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
+                               sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                               sr.motivo_rechazo, sr.observacion, sr.fecha_revision
+                        FROM solicitud_revisiones sr
+                        LEFT JOIN planta p ON sr.id_planta = p.id
+                        ORDER BY sr.fecha_revision ASC
+                    """)
+                    revs_db = cursor.fetchall() or []
+                    revs_por_sol = {}
+                    for r in revs_db:
+                        sid = r.get("id_solicitud")
+                        if sid not in revs_por_sol:
+                            revs_por_sol[sid] = []
+                        if r.get("fecha_revision"):
+                            r["fecha_revision"] = str(r["fecha_revision"])
+                        revs_por_sol[sid].append(r)
+                    
+                    for row in datos:
+                        row["revisiones"] = revs_por_sol.get(row["id"], [])
+                except Exception as e_rev:
+                    print(f"⚠️ Aviso al cargar revisiones en GET_ALL_solicitudes_bd: {e_rev}")
                             
                 print(f"📦 [LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
         

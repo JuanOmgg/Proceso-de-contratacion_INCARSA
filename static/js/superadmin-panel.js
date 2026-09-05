@@ -9,13 +9,32 @@ function superAdminPanel() {
     guardandoPermisos: false,
     hayCambiosPendientes: false,
     
-    // Modo mantenimiento
+    // Modo mantenimiento (General o Selectivo por Módulos)
     mantenimiento: {
       activo: false,
+      tipo: 'general', // 'general' o 'modulos'
+      modulos: [],     // slugs de módulos en mantenimiento
       mensaje: 'Estamos realizando labores de mantenimiento y optimización en la plataforma. El servicio se reanudará en breve.',
       tiempo: 'Disponible en aproximadamente 30 minutos',
+      temporizador_minutos: 30,
+      temporizador_fin: null,
       updated_at: null
     },
+
+    listaModulosSistema: [
+      { id: 'dashboard', nombre: 'Dashboard y Estadísticas', icono: 'fa-gauge-high', color: 'text-cyan-400' },
+      { id: 'solicitudes', nombre: 'Listado de Solicitudes', icono: 'fa-file-invoice', color: 'text-amber-400' },
+      { id: 'nueva_solicitud', nombre: 'Nueva Solicitud', icono: 'fa-file-circle-plus', color: 'text-emerald-400' },
+      { id: 'usuarios', nombre: 'Listado de Usuarios', icono: 'fa-users', color: 'text-blue-400' },
+      { id: 'nuevo_usuario', nombre: 'Nuevo Usuario', icono: 'fa-user-plus', color: 'text-indigo-400' },
+      { id: 'plantas', nombre: 'Plantas y Zonas', icono: 'fa-building', color: 'text-violet-400' },
+      { id: 'contratistas', nombre: 'Empresas Contratistas', icono: 'fa-id-card-clip', color: 'text-orange-400' },
+      { id: 'vehiculos', nombre: 'Vehículos y Maquinaria', icono: 'fa-truck-front', color: 'text-teal-400' },
+      { id: 'personas', nombre: 'Directorio de Personas', icono: 'fa-person', color: 'text-pink-400' },
+      { id: 'procesamiento', nombre: 'Procesamiento de Solicitudes', icono: 'fa-diagram-project', color: 'text-yellow-400' },
+      { id: 'antecedentes', nombre: 'Verificación de Antecedentes', icono: 'fa-magnifying-glass-chart', color: 'text-sky-400' },
+      { id: 'revision_solicitud', nombre: 'Revisión y Aprobación', icono: 'fa-clipboard-check', color: 'text-emerald-400' }
+    ],
 
     // Gestión de Permisos
     roles: [],
@@ -41,6 +60,46 @@ function superAdminPanel() {
         const nombreHumano = this.formatoModulo(m).toLowerCase();
         return m.toLowerCase().includes(q) || nombreHumano.includes(q);
       });
+    },
+
+    // Total de módulos actualmente seleccionados para mantenimiento
+    get totalModulosMantenimiento() {
+      return (this.mantenimiento.modulos || []).length;
+    },
+
+    isModuloEnMantenimiento(modId) {
+      return (this.mantenimiento.modulos || []).includes(modId);
+    },
+
+    toggleModuloMantenimiento(modId) {
+      if (!Array.isArray(this.mantenimiento.modulos)) {
+        this.mantenimiento.modulos = [];
+      }
+      const idx = this.mantenimiento.modulos.indexOf(modId);
+      if (idx >= 0) {
+        this.mantenimiento.modulos.splice(idx, 1);
+      } else {
+        this.mantenimiento.modulos.push(modId);
+      }
+      this.mantenimiento.modulos = [...this.mantenimiento.modulos];
+    },
+
+    seleccionarTodosModulosMantenimiento(activar) {
+      if (activar) {
+        this.mantenimiento.modulos = this.listaModulosSistema.map(m => m.id);
+      } else {
+        this.mantenimiento.modulos = [];
+      }
+    },
+
+    setTemporizadorPreset(minutos) {
+      this.mantenimiento.temporizador_minutos = minutos;
+      if (minutos < 60) {
+        this.mantenimiento.tiempo = `Disponible en aproximadamente ${minutos} minutos`;
+      } else {
+        const horas = Math.round((minutos / 60) * 10) / 10;
+        this.mantenimiento.tiempo = `Disponible en aproximadamente ${horas} hora${horas > 1 ? 's' : ''}`;
+      }
     },
 
     async init() {
@@ -78,8 +137,12 @@ function superAdminPanel() {
         if (res.ok) {
           const data = await res.json();
           this.mantenimiento.activo = !!data.activo;
+          this.mantenimiento.tipo = data.tipo || 'general';
+          this.mantenimiento.modulos = Array.isArray(data.modulos) ? data.modulos : [];
           if (data.mensaje) this.mantenimiento.mensaje = data.mensaje;
           if (data.tiempo) this.mantenimiento.tiempo = data.tiempo;
+          if (data.temporizador_minutos !== undefined) this.mantenimiento.temporizador_minutos = data.temporizador_minutos;
+          if (data.temporizador_fin !== undefined) this.mantenimiento.temporizador_fin = data.temporizador_fin;
           this.mantenimiento.updated_at = data.updated_at;
         }
       } catch (err) {
@@ -89,18 +152,48 @@ function superAdminPanel() {
 
     async toggleMantenimiento(nuevoEstado) {
       const activar = nuevoEstado !== undefined ? nuevoEstado : !this.mantenimiento.activo;
-      const titulo = activar ? '¿Activar Modo Mantenimiento (HTTP 503)?' : '¿Reanudar servicio y desactivar mantenimiento?';
-      const texto = activar 
-        ? 'Todos los usuarios que no sean SUPERADMIN verán la pantalla de mantenimiento (503) y no podrán interactuar con el sistema.'
-        : 'Todos los usuarios volverán a tener acceso normal de acuerdo con sus roles y permisos.';
+      const esGeneral = this.mantenimiento.tipo === 'general';
+      const cantModulos = (this.mantenimiento.modulos || []).length;
+
+      if (activar && !esGeneral && cantModulos === 0) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin módulos seleccionados',
+            text: 'Has seleccionado el modo por módulos, pero no has marcado ningún módulo para poner en mantenimiento. Marca al menos un módulo o cambia a modo General.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+
+      const titulo = activar 
+        ? (esGeneral ? '¿Activar Mantenimiento GENERAL (HTTP 503)?' : `¿Activar Mantenimiento en ${cantModulos} Módulo(s)?`)
+        : '¿Reanudar servicio y desactivar mantenimiento?';
+
+      let textoDetalle = '';
+      if (activar) {
+        if (esGeneral) {
+          textoDetalle = 'Todo el sistema responderá con Error 503 para los usuarios estándar. Tú como SUPERADMIN conservarás acceso pleno.';
+        } else {
+          const nombres = (this.mantenimiento.modulos || []).map(id => {
+            const f = this.listaModulosSistema.find(m => m.id === id);
+            return f ? f.nombre : id;
+          }).slice(0, 4).join(', ');
+          const resto = cantModulos > 4 ? ` y ${cantModulos - 4} más` : '';
+          textoDetalle = `Solo los módulos seleccionados (${nombres}${resto}) mostrarán la pantalla 503. El resto del sistema seguirá 100% operativo para todos.`;
+        }
+      } else {
+        textoDetalle = 'Todos los usuarios volverán a tener acceso normal a la plataforma de acuerdo con sus permisos.';
+      }
 
       if (typeof Swal !== 'undefined') {
         const confirmacion = await Swal.fire({
           title: titulo,
-          text: texto,
+          text: textoDetalle,
           icon: activar ? 'warning' : 'question',
           showCancelButton: true,
-          confirmButtonText: activar ? 'Sí, activar mantenimiento' : 'Sí, reanudar servicio',
+          confirmButtonText: activar ? 'Sí, aplicar mantenimiento' : 'Sí, reanudar servicio',
           cancelButtonText: 'Cancelar',
           confirmButtonColor: activar ? '#dc2626' : '#16a34a',
           cancelButtonColor: '#64748b'
@@ -118,20 +211,27 @@ function superAdminPanel() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             activo: activar,
+            tipo: this.mantenimiento.tipo,
+            modulos: this.mantenimiento.modulos,
             mensaje: this.mantenimiento.mensaje,
-            tiempo: this.mantenimiento.tiempo
+            tiempo: this.mantenimiento.tiempo,
+            temporizador_minutos: this.mantenimiento.temporizador_minutos
           })
         });
 
         const data = await res.json();
         if (res.ok && data.exito) {
           this.mantenimiento.activo = activar;
+          if (data.temporizador_fin) this.mantenimiento.temporizador_fin = data.temporizador_fin;
+
           if (typeof Swal !== 'undefined') {
             Swal.fire({
               icon: 'success',
               title: activar ? 'Modo Mantenimiento Activado' : 'Servicio Reanudado con Éxito',
-              text: activar ? 'El sistema ahora responde con código HTTP 503 para usuarios estándar.' : 'El sistema está operando con normalidad.',
-              timer: 2500,
+              text: activar 
+                ? (esGeneral ? 'El sistema completo está ahora en mantenimiento (503) para usuarios estándar.' : `Mantenimiento activado en ${cantModulos} módulo(s).`)
+                : 'La plataforma está operando con total normalidad.',
+              timer: 2800,
               showConfirmButton: false
             });
           }
@@ -142,6 +242,39 @@ function superAdminPanel() {
         console.error('Error guardando mantenimiento:', err);
         if (typeof Swal !== 'undefined') {
           Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Error de conexión.' });
+        }
+      } finally {
+        this.guardandoMantenimiento = false;
+      }
+    },
+
+    async guardarConfiguracionMantenimiento() {
+      this.guardandoMantenimiento = true;
+      try {
+        const res = await fetch('/api/v1/superadmin/mantenimiento', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            activo: this.mantenimiento.activo,
+            tipo: this.mantenimiento.tipo,
+            modulos: this.mantenimiento.modulos,
+            mensaje: this.mantenimiento.mensaje,
+            tiempo: this.mantenimiento.tiempo,
+            temporizador_minutos: this.mantenimiento.temporizador_minutos
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.exito) {
+          if (data.temporizador_fin) this.mantenimiento.temporizador_fin = data.temporizador_fin;
+          this.notificar('Configuración de mantenimiento y cronómetro guardada exitosamente.', 'success');
+        } else {
+          throw new Error(data.detail || 'Error al guardar la configuración');
+        }
+      } catch (err) {
+        console.error('Error guardando config mantenimiento:', err);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Error al guardar.' });
         }
       } finally {
         this.guardandoMantenimiento = false;

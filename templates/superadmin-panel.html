@@ -65,44 +65,49 @@
         </div>
 
         <!-- ============================================================
-           SECCIÓN 1: MODO MANTENIMIENTO GLOBAL (ERROR 503)
+           SECCIÓN 1: MODO MANTENIMIENTO AVANZADO (GENERAL Y POR MÓDULOS)
         ============================================================= -->
-        <section class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl relative overflow-hidden">
-          <!-- Efecto sutil de fondo -->
-          <div class="absolute -right-10 -bottom-10 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
+        <section class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl relative overflow-hidden space-y-6">
+          <!-- Efecto sutil de fondo neón -->
+          <div class="absolute -right-10 -bottom-10 w-72 h-72 rounded-full blur-3xl opacity-10 pointer-events-none"
             :class="mantenimiento.activo ? 'bg-rose-500' : 'bg-emerald-500'"></div>
 
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <!-- Encabezado y Switch Maestro -->
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 border-b border-[var(--border-color,#334155)] pb-6">
             <div class="space-y-2 max-w-2xl">
               <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                  :class="mantenimiento.activo ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shadow-md"
+                  :class="mantenimiento.activo ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'">
                   <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
-                  Control de Emergencia: Modo Mantenimiento (HTTP 503)
-                </h2>
+                <div>
+                  <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
+                    Control de Emergencia: Modo Mantenimiento (HTTP 503)
+                  </h2>
+                  <span class="text-xs text-amber-400 font-semibold" x-text="mantenimiento.tipo === 'general' ? '• Alcance: Todo el Sistema' : `• Alcance: Selectivo (${totalModulosMantenimiento} módulos)`"></span>
+                </div>
               </div>
               <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-                Cuando el mantenimiento está activado, <strong>todos los usuarios estándar</strong> que intenten acceder al sistema recibirán la pantalla de <strong>Error 503 (En Mantenimiento)</strong>. Como SUPERADMIN, tendrás acceso sin interrupciones para aplicar cambios y pruebas.
+                Define el alcance del mantenimiento: suspende el acceso a <strong>todo el sistema</strong> o únicamente a <strong>módulos específicos</strong>. Como <strong class="text-amber-400">SUPERADMIN</strong>, mantendrás acceso irrestricto sin interrupciones para realizar pruebas y cambios.
               </p>
             </div>
 
-            <!-- Switch de Activación Principal -->
-            <div class="flex flex-col sm:flex-row items-center gap-4 bg-[var(--table-header,#0f172a)]/60 p-4 rounded-xl border border-[var(--border-color,#334155)]">
+            <!-- Switch Maestro de Activación -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 bg-[var(--table-header,#0f172a)]/80 p-4 rounded-xl border border-[var(--border-color,#334155)] shadow-inner flex-shrink-0">
               <div class="text-right sm:text-left">
-                <span class="block text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Estado del switch</span>
-                <span class="text-sm font-bold"
-                  :class="mantenimiento.activo ? 'text-rose-400' : 'text-emerald-400'"
-                  x-text="mantenimiento.activo ? 'Mantenimiento ACTIVO' : 'Mantenimiento INACTIVO'">
+                <span class="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Estado del Interruptor</span>
+                <span class="text-sm font-bold flex items-center gap-1.5"
+                  :class="mantenimiento.activo ? 'text-rose-400' : 'text-emerald-400'">
+                  <i class="fa-solid fa-circle text-[8px]" :class="mantenimiento.activo ? 'animate-pulse text-rose-500' : 'text-emerald-500'"></i>
+                  <span x-text="mantenimiento.activo ? 'Mantenimiento ACTIVO' : 'Mantenimiento INACTIVO'"></span>
                 </span>
               </div>
               
               <button type="button"
                 @click="toggleMantenimiento(!mantenimiento.activo)"
                 :disabled="guardandoMantenimiento"
-                class="relative inline-flex h-8 w-16 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                :class="mantenimiento.activo ? 'bg-rose-600' : 'bg-slate-600'">
+                class="relative inline-flex h-8 w-16 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-md"
+                :class="mantenimiento.activo ? 'bg-rose-600' : 'bg-slate-700'">
                 <span class="sr-only">Toggle mantenimiento</span>
                 <span
                   aria-hidden="true"
@@ -112,45 +117,226 @@
             </div>
           </div>
 
-          <!-- Formulario de Configuración del Mantenimiento -->
-          <div class="mt-6 pt-6 border-t border-[var(--border-color,#334155)] grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
-                <i class="fa-regular fa-comment-dots text-amber-400"></i> Mensaje que verán los usuarios
-              </label>
-              <textarea
-                x-model="mantenimiento.mensaje"
-                rows="3"
-                class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
-                placeholder="Indica el motivo del mantenimiento..."></textarea>
+          <!-- SELECTOR DE ALCANCE: TABS INTERACTIVOS -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+              Seleccionar Alcance del Mantenimiento
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Opción 1: Todo el Sistema -->
+              <div 
+                @click="mantenimiento.tipo = 'general'"
+                class="p-4 rounded-xl border cursor-pointer transition-all duration-200 flex items-start gap-3.5 relative"
+                :class="mantenimiento.tipo === 'general' 
+                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/10' 
+                  : 'bg-[var(--table-header,#0f172a)]/50 border-[var(--border-color,#334155)] text-[var(--text-muted)] hover:border-slate-500 hover:text-[var(--text-primary)]'">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                  :class="mantenimiento.tipo === 'general' ? 'bg-amber-500 text-slate-900 shadow-md' : 'bg-slate-800 text-slate-400'">
+                  <i class="fa-solid fa-globe text-base"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-sm text-[var(--text-primary)]">🌐 Todo el Sistema (Mantenimiento General)</h3>
+                    <i class="fa-solid" :class="mantenimiento.tipo === 'general' ? 'fa-circle-dot text-amber-400' : 'fa-circle text-slate-600'"></i>
+                  </div>
+                  <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                    Bloquea completamente el acceso a usuarios no-superadmin en cualquier URL de la plataforma, respondiendo con pantalla HTTP 503 global.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Opción 2: Módulos Seleccionados -->
+              <div 
+                @click="mantenimiento.tipo = 'modulos'"
+                class="p-4 rounded-xl border cursor-pointer transition-all duration-200 flex items-start gap-3.5 relative"
+                :class="mantenimiento.tipo === 'modulos' 
+                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/10' 
+                  : 'bg-[var(--table-header,#0f172a)]/50 border-[var(--border-color,#334155)] text-[var(--text-muted)] hover:border-slate-500 hover:text-[var(--text-primary)]'">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                  :class="mantenimiento.tipo === 'modulos' ? 'bg-amber-500 text-slate-900 shadow-md' : 'bg-slate-800 text-slate-400'">
+                  <i class="fa-solid fa-layer-group text-base"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-sm text-[var(--text-primary)]">🧩 Por Módulos Seleccionados</h3>
+                    <i class="fa-solid" :class="mantenimiento.tipo === 'modulos' ? 'fa-circle-dot text-amber-400' : 'fa-circle text-slate-600'"></i>
+                  </div>
+                  <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                    Pone en mantenimiento solo los módulos específicos elegidos. El resto de módulos continúa funcionando al 100% con normalidad.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REJILLA DE MÓDULOS (Visible cuando se selecciona Módulos Específicos) -->
+          <div x-show="mantenimiento.tipo === 'modulos'" x-collapse class="space-y-4 pt-2">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl bg-[var(--table-header,#0f172a)]/80 border border-[var(--border-color,#334155)]">
+              <div>
+                <span class="text-xs font-bold text-[var(--text-primary)]">Módulos afectados por el mantenimiento</span>
+                <p class="text-[11px] text-[var(--text-muted)]">
+                  Selecciona los módulos que deseas suspender temporalmente.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold"
+                  :class="totalModulosMantenimiento > 0 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'"
+                  x-text="`${totalModulosMantenimiento} de ${listaModulosSistema.length} en mantenimiento`"></span>
+
+                <button type="button" @click="seleccionarTodosModulosMantenimiento(true)"
+                  class="px-2.5 py-1 text-xs rounded-lg font-medium text-amber-400 hover:bg-amber-500/10 border border-amber-500/30 transition-colors">
+                  Marcar Todos
+                </button>
+                <button type="button" @click="seleccionarTodosModulosMantenimiento(false)"
+                  class="px-2.5 py-1 text-xs rounded-lg font-medium text-slate-400 hover:bg-white/5 border border-slate-700 transition-colors">
+                  Desmarcar Todos
+                </button>
+              </div>
             </div>
 
-            <div class="flex flex-col justify-between">
+            <!-- Cuadrícula de Módulos con Switches Individuales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <template x-for="mod in listaModulosSistema" :key="mod.id">
+                <div 
+                  @click="toggleModuloMantenimiento(mod.id)"
+                  class="p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                  :class="isModuloEnMantenimiento(mod.id)
+                    ? 'bg-rose-500/10 border-rose-500/40 shadow-sm shadow-rose-500/10'
+                    : 'bg-[var(--table-header,#0f172a)]/40 border-[var(--border-color,#334155)] hover:border-slate-600'">
+                  
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
+                      :class="isModuloEnMantenimiento(mod.id) ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'">
+                      <i class="fa-solid" :class="mod.icono"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-xs font-semibold truncate text-[var(--text-primary)]" x-text="mod.nombre"></p>
+                      <span class="text-[10px] font-bold uppercase tracking-wider"
+                        :class="isModuloEnMantenimiento(mod.id) ? 'text-rose-400' : 'text-emerald-400'"
+                        x-text="isModuloEnMantenimiento(mod.id) ? 'En Mantenimiento' : 'Operativo'"></span>
+                    </div>
+                  </div>
+
+                  <!-- Switch individual -->
+                  <div class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                    :class="isModuloEnMantenimiento(mod.id) ? 'bg-rose-600' : 'bg-slate-700'">
+                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="isModuloEnMantenimiento(mod.id) ? 'translate-x-4' : 'translate-x-0'"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- MENSAJES Y CRONÓMETRO / TEMPORIZADOR VISUAL -->
+          <div class="pt-4 border-t border-[var(--border-color,#334155)] grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <!-- Mensaje para los usuarios (Col 6) -->
+            <div class="lg:col-span-6 space-y-3">
               <div>
                 <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
-                  <i class="fa-regular fa-clock text-amber-400"></i> Tiempo estimado de espera
+                  <i class="fa-regular fa-comment-dots text-amber-400"></i> Mensaje que verán los usuarios en la pantalla 503
+                </label>
+                <textarea
+                  x-model="mantenimiento.mensaje"
+                  rows="3"
+                  class="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                  placeholder="Indica el motivo del mantenimiento..."></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock text-amber-400"></i> Texto descriptivo del tiempo de espera
                 </label>
                 <input
                   type="text"
                   x-model="mantenimiento.tiempo"
-                  class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
+                  class="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
                   placeholder="Ej: Disponible en aproximadamente 30 minutos">
               </div>
+            </div>
 
-              <div class="mt-4 flex flex-wrap items-center gap-3">
+            <!-- Temporizador Visual y Cronómetro (Col 6) -->
+            <div class="lg:col-span-6 flex flex-col justify-between space-y-3">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <i class="fa-solid fa-stopwatch text-amber-400"></i> Cronómetro Visual de Cuenta Regresiva
+                  </label>
+                  <span class="text-[10px] text-amber-400/90 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    Solo Visual (Desactivación Manual)
+                  </span>
+                </div>
+
+                <!-- Presets rápidos de tiempo -->
+                <div class="flex flex-wrap items-center gap-1.5 mb-3">
+                  <button type="button" @click="setTemporizadorPreset(15)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
+                    :class="mantenimiento.temporizador_minutos === 15 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    15 min
+                  </button>
+                  <button type="button" @click="setTemporizadorPreset(30)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
+                    :class="mantenimiento.temporizador_minutos === 30 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    30 min
+                  </button>
+                  <button type="button" @click="setTemporizadorPreset(45)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
+                    :class="mantenimiento.temporizador_minutos === 45 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    45 min
+                  </button>
+                  <button type="button" @click="setTemporizadorPreset(60)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
+                    :class="mantenimiento.temporizador_minutos === 60 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    1 hora
+                  </button>
+                  <button type="button" @click="setTemporizadorPreset(120)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
+                    :class="mantenimiento.temporizador_minutos === 120 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    2 horas
+                  </button>
+                  <div class="flex items-center gap-1 text-xs">
+                    <input type="number" min="1" max="1440" x-model.number="mantenimiento.temporizador_minutos"
+                      class="w-16 px-2 py-1 rounded-lg text-xs bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-center font-mono">
+                    <span class="text-[10px] text-[var(--text-muted)]">minutos</span>
+                  </div>
+                </div>
+
+                <!-- Preview Digital del Cronómetro para SuperAdmin -->
+                <div class="p-3 rounded-xl bg-black/40 border border-amber-500/20 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                      <i class="fa-regular fa-clock text-xs"></i>
+                    </div>
+                    <div>
+                      <span class="block text-[10px] uppercase font-bold text-slate-400">Previsualización de contador</span>
+                      <span class="text-xs font-mono font-bold text-amber-400">
+                        <span x-text="String(Math.floor((mantenimiento.temporizador_minutos || 30) / 60)).padStart(2, '0')"></span> : 
+                        <span x-text="String((mantenimiento.temporizador_minutos || 30) % 60).padStart(2, '0')"></span> : 00
+                      </span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-slate-400 max-w-[200px] text-right">
+                    Orientativo para el usuario. No reactiva el sistema automáticamente.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="flex flex-wrap items-center gap-3 pt-2">
                 <button
                   type="button"
-                  @click="toggleMantenimiento(mantenimiento.activo)"
+                  @click="guardarConfiguracionMantenimiento()"
                   :disabled="guardandoMantenimiento"
-                  class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all shadow-lg shadow-amber-600/20 inline-flex items-center gap-2">
+                  class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all shadow-lg shadow-amber-600/20 inline-flex items-center gap-2">
                   <i class="fa-solid fa-floppy-disk text-xs"></i>
-                  <span x-text="guardandoMantenimiento ? 'Guardando...' : 'Guardar Mensajes'"></span>
+                  <span x-text="guardandoMantenimiento ? 'Guardando...' : 'Guardar Configuración'"></span>
                 </button>
 
                 <a
-                  href="/templates/errors/error-503.html"
+                  href="/superadmin/previsualizar-503"
                   target="_blank"
-                  class="px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-white/5 hover:bg-white/10 transition-colors inline-flex items-center gap-2">
+                  class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-white/5 hover:bg-white/10 transition-colors inline-flex items-center gap-2">
                   <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Previsualizar Pantalla 503
                 </a>
               </div>

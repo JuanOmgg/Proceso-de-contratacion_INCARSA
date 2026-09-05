@@ -579,6 +579,49 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   transform: translateY(0) scale(0.97);
 }
 
+/* Botones con estado de Visto Bueno / Revisión */
+.btn-visto-bueno-listo {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35), 0 0 10px rgba(5, 150, 105, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-listo:hover {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5), 0 0 16px rgba(52, 211, 153, 0.3) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.btn-visto-bueno-rechazado {
+  background: linear-gradient(135deg, #be123c 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(251, 113, 133, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-rechazado:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%) !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.5) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.btn-visto-bueno-parcial {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(192, 132, 252, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-parcial:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 100%) !important;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5) !important;
+  transform: translateY(-1.5px) !important;
+}
+
 .input-field {
   background: var(--surface);
   border: 1px solid var(--border-subtle);

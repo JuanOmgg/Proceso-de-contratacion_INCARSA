@@ -1,3 +1,4 @@
+import json
 import time
 from typing import Dict, List, Any, Optional
 from database import GET_conexion
@@ -5,67 +6,164 @@ from database import GET_conexion
 # Cache en memoria para verificación ultra-rápida del modo mantenimiento (5 segundos TTL)
 _MAINTENANCE_CACHE = {
     "activo": False,
+    "tipo": "general",
+    "modulos": [],
     "mensaje": "Estamos realizando labores de optimización y mantenimiento programado.",
     "tiempo": "30 minutos aprox.",
+    "temporizador_minutos": 30,
+    "temporizador_fin": None,
     "expires_at": 0
 }
 
 def GET_mantenimiento_status() -> Dict[str, Any]:
-    """Obtiene el estado del modo mantenimiento con caché en memoria."""
+    """Obtiene el estado del modo mantenimiento (general o por módulos) con caché en memoria."""
     global _MAINTENANCE_CACHE
     now = time.time()
     
     if now < _MAINTENANCE_CACHE["expires_at"]:
         return {
             "activo": _MAINTENANCE_CACHE["activo"],
+            "tipo": _MAINTENANCE_CACHE["tipo"],
+            "modulos": _MAINTENANCE_CACHE["modulos"],
             "mensaje": _MAINTENANCE_CACHE["mensaje"],
-            "tiempo": _MAINTENANCE_CACHE["tiempo"]
+            "tiempo": _MAINTENANCE_CACHE["tiempo"],
+            "temporizador_minutos": _MAINTENANCE_CACHE.get("temporizador_minutos"),
+            "temporizador_fin": _MAINTENANCE_CACHE.get("temporizador_fin")
         }
 
     try:
         with GET_conexion() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT clave, valor FROM sistema_config WHERE clave IN ('modo_mantenimiento', 'mantenimiento_mensaje', 'mantenimiento_tiempo')")
+                cur.execute("""
+                    SELECT clave, valor FROM sistema_config 
+                    WHERE clave IN (
+                        'modo_mantenimiento', 
+                        'mantenimiento_tipo',
+                        'mantenimiento_modulos',
+                        'mantenimiento_mensaje', 
+                        'mantenimiento_tiempo',
+                        'mantenimiento_temporizador_minutos',
+                        'mantenimiento_temporizador_fin'
+                    )
+                """)
                 rows = cur.fetchall()
                 config = {r["clave"]: r["valor"] for r in rows}
                 
                 activo = str(config.get("modo_mantenimiento", "0")).strip() in ("1", "true", "True")
-                mensaje = config.get("mantenimiento_mensaje", "Estamos realizando mejoras en el sistema.")
+                tipo = str(config.get("mantenimiento_tipo", "general")).strip().lower()
+                if tipo not in ("general", "modulos"):
+                    tipo = "general"
+
+                modulos_raw = config.get("mantenimiento_modulos", "[]")
+                try:
+                    modulos = json.loads(modulos_raw) if modulos_raw else []
+                    if not isinstance(modulos, list):
+                        modulos = []
+                except Exception:
+                    modulos = []
+
+                mensaje = config.get("mantenimiento_mensaje", "Estamos realizando labores de mantenimiento programado.")
                 tiempo = config.get("mantenimiento_tiempo", "30 minutos aprox.")
+
+                try:
+                    temporizador_minutos = int(config.get("mantenimiento_temporizador_minutos", 30))
+                except Exception:
+                    temporizador_minutos = 30
+
+                temporizador_fin_raw = config.get("mantenimiento_temporizador_fin")
+                temporizador_fin = None
+                if temporizador_fin_raw and str(temporizador_fin_raw).strip():
+                    try:
+                        temporizador_fin = int(float(str(temporizador_fin_raw).strip()))
+                    except Exception:
+                        temporizador_fin = None
 
                 _MAINTENANCE_CACHE = {
                     "activo": activo,
+                    "tipo": tipo,
+                    "modulos": modulos,
                     "mensaje": mensaje,
                     "tiempo": tiempo,
+                    "temporizador_minutos": temporizador_minutos,
+                    "temporizador_fin": temporizador_fin,
                     "expires_at": now + 5  # 5 segundos de cache
                 }
 
                 return {
                     "activo": activo,
+                    "tipo": tipo,
+                    "modulos": modulos,
                     "mensaje": mensaje,
-                    "tiempo": tiempo
+                    "tiempo": tiempo,
+                    "temporizador_minutos": temporizador_minutos,
+                    "temporizador_fin": temporizador_fin
                 }
     except Exception as e:
         print(f"❌ Error al consultar modo mantenimiento: {e}")
         return {
             "activo": False,
+            "tipo": "general",
+            "modulos": [],
             "mensaje": "Sistema operativo.",
-            "tiempo": ""
+            "tiempo": "",
+            "temporizador_minutos": 0,
+            "temporizador_fin": None
         }
 
-def SET_mantenimiento_status(activo: bool, mensaje: Optional[str] = None, tiempo: Optional[str] = None) -> Dict[str, Any]:
-    """Activa o desactiva el modo mantenimiento e invalida el caché."""
+def SET_mantenimiento_status(
+    activo: bool, 
+    tipo: Optional[str] = "general",
+    modulos: Optional[List[str]] = None,
+    mensaje: Optional[str] = None, 
+    tiempo: Optional[str] = None,
+    temporizador_minutos: Optional[int] = None,
+    temporizador_fin: Optional[str] = None
+) -> Dict[str, Any]:
+    """Activa o desactiva el modo mantenimiento (general o selectivo) e invalida el caché."""
     global _MAINTENANCE_CACHE
     valor_activo = "1" if activo else "0"
+    tipo_val = "modulos" if str(tipo).lower() == "modulos" else "general"
+
+    if modulos is None:
+        modulos_val = json.dumps([])
+    else:
+        modulos_val = json.dumps(list(set(modulos)))
+
+    # Si el mantenimiento está activo y se especifica temporizador_minutos:
+    # Guardamos el epoch timestamp en milisegundos absoluto.
+    if activo:
+        if temporizador_minutos is not None and int(temporizador_minutos) > 0:
+            fin_timestamp_ms = int((time.time() + (int(temporizador_minutos) * 60)) * 1000)
+            temporizador_fin = str(fin_timestamp_ms)
+    else:
+        # Si el mantenimiento se desactiva/cancela, limpiamos la fecha fin
+        temporizador_fin = None
 
     try:
         with GET_conexion() as conn:
             with conn.cursor() as cur:
-                cur.execute("UPDATE sistema_config SET valor = %s WHERE clave = 'modo_mantenimiento'", (valor_activo,))
+                valores_a_guardar = [
+                    ("modo_mantenimiento", valor_activo, "Estado del modo mantenimiento (0=inactivo, 1=activo)"),
+                    ("mantenimiento_tipo", tipo_val, "Alcance del mantenimiento (general o modulos)"),
+                    ("mantenimiento_modulos", modulos_val, "Lista JSON de modulos en mantenimiento"),
+                ]
+
                 if mensaje is not None:
-                    cur.execute("UPDATE sistema_config SET valor = %s WHERE clave = 'mantenimiento_mensaje'", (mensaje.strip(),))
+                    valores_a_guardar.append(("mantenimiento_mensaje", mensaje.strip(), "Mensaje del mantenimiento"))
                 if tiempo is not None:
-                    cur.execute("UPDATE sistema_config SET valor = %s WHERE clave = 'mantenimiento_tiempo'", (tiempo.strip(),))
+                    valores_a_guardar.append(("mantenimiento_tiempo", tiempo.strip(), "Tiempo estimado de espera"))
+                if temporizador_minutos is not None:
+                    valores_a_guardar.append(("mantenimiento_temporizador_minutos", str(temporizador_minutos), "Minutos del cronómetro visual"))
+                if temporizador_fin is not None or not activo:
+                    valores_a_guardar.append(("mantenimiento_temporizador_fin", temporizador_fin or "", "Fecha fin para cronómetro visual"))
+
+                for clave, val, desc in valores_a_guardar:
+                    cur.execute("""
+                        INSERT INTO sistema_config (clave, valor, descripcion)
+                        VALUES (%s, %s, %s)
+                        ON DUPLICATE KEY UPDATE valor = VALUES(valor), descripcion = VALUES(descripcion)
+                    """, (clave, val, desc))
+
                 conn.commit()
 
         # Invalidar cache de inmediato

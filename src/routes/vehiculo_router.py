@@ -2,10 +2,11 @@ import os
 import shutil
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Depends
 
 from src.utils.file_manager import guardar_documento_seguro
 from src.schemas.vehiculo_schema import VehiculoInput, VehiculoUpdate
+from src.utils.security import get_current_user, require_permission
 from src.services.vehiculo import (
     CREATE_vehiculo as service_create_vehiculo,
     GET_ALL_vehiculos as service_get_all_vehiculos,
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/api/v1/vehiculos", tags=["Vehículos"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def CREATE_vehiculo_endpoint(payload: VehiculoInput):
+def CREATE_vehiculo_endpoint(payload: VehiculoInput, current_user: dict = Depends(require_permission("vehiculos", "crear"))):
     print("🚗 [POST] Creando nuevo vehículo...")
     resultado = service_create_vehiculo(payload)
 
@@ -36,7 +37,7 @@ def CREATE_vehiculo_endpoint(payload: VehiculoInput):
 @router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_vehiculos_endpoint():
+def GET_ALL_vehiculos_endpoint(current_user: dict = Depends(get_current_user)):
     print("🔍 [GET] Consultando lista de vehículos...")
     resultado = service_get_all_vehiculos()
 
@@ -50,7 +51,7 @@ def GET_ALL_vehiculos_endpoint():
 
 
 @router.get("/{vehiculo_id}", status_code=status.HTTP_200_OK)
-def GET_vehiculo_endpoint(vehiculo_id: int):
+def GET_vehiculo_endpoint(vehiculo_id: int, current_user: dict = Depends(get_current_user)):
     print(f"🔍 [GET] Consultando vehículo #{vehiculo_id}...")
     resultado = service_get_vehiculo_by_id(vehiculo_id)
 
@@ -64,8 +65,9 @@ def GET_vehiculo_endpoint(vehiculo_id: int):
 
 
 @router.patch("/{vehiculo_id}", status_code=status.HTTP_200_OK)
-def UPDATE_vehiculo_endpoint(vehiculo_id: int, payload: VehiculoUpdate):
-    print(f"📝 [PATCH] Actualizando vehículo #{vehiculo_id}...")
+@router.put("/{vehiculo_id}", status_code=status.HTTP_200_OK)
+def UPDATE_vehiculo_endpoint(vehiculo_id: int, payload: VehiculoUpdate, current_user: dict = Depends(require_permission("vehiculos", "editar"))):
+    print(f"📝 [PATCH/PUT] Actualizando vehículo #{vehiculo_id}...")
     resultado = service_update_vehiculo(vehiculo_id, payload)
 
     if not resultado.get("exito"):
@@ -75,13 +77,16 @@ def UPDATE_vehiculo_endpoint(vehiculo_id: int, payload: VehiculoUpdate):
         )
 
     return {
+        "exito": True,
         "estado": "success",
         "mensaje": resultado.get("mensaje"),
+        "datos": resultado.get("data"),
+        "data": resultado.get("data"),
     }
 
 
 @router.delete("/{vehiculo_id}", status_code=status.HTTP_200_OK)
-def DELETE_vehiculo_endpoint(vehiculo_id: int):
+def DELETE_vehiculo_endpoint(vehiculo_id: int, current_user: dict = Depends(require_permission("vehiculos", "eliminar"))):
     print(f"🗑️ [DELETE] Eliminando vehículo #{vehiculo_id}...")
     resultado = service_delete_vehiculo(vehiculo_id)
 
@@ -102,6 +107,7 @@ async def SUBIR_documento_vehiculo_endpoint(
     vehiculo_id: int,
     file: UploadFile = File(...),
     tipo_documento: str = Form("soat"),
+    current_user: dict = Depends(get_current_user),
 ):
     # 1. Verificar si el vehículo existe
     vehiculo = service_get_vehiculo_by_id(vehiculo_id)

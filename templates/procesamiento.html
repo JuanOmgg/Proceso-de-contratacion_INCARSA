@@ -191,13 +191,28 @@
                 </template>
               </div>
 
-              <!-- Botón de acción: Revisar Expediente -->
+              <!-- Botón de acción: Revisar Expediente con cambio de estilo según Visto Bueno -->
               <div class="mt-5 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
-                <span class="text-[11px] text-[var(--text-muted)] font-mono font-bold" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-[11px] text-[var(--text-muted)] font-mono font-bold" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
+                  <span x-show="getEstadoRevisionUsuario(solicitud) === 'aprobado'"
+                    class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-md"
+                    title="Ya diste tu visto bueno a esta solicitud">
+                    <i class="fa-solid fa-check text-[9px]"></i> Visto Bueno
+                  </span>
+                  <span x-show="getEstadoRevisionUsuario(solicitud) === 'rechazado'"
+                    class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-md"
+                    title="Dictamen de rechazo emitido">
+                    <i class="fa-solid fa-xmark text-[9px]"></i> Rechazado
+                  </span>
+                </div>
+
                 <a :href="'/solicitudes/revision/' + (solicitud.codigo || solicitud.id)" 
-                  class="btn-signal text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all">
-                  <i class="fa-solid fa-clipboard-check text-[11px]"></i>
-                  <span>Revisar Expediente</span>
+                  class="text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none"
+                  :class="getBotonRevisionClase(solicitud)"
+                  :title="getEstadoRevisionUsuario(solicitud) === 'aprobado' ? 'Ya has revisado y otorgado visto bueno. Clic para ver expediente.' : 'Clic para revisar expediente y emitir dictamen'">
+                  <i :class="getBotonRevisionIcono(solicitud) + ' text-[11px]'"></i>
+                  <span x-text="getBotonRevisionTexto(solicitud)"></span>
                 </a>
               </div>
             </div>

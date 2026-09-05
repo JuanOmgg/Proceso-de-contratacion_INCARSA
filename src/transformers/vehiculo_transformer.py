@@ -103,11 +103,22 @@ def TRANSFORMER_vehiculo(datos_raw: Dict[str, Any]) -> Dict[str, Any]:
         or datos_raw.get("documentos_ids")
         or []
     )
+    docs_limpios = limpiar_documentos_vehiculo(docs_raw)
+
+    licencia_doc = str(datos_raw.get("licencia_doc") or "").strip()
+    if licencia_doc and not any(d.get("tipo_doc", "").lower().startswith("licencia") for d in docs_limpios):
+        docs_limpios.append({
+            "tipo_doc": "licencia",
+            "nom_documento": licencia_doc,
+            "nombre_archivo": licencia_doc
+        })
 
     return {
         "tipo": str(datos_raw.get("tipo") or "").strip().upper(),
         "placa": FORMATEAR_PLACA(datos_raw.get("placa")),
-        "documentos": limpiar_documentos_vehiculo(docs_raw),
+        "conductor": str(datos_raw.get("conductor") or "").strip(),
+        "licencia_doc": licencia_doc,
+        "documentos": docs_limpios,
     }
 
 
@@ -123,13 +134,33 @@ def TRANSFORMER_vehiculo_patch(datos_raw: Dict[str, Any]) -> Dict[str, Any]:
     if "placa" in datos_raw and datos_raw["placa"] is not None:
         vehiculo_limpio["placa"] = FORMATEAR_PLACA(datos_raw["placa"])
 
+    if "conductor" in datos_raw and datos_raw["conductor"] is not None:
+        vehiculo_limpio["conductor"] = str(datos_raw["conductor"]).strip()
+
+    if "licencia_doc" in datos_raw and datos_raw["licencia_doc"] is not None:
+        vehiculo_limpio["licencia_doc"] = str(datos_raw["licencia_doc"]).strip()
+
     if "documentos" in datos_raw or "documentos_ids" in datos_raw:
         docs_raw = (
             datos_raw.get("documentos")
             if "documentos" in datos_raw
             else datos_raw.get("documentos_ids")
         )
-        vehiculo_limpio["documentos"] = limpiar_documentos_vehiculo(docs_raw)
+        docs_limpios = limpiar_documentos_vehiculo(docs_raw)
+        if vehiculo_limpio.get("licencia_doc") and not any(d.get("tipo_doc", "").lower().startswith("licencia") for d in docs_limpios):
+            docs_limpios.append({
+                "tipo_doc": "licencia",
+                "nom_documento": vehiculo_limpio["licencia_doc"],
+                "nombre_archivo": vehiculo_limpio["licencia_doc"]
+            })
+        vehiculo_limpio["documentos"] = docs_limpios
+    elif vehiculo_limpio.get("licencia_doc"):
+        # Si se pasó licencia_doc pero no la lista de documentos, asegurar que se actualice la licencia
+        vehiculo_limpio["documentos"] = [{
+            "tipo_doc": "licencia",
+            "nom_documento": vehiculo_limpio["licencia_doc"],
+            "nombre_archivo": vehiculo_limpio["licencia_doc"]
+        }]
 
     return vehiculo_limpio
 
