@@ -178,7 +178,9 @@ function solicitudWizard() {
       fechaSalida: "", // Fecha de finalización en formato YYYY-MM-DD
       nivelRiesgo: "", // "Bajo" | "Medio" | "Alto"
       actividad: "", // Descripción detallada de las labores a ejecutar
-      diligenciadoPor: "Juan Prieto" // Nombre del usuario autenticado
+      diligenciadoPor: "Juan Prieto", // Nombre del usuario autenticado
+      estado: "ENVIADO", // Estado editable por SUPERADMIN en modo edición
+      codigo: "" // Código de radicado en modo edición
     },
     aceptaVeracidad: false, // Checkbox de confirmación y veracidad en el Paso 4
 
@@ -270,6 +272,24 @@ function solicitudWizard() {
 
     solicitudOriginal: null,
 
+    estadoClass(estado) {
+      const map = {
+        "ENVIADO": "status-enviado",
+        "EN REVISIÓN": "status-revision",
+        "EN REVISION": "status-revision",
+        "POR APROBAR": "status-aprobar",
+        "APROBADO": "status-aprobado",
+        "PRE-APROBADO": "status-aprobado",
+        "RECHAZADO": "status-rechazado"
+      };
+      return map[(estado || "").toUpperCase()] || "status-enviado";
+    },
+
+    get esSuperAdmin() {
+      const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+      return (miSesion?.rol || "").trim().toUpperCase() === "SUPERADMIN";
+    },
+
     /**
      * Si la URL incluye ?edit=ID, busca la solicitud en la API, localStorage o MOCK y precarga el formulario
      */
@@ -342,8 +362,9 @@ function solicitudWizard() {
         const esSuper = (miRol === "SUPERADMIN");
         const estadoSol = String(found.estado || "").trim().toUpperCase();
 
+        // Si NO es SuperAdmin, solo puede editar si la solicitud está en estado 'ENVIADO'
         if (!esSuper && estadoSol !== "ENVIADO") {
-          console.warn(`Acceso restringido: La solicitud ${editParam} está en estado '${estadoSol}' y solo puede editarse en estado 'ENVIADO' o por SUPERADMIN.`);
+          console.warn(`Acceso restringido: La solicitud ${editParam} está en estado '${estadoSol}'. Solo puede ser editada en estado 'ENVIADO', o por un usuario SUPERADMIN.`);
           if (typeof alert === "function") {
             alert(`La solicitud se encuentra en estado "${estadoSol}". Solo puede ser editada mientras esté en estado "ENVIADO", o por un usuario SUPERADMIN.`);
           }
@@ -486,6 +507,8 @@ function solicitudWizard() {
       this.form.nivelRiesgo = found.nivel_de_riesgo || found.nivelRiesgo || found.riesgo || "Bajo";
       this.form.actividad = found.actividad || "";
       this.form.diligenciadoPor = found.diligenciador || found.diligenciado_por || found.diligenciadoPor || "Juan Prieto";
+      this.form.estado = (found.estado || "ENVIADO").toUpperCase();
+      this.form.codigo = found.codigo || found.codigo_radicado || "";
 
       // 5. Personas
       let listaPersonas = [];
@@ -1775,6 +1798,7 @@ function solicitudWizard() {
       const payloadApi = {
         codigo_radicado: this.form.codigo || undefined,
         observaciones: this.form.observaciones || undefined,
+        estado: (this.isEdit && this.esSuperAdmin) ? (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO") : undefined,
         empresa_origen: empresaOrigenId,
         diligenciado_por: diligenciadorId,
         nivel_de_riesgo: this.form.nivelRiesgo || "Bajo",
@@ -1817,7 +1841,7 @@ function solicitudWizard() {
             const idx = guardadas.findIndex(s => String(s.id) === String(this.editId));
             const solicitudActualizada = {
               id: this.editId,
-              estado: this.solicitudOriginal?.estado || "ENVIADO",
+              estado: this.form.estado || this.solicitudOriginal?.estado || "ENVIADO",
               contratista: this.form.contratista,
               empresaOrigen: this.empresaNombre(this.form.empresas[0]),
               plantas: plantasIds,
@@ -1838,6 +1862,27 @@ function solicitudWizard() {
             localStorage.setItem("incarsa_solicitudes_creadas", JSON.stringify(guardadas));
           } catch (e) {}
 
+          // Sincronizar almacenamiento local de revisiones según nuevo estado
+          try {
+            const storageKeyRev = `incarsa_revisiones_${this.editId}`;
+            const nuevoEstado = String(this.form.estado || "").trim().toUpperCase();
+            if (["EN REVISIÓN", "EN REVISION", "ENVIADO"].includes(nuevoEstado)) {
+              localStorage.removeItem(storageKeyRev);
+            } else if (nuevoEstado === "POR APROBAR") {
+              const dataRev = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+              if (dataRev) {
+                if (Array.isArray(dataRev)) {
+                  const filtradas = dataRev.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  localStorage.setItem(storageKeyRev, JSON.stringify(filtradas));
+                } else if (Array.isArray(dataRev.historial)) {
+                  dataRev.historial = dataRev.historial.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  if (dataRev.roles) delete dataRev.roles["SCR"];
+                  localStorage.setItem(storageKeyRev, JSON.stringify(dataRev));
+                }
+              }
+            }
+          } catch (e) {}
+
           this.submitted = true;
           setTimeout(() => {
             window.location.href = "/solicitudes";
@@ -1851,7 +1896,7 @@ function solicitudWizard() {
             const idx = guardadas.findIndex(s => String(s.id) === String(this.editId));
             const solicitudActualizada = {
               id: this.editId,
-              estado: this.solicitudOriginal?.estado || "ENVIADO",
+              estado: this.form.estado || this.solicitudOriginal?.estado || "ENVIADO",
               contratista: this.form.contratista,
               empresaOrigen: this.empresaNombre(this.form.empresas[0]),
               plantas: plantasIds,
@@ -1870,6 +1915,26 @@ function solicitudWizard() {
               guardadas.unshift(solicitudActualizada);
             }
             localStorage.setItem("incarsa_solicitudes_creadas", JSON.stringify(guardadas));
+          } catch (e) {}
+
+          try {
+            const storageKeyRev = `incarsa_revisiones_${this.editId}`;
+            const nuevoEstado = String(this.form.estado || "").trim().toUpperCase();
+            if (["EN REVISIÓN", "EN REVISION", "ENVIADO"].includes(nuevoEstado)) {
+              localStorage.removeItem(storageKeyRev);
+            } else if (nuevoEstado === "POR APROBAR") {
+              const dataRev = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+              if (dataRev) {
+                if (Array.isArray(dataRev)) {
+                  const filtradas = dataRev.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  localStorage.setItem(storageKeyRev, JSON.stringify(filtradas));
+                } else if (Array.isArray(dataRev.historial)) {
+                  dataRev.historial = dataRev.historial.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  if (dataRev.roles) delete dataRev.roles["SCR"];
+                  localStorage.setItem(storageKeyRev, JSON.stringify(dataRev));
+                }
+              }
+            }
           } catch (e) {}
 
           this.submitted = true;

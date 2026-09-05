@@ -492,9 +492,12 @@ function revisionSolicitudApp() {
       let listaVehiculos = [];
       if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
         listaVehiculos = s.vehiculos.split('###').map(v => {
-          const [id, tipo, placa, licencia] = v.split('|||');
+          const [id, tipo, placa, licencia, autorizado, motivo_rechazo] = v.split('|||');
           return {
             id, tipo: tipo || "Vehículo", placa, licencia,
+            licencia_doc: licencia || "—",
+            autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+            motivo_rechazo: motivo_rechazo || "",
             documentos: [
               { tipo_doc: "soat", nombre_archivo: `SOAT_${placa || 'DOC'}.pdf` },
               { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${placa || 'DOC'}.pdf` },
@@ -509,6 +512,9 @@ function revisionSolicitudApp() {
           tipo: v.tipo || "Vehículo",
           placa: v.placa || "—",
           licencia: v.licencia_doc || v.licencia || "—",
+          licencia_doc: v.licencia_doc || v.licencia || "—",
+          autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
+          motivo_rechazo: v.motivo_rechazo || v.motivo || "",
           documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
             id: d.id || dIdx,
             tipo_doc: d.tipo_doc || "documento",
@@ -520,6 +526,25 @@ function revisionSolicitudApp() {
           ]
         }));
       }
+
+      // Cargar autorizaciones individuales de vehículos persistidas en localStorage
+      try {
+        const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
+        const vehiculosGuardados = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
+        if (Array.isArray(vehiculosGuardados) && vehiculosGuardados.length > 0) {
+          listaVehiculos = listaVehiculos.map(v => {
+            const match = vehiculosGuardados.find(vg => String(vg.id) === String(v.id) || (vg.placa && vg.placa === v.placa));
+            if (match) {
+              return {
+                ...v,
+                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
+                motivo_rechazo: match.motivo_rechazo || ""
+              };
+            }
+            return v;
+          });
+        }
+      } catch (e) {}
 
       let listaPersonas = [];
       if (typeof s.personas === 'string' && s.personas.trim() !== '') {
@@ -639,6 +664,21 @@ function revisionSolicitudApp() {
 
     get totalPersonasDenegadas() {
       return this.solicitud?.personas?.filter(p => p.autorizado === false).length || 0;
+    },
+
+    // -------------------------------------------------------------
+    // Gestión de Autorización Individual de Vehículos
+    // -------------------------------------------------------------
+    get totalVehiculos() {
+      return this.solicitud?.vehiculos?.length || 0;
+    },
+
+    get totalVehiculosAutorizados() {
+      return this.solicitud?.vehiculos?.filter(v => v.autorizado === true).length || 0;
+    },
+
+    get totalVehiculosDenegados() {
+      return this.solicitud?.vehiculos?.filter(v => v.autorizado === false).length || 0;
     },
 
     get yaAproboRolActual() {
@@ -762,6 +802,91 @@ function revisionSolicitudApp() {
         }
       } catch (e) {
         console.warn("No se pudo guardar personas en storage:", e);
+      }
+    },
+
+    setAutorizacionVehiculo(vehiculo, estaAutorizado, motivo = "") {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
+      vehiculo.autorizado = estaAutorizado;
+      if (!estaAutorizado && motivo) {
+        vehiculo.motivo_rechazo = motivo;
+      } else if (estaAutorizado) {
+        vehiculo.motivo_rechazo = "";
+      }
+      this.persistirVehiculosEnStorage();
+      const placa = vehiculo.placa || "Vehículo";
+      this.mostrarToast(
+        estaAutorizado ? `✅ Vehículo [${placa}] ha sido autorizado` : `⛔ Acceso denegado a vehículo [${placa}]`,
+        estaAutorizado ? "success" : "info"
+      );
+    },
+
+    toggleAutorizacionVehiculo(vehiculo) {
+      if (!this.puedeEditarAutorizacion) return;
+      this.setAutorizacionVehiculo(vehiculo, !vehiculo.autorizado);
+    },
+
+    autorizarTodosVehiculos() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
+      if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      this.solicitud.vehiculos.forEach(v => {
+        v.autorizado = true;
+        v.motivo_rechazo = "";
+      });
+      this.persistirVehiculosEnStorage();
+      this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+    },
+
+    denegarTodosVehiculos() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
+      if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      this.solicitud.vehiculos.forEach(v => {
+        v.autorizado = false;
+      });
+      this.persistirVehiculosEnStorage();
+      this.mostrarToast("Todos los vehículos han sido marcados como No Autorizados", "info");
+    },
+
+    async persistirVehiculosEnStorage() {
+      if (!this.puedeEditarAutorizacion) return;
+      try {
+        const storageKey = `incarsa_solicitud_${this.solicitudId}_vehiculos`;
+        localStorage.setItem(storageKey, JSON.stringify(this.solicitud.vehiculos));
+
+        const locales = JSON.parse(localStorage.getItem("incarsa_solicitudes") || "[]");
+        const idx = locales.findIndex(s => String(s.id) === String(this.solicitudId));
+        if (idx > -1) {
+          locales[idx].vehiculos = this.solicitud.vehiculos;
+          localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
+        }
+
+        // Sincronizar con backend si existe
+        if (this.solicitudId && this.solicitud?.vehiculos) {
+          const payloadVehiculos = this.solicitud.vehiculos.map(v => ({
+            id: v.id,
+            id_vehiculo: v.id,
+            autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
+            motivo: v.motivo_rechazo || v.motivo || null,
+            licencia_doc: v.licencia_doc || v.licencia || 0
+          }));
+
+          fetch(`${API.solicitudes}/${this.solicitudId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vehiculos: payloadVehiculos })
+          }).catch(err => console.warn("Aviso al sincronizar vehículos en backend:", err.message));
+        }
+      } catch (e) {
+        console.warn("No se pudo guardar vehículos en storage:", e);
       }
     },
 
@@ -1009,6 +1134,9 @@ function revisionSolicitudApp() {
           nombre_revisor: nombreUsuario
         };
 
+        await this.persistirPersonasEnStorage();
+        await this.persistirVehiculosEnStorage();
+
         // Enviar a API Backend (usando solicitudId numérico o código)
         const targetId = this.solicitud?.id || this.solicitudId;
         const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
@@ -1069,6 +1197,15 @@ function revisionSolicitudApp() {
             id_persona: p.id,
             autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
             motivo: p.motivo_rechazo || p.motivo || null
+          }));
+        }
+        if (this.solicitud?.vehiculos && Array.isArray(this.solicitud.vehiculos)) {
+          payloadPatch.vehiculos = this.solicitud.vehiculos.map(v => ({
+            id: v.id,
+            id_vehiculo: v.id,
+            autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
+            motivo: v.motivo_rechazo || v.motivo || null,
+            licencia_doc: v.licencia_doc || v.licencia || 0
           }));
         }
 

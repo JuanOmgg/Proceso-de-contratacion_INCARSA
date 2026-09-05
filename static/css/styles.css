@@ -2307,6 +2307,24 @@ table td .inline-flex {
   color: #92400e !important;
 }
 
+:root:not(.dark) .revision-step-card.step-scr.is-rejected {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.14), inset 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-title {
+  color: #991b1b !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-subtitle {
+  color: #b91c1c !important;
+}
+
 :root:not(.dark) .revision-step-card.step-scr.is-locked {
   background: #f8fafc !important;
   border-color: #e2e8f0 !important;
@@ -2380,6 +2398,109 @@ table td .inline-flex {
 
 :root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-subtitle {
   color: #94a3b8 !important;
+}
+
+:root:not(.dark) .role-badge-sst {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+:root:not(.dark) .role-badge-gesco {
+  background: #f3e8ff !important;
+  color: #7e22ce !important;
+  border: 1px solid #d8b4fe !important;
+}
+
+:root:not(.dark) .role-badge-scr {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+}
+
+/* Tarjeta Dictamen SCR - Idéntica a step-scr en Modo Claro */
+:root:not(.dark) .dictamen-scr-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card .subitem-title {
+  color: #0f172a !important;
+}
+
+:root:not(.dark) .dictamen-scr-card .subitem-subtitle {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-aprobado {
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.14), inset 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-aprobado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-aprobado .subitem-icon {
+  color: #059669 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar {
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.14), inset 0 0 0 1px rgba(245, 158, 11, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar .subitem-icon {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-rechazado {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.14), inset 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-rechazado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-rechazado .subitem-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-bloqueado {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  opacity: 0.7 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-bloqueado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-bloqueado .subitem-icon {
+  color: #64748b !important;
+}
+
+/* Equipos de Cómputo Cards - Modo Claro */
+:root:not(.dark) .computo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root:not(.dark) .computo-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+:root:not(.dark) .computo-icon-box {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+:root:not(.dark) .computo-title {
+  color: #0f172a;
+}
+:root:not(.dark) .computo-serie-label {
+  color: #64748b;
+}
+:root:not(.dark) .computo-serie-val {
+  color: #334155;
 }
 
 /* Status pills en Modo Claro */
@@ -2944,6 +3065,196 @@ table td .inline-flex {
 .swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
   background: #e2e8f0 !important;
 }
+
+/* =========================================================
+   DICTÁMENES EN MODAL TICKET (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .ticket-dictamen-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-dictamen-item.is-aprobado {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.08);
+}
+:root:not(.dark) .ticket-dictamen-item.is-rechazado {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
+}
+:root:not(.dark) .ticket-dictamen-item.is-pendiente {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+:root:not(.dark) .ticket-revisor-name {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-planta-tag {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-fecha {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-obs {
+  color: #334155;
+  border-left-color: #22c55e;
+}
+:root:not(.dark) .ticket-rechazo {
+  color: #dc2626;
+  border-left-color: #ef4444;
+}
+
+/* Badges de rol en ticket */
+:root:not(.dark) .ticket-role-badge.role-sst {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+:root:not(.dark) .ticket-role-badge.role-gesco {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+:root:not(.dark) .ticket-role-badge.role-scr {
+  background: #fef9c3;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+/* =========================================================
+   ELEMENTOS INTERNOS DEL MODAL TICKET (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .ticket-section-title {
+  color: #475569;
+}
+:root:not(.dark) .ticket-empty-msg {
+  color: #94a3b8;
+}
+:root:not(.dark) .ticket-table-wrapper {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-th-row {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+:root:not(.dark) .ticket-tbody {
+  border-color: #f1f5f9;
+}
+:root:not(.dark) .ticket-tr {
+  border-bottom-color: #f1f5f9;
+}
+:root:not(.dark) .ticket-tr:hover {
+  background: #f8fafc;
+}
+:root:not(.dark) .ticket-td-primary {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-td-muted {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-td-code {
+  color: #0284c7;
+}
+:root:not(.dark) .ticket-td-text {
+  color: #334155;
+}
+:root:not(.dark) .ticket-status-auth {
+  color: #16a34a;
+}
+:root:not(.dark) .ticket-status-unauth {
+  color: #dc2626;
+}
+:root:not(.dark) .ticket-card-item {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-card-item:hover {
+  border-color: #cbd5e1;
+}
+:root:not(.dark) .ticket-placa-badge {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-card-title {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-card-sub {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-card-doc {
+  color: #334155;
+}
+:root:not(.dark) .ticket-card-error {
+  color: #dc2626;
+}
+
+/* =========================================================
+   PILLS DE ROLES DE USUARIO (MODO CLARO) - SIN PUNTO
+   ========================================================= */
+.status-usuario-rol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+.status-usuario-rol::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:root:not(.dark) .status-rol-admin {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+:root:not(.dark) .status-rol-gesco {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+:root:not(.dark) .status-rol-sst {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+:root:not(.dark) .status-rol-vigilante {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+:root:not(.dark) .status-rol-scr {
+  background: #ffe4e6;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+:root:not(.dark) .status-rol-documental {
+  background: #fdf2f8;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+}
+:root:not(.dark) .status-rol-default {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+
+
 
 
 

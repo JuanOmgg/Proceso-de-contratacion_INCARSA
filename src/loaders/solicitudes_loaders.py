@@ -407,7 +407,8 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 # 4. Obtener los vehículos asociados (vía tabla de rompimiento 'Veh_ingreso')
                 cursor.execute(
                     """
-                    SELECT v.id, v.tipo, v.placa, vi.licencia_doc
+                    SELECT v.id, v.tipo, v.placa, vi.licencia_doc,
+                           COALESCE(vi.autorizado, 1) AS autorizado, vi.motivo
                     FROM Veh_ingreso vi
                     INNER JOIN vehiculos v ON vi.id_vehiculo = v.id
                     WHERE vi.id_solicitud = %s
@@ -416,6 +417,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 vehiculos = cursor.fetchall() or []
                 for v in vehiculos:
+                    v["autorizado"] = bool(v.get("autorizado", True))
+                    v["motivo"] = v.get("motivo") or ""
+                    v["motivo_rechazo"] = v["motivo"]
                     lic = v.get("licencia_doc")
                     v["url_licencia"] = f"/uploads/documentos/vehiculos/{lic}" if lic else None
                     cursor.execute(
@@ -798,7 +802,9 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                 vh.id,
                                 vh.tipo,
                                 vh.placa,
-                                IFNULL(vi.licencia_doc, 0)
+                                IFNULL(vi.licencia_doc, 0),
+                                IFNULL(vi.autorizado, 1),
+                                IFNULL(vi.motivo, '')
                             )
                             SEPARATOR '###'
                         ) AS vehiculos,
@@ -887,12 +893,17 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                     except Exception:
                                         v_id = None
                                     lic_doc = partes[3].strip() if len(partes) > 3 and partes[3] else ""
+                                    aut_val = partes[4].strip() if len(partes) > 4 else "1"
+                                    mot_val = partes[5].strip() if len(partes) > 5 else ""
+                                    is_aut = False if aut_val in ('0', 'false', 'False', 0) else True
                                     v_list.append({
                                         'id': v_id,
                                         'tipo': partes[1] or None,
                                         'placa': partes[2] or None,
                                         'licencia_doc': lic_doc,
-                                        'licencia': lic_doc
+                                        'licencia': lic_doc,
+                                        'autorizado': is_aut,
+                                        'motivo': mot_val,
                                     })
                                 val_vehiculos = v_list
                         if isinstance(val_vehiculos, list):
@@ -1029,14 +1040,46 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, estado, observaciones FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, estado, observaciones FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
                 real_id = int(sol["id"])
                 estado_actual = str(sol.get("estado") or "").strip().upper()
+                nuevo_estado = str(campos.get("estado") or "").strip().upper() if "estado" in campos else None
+
+                # Lógica de transición de estados por SuperAdmin:
+                if nuevo_estado and nuevo_estado != estado_actual:
+                    # 1. Si el superadmin cambia el estado a revisión (o enviado), las aprobaciones hechas se desactivan
+                    if nuevo_estado in ("EN REVISIÓN", "EN REVISION", "ENVIADO"):
+                        print(f"🔄 [UPDATE] SuperAdmin cambió solicitud #{real_id} a '{nuevo_estado}'. Desactivando todas las aprobaciones emitidas...")
+                        cursor.execute("DELETE FROM solicitud_revisiones WHERE id_solicitud = %s", (real_id,))
+                        # Limpiar observaciones si eran de rechazo y no enviaron una nueva
+                        if "observaciones" not in campos:
+                            obs_actual = str(sol.get("observaciones") or "")
+                            if "[RECHAZADO" in obs_actual:
+                                campos["observaciones"] = ""
+
+                    # 2. Si pasa de APROBADO o RECHAZADO a 'POR APROBAR' (o cambia a 'POR APROBAR'):
+                    #    mantiene las aprobaciones de SST y GESCO, pero revierte la de SCR
+                    elif nuevo_estado == "POR APROBAR":
+                        print(f"🔄 [UPDATE] SuperAdmin cambió solicitud #{real_id} de '{estado_actual}' a 'POR APROBAR'. Manteniendo SST y GESCO y revirtiendo dictamen de SCR...")
+                        cursor.execute(
+                            "DELETE FROM solicitud_revisiones WHERE id_solicitud = %s AND UPPER(rol) = 'SCR'",
+                            (real_id,)
+                        )
+                        # Asegurar que SST y GESCO mantengan su aprobación si habían sido observadas
+                        cursor.execute(
+                            "UPDATE solicitud_revisiones SET decision = 'APROBADO', motivo_rechazo = NULL WHERE id_solicitud = %s AND UPPER(rol) IN ('SST', 'GESCO') AND decision = 'RECHAZADO'",
+                            (real_id,)
+                        )
+                        # Limpiar observación de rechazo si venía de RECHAZADO
+                        if "observaciones" not in campos and estado_actual == "RECHAZADO":
+                            obs_actual = str(sol.get("observaciones") or "")
+                            if "[RECHAZADO por SCR]" in obs_actual or "[RECHAZADO" in obs_actual:
+                                campos["observaciones"] = ""
 
                 # Extraer y limpiar subtablas / relaciones
                 personas = campos.pop("personas", None)
@@ -1069,28 +1112,27 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                             lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_personas_ids.split(",") if x.strip().isdigit()]
 
                     if isinstance(lista_p, list):
-                        # Si no está aprobada/rechazada, actualizar tabla ingresantes
-                        if estado_actual not in ("APROBADO", "RECHAZADO"):
-                            cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
-                            valores_ing = []
-                            for item_p in lista_p:
-                                if isinstance(item_p, dict):
-                                    p_id = item_p.get("id") or item_p.get("id_persona")
-                                    aut = item_p.get("autorizado", True)
-                                    aut_val = False if aut in (False, 0, "0", "false") else True
-                                    mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
-                                    if p_id and str(p_id).isdigit():
-                                        valores_ing.append((real_id, int(p_id), aut_val, mot))
-                                        resolved_personas_ids.append(int(p_id))
-                                elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
-                                    valores_ing.append((real_id, int(item_p), True, None))
-                                    resolved_personas_ids.append(int(item_p))
+                        # Actualizar tabla ingresantes sin importar el estado
+                        cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
+                        valores_ing = []
+                        for item_p in lista_p:
+                            if isinstance(item_p, dict):
+                                p_id = item_p.get("id") or item_p.get("id_persona")
+                                aut = item_p.get("autorizado", True)
+                                aut_val = False if aut in (False, 0, "0", "false") else True
+                                mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
+                                if p_id and str(p_id).isdigit():
+                                    valores_ing.append((real_id, int(p_id), aut_val, mot))
+                                    resolved_personas_ids.append(int(p_id))
+                            elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
+                                valores_ing.append((real_id, int(item_p), True, None))
+                                resolved_personas_ids.append(int(item_p))
 
-                            if valores_ing:
-                                cursor.executemany(
-                                    "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
-                                    valores_ing,
-                                )
+                        if valores_ing:
+                            cursor.executemany(
+                                "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
+                                valores_ing,
+                            )
 
                         if resolved_personas_ids:
                             campos["personas_ids"] = ",".join(map(str, resolved_personas_ids))
@@ -1124,48 +1166,56 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
 
                 # 3. Sincronizar vehículos / Veh_ingreso
                 if vehiculo is not None or raw_vehiculos_ids is not None:
-                    cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
-                    resolved_vids = []
-                    if vehiculo and isinstance(vehiculo, list):
-                        for v in vehiculo:
-                            id_v = None
-                            lic_doc = int(v.get("licencia_doc") or 0) if isinstance(v, dict) else 0
+                    if estado_actual not in ("APROBADO", "RECHAZADO"):
+                        cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                        resolved_vids = []
+                        if vehiculo and isinstance(vehiculo, list):
+                            for v in vehiculo:
+                                id_v = None
+                                lic_doc = 0
+                                aut_v = True
+                                mot_v = None
 
-                            if isinstance(v, (int, str)) and str(v).isdigit():
-                                id_v = int(v)
-                            elif isinstance(v, dict):
-                                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
-                                    id_v = int(v["id_vehiculo"])
-                                elif v.get("id") and str(v.get("id")).isdigit():
-                                    id_v = int(v["id"])
-                                elif v.get("placa"):
-                                    placa_norm = str(v.get("placa")).strip().upper()
-                                    tipo_norm = str(v.get("tipo", "Camioneta")).strip()
-                                    cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
-                                    vehi_existente = cursor.fetchone()
-                                    if vehi_existente:
-                                        id_v = vehi_existente["id"]
-                                    else:
-                                        cursor.execute(
-                                            "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
-                                            (tipo_norm, placa_norm),
-                                        )
-                                        id_v = cursor.lastrowid
+                                if isinstance(v, (int, str)) and str(v).isdigit():
+                                    id_v = int(v)
+                                elif isinstance(v, dict):
+                                    lic_doc = v.get("licencia_doc") or 0
+                                    aut = v.get("autorizado", True)
+                                    aut_v = False if aut in (False, 0, "0", "false") else True
+                                    mot_v = v.get("motivo") or v.get("motivo_rechazo") or None
 
-                            if id_v:
-                                resolved_vids.append(id_v)
-                                cursor.execute(
-                                    "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc) VALUES (%s, %s, %s)",
-                                    (real_id, id_v, lic_doc)
-                                )
+                                    if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
+                                        id_v = int(v["id_vehiculo"])
+                                    elif v.get("id") and str(v.get("id")).isdigit():
+                                        id_v = int(v["id"])
+                                    elif v.get("placa"):
+                                        placa_norm = str(v.get("placa")).strip().upper()
+                                        tipo_norm = str(v.get("tipo", "Camioneta")).strip()
+                                        cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
+                                        vehi_existente = cursor.fetchone()
+                                        if vehi_existente:
+                                            id_v = vehi_existente["id"]
+                                        else:
+                                            cursor.execute(
+                                                "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
+                                                (tipo_norm, placa_norm),
+                                            )
+                                            id_v = cursor.lastrowid
 
-                    if resolved_vids:
-                        campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
-                    elif raw_vehiculos_ids:
-                        if isinstance(raw_vehiculos_ids, list):
-                            campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
-                        elif isinstance(raw_vehiculos_ids, str):
-                            campos["vehiculos_ids"] = raw_vehiculos_ids
+                                if id_v:
+                                    resolved_vids.append(id_v)
+                                    cursor.execute(
+                                        "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo) VALUES (%s, %s, %s, %s, %s)",
+                                        (real_id, id_v, lic_doc, aut_v, mot_v)
+                                    )
+
+                        if resolved_vids:
+                            campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
+                        elif raw_vehiculos_ids:
+                            if isinstance(raw_vehiculos_ids, list):
+                                campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
+                            elif isinstance(raw_vehiculos_ids, str):
+                                campos["vehiculos_ids"] = raw_vehiculos_ids
 
                 # 4. Sincronizar equipos de cómputo
                 if eq_computo is not None:

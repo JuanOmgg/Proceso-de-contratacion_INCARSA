@@ -269,9 +269,18 @@
             </div>
 
             <!-- Fila Fecha Registro -->
-            <div class="py-2 border-b border-dashed border-[var(--paper-shadow)]">
-              <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-0.5">Fecha de registro</span>
-              <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="formatearFecha(personaDetalle?.fecha_creacion)"></span>
+            <div class="py-2 border-b border-dashed border-[var(--paper-shadow)] flex items-center justify-between">
+              <div>
+                <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-0.5">Fecha de registro</span>
+                <span class="text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar-check text-emerald-500 text-[11px]"></i>
+                  <span x-text="formatearFecha(personaDetalle?.fecha_creacion)"></span>
+                </span>
+              </div>
+              <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                x-show="personaDetalle?.fecha_creacion">
+                Registrado
+              </span>
             </div>
 
             <!-- Observaciones -->
@@ -370,6 +379,12 @@
               </span>
               <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
                 x-text="(personaDocs?.documentos?.length || 0) + ' archivos'"></span>
+              <template x-if="personaDocs?.fecha_creacion">
+                <span class="text-xs font-mono text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)] flex items-center gap-1">
+                  <i class="fa-regular fa-calendar-check text-emerald-500 text-[10px]"></i>
+                  <span x-text="'Registrado: ' + formatearFecha(personaDocs.fecha_creacion)"></span>
+                </span>
+              </template>
             </div>
           </div>
 
@@ -465,6 +480,12 @@
               </span>
               <span class="text-xs text-[var(--paper-muted)] font-mono font-bold bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
                 x-text="editandoId ? 'Actualización de datos' : 'Nuevo registro'"></span>
+              <template x-if="editandoId && form.fecha_creacion">
+                <span class="text-xs font-mono text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)] flex items-center gap-1">
+                  <i class="fa-regular fa-calendar-check text-emerald-500 text-[10px]"></i>
+                  <span x-text="'Creado: ' + formatearFecha(form.fecha_creacion)"></span>
+                </span>
+              </template>
             </div>
           </div>
 

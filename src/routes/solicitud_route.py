@@ -178,6 +178,26 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
             detail="No se enviaron campos para actualizar."
         )
 
+    # Restricciones de edición según rol y estado:
+    user_rol = str(current_user.get("rol", "")).strip().lower()
+    es_super = user_rol in ("superadmin", "super admin", "super_admin")
+
+    if not es_super:
+        # 1. Los usuarios sin rol SUPERADMIN no pueden cambiar el estado de la solicitud
+        if "estado" in new_updates:
+            del new_updates["estado"]
+
+        # 2. Solo pueden editar si la solicitud se encuentra en estado 'ENVIADO'
+        actual = GET_solicitud_bd(solicitud_id)
+        if actual.get("exito"):
+            estado_actual = str(actual.get("datos", {}).get("estado") or "").strip().upper()
+            if estado_actual != "ENVIADO":
+                print(f"🚫 [PATCH] Usuario con rol '{user_rol}' intentó editar la solicitud #{solicitud_id} en estado '{estado_actual}'. Solo SUPERADMIN puede editar fuera de 'ENVIADO'.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Acceso denegado: La solicitud se encuentra en estado '{estado_actual}'. Solo puede ser editada mientras esté en estado 'ENVIADO', o por un usuario con rol SUPERADMIN."
+                )
+
     print(f"⚙️ [TRANSFORMER] Aplicando transformaciones de PATCH para la solicitud #{solicitud_id}...")
     datos_transformados = transformar_solicitud_patch(new_updates)
 

@@ -314,27 +314,137 @@ function normalizarSolicitud(s) {
   let listaVehiculos = [];
   if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
     listaVehiculos = s.vehiculos.split('###').map(v => {
-      const [id, placa, marca, modelo, serie] = v.split('|||');
-      return { id, placa, marca, modelo, serie };
+      const partes = v.split('|||');
+      const id = partes[0];
+      const tipo = partes[1] || "Vehículo";
+      const placa = partes[2] || "—";
+      const licencia_doc = partes[3] || "";
+      const aut = partes[4];
+      const mot = partes[5] || "";
+      return {
+        id,
+        tipo,
+        placa,
+        licencia_doc,
+        licencia: licencia_doc,
+        autorizado: aut !== '0' && aut !== 0 && aut !== false && aut !== 'false',
+        motivo: mot
+      };
     });
-  } else if (Array.isArray(s.vehiculos)) {
-    listaVehiculos = s.vehiculos;
+  } else if (Array.isArray(s.vehiculos) || Array.isArray(s.vehiculo)) {
+    const rawV = Array.isArray(s.vehiculos) ? s.vehiculos : s.vehiculo;
+    listaVehiculos = rawV.map(v => ({
+      id: v.id || v.id_vehiculo,
+      tipo: v.tipo || "Vehículo",
+      placa: v.placa || "—",
+      conductor: v.conductor || "",
+      licencia_doc: v.licencia_doc || v.licencia || "",
+      licencia: v.licencia_doc || v.licencia || "",
+      autorizado: v.autorizado !== '0' && v.autorizado !== 0 && v.autorizado !== false && v.autorizado !== 'false',
+      motivo: v.motivo || v.motivo_rechazo || ""
+    }));
   }
+
+  try {
+    const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
+    const localVeh = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
+    if (Array.isArray(localVeh) && localVeh.length > 0) {
+      listaVehiculos = listaVehiculos.map(lv => {
+        const match = localVeh.find(v => String(v.id) === String(lv.id) || (v.placa && v.placa === lv.placa));
+        if (match) {
+          return {
+            ...lv,
+            autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
+            motivo: match.motivo_rechazo || match.motivo || lv.motivo || ""
+          };
+        }
+        return lv;
+      });
+    }
+  } catch (e) {}
   
   let listaPersonas = [];
-  if (typeof s.personas === 'string') {
-    try {
-      listaPersonas = JSON.parse(s.personas);
-    } catch (e) {
-      listaPersonas = [];
+  if (typeof s.personas === 'string' && s.personas.trim() !== '') {
+    if (s.personas.includes('|||') || s.personas.includes('###')) {
+      listaPersonas = s.personas.split('###').map(p => {
+        const parts = p.split('|||');
+        const id = parts[0];
+        const ap_nombre = parts[1];
+        const tipo_doc = parts[2];
+        const identificacion = parts[3];
+        const cargo = parts[4];
+        const autorizado = parts[5];
+        const motivo = parts[6] || "";
+        return {
+          id,
+          ap_nombre,
+          nombre: ap_nombre,
+          tipo_doc,
+          identificacion,
+          cargo,
+          autorizado: autorizado !== '0' && autorizado !== 0 && autorizado !== false && autorizado !== 'false',
+          motivo: motivo || ""
+        };
+      });
+    } else {
+      try {
+        listaPersonas = JSON.parse(s.personas);
+      } catch (e) {
+        listaPersonas = [];
+      }
     }
-  } else if (Array.isArray(s.personas)) {
-    listaPersonas = s.personas;
+  } else if (Array.isArray(s.personas) || Array.isArray(s.ingresantes)) {
+    const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
+    listaPersonas = rawP.map(p => ({
+      id: p.id,
+      ap_nombre: p.ap_nombre || `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.nombre || "Contratista",
+      nombre: p.nombre || p.ap_nombre || "Contratista",
+      tipo_doc: p.tipo_doc || "CC",
+      identificacion: p.identificacion || "—",
+      cargo: p.cargo || "Operario",
+      autorizado: p.autorizado !== '0' && p.autorizado !== 0 && p.autorizado !== false && p.autorizado !== 'false',
+      motivo: p.motivo || p.motivo_rechazo || ""
+    }));
+  }
+
+  try {
+    const storageKey = `incarsa_solicitud_${s.id}_personas`;
+    const localPersonas = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (Array.isArray(localPersonas) && localPersonas.length > 0) {
+      listaPersonas = listaPersonas.map(lp => {
+        const match = localPersonas.find(p => String(p.id) === String(lp.id) || (p.identificacion && p.identificacion === lp.identificacion));
+        if (match) {
+          return {
+            ...lp,
+            autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
+            motivo: match.motivo_rechazo || match.motivo || lp.motivo || ""
+          };
+        }
+        return lp;
+      });
+    }
+  } catch (e) {}
+
+  let listaRevisiones = [];
+  if (Array.isArray(s.revisiones)) {
+    listaRevisiones = s.revisiones;
+  } else {
+    try {
+      const storageKeyRev = `incarsa_revisiones_${s.id}`;
+      const guardado = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+      if (guardado) {
+        if (Array.isArray(guardado.historial)) {
+          listaRevisiones = guardado.historial;
+        } else if (Array.isArray(guardado)) {
+          listaRevisiones = guardado;
+        }
+      }
+    } catch (e) {}
   }
 
   const nombreEmpresaOrigen = s.nombre_empresa || s.empresa_origen || s.empresaOrigen || "INCARSA";
   const nombreContratista = s.nombre_emContratista || s.empresa_contratista || s.contratista || "—";
-  const diligenciadorNombre = s.diligenciador || s.diligenciadoPor || "Administrador";
+  const diligenciadorNombre = s.diligenciador || (typeof s.diligenciado_por === "string" ? s.diligenciado_por : null) || s.diligenciadoPor || "Administrador";
   const codigoVal = s.codigo || s.codigo_radicado || `RAD-${s.id}`;
 
   return {
@@ -363,7 +473,8 @@ function normalizarSolicitud(s) {
     is_active: s.is_active,
     vehiculos: listaVehiculos || [],
     computos: listaComputos || [],
-    personas: listaPersonas
+    personas: listaPersonas || [],
+    revisiones: listaRevisiones || []
   };
 }
 
@@ -467,12 +578,14 @@ function solicitudesTable() {
       if (typeof window.puedeEditarSolicitud === 'function') {
         return window.puedeEditarSolicitud(s);
       }
-      const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
-      const miRol = (sesion?.rol || '').trim().toUpperCase();
-      if (miRol === 'SUPERADMIN') return true;
-      if (!this.puedeAccion('dashboard', 'editar') && !this.puedeAccion('solicitudes', 'editar')) return false;
       if (!s) return false;
-      return String(s.estado || '').trim().toUpperCase() === 'ENVIADO';
+      const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
+      const miRol = (sesion?.rol || this.activeRole || '').trim().toUpperCase();
+      if (miRol === 'SUPERADMIN') return true;
+
+      if (!this.puedeAccion('dashboard', 'editar') && !this.puedeAccion('solicitudes', 'editar')) return false;
+      const est = String(s.estado || '').trim().toUpperCase();
+      return est === 'ENVIADO';
     },
 
     async init() {
@@ -527,6 +640,7 @@ function solicitudesTable() {
         "EN REVISION": "status-revision",
         "POR APROBAR": "status-aprobar",
         "APROBADO": "status-aprobado",
+        "PRE-APROBADO": "status-aprobado",
         "RECHAZADO": "status-rechazado"
       };
       return map[(estado || "").toUpperCase()] || "status-enviado";
@@ -570,7 +684,7 @@ function solicitudesTable() {
     },
 
     async openView(solicitud) {
-      this.selected = solicitud;
+      this.selected = normalizarSolicitud(solicitud);
       this.viewModalOpen = true;
 
       try {
@@ -578,38 +692,10 @@ function solicitudesTable() {
         if (res.ok) {
           const dataLive = await res.json();
           if (dataLive && (dataLive.id || dataLive.codigo)) {
-            let listaPersonas = dataLive.ingresantes || dataLive.personas || solicitud.personas || [];
-            try {
-              const storageKey = `incarsa_solicitud_${solicitud.id}_personas`;
-              const localPersonas = JSON.parse(localStorage.getItem(storageKey) || "null");
-              if (Array.isArray(localPersonas) && localPersonas.length > 0) {
-                listaPersonas = listaPersonas.map(lp => {
-                  const match = localPersonas.find(p => String(p.id) === String(lp.id) || (p.identificacion && p.identificacion === lp.identificacion));
-                  if (match) {
-                    return {
-                      ...lp,
-                      autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
-                      motivo: match.motivo_rechazo || match.motivo || lp.motivo || ""
-                    };
-                  }
-                  return lp;
-                });
-              }
-            } catch (e) {}
-
-            this.selected = {
+            this.selected = normalizarSolicitud({
               ...solicitud,
-              ...dataLive,
-              fecha_ingreso: formatearFechaCorta(dataLive.fecha_ingreso || dataLive.fecha_inicio || solicitud.fecha_ingreso),
-              fecha_salida: formatearFechaCorta(dataLive.fecha_salida || dataLive.fecha_fin || solicitud.fecha_salida),
-              fechaIngreso: formatearFechaCorta(dataLive.fecha_ingreso || dataLive.fecha_inicio || solicitud.fechaIngreso),
-              fechaSalida: formatearFechaCorta(dataLive.fecha_salida || dataLive.fecha_fin || solicitud.fechaSalida),
-              fecha_creacion: formatearFechaHoraEspanol(dataLive.fecha_creacion || solicitud.fecha_creacion),
-              estado: (dataLive.estado || solicitud.estado || "ENVIADO").toUpperCase(),
-              codigo: dataLive.codigo || solicitud.codigo,
-              observaciones: dataLive.observaciones || solicitud.observaciones,
-              personas: listaPersonas
-            };
+              ...dataLive
+            });
             const idx = this.solicitudes.findIndex(s => String(s.id) === String(solicitud.id));
             if (idx > -1) {
               this.solicitudes[idx] = { ...this.solicitudes[idx], ...this.selected };

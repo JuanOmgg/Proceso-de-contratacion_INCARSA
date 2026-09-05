@@ -4,12 +4,16 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class VehiculoSchema(BaseModel):
+    id: Optional[Union[int, str]] = None
     id_vehiculo: Optional[Union[int, str]] = None
     tipo: Optional[str] = None
     placa: Optional[str] = None
     conductor: Optional[str] = None
     licencia_doc: Optional[Union[str, int]] = None
     documentos: Optional[List[Any]] = None
+    autorizado: Optional[Union[bool, int, str]] = True
+    motivo: Optional[str] = None
+    motivo_rechazo: Optional[str] = None
 
 
 class EquipoComputoSchema(BaseModel):

@@ -2,6 +2,113 @@
 
 {% block title %} Revisión de solicitud · INCARSA {% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ============================================================
+     ESTILOS IDÉNTICOS PARA TARJETAS SCR (Paso 3 y Dictamen Final)
+     ============================================================ */
+  
+  /* 1. Caso POR APROBAR / ACTIVO (Ámbar Neón cálido con fondo iluminado) */
+  :root.dark .revision-step-card.step-scr.is-active,
+  :root.dark .dictamen-scr-card.is-por-aprobar {
+    background: linear-gradient(145deg, rgba(255, 183, 0, 0.24) 0%, rgba(46, 32, 11, 0.95) 100%) !important;
+    border: 1.5px solid rgba(255, 183, 0, 0.75) !important;
+    box-shadow: 0 0 18px rgba(255, 183, 0, 0.38), inset 0 0 12px rgba(255, 183, 0, 0.12) !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-active .step-title,
+  :root.dark .dictamen-scr-card.is-por-aprobar .subitem-title {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px #ffb700 !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-active .step-subtitle,
+  :root.dark .dictamen-scr-card.is-por-aprobar .subitem-subtitle {
+    color: #fde68a !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-active .step-icon,
+  :root.dark .dictamen-scr-card.is-por-aprobar .subitem-icon {
+    color: #ffb700 !important;
+    text-shadow: 0 0 8px #ffb700 !important;
+    filter: drop-shadow(0 0 8px #ffb700) !important;
+  }
+
+  /* 2. Caso APROBADO / COMPLETO (Verde Esmeralda Neón) */
+  :root.dark .revision-step-card.step-scr.is-complete,
+  :root.dark .dictamen-scr-card.is-aprobado {
+    background: linear-gradient(145deg, rgba(0, 255, 136, 0.20) 0%, rgba(10, 42, 25, 0.95) 100%) !important;
+    border: 1.5px solid rgba(0, 255, 136, 0.70) !important;
+    box-shadow: 0 0 18px rgba(0, 255, 136, 0.32), inset 0 0 12px rgba(0, 255, 136, 0.10) !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-complete .step-title,
+  :root.dark .dictamen-scr-card.is-aprobado .subitem-title {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px #00ff88 !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-complete .step-subtitle,
+  :root.dark .dictamen-scr-card.is-aprobado .subitem-subtitle {
+    color: #a7f3d0 !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-complete .step-icon,
+  :root.dark .dictamen-scr-card.is-aprobado .subitem-icon {
+    color: #00ff88 !important;
+    text-shadow: 0 0 8px #00ff88 !important;
+    filter: drop-shadow(0 0 8px #00ff88) !important;
+  }
+
+  /* 3. Caso RECHAZADO (Rojo Rubí Neón) */
+  :root.dark .revision-step-card.step-scr.is-rejected,
+  :root.dark .dictamen-scr-card.is-rechazado {
+    background: linear-gradient(145deg, rgba(255, 42, 85, 0.22) 0%, rgba(45, 12, 20, 0.95) 100%) !important;
+    border: 1.5px solid rgba(255, 42, 85, 0.70) !important;
+    box-shadow: 0 0 18px rgba(255, 42, 85, 0.32), inset 0 0 12px rgba(255, 42, 85, 0.10) !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-rejected .step-title,
+  :root.dark .dictamen-scr-card.is-rechazado .subitem-title {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px #ff2a55 !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-rejected .step-subtitle,
+  :root.dark .dictamen-scr-card.is-rechazado .subitem-subtitle {
+    color: #fecdd3 !important;
+  }
+  :root.dark .revision-step-card.step-scr.is-rejected .step-icon,
+  :root.dark .dictamen-scr-card.is-rechazado .subitem-icon {
+    color: #ff2a55 !important;
+    text-shadow: 0 0 8px #ff2a55 !important;
+    filter: drop-shadow(0 0 8px #ff2a55) !important;
+  }
+
+  /* 4. TARJETAS EQUIPOS DE CÓMPUTO EN MODO OSCURO */
+  :root.dark .computo-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+  :root.dark .computo-card:hover {
+    background: rgba(16, 185, 129, 0.06) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.18) !important;
+    transform: translateY(-1px);
+  }
+  :root.dark .computo-icon-box {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+  }
+  :root.dark .computo-title {
+    color: #f8fafc !important;
+    font-weight: 700;
+  }
+  :root.dark .computo-serie-label {
+    color: #64748b !important;
+  }
+  :root.dark .computo-serie-val {
+    color: #38bdf8 !important;
+    text-shadow: 0 0 6px rgba(56, 189, 248, 0.35) !important;
+  }
+</style>
+{% endblock %}
+
 {% block extra_js%}
   <script src="{{ url_for('static', path='js/revision-solicitud.js') }}"></script>
 {% endblock %}
@@ -273,7 +380,7 @@
                       <strong class="text-slate-900 dark:text-white text-xs font-bold" x-text="solicitud.empresa_contratista"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Diligenciador</span>
+                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Solicitado por</span>
                       <strong class="text-slate-900 dark:text-slate-100 text-xs font-bold" x-text="solicitud.diligenciador"></strong>
                     </div>
                     <div>
@@ -447,29 +554,124 @@
                   </div>
                 </div>
 
-                <!-- 3. Vehículos y Maquinaria -->
+                <!-- 3. Vehículos y Maquinaria + Control Individual de Autorización -->
                 <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
-                  <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      <h3 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-truck-front text-amber-500"></i> Vehículos y Maquinaria
                       </h3>
-                      <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold" x-text="solicitud.vehiculos.length"></span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold" x-text="totalVehiculos + ' vehículos'"></span>
+                      
+                      <!-- Píldoras de Conteo de Autorización -->
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check text-[10px]"></i>
+                        <span x-text="totalVehiculosAutorizados + ' autorizados'"></span>
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-1" x-show="totalVehiculosDenegados > 0">
+                        <i class="fa-solid fa-circle-xmark text-[10px]"></i>
+                        <span x-text="totalVehiculosDenegados + ' denegados'"></span>
+                      </span>
+                    </div>
+
+                    <!-- Botones de Acción Masiva Rápida para Vehículos -->
+                    <div class="flex items-center gap-1.5" x-show="solicitud.vehiculos && solicitud.vehiculos.length > 1 && puedeEditarAutorizacion">
+                      <button type="button" @click="autorizarTodosVehiculos()"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Autorizar a todos los vehículos de la lista">
+                        <i class="fa-solid fa-check-double text-[11px]"></i> Autorizar todos
+                      </button>
+                      <button type="button" @click="denegarTodosVehiculos()"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Denegar acceso a todos los vehículos">
+                        <i class="fa-solid fa-ban text-[11px]"></i> Denegar todos
+                      </button>
                     </div>
                   </div>
 
-                  <div class="space-y-3">
-                    <template x-for="(veh, vIdx) in solicitud.vehiculos" :key="veh.id || vIdx">
-                      <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
-                        <div class="flex items-center justify-between">
-                          <div class="flex items-center gap-2.5">
-                            <span class="px-2.5 py-1 rounded font-mono font-bold text-xs bg-slate-100 border border-slate-300 text-slate-800" x-text="veh.placa"></span>
-                            <span class="text-xs font-medium text-slate-700" x-text="veh.tipo"></span>
+                  <div class="space-y-3.5">
+                    <template x-for="(veh, vIdx) in solicitud.vehiculos" :key="veh.id || veh.placa || vIdx">
+                      <div class="persona-revision-card vehiculo-revision-card p-4 rounded-xl border transition-all space-y-3"
+                        :class="veh.autorizado ? 'is-autorizado' : 'is-denegado'">
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <!-- Datos del Vehículo -->
+                          <div class="flex items-start gap-3">
+                            <div class="persona-num-badge w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-colors"
+                              :class="veh.autorizado ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'">
+                              <span x-text="vIdx + 1"></span>
+                            </div>
+                            <div>
+                              <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2.5 py-1 rounded font-mono font-bold text-xs bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white"
+                                  x-text="veh.placa || 'Sin placa'"></span>
+                                <h4 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white" x-text="veh.tipo || 'Vehículo'"></h4>
+                                
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                                  :class="veh.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40'">
+                                  <i class="fa-solid mr-0.5" :class="veh.autorizado ? 'fa-check' : 'fa-xmark'"></i>
+                                  <span x-text="veh.autorizado ? 'Autorizado' : 'Acceso Denegado'"></span>
+                                </span>
+
+                                <!-- Indicador de Bloqueo tras Aprobación / Dictamen -->
+                                <span x-show="!puedeEditarAutorizacion"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 inline-flex items-center gap-1 select-none"
+                                  title="Autorización fijada: no editable tras haber emitido dictamen">
+                                  <i class="fa-solid fa-lock text-[9px]"></i>
+                                  <span>Fijado</span>
+                                </span>
+                              </div>
+                              <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium" x-show="veh.conductor">
+                                <i class="fa-solid fa-user-gear text-[10px] mr-1 text-slate-400"></i>
+                                <span x-text="'Conductor: ' + veh.conductor"></span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- Controles de Autorización Individual de Vehículo -->
+                          <div class="persona-controls-group flex items-center gap-1.5 self-end sm:self-center p-1 rounded-xl border transition-all"
+                            :class="!puedeEditarAutorizacion ? 'is-locked opacity-60 cursor-not-allowed pointer-events-none select-none' : ''"
+                            :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: ya has emitido dictamen para esta solicitud' : ''">
+                            <!-- Botón: Autorizar -->
+                            <button type="button" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @click="puedeEditarAutorizacion && setAutorizacionVehiculo(veh, true)"
+                              class="btn-autorizar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="[veh.autorizado ? 'is-active' : 'is-inactive', !puedeEditarAutorizacion ? 'cursor-not-allowed' : '']"
+                              :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: dictamen ya emitido' : 'Autorizar vehículo'">
+                              <i class="fa-solid fa-circle-check text-[11px]"></i>
+                              <span>Autorizar</span>
+                            </button>
+
+                            <!-- Botón: No Autorizar / Denegar -->
+                            <button type="button" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @click="puedeEditarAutorizacion && setAutorizacionVehiculo(veh, false)"
+                              class="btn-denegar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              :class="[!veh.autorizado ? 'is-active' : 'is-inactive', !puedeEditarAutorizacion ? 'cursor-not-allowed' : '']"
+                              :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: dictamen ya emitido' : 'Denegar acceso a vehículo'">
+                              <i class="fa-solid fa-circle-xmark text-[11px]"></i>
+                              <span>No Autorizar</span>
+                            </button>
                           </div>
                         </div>
 
-                        <!-- Documentos de vehículo -->
+                        <!-- Campo para motivo de no autorización del vehículo (Visible si está denegado) -->
+                        <div x-show="!veh.autorizado" x-transition class="pt-2 border-t border-red-200/70">
+                          <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
+                            <input type="text" x-model="veh.motivo_rechazo" 
+                              :disabled="!puedeEditarAutorizacion"
+                              @input.debounce.500ms="puedeEditarAutorizacion && persistirVehiculosEnStorage()"
+                              placeholder="Escriba el motivo de la no autorización del vehículo..."
+                              class="input-field w-full px-3 py-1.5 text-xs rounded-lg border border-red-300 bg-white text-red-900 placeholder:text-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed">
+                          </div>
+                        </div>
+
+                        <!-- Documentos Adjuntos del vehículo -->
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Expediente vehículo:</span>
+
                           <!-- Licencia de conducción si existe archivo adjunto -->
                           <template x-if="veh.licencia && veh.licencia !== '—' && veh.licencia !== ''">
                             <button type="button" @click="abrirDocumento({ nombre_archivo: veh.licencia, tipo_doc: 'Licencia' }, veh.placa)"
@@ -493,7 +695,7 @@
                       </div>
                     </template>
 
-                    <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.vehiculos.length === 0">
+                    <p class="text-xs text-slate-400 text-center py-4" x-show="!solicitud.vehiculos || solicitud.vehiculos.length === 0">
                       No se registraron vehículos para esta solicitud.
                     </p>
                   </div>
@@ -503,20 +705,25 @@
                 <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                     <div class="flex items-center gap-2">
-                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-laptop text-emerald-500"></i> Equipos de Cómputo
                       </h3>
-                      <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold" x-text="solicitud.computos.length"></span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-500/40 text-[11px] font-bold shadow-xs" x-text="solicitud.computos.length"></span>
                     </div>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" x-show="solicitud.computos.length > 0">
                     <template x-for="(eq, eIdx) in solicitud.computos" :key="eq.id || eIdx">
-                      <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-start gap-2.5">
-                        <i class="fa-solid fa-laptop text-slate-400 text-sm mt-0.5"></i>
-                        <div class="text-xs">
-                          <strong class="text-slate-800 block" x-text="(eq.marca || 'Marca') + ' · ' + (eq.modelo || 'Modelo')"></strong>
-                          <span class="text-slate-500 font-mono text-[11px]" x-text="'Serie: ' + (eq.serie || 'S/N')"></span>
+                      <div class="computo-card p-3 rounded-xl border flex items-center gap-3 transition-all">
+                        <div class="computo-icon-box w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm">
+                          <i class="fa-solid fa-laptop"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <strong class="computo-title text-xs font-bold block truncate" x-text="(eq.marca || 'Marca') + ' · ' + (eq.modelo || 'Modelo')"></strong>
+                          <div class="computo-serie font-mono text-[11px] mt-0.5 truncate flex items-center gap-1.5">
+                            <span class="computo-serie-label text-[10px] uppercase font-bold tracking-wider">Serie:</span>
+                            <span class="computo-serie-val font-semibold" x-text="eq.serie || 'S/N'"></span>
+                          </div>
                         </div>
                       </div>
                     </template>
@@ -598,22 +805,22 @@
                     </template>
                   </div>
 
-                  <!-- Dictamen Final SCR -->
-                  <div class="dictamen-scr-card p-3 rounded-xl border transition-all"
-                    :class="dictamenSCR.aprobado ? 'is-aprobado' : (dictamenSCR.rechazado ? 'is-rechazado' : (solicitud.estado === 'POR APROBAR' ? 'is-por-aprobar' : 'is-bloqueado'))">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <div class="scr-icon-box w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold">
-                          SCR
-                        </div>
-                        <div>
-                          <h4 class="font-bold text-xs scr-title">Seguridad Corporativa (SCR)</h4>
-                          <p class="text-[10px] scr-subtitle" x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
-                        </div>
+                  <!-- Dictamen Final SCR (Estilos idénticos al Paso 3 en su respectivo caso) -->
+                  <div class="revision-step-card step-scr p-3.5 rounded-xl border transition-all"
+                    :class="dictamenSCR.aprobado ? 'is-complete' : (dictamenSCR.rechazado ? 'is-rejected' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : 'is-locked'))">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-xs font-bold step-title">Seguridad Corporativa (SCR)</span>
+                      <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-check-circle text-sm step-icon" x-show="dictamenSCR.aprobado"></i>
+                        <i class="fa-solid fa-xmark-circle text-sm step-icon" x-show="dictamenSCR.rechazado"></i>
+                        <i class="fa-solid fa-clock text-xs step-icon" x-show="solicitud.estado === 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
+                        <i class="fa-solid fa-lock text-xs step-icon" x-show="solicitud.estado !== 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
                       </div>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold scr-badge"
-                        x-text="dictamenSCR.aprobado ? 'Aprobado' : (dictamenSCR.rechazado ? 'Rechazado' : (solicitud.estado === 'POR APROBAR' ? 'Por Aprobar' : 'Bloqueado'))"></span>
                     </div>
+                    <p class="text-[11px] step-subtitle"
+                      x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
+                    <p class="text-[10px] mt-1 italic opacity-80" x-show="dictamenSCR.observacion" x-text="dictamenSCR.observacion"></p>
+                    <p class="text-[10px] font-semibold mt-1 text-red-500 dark:text-red-400" x-show="dictamenSCR.motivoRechazo" x-text="'Motivo: ' + dictamenSCR.motivoRechazo"></p>
                   </div>
                 </div>
 
@@ -693,6 +900,18 @@
                         </div>
                       </div>
 
+                      <!-- Resumen de Vehículos Autorizados -->
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between" x-show="totalVehiculos > 0">
+                        <div class="flex items-center gap-1.5 text-slate-600 font-medium">
+                          <i class="fa-solid fa-truck-front text-amber-500 text-xs"></i>
+                          <span>Vehículos con acceso permitido:</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 font-bold">
+                          <span class="text-emerald-700" x-text="totalVehiculosAutorizados + ' / ' + totalVehiculos"></span>
+                          <span class="text-[10px] text-slate-400">vehículos</span>
+                        </div>
+                      </div>
+
                       <!-- Botón de Envío -->
                       <button type="submit" :disabled="guardando"
                         class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
@@ -747,74 +966,136 @@
        MODAL VISOR DE DOCUMENTOS (PDF / IMAGEN)
     ============================================================= -->
     <div x-show="docModalOpen" x-cloak
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
-      @keydown.escape.window="cerrarDocumento()">
-      <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="cerrarDocumento()">
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      @keydown.escape.window="cerrarDocumento()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+      
+      <div x-show="docModalOpen"
+        @click.outside="cerrarDocumento()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="modal-panel w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden p-0 relative shadow-2xl border border-[var(--paper-shadow)]" x-cloak>
         
         <!-- Header del visor -->
-        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-white/10">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm text-[var(--signal-500)]">
-              <i class="fa-solid fa-file-lines"></i>
+        <div class="px-6 py-4 flex items-center justify-between border-b border-[var(--paper-shadow)] bg-[#efe9dc]/40 dark:bg-white/[0.04]">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+              :class="docActual.esPdf ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'">
+              <i class="fa-solid" :class="docActual.esPdf ? 'fa-file-pdf' : (docActual.esImagen ? 'fa-file-image' : 'fa-file-lines')"></i>
             </div>
-            <div>
-              <h3 class="font-display font-semibold text-sm" x-text="docActual.titulo"></h3>
-              <p class="text-[11px] text-slate-400" x-text="docActual.subtitulo || 'Documento adjunto'"></p>
+            <div class="min-w-0">
+              <h3 class="font-display font-bold text-sm sm:text-base text-[var(--paper-ink)] truncate" x-text="docActual.titulo"></h3>
+              <p class="text-xs text-[var(--paper-muted)] truncate" x-text="docActual.subtitulo || 'Documento adjunto al expediente'"></p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <a :href="docActual.url" target="_blank" class="action-icon-btn text-slate-300 hover:text-white hover:bg-white/10" title="Abrir en pestaña nueva">
+          <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+            <a :href="docActual.url" target="_blank" 
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Abrir en pestaña nueva">
               <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
-            <button type="button" @click="cerrarDocumento()" class="action-icon-btn text-slate-300 hover:text-white hover:bg-white/10" title="Cerrar visor">
+            <a :href="docActual.url" download
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Descargar archivo">
+              <i class="fa-solid fa-download text-xs"></i>
+            </a>
+            <button type="button" @click="cerrarDocumento()" 
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Cerrar visor">
               <i class="fa-solid fa-xmark text-sm"></i>
             </button>
           </div>
         </div>
 
         <!-- Cuerpo del visor -->
-        <div class="flex-1 bg-slate-100 p-6 overflow-y-auto min-h-[400px] flex items-center justify-center">
+        <div class="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col items-center justify-center gap-4 custom-scroll">
           
-          <!-- Simulación de previsualización de documento -->
+          <!-- Contenedor del documento -->
+          <div class="w-full flex items-center justify-center min-h-[280px] max-h-[55vh] rounded-xl overflow-hidden bg-black/5 dark:bg-black/25 border border-[var(--paper-shadow)] p-3 relative">
+            
+            <!-- 1. Si es Imagen -->
             <template x-if="docActual.esImagen">
-              <div class="max-h-[360px] overflow-hidden rounded-xl bg-slate-900/5 p-2 flex items-center justify-center">
-                <img :src="docActual.url" :alt="docActual.nombreArchivo" class="max-h-[340px] max-w-full object-contain rounded-lg shadow-sm border border-slate-200" />
+              <img :src="docActual.url" :alt="docActual.nombreArchivo" 
+                class="max-h-[50vh] max-w-full object-contain rounded-lg shadow-sm" />
+            </template>
+
+            <!-- 2. Si es PDF -->
+            <template x-if="docActual.esPdf">
+              <div class="w-full h-full min-h-[380px] flex flex-col items-center justify-center">
+                <iframe :src="docActual.url" class="w-full h-[50vh] rounded-lg border-0 bg-white" title="Visor PDF"></iframe>
               </div>
             </template>
-            <template x-if="!docActual.esImagen">
-              <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-3xl mx-auto">
-                <i class="fa-regular fa-file-pdf"></i>
+
+            <!-- 3. Si no es ni PDF ni Imagen (u otro formato) -->
+            <template x-if="!docActual.esImagen && !docActual.esPdf">
+              <div class="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center text-3xl">
+                  <i class="fa-regular fa-file-lines"></i>
+                </div>
+                <div>
+                  <h4 class="font-display font-bold text-base text-[var(--paper-ink)]" x-text="docActual.nombreArchivo"></h4>
+                  <p class="text-xs text-[var(--paper-muted)]">Vista previa directa no disponible para este formato.</p>
+                </div>
               </div>
             </template>
-            <div class="space-y-1">
-              <h4 class="font-display font-bold text-base text-[var(--ink-900)]" x-text="docActual.nombreArchivo"></h4>
-              <p class="text-xs text-slate-500" x-text="'Tipo: ' + docActual.tipo.toUpperCase() + ' · Estado: Documento Válido'"></p>
-            </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs text-slate-600 space-y-2">
-              <div class="flex justify-between py-1 border-b border-slate-200">
-                <span class="text-slate-400">Ruta de archivo:</span>
-                <span class="font-mono text-[11px] text-slate-700" x-text="docActual.url"></span>
-              </div>
-              <div class="flex justify-between py-1 border-b border-slate-200">
-                <span class="text-slate-400">Verificación de Firma:</span>
-                <span class="font-semibold text-emerald-600"><i class="fa-solid fa-shield-check mr-1"></i> Certificado Digital Válido</span>
-              </div>
-            </div>
+          </div>
 
-            <div class="flex justify-center gap-3">
-              <a :href="docActual.url" download class="btn-signal text-xs px-5 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2">
-                <i class="fa-solid fa-download"></i> Descargar Documento
-              </a>
-              <button type="button" @click="cerrarDocumento()" class="btn-secondary text-xs px-5 py-2.5 rounded-xl font-semibold">
-                Volver al expediente
-              </button>
+          <!-- Ficha de Información del Archivo -->
+          <div class="w-full p-3.5 sm:p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)] space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <span class="font-semibold text-[var(--paper-ink)] flex items-center gap-2 truncate">
+                <i class="fa-solid fa-file-check text-emerald-500"></i>
+                <span x-text="docActual.nombreArchivo"></span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 w-fit flex-shrink-0">
+                <i class="fa-solid fa-shield-check"></i> Documento Verificado
+              </span>
+            </div>
+            
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <span class="text-[11px] flex-shrink-0">Ruta de archivo:</span>
+              <span class="font-mono text-[10.5px] text-[var(--paper-ink)] truncate max-w-[70%]" x-text="docActual.url"></span>
             </div>
           </div>
 
         </div>
 
+        <!-- Footer con botones -->
+        <div class="px-6 py-3.5 border-t border-[var(--paper-shadow)] bg-[#efe9dc]/20 dark:bg-white/[0.02] flex items-center justify-between gap-3 flex-wrap">
+          <button type="button" @click="cerrarDocumento()" 
+            class="modal-btn-cancel px-6 py-2 text-xs font-semibold">
+            Volver al expediente
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <a :href="docActual.url" target="_blank" 
+              class="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--paper-shadow)] hover:bg-black/5 dark:hover:bg-white/10 text-[var(--paper-ink)] inline-flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+              <span>Abrir pestaña</span>
+            </a>
+            <a :href="docActual.url" download 
+              class="btn-signal px-5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-download text-[11px]"></i>
+              <span>Descargar Documento</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Borde dentado ticket visible al pie -->
+        <div class="modal-serrated"></div>
       </div>
+    </div>
+
 
     <!-- ============================================================
        MODAL 1: HISTORIAL DE SOLICITUDES Y VIGENCIA DE ANTECEDENTES (Estilo Ticket)
@@ -841,7 +1122,7 @@
         
         <!-- Botón cerrar superior derecho -->
         <button type="button" @click="cerrarHistorialModal()"
-          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
           title="Cerrar modal">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
@@ -1089,7 +1370,7 @@
         
         <!-- Botón cerrar superior derecho -->
         <button type="button" @click="cerrarFormularioAntecedentes()"
-          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
           title="Cerrar modal">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>

@@ -241,13 +241,14 @@ function puedeAccion(modulo, accion) {
 window.puedeAccion = puedeAccion;
 
 function puedeEditarSolicitud(solicitud) {
+    if (!solicitud) return false;
     let sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
     const miRol = (sesion?.rol || "").trim().toUpperCase();
+
+    // SUPERADMIN puede editar sin importar en qué estado esté la solicitud
     if (miRol === "SUPERADMIN") return true;
 
-    if (!solicitud) return false;
-
-    // Verificar si el usuario tiene permiso general de editar solicitudes
+    // Los demás usuarios solo pueden editar si tienen permiso Y la solicitud está en estado ENVIADO
     if (!puedeAccion("solicitudes", "editar") && !puedeAccion("dashboard", "editar")) {
         return false;
     }

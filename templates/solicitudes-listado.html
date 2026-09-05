@@ -173,7 +173,7 @@
                     <th class="px-4 py-3 text-center">Empresa origen</th>
                     <th class="px-4 py-3 text-center">Contratista</th>
                     <th class="px-3 py-3 text-center">Estado</th>
-                    <th class="px-4 py-3 text-center">Diligenciador</th>
+                    <th class="px-4 py-3 text-center">Solicitado por</th>
                     <th class="px-4 py-3 text-center">Observaciones</th>
                     <th class="px-3 py-3 text-center">Modo</th>
                     <th class="px-4 py-3 text-center">Acciones</th>
@@ -391,7 +391,7 @@
                         </div>
                       </div>
 
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 py-2">
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 py-2">
                         <div>
                           <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Plantas a visitar</span>
                           <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.planta || '—'"></span>
@@ -399,6 +399,10 @@
                         <div>
                           <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Actividad</span>
                           <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.actividad || '—'"></span>
+                        </div>
+                        <div>
+                          <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Solicitado por</span>
+                          <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="selected.diligenciador || '—'"></span>
                         </div>
                       </div>
 
@@ -410,19 +414,19 @@
 
                     <!-- 2. Personas / Ingresantes -->
                     <div class="py-2 border-b border-dashed border-[var(--paper-shadow)]">
-                      <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-2">
+                      <span class="subtitles-modal ticket-section-title text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-2">
                         Personas registradas
                       </span>
 
                       <template x-if="!selected?.personas || selected?.personas?.length === 0">
-                        <p class="text-xs text-[var(--paper-muted)] italic py-1 text-center">Sin personas registradas.</p>
+                        <p class="text-xs ticket-empty-msg italic py-2 text-center">Sin personas registradas.</p>
                       </template>
 
                       <template x-if="selected?.personas && selected?.personas?.length > 0">
-                        <div class="overflow-x-auto rounded-lg border border-[var(--paper-shadow)] bg-[#faf7f0]">
-                          <table class="w-full text-xs data-table">
+                        <div class="ticket-table-wrapper overflow-x-auto rounded-xl border border-[var(--paper-shadow)]">
+                          <table class="w-full text-xs ticket-table">
                             <thead>
-                              <tr class="bg-[#efe9dc] text-[var(--paper-ink)] font-bold border-b border-[var(--paper-shadow)]">
+                              <tr class="ticket-th-row font-bold border-b border-[var(--paper-shadow)]">
                                 <th class="px-2.5 py-2 text-center">#</th>
                                 <th class="px-2.5 py-2 text-center">Apellidos y nombres</th>
                                 <th class="px-2.5 py-2 text-center">Doc.</th>
@@ -431,22 +435,22 @@
                                 <th class="px-2.5 py-2 text-center">Autorizado</th>
                               </tr>
                             </thead>
-                            <tbody class="divide-y divide-dashed divide-[var(--paper-shadow)]">
+                            <tbody class="divide-y divide-dashed ticket-tbody">
                               <template x-for="(p, index) in (selected?.personas || [])" :key="p.id || index">
-                                <tr class="hover:bg-[#efe9dc]/50 transition-colors">
-                                  <td class="px-2.5 py-2 text-center font-medium text-[var(--paper-muted)]" x-text="index + 1"></td>
-                                  <td class="px-2.5 py-2 text-center font-semibold text-[var(--paper-ink)]" x-text="p.ap_nombre || p.nombre || '-'"></td>
-                                  <td class="px-2.5 py-2 text-center" x-text="p.tipo_doc || '-'"></td>
-                                  <td class="px-2.5 py-2 text-center font-mono" x-text="p.identificacion || '-'"></td>
-                                  <td class="px-2.5 py-2 text-center" x-text="p.cargo || '-'"></td>
+                                <tr class="ticket-tr transition-colors">
+                                  <td class="px-2.5 py-2 text-center font-medium ticket-td-muted" x-text="index + 1"></td>
+                                  <td class="px-2.5 py-2 text-center font-semibold ticket-td-primary" x-text="p.ap_nombre || p.nombre || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center ticket-td-muted" x-text="p.tipo_doc || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center font-mono ticket-td-code" x-text="p.identificacion || '-'"></td>
+                                  <td class="px-2.5 py-2 text-center ticket-td-text" x-text="p.cargo || '-'"></td>
                                   <td class="px-2.5 py-2 text-center">
                                     <template x-if="p.autorizado == 1 || p.autorizado === true || p.autorizado === '1'">
-                                      <span class="inline-flex items-center justify-center text-[#2f8f5b]" title="Autorizado">
+                                      <span class="inline-flex items-center justify-center ticket-status-auth" title="Autorizado">
                                         <i class="fa-solid fa-circle-check text-base"></i>
                                       </span>
                                     </template>
                                     <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1')">
-                                      <span class="inline-flex items-center justify-center text-[#c1443c] cursor-help"
+                                      <span class="inline-flex items-center justify-center ticket-status-unauth cursor-help"
                                         :title="p.motivo ? ('No Autorizado: ' + p.motivo) : 'No autorizado'">
                                         <i class="fa-solid fa-circle-xmark text-base"></i>
                                       </span>
@@ -464,24 +468,43 @@
                     <div class="grid md:grid-cols-2 gap-4 py-2">
                       <!-- Vehículos -->
                       <div>
-                        <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
+                        <span class="subtitles-modal ticket-section-title text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
                           Vehículos
                         </span>
                         <template x-if="!selected?.vehiculos || selected?.vehiculos?.length === 0">
-                          <p class="text-xs text-[var(--paper-muted)] italic py-1">No se registraron vehículos.</p>
+                          <p class="text-xs ticket-empty-msg italic py-1">No se registraron vehículos.</p>
                         </template>
                         <ul class="space-y-1.5 text-xs" x-show="selected?.vehiculos && selected?.vehiculos?.length > 0">
                           <template x-for="(v, i) in (selected?.vehiculos || [])" :key="v.id || i">
-                            <li class="border border-[var(--paper-shadow)] rounded-lg p-2 bg-[#efe9dc]/50 space-y-1">
+                            <li class="ticket-card-item border border-[var(--paper-shadow)] rounded-xl p-2.5 space-y-1.5">
                               <div class="flex items-center justify-between">
-                                <span class="font-bold font-mono text-[11px] uppercase px-1.5 py-0.5 rounded bg-white border border-[var(--paper-shadow)]"
-                                  x-text="v.placa || 'Sin placa'"></span>
-                                <span class="text-[11px] font-semibold text-[var(--paper-ink)]" x-text="v.tipo || 'Vehículo'"></span>
+                                <div class="flex items-center gap-1.5">
+                                  <span class="ticket-placa-badge font-bold font-mono text-[11px] uppercase px-1.5 py-0.5 rounded border border-[var(--paper-shadow)]"
+                                    x-text="v.placa || 'Sin placa'"></span>
+                                  <span class="ticket-card-title text-[11px] font-semibold" x-text="v.tipo || 'Vehículo'"></span>
+                                </div>
+                                <div class="flex items-center">
+                                  <template x-if="v.autorizado == 1 || v.autorizado === true || v.autorizado === '1'">
+                                    <span class="inline-flex items-center justify-center ticket-status-auth" title="Vehículo Autorizado">
+                                      <i class="fa-solid fa-circle-check text-sm"></i>
+                                    </span>
+                                  </template>
+                                  <template x-if="!(v.autorizado == 1 || v.autorizado === true || v.autorizado === '1')">
+                                    <span class="inline-flex items-center justify-center ticket-status-unauth" 
+                                      :title="v.motivo ? ('No Autorizado: ' + v.motivo) : 'Vehículo no autorizado'">
+                                      <i class="fa-solid fa-circle-xmark text-sm"></i>
+                                    </span>
+                                  </template>
+                                </div>
                               </div>
-                              <div x-show="v.conductor || v.licencia_doc || v.licencia" class="text-[11px] text-[var(--paper-muted)] flex items-center gap-1">
-                                <i class="fa-solid fa-id-card text-[#2f8f5b] text-[10px]"></i>
+                              <div x-show="v.conductor || v.licencia_doc || v.licencia" class="text-[11px] ticket-card-sub flex items-center gap-1.5">
+                                <i class="fa-solid fa-id-card text-emerald-500 text-[10px]"></i>
                                 <span x-text="v.conductor ? v.conductor + ':' : 'Lic:'"></span>
-                                <span class="truncate font-medium text-[var(--paper-ink)]" x-text="v.licencia_doc || v.licencia || 'Asignado'"></span>
+                                <span class="truncate font-medium ticket-card-doc" x-text="v.licencia_doc || v.licencia || 'Asignado'"></span>
+                              </div>
+                              <div x-show="!(v.autorizado == 1 || v.autorizado === true || v.autorizado === '1') && v.motivo" class="text-[10px] ticket-card-error font-medium italic flex items-center gap-1">
+                                <i class="fa-solid fa-circle-exclamation text-[9px]"></i>
+                                <span x-text="'Motivo: ' + v.motivo"></span>
                               </div>
                             </li>
                           </template>
@@ -490,21 +513,109 @@
 
                       <!-- Equipos de Cómputo -->
                       <div>
-                        <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
+                        <span class="subtitles-modal ticket-section-title text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block mb-1.5">
                           Equipos de cómputo
                         </span>
                         <template x-if="!selected?.computos || selected?.computos?.length === 0">
-                          <p class="text-xs text-[var(--paper-muted)] italic py-1">No se declararon equipos.</p>
+                          <p class="text-xs ticket-empty-msg italic py-1">No se declararon equipos.</p>
                         </template>
                         <ul class="space-y-1.5 text-xs" x-show="selected?.computos && selected?.computos?.length > 0">
                           <template x-for="(e, index) in (selected?.computos || [])" :key="e.id || index">
-                            <li class="flex items-center justify-between p-2 rounded-lg bg-[#efe9dc]/50 border border-[var(--paper-shadow)]">
-                              <span class="font-semibold text-[var(--paper-ink)]" x-text="(e.marca || '') + ' ' + (e.modelo || '')"></span>
-                              <span class="font-mono text-[var(--paper-muted)]" x-text="'S/N: ' + (e.serie || '—')"></span>
+                            <li class="ticket-card-item flex items-center justify-between p-2.5 rounded-xl border border-[var(--paper-shadow)]">
+                              <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-laptop text-[11px] text-cyan-400"></i>
+                                <span class="ticket-card-title font-semibold text-xs" x-text="(e.marca || '') + ' ' + (e.modelo || '')"></span>
+                              </div>
+                              <span class="ticket-td-code font-mono text-xs" x-text="'S/N: ' + (e.serie || '—')"></span>
                             </li>
                           </template>
                         </ul>
                       </div>
+                    </div>
+
+                    <!-- 4. Historial de Aprobaciones y Dictámenes -->
+                    <div class="py-2 border-t border-dashed border-[var(--paper-shadow)]">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10.5px] font-bold uppercase tracking-wider text-[var(--paper-muted)] flex items-center gap-1.5">
+                          <i class="fa-solid fa-stamp text-[11px] text-[#2f8f5b]"></i>
+                          Aprobación y Dictámenes
+                        </span>
+                        <!-- Resumen rápido de autorizaciones -->
+                        <div class="flex items-center gap-2 text-[10.5px]">
+                          <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.personas?.length > 0">
+                            <i class="fa-solid fa-user-check text-[10px] text-[#2f8f5b] mr-0.5"></i>
+                            <span x-text="(selected?.personas || []).filter(p => p.autorizado == 1 || p.autorizado === true || p.autorizado === '1').length + '/' + (selected?.personas?.length || 0) + ' personas aut.'"></span>
+                          </span>
+                          <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.vehiculos?.length > 0">
+                            <i class="fa-solid fa-car-side text-[10px] text-[#2f8f5b] mr-0.5"></i>
+                            <span x-text="(selected?.vehiculos || []).filter(v => v.autorizado == 1 || v.autorizado === true || v.autorizado === '1').length + '/' + (selected?.vehiculos?.length || 0) + ' veh. aut.'"></span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Tarjeta de dictámenes por revisor -->
+                      <template x-if="selected?.revisiones && selected?.revisiones?.length > 0">
+                        <div class="space-y-2">
+                          <template x-for="(rev, rIdx) in selected.revisiones" :key="rev.id || rIdx">
+                            <div class="ticket-dictamen-item border rounded-xl p-3 transition-all flex flex-col gap-1.5"
+                              :class="rev.decision === 'APROBADO' ? 'is-aprobado' : (rev.decision === 'RECHAZADO' ? 'is-rechazado' : 'is-pendiente')">
+                              <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                  <span class="ticket-role-badge px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                                    :class="{
+                                      'role-sst': rev.rol === 'SST',
+                                      'role-gesco': rev.rol === 'GESCO',
+                                      'role-scr': rev.rol === 'SCR'
+                                    }"
+                                    x-text="rev.rol || 'REVISOR'">
+                                  </span>
+                                  <span class="text-xs font-bold ticket-revisor-name" x-text="rev.nombre_revisor || 'Revisor'"></span>
+                                  <span x-show="rev.nombre_planta || rev.planta" class="text-[10.5px] ticket-planta-tag font-medium" x-text="'(' + (rev.nombre_planta || rev.planta) + ')'"></span>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                  <span class="status-pill inline-flex select-none font-bold text-[10px] px-2.5 py-0.5 rounded-full"
+                                    :class="estadoClass(rev.decision)"
+                                    x-text="rev.decision || 'REVISADO'">
+                                  </span>
+                                  <span class="text-[10.5px] font-mono ticket-fecha opacity-85" x-text="formatearFechaHoraEspanol(rev.fecha_revision)"></span>
+                                </div>
+                              </div>
+                              <p x-show="rev.observacion" class="text-xs ticket-obs mt-0.5 pl-2.5 border-l-2 italic" x-text="rev.observacion"></p>
+                              <p x-show="rev.motivo_rechazo" class="text-xs ticket-rechazo font-medium mt-0.5 pl-2.5 border-l-2" x-text="'Motivo: ' + rev.motivo_rechazo"></p>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+
+                      <!-- Si no hay dictámenes detallados pero la solicitud ya tiene estado APROBADO o PRE-APROBADO -->
+                      <template x-if="(!selected?.revisiones || selected?.revisiones?.length === 0) && (selected?.estado === 'APROBADO' || selected?.estado === 'PRE-APROBADO')">
+                        <div class="flex items-center gap-3 p-2.5 rounded-lg border border-[#2f8f5b]/40 bg-[#2f8f5b]/10 text-xs">
+                          <i class="fa-solid fa-circle-check text-base text-[#2f8f5b] shrink-0"></i>
+                          <div class="text-left">
+                            <span class="font-bold text-[#2f8f5b] block text-[12px]">Solicitud Aprobada</span>
+                            <span class="text-[var(--paper-text)] text-[11px]">Esta solicitud cuenta con la autorización requerida para el ingreso a planta.</span>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Si está RECHAZADO sin revisiones -->
+                      <template x-if="(!selected?.revisiones || selected?.revisiones?.length === 0) && selected?.estado === 'RECHAZADO'">
+                        <div class="flex items-center gap-3 p-2.5 rounded-lg border border-[#c1443c]/40 bg-[#c1443c]/10 text-xs">
+                          <i class="fa-solid fa-circle-xmark text-base text-[#c1443c] shrink-0"></i>
+                          <div class="text-left">
+                            <span class="font-bold text-[#c1443c] block text-[12px]">Solicitud Rechazada</span>
+                            <span class="text-[var(--paper-text)] text-[11px]" x-text="selected?.observaciones ? ('Motivo: ' + selected.observaciones) : 'La solicitud no fue autorizada para el ingreso.'"></span>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Si está pendiente y no hay dictámenes aún -->
+                      <template x-if="(!selected?.revisiones || selected?.revisiones?.length === 0) && selected?.estado !== 'APROBADO' && selected?.estado !== 'PRE-APROBADO' && selected?.estado !== 'RECHAZADO'">
+                        <div class="flex items-center gap-3 p-2 rounded-lg border border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/30 text-xs text-[var(--paper-muted)]">
+                          <i class="fa-solid fa-clock-rotate-left text-sm shrink-0"></i>
+                          <span>Pendiente de revisión y dictamen por los roles correspondientes (SST, GESCO, SCR).</span>
+                        </div>
+                      </template>
                     </div>
                   </div>
 
@@ -556,6 +667,9 @@
           </div>
           <h3 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">Observaciones</h3>
           <p class="text-xs text-[var(--paper-muted)] font-mono font-semibold" x-text="solicitudObservacion ? ((solicitudObservacion.codigo || '') + ' · ' + (solicitudObservacion.nombre_empresa || '')) : ''"></p>
+          <p class="text-[11px] text-[var(--paper-muted)] mt-1" x-show="solicitudObservacion && solicitudObservacion.diligenciador">
+            <i class="fa-regular fa-user mr-1 text-slate-400"></i>Diligenciado por: <span class="font-medium text-[var(--paper-ink)]" x-text="solicitudObservacion.diligenciador"></span>
+          </p>
         </div>
 
         <div class="space-y-2 text-left border-y border-dashed border-[var(--paper-shadow)] py-3 my-3">

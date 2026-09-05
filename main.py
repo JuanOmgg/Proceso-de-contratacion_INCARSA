@@ -1,3 +1,4 @@
+from typing import Optional
 import sys
 if sys.platform == "win32":
     try:
