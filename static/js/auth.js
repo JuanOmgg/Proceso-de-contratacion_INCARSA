@@ -33,7 +33,7 @@ function loginForm() {
 
       const params = new URLSearchParams(window.location.search);
       if (params.get("expired")) {
-        this.error = "Tu sesión ha caducado o el token ha expirado. Inicia sesión nuevamente.";
+        this.error = "Tu sesión ha caducado.";
       }
     },
 

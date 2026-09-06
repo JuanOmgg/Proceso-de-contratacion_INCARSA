@@ -17,6 +17,7 @@ from src.loaders.solicitudes_loaders import (
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
 from src.utils.security import get_current_user, require_role, require_permission
+from src.loaders.notificacion_loader import marcar_leida_por_solicitud_db
 from typing import List, Dict, Any, Optional
 
 router = APIRouter(prefix="/api/v1/solicitudes", tags=["Solicitudes"])
@@ -146,6 +147,15 @@ def GET_solicitud(solicitud_id: str, current_user: dict = Depends(get_current_us
             status_code=status.HTTP_404_NOT_FOUND,
             detail=resultado.get("mensaje"),
         )
+
+    # Si alguien revisa la solicitud desde otra parte que no sea notificaciones (listado, dashboard, modal, URL directa),
+    # marcar automáticamente como leídas las notificaciones pendientes asociadas a esta solicitud para su usuario o rol
+    try:
+        user_id = current_user.get("id") if isinstance(current_user, dict) else None
+        rol_id = current_user.get("id_rol") if isinstance(current_user, dict) else None
+        marcar_leida_por_solicitud_db(solicitud_id, id_usuario=user_id, id_rol=rol_id)
+    except Exception as e_notif:
+        print(f"⚠️ Error al auto-marcar notificaciones para solicitud #{solicitud_id}: {e_notif}")
 
     print(f"📦 [GET] Datos de la solicitud #{solicitud_id} recuperados con éxito.")
     return resultado["datos"]

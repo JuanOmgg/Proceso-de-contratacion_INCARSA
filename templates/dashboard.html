@@ -553,8 +553,8 @@
           </div>
         </section>
 
-        <!-- ===== C. Gráficos ===== -->
-        <section class="grid md:grid-cols-2 gap-6">
+        <!-- ===== C. Gráficos (Solo para ADMINISTRADOR y SUPERADMIN) ===== -->
+        <section x-show="tieneRol('ADMINISTRADOR', 'SUPERADMIN')" x-cloak class="grid md:grid-cols-2 gap-6">
           <div class="chart-card p-5">
             <h3 class="font-display font-semibold mb-1">Solicitudes creadas por mes</h3>
             <p class="text-xs text-gray-500 mb-4">Últimos 6 meses</p>
@@ -567,8 +567,8 @@
           </div>
         </section>
 
-        <!-- ===== D. Sección de usuarios ===== -->
-        <section x-data="usersSection()"
+        <!-- ===== D. Sección de usuarios (Solo para ADMINISTRADOR y SUPERADMIN) ===== -->
+        <section x-data="usersSection()" x-show="tieneRol('ADMINISTRADOR', 'SUPERADMIN')" x-cloak
           class="chart-card p-3 sm:p-5 min-w-0 max-w-full overflow-hidden">
           <h2 class="font-display font-semibold text-[var(--ink-900)] mb-4"><b> Usuarios del sistema</b></h2>
 

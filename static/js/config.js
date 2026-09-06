@@ -110,6 +110,12 @@ function cerrarSesionUsuario() {
             window.location.replace("/login?expired=1");
         }
 
+        // Si el backend responde 403 Forbidden en peticiones autenticadas
+        if (response.status === 403 && esApiInterna && !window.location.pathname.includes("/403") && !window.location.pathname.includes("/login")) {
+            console.warn("⛔ [AUTH] Acceso denegado (403). Redirigiendo a /403...");
+            window.location.replace("/403");
+        }
+
         return response;
     };
 })();
@@ -532,6 +538,16 @@ function appShellStub() {
                 this.abrirModalTodasNotificaciones();
             });
 
+            // Escuchar actualizaciones de notificaciones al revisar solicitudes
+            window.addEventListener("notificaciones-actualizadas", () => {
+                this.cargarNotificaciones();
+            });
+            window.addEventListener("storage", (e) => {
+                if (e.key === "incarsa_notificaciones_reload") {
+                    this.cargarNotificaciones();
+                }
+            });
+
             // Escuchar actualizaciones de permisos en vivo
             window.addEventListener("permisos-actualizados", (e) => {
                 this.permisos = e.detail || {};
@@ -909,3 +925,90 @@ function modalTimerCountdown() {
   };
 }
 window.modalTimerCountdown = modalTimerCountdown;
+
+// ============================================================================
+// SISTEMA UNIVERSAL DE TOOLTIPS MODERNOS (Reemplaza y estiliza [title] y [data-tooltip])
+// ============================================================================
+(function initModernTooltips() {
+  let tooltipEl = null;
+  let activeTarget = null;
+
+  function getTooltipEl() {
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'incarsa-global-tooltip';
+      tooltipEl.className = 'incarsa-global-tooltip';
+      document.body.appendChild(tooltipEl);
+    }
+    return tooltipEl;
+  }
+
+  function showTooltip(target, text) {
+    if (!text || !text.trim()) return;
+    const tip = getTooltipEl();
+    tip.textContent = text.trim();
+    tip.classList.remove('is-active', 'pos-bottom');
+    tip.style.display = 'block';
+
+    const rect = target.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+
+    let top = rect.top - tipRect.height - 8;
+    let posClass = 'pos-top';
+
+    // Si se sale por arriba de la pantalla visible, colocar abajo
+    if (top < 8) {
+      top = rect.bottom + 8;
+      posClass = 'pos-bottom';
+    }
+
+    let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+    // Limitar dentro de los bordes izquierdo y derecho
+    const maxLeft = window.innerWidth - tipRect.width - 12;
+    left = Math.max(12, Math.min(left, maxLeft));
+
+    tip.style.top = `${top + window.scrollY}px`;
+    tip.style.left = `${left + window.scrollX}px`;
+    tip.classList.add(posClass, 'is-active');
+    activeTarget = target;
+  }
+
+  function hideTooltip() {
+    if (tooltipEl) {
+      tooltipEl.classList.remove('is-active');
+    }
+    activeTarget = null;
+  }
+
+  // Interceptar al pasar el cursor sobre elementos con title o data-tooltip
+  document.addEventListener('mouseover', function (e) {
+    const target = e.target.closest ? e.target.closest('[title], [data-tooltip], [data-title]') : null;
+    if (!target) return;
+
+    let text = target.getAttribute('data-tooltip') || target.getAttribute('data-title');
+
+    // Si tiene atributo title nativo, transferir su contenido y suprimir title para evitar el tooltip nativo
+    if (target.hasAttribute('title')) {
+      const nativeTitle = target.getAttribute('title');
+      if (nativeTitle && nativeTitle.trim()) {
+        text = nativeTitle.trim();
+        target.setAttribute('data-tooltip', text);
+      }
+      target.removeAttribute('title'); // Elimina la caja negra nativa del navegador
+    }
+
+    if (text && text.trim()) {
+      showTooltip(target, text);
+    }
+  }, true);
+
+  // Ocultar al retirar el cursor
+  document.addEventListener('mouseout', function (e) {
+    if (activeTarget && (!e.relatedTarget || !activeTarget.contains(e.relatedTarget))) {
+      hideTooltip();
+    }
+  }, true);
+
+  window.addEventListener('scroll', hideTooltip, { passive: true });
+  document.addEventListener('click', hideTooltip, true);
+})();

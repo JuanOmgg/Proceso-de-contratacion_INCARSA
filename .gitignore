@@ -22,3 +22,6 @@ Thumbs.db
 
 # Documentacion local
 GUIA_ALEMBIC.md
+
+# Node modules
+node_modules/

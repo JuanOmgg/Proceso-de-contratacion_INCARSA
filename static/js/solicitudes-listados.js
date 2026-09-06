@@ -640,6 +640,8 @@ function solicitudesTable() {
                             this.solicitudes[idx] = this.selected;
                             this.notificarCambio();
                         }
+                        window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+                        localStorage.setItem("incarsa_notificaciones_reload", Date.now().toString());
                     }
                 }
             } catch (err) {

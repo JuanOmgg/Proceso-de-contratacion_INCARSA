@@ -111,9 +111,52 @@ function superAdminPanel() {
       return '';
     },
 
-    // Total de módulos actualmente seleccionados para mantenimiento
     get totalModulosMantenimiento() {
       return (this.mantenimiento.modulos || []).length;
+    },
+
+    get permisosActivosRolActual() {
+      if (this.esRolSuperAdmin) return (this.modulos.length || 0) * (this.acciones.length || 5);
+      const rolId = String(this.rolSeleccionadoId);
+      const rolData = this.matriz[rolId] || this.matriz[this.rolSeleccionadoId] || {};
+      let activos = 0;
+      for (const mod of this.modulos) {
+        if (rolData[mod]) {
+          for (const acc of this.acciones) {
+            if (rolData[mod][acc]) activos++;
+          }
+        }
+      }
+      return activos;
+    },
+
+    get totalPermisosPosibles() {
+      return (this.modulos.length || 0) * (this.acciones.length || 5);
+    },
+
+    iconoRol(nombreRol) {
+      const n = (nombreRol || '').trim().toUpperCase();
+      if (n === 'SUPERADMIN') return 'fa-crown';
+      if (n === 'ADMINISTRADOR') return 'fa-user-gear';
+      if (n === 'VIGILANTE') return 'fa-shield-halved';
+      if (n.includes('DOCUMENTAL')) return 'fa-folder-tree';
+      if (n === 'SST') return 'fa-helmet-safety';
+      if (n === 'GESCO') return 'fa-briefcase';
+      if (n === 'SCR') return 'fa-id-badge';
+      return 'fa-user-tag';
+    },
+
+    colorIconoRol(nombreRol, esActivo) {
+      if (esActivo) return 'text-slate-950';
+      const n = (nombreRol || '').trim().toUpperCase();
+      if (n === 'SUPERADMIN') return 'text-amber-400';
+      if (n === 'ADMINISTRADOR') return 'text-sky-400';
+      if (n === 'VIGILANTE') return 'text-emerald-400';
+      if (n.includes('DOCUMENTAL')) return 'text-purple-400';
+      if (n === 'SST') return 'text-amber-400';
+      if (n === 'GESCO') return 'text-teal-400';
+      if (n === 'SCR') return 'text-rose-400';
+      return 'text-slate-400';
     },
 
     isModuloEnMantenimiento(modId) {
@@ -618,6 +661,25 @@ function superAdminPanel() {
         superadmin: 'fa-shield-halved text-rose-400'
       };
       return iconos[mod] || 'fa-folder text-slate-400';
+    },
+
+    bgIconoModulo(mod) {
+      const bgs = {
+        dashboard: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400 shadow-cyan-500/10',
+        solicitudes: 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-amber-500/10',
+        nueva_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
+        usuarios: 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-blue-500/10',
+        nuevo_usuario: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-indigo-500/10',
+        plantas: 'bg-violet-500/15 border-violet-500/30 text-violet-400 shadow-violet-500/10',
+        contratistas: 'bg-orange-500/15 border-orange-500/30 text-orange-400 shadow-orange-500/10',
+        vehiculos: 'bg-teal-500/15 border-teal-500/30 text-teal-400 shadow-teal-500/10',
+        personas: 'bg-pink-500/15 border-pink-500/30 text-pink-400 shadow-pink-500/10',
+        procesamiento: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400 shadow-yellow-500/10',
+        antecedentes: 'bg-sky-500/15 border-sky-500/30 text-sky-400 shadow-sky-500/10',
+        revision_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
+        superadmin: 'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/10'
+      };
+      return bgs[mod] || 'bg-slate-800 border-slate-700 text-slate-400';
     },
 
     // -------------------------------------------------------------

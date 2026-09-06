@@ -248,7 +248,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(os.path.join(BASE_DIR, "static", "img", "icono.jpg"))
+    icon_path = os.path.join(BASE_DIR, "static", "img", "icono.png")
+    if os.path.exists(icon_path):
+        return FileResponse(icon_path, media_type="image/png")
+    return Response(status_code=204)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -317,11 +320,30 @@ async def get_editar_solicitud(request: Request, codigo: str):
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
 
+@app.get("/403")
+@app.get("/error-403")
+async def get_error_403(request: Request):
+    return templates.TemplateResponse(
+        name="errors/error-403.html",
+        request=request,
+        status_code=403
+    )
+
 # Manejo de errores
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if "text/html" in request.headers.get("Accept", ""):
-        if exc.status_code == 404:
+        if exc.status_code == 403:
+            try:
+                return templates.TemplateResponse(
+                    name="errors/error-403.html",
+                    request=request,
+                    status_code=403,
+                    context={"mensaje": exc.detail if exc.detail else "Tu rol actual no tiene permisos para ver esta sección."}
+                )
+            except Exception:
+                pass
+        elif exc.status_code == 404:
             try:
                 return templates.TemplateResponse(
                     name="errors/error-404.html",

@@ -3934,12 +3934,12 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
 /* =========================================================
    BRILLO BLANCO EN ENCABEZADOS DE TABLAS (MODO OSCURO)
    ========================================================= */
-:root.dark thead th,
+:root.dark thead th:not(.rbac-table thead th):not(.rbac-table th),
 :root.dark .data-table thead th,
 :root.dark .data-table th,
-:root.dark table thead th,
-:root.dark table thead tr th,
-:root.dark table th {
+:root.dark table:not(.rbac-table) thead th,
+:root.dark table:not(.rbac-table) thead tr th,
+:root.dark table:not(.rbac-table) th {
   color: #ffffff !important;
   font-weight: 700 !important;
   letter-spacing: 0.06em !important;

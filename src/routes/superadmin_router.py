@@ -55,7 +55,7 @@ def previsualizar_503(request: Request):
     return templates.TemplateResponse(
         name="errors/error-503.html",
         request=request,
-        status_code=503,
+        status_code=200,
         context={
             "mensaje": mantenimiento.get("mensaje"),
             "tiempo": mantenimiento.get("tiempo"),
@@ -65,6 +65,33 @@ def previsualizar_503(request: Request):
             "temporizador_fin": mantenimiento.get("temporizador_fin"),
             "temporizador_minutos": mantenimiento.get("temporizador_minutos") or 30
         }
+    )
+
+@router.get("/superadmin/previsualizar-403", response_class=HTMLResponse, summary="Previsualización de Pantalla 403")
+def previsualizar_403(request: Request):
+    """Previsualiza la pantalla de error 403 (Acceso no autorizado / Forbidden)."""
+    return templates.TemplateResponse(
+        name="errors/error-403.html",
+        request=request,
+        status_code=200
+    )
+
+@router.get("/superadmin/previsualizar-404", response_class=HTMLResponse, summary="Previsualización de Pantalla 404")
+def previsualizar_404(request: Request):
+    """Previsualiza la pantalla de error 404 (Página no encontrada / Not Found)."""
+    return templates.TemplateResponse(
+        name="errors/error-404.html",
+        request=request,
+        status_code=200
+    )
+
+@router.get("/superadmin/previsualizar-500", response_class=HTMLResponse, summary="Previsualización de Pantalla 500")
+def previsualizar_500(request: Request):
+    """Previsualiza la pantalla de error 500 (Error interno del servidor)."""
+    return templates.TemplateResponse(
+        name="errors/error-500.html",
+        request=request,
+        status_code=200
     )
 
 # -----------------------------------------------------------------------------

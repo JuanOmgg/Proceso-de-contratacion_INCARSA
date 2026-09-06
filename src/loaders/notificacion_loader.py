@@ -130,6 +130,98 @@ def marcar_todas_leidas_db(
         return False
 
 
+def marcar_leida_por_solicitud_db(
+    id_o_codigo: str,
+    id_usuario: Optional[int] = None,
+    id_rol: Optional[int] = None,
+) -> int:
+    """
+    Marca como leídas las notificaciones asociadas a una solicitud cuando
+    un usuario entra a revisarla desde cualquier parte que no sea el menú
+    de notificaciones (ej: listado, dashboard, modal, URL directa).
+    """
+    if not id_o_codigo:
+        return 0
+
+    id_o_codigo_str = str(id_o_codigo).strip()
+    sol_id = None
+    sol_cod = None
+
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # 1. Obtener id numérico y código de la solicitud
+                cursor.execute(
+                    "SELECT id, codigo FROM solicitudes WHERE CAST(id AS CHAR) = %s OR codigo = %s LIMIT 1",
+                    (id_o_codigo_str, id_o_codigo_str)
+                )
+                row = cursor.fetchone()
+                if row:
+                    sol_id = str(row.get("id"))
+                    sol_cod = str(row.get("codigo") or "")
+                else:
+                    if id_o_codigo_str.isdigit():
+                        sol_id = id_o_codigo_str
+                    else:
+                        sol_cod = id_o_codigo_str
+
+                # Construir patrones para enlace y mensaje
+                patterns = []
+                if sol_cod:
+                    patterns.append(f"%{sol_cod}%")
+                if sol_id:
+                    patterns.append(f"%/{sol_id}%")
+                    patterns.append(f"%={sol_id}%")
+
+                if not patterns:
+                    return 0
+
+                or_like_clauses = []
+                params_like = []
+                for p in patterns:
+                    or_like_clauses.append("enlace LIKE %s")
+                    params_like.append(p)
+                    or_like_clauses.append("mensaje LIKE %s")
+                    params_like.append(p)
+
+                cond_like = " OR ".join(or_like_clauses)
+
+                # Condición de destinatario
+                if id_usuario is not None and id_rol is not None:
+                    if int(id_rol) == 2:
+                        cond_dest = "(id_usuario = %s OR rol_destino = %s OR rol_destino IS NULL)"
+                        params_dest = [id_usuario, id_rol]
+                    else:
+                        cond_dest = "((%s IS NOT NULL AND id_usuario = %s) OR (%s IS NOT NULL AND rol_destino = %s))"
+                        params_dest = [id_usuario, id_usuario, id_rol, id_rol]
+                elif id_usuario is not None:
+                    cond_dest = "(id_usuario = %s)"
+                    params_dest = [id_usuario]
+                elif id_rol is not None:
+                    cond_dest = "(rol_destino = %s)"
+                    params_dest = [id_rol]
+                else:
+                    cond_dest = "1=1"
+                    params_dest = []
+
+                sql_update = f"""
+                    UPDATE notificaciones
+                    SET leido = TRUE
+                    WHERE leido = FALSE
+                      AND {cond_dest}
+                      AND ({cond_like})
+                """
+                cursor.execute(sql_update, params_dest + params_like)
+                conexion.commit()
+                filas_afectadas = cursor.rowcount
+                if filas_afectadas > 0:
+                    print(f"🔔 [NOTIFICACIONES] Se marcaron {filas_afectadas} notificación(es) como leídas para solicitud '{id_o_codigo_str}' (usuario={id_usuario}, rol={id_rol}).")
+                return filas_afectadas
+    except Exception as e:
+        print(f"❌ Error al marcar notificaciones como leídas para solicitud '{id_o_codigo}': {e}")
+        return 0
+
+
 def emitir_difusion_superadmin_db(
     titulo: str,
     mensaje: str,

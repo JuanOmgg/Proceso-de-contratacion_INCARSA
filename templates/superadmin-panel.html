@@ -2,6 +2,121 @@
 
 {% block title %}Panel SuperAdmin & Mantenimiento · INCARSA{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* =========================================================
+     FIX & MODERN DESIGN: RBAC MATRIX & TOGGLE SWITCHES
+     ========================================================= */
+
+  /* Override dark-mode.css text-shadow blur on RBAC table headers */
+  .rbac-table thead th,
+  :root.dark .rbac-table thead th,
+  :root.dark .rbac-table thead tr th,
+  :root.dark .rbac-table th {
+    text-shadow: none !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  /* Custom RBAC Toggle Switches */
+  .rbac-toggle {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    width: 44px !important;
+    height: 24px !important;
+    flex-shrink: 0 !important;
+    border-radius: 9999px !important;
+    background-color: #1e293b !important;
+    border: 1.5px solid #475569 !important;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0 !important;
+    outline: none !important;
+  }
+
+  .rbac-toggle:hover:not(:disabled) {
+    transform: scale(1.06);
+    border-color: #64748b !important;
+  }
+
+  .rbac-toggle:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .rbac-toggle:disabled {
+    cursor: not-allowed !important;
+  }
+
+  /* Knob / Thumb: CRITICAL FIX. 
+     Forces true white background and soft drop shadow, 
+     preventing dark-mode.css .bg-white from turning it dark var(--surface) */
+  .rbac-toggle-thumb,
+  :root.dark .rbac-toggle-thumb,
+  :root.dark span.rbac-toggle-thumb {
+    position: absolute !important;
+    top: 2px !important;
+    left: 2.5px !important;
+    display: inline-block !important;
+    width: 17px !important;
+    height: 17px !important;
+    border-radius: 9999px !important;
+    background-color: #94a3b8 !important;
+    background: #94a3b8 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.22s ease !important;
+    pointer-events: none !important;
+  }
+
+  /* Knob Active: Pure white with soft glow */
+  .rbac-toggle.is-active .rbac-toggle-thumb,
+  :root.dark .rbac-toggle.is-active .rbac-toggle-thumb,
+  :root.dark .rbac-toggle.is-active span.rbac-toggle-thumb {
+    transform: translateX(19px) !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Color-coded Variants when Active */
+  .rbac-toggle.is-active.toggle-ver {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border-color: #34d399 !important;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.45) !important;
+  }
+
+  .rbac-toggle.is-active.toggle-crear {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 14px rgba(14, 165, 233, 0.45) !important;
+  }
+
+  .rbac-toggle.is-active.toggle-editar {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.45) !important;
+  }
+
+  .rbac-toggle.is-active.toggle-eliminar {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+    border-color: #fb7185 !important;
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.45) !important;
+  }
+
+  .rbac-toggle.is-active.toggle-aprobar {
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%) !important;
+    border-color: #c084fc !important;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.45) !important;
+  }
+
+  /* General fix for all other switches on this page (e.g. maintenance toggle) */
+  :root.dark .switch-thumb-white,
+  :root.dark span.switch-thumb-white {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+</style>
+{% endblock %}
+
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/superadmin-panel.js') }}"></script>
 {% endblock %}
@@ -111,7 +226,7 @@
                 <span class="sr-only">Toggle mantenimiento</span>
                 <span
                   aria-hidden="true"
-                  class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                  class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white switch-thumb-white shadow-lg ring-0 transition duration-200 ease-in-out"
                   :class="mantenimiento.activo ? 'translate-x-8' : 'translate-x-0'"></span>
               </button>
             </div>
@@ -140,8 +255,7 @@
                     <i class="fa-solid" :class="mantenimiento.tipo === 'general' ? 'fa-circle-dot text-amber-400' : 'fa-circle text-slate-600'"></i>
                   </div>
                   <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
-                    Bloquea completamente el acceso a usuarios no-superadmin en cualquier URL de la plataforma, respondiendo con pantalla HTTP 503 global.
-                  </p>
+                    Bloquear todo el sistema para ejecución de mantenimiento general</p>
                 </div>
               </div>
 
@@ -221,7 +335,7 @@
                   <!-- Switch individual -->
                   <div class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
                     :class="isModuloEnMantenimiento(mod.id) ? 'bg-rose-600' : 'bg-slate-700'">
-                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white switch-thumb-white shadow ring-0 transition duration-200 ease-in-out"
                       :class="isModuloEnMantenimiento(mod.id) ? 'translate-x-4' : 'translate-x-0'"></span>
                   </div>
                 </div>
@@ -322,8 +436,8 @@
                 </div>
               </div>
 
-              <!-- Botones de Acción -->
-              <div class="flex flex-wrap items-center gap-3 pt-2">
+              <!-- Botones de Acción y Previsualización de Errores -->
+              <div class="flex flex-wrap items-center gap-3 pt-2" x-data="{ menuErroresAbierto: false }">
                 <button
                   type="button"
                   @click="guardarConfiguracionMantenimiento()"
@@ -333,12 +447,100 @@
                   <span x-text="guardandoMantenimiento ? 'Guardando...' : 'Guardar Configuración'"></span>
                 </button>
 
-                <a
-                  href="/superadmin/previsualizar-503"
-                  target="_blank"
-                  class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-white/5 hover:bg-white/10 transition-colors inline-flex items-center gap-2">
-                  <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Previsualizar Pantalla 503
-                </a>
+                <!-- Menú desplegable para previsualizar errores -->
+                <div class="relative">
+                  <button
+                    type="button"
+                    @click="menuErroresAbierto = !menuErroresAbierto"
+                    class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-[var(--text-primary)] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all inline-flex items-center gap-2.5 shadow-sm">
+                    <i class="fa-solid fa-eye text-xs text-amber-400"></i>
+                    <span>Previsualizar Errores</span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)] transition-transform duration-200" :class="{ 'rotate-180': menuErroresAbierto }"></i>
+                  </button>
+
+                  <div
+                    x-show="menuErroresAbierto"
+                    @click.away="menuErroresAbierto = false"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="absolute left-0 mt-2 w-64 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-2xl p-2 z-50 space-y-1 backdrop-blur-xl"
+                    x-cloak>
+                    <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      Pantallas de Error del Sistema
+                    </div>
+
+                    <a
+                      href="/superadmin/previsualizar-403"
+                      target="_blank"
+                      class="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-primary)] hover:bg-white/10 transition-all group">
+                      <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/25 text-rose-400 flex items-center justify-center font-bold font-mono text-[10px] group-hover:scale-105 transition-transform">403</span>
+                        <div>
+                          <p class="font-semibold leading-none">Acceso no autorizado</p>
+                          <p class="text-[10px] text-[var(--text-muted)] mt-0.5">Forbidden / Sin permisos</p>
+                        </div>
+                      </div>
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400 group-hover:text-white transition-colors"></i>
+                    </a>
+
+                    <a
+                      href="/superadmin/previsualizar-404"
+                      target="_blank"
+                      class="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-primary)] hover:bg-white/10 transition-all group">
+                      <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/25 text-sky-400 flex items-center justify-center font-bold font-mono text-[10px] group-hover:scale-105 transition-transform">404</span>
+                        <div>
+                          <p class="font-semibold leading-none">Página no encontrada</p>
+                          <p class="text-[10px] text-[var(--text-muted)] mt-0.5">Not Found / Ruta inexistente</p>
+                        </div>
+                      </div>
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400 group-hover:text-white transition-colors"></i>
+                    </a>
+
+                    <a
+                      href="/superadmin/previsualizar-500"
+                      target="_blank"
+                      class="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-primary)] hover:bg-white/10 transition-all group">
+                      <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center font-bold font-mono text-[10px] group-hover:scale-105 transition-transform">500</span>
+                        <div>
+                          <p class="font-semibold leading-none">Error del servidor</p>
+                          <p class="text-[10px] text-[var(--text-muted)] mt-0.5">Internal Server Error</p>
+                        </div>
+                      </div>
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400 group-hover:text-white transition-colors"></i>
+                    </a>
+
+                    <div class="h-px bg-white/10 my-1"></div>
+
+                    <a
+                      href="/superadmin/previsualizar-503"
+                      target="_blank"
+                      class="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-amber-300 hover:bg-amber-500/15 transition-all group">
+                      <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-amber-500/25 border border-amber-500/40 text-amber-300 flex items-center justify-center font-bold font-mono text-[10px] group-hover:scale-105 transition-transform">503</span>
+                        <div>
+                          <p class="font-semibold leading-none text-amber-300">Mantenimiento</p>
+                          <p class="text-[10px] text-amber-400/80 mt-0.5">Service Unavailable</p>
+                        </div>
+                      </div>
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-amber-400 group-hover:text-amber-200 transition-colors"></i>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Accesos directos rápidos en píldoras (badge chips) -->
+                <div class="flex items-center gap-1.5 sm:pl-2 sm:border-l sm:border-white/10">
+                  <span class="text-[11px] text-[var(--text-muted)] mr-1 hidden sm:inline">Vistas rápidas:</span>
+                  <a href="/superadmin/previsualizar-403" target="_blank" data-tooltip="Previsualizar Error 403 (Acceso no autorizado)" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all hover:scale-105">403</a>
+                  <a href="/superadmin/previsualizar-404" target="_blank" data-tooltip="Previsualizar Error 404 (Página no encontrada)" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition-all hover:scale-105">404</a>
+                  <a href="/superadmin/previsualizar-500" target="_blank" data-tooltip="Previsualizar Error 500 (Error del servidor)" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all hover:scale-105">500</a>
+                  <a href="/superadmin/previsualizar-503" target="_blank" data-tooltip="Previsualizar Error 503 (Mantenimiento)" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all hover:scale-105">503</a>
+                </div>
               </div>
             </div>
           </div>
@@ -347,68 +549,91 @@
         <!-- ============================================================
            SECCIÓN 2: MATRIZ DE PERMISOS DINÁMICOS POR ROL (RBAC)
         ============================================================= -->
-        <section class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl space-y-6">
-          
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <section class="p-6 sm:p-8 rounded-3xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-2xl space-y-6 relative overflow-hidden">
+          <!-- Glow de fondo neón sutil -->
+          <div class="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none"></div>
+
+          <!-- Encabezado de la Sección -->
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative z-10">
             <div>
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-indigo-600/30 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg shadow-sm">
                   <i class="fa-solid fa-users-gear"></i>
                 </div>
-                <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
-                  Matriz de Permisos por Rol (RBAC Dinámico)
-                </h2>
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h2 class="text-xl font-bold font-display text-[var(--text-primary)]">
+                      Matriz de Permisos por Rol (RBAC Dinámico)
+                    </h2>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+                      Tiempo Real
+                    </span>
+                  </div>
+                  <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+                    Control granular de visualización y acciones operativas (Crear, Editar, Eliminar, Aprobar) para cada rol.
+                  </p>
+                </div>
               </div>
-              <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
-                Configura qué módulos pueden ver y qué botones de acción (Crear, Editar, Eliminar, Aprobar) tienen habilitados.
-              </p>
             </div>
 
             <!-- Botones de Acción Global para el Rol -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5 flex-shrink-0">
               <button
                 type="button"
                 @click="marcarTodosRol(true)"
                 :disabled="esRolSuperAdmin"
-                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-emerald-500/20 active:scale-95'"
-                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-all inline-flex items-center gap-1.5">
-                <i class="fa-solid fa-check-double text-[10px]"></i> Habilitar Todo
+                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-emerald-500/20 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10 active:scale-95'"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 transition-all inline-flex items-center gap-2 shadow-sm backdrop-blur-sm">
+                <i class="fa-solid fa-check-double text-xs"></i>
+                <span>Habilitar Todo</span>
               </button>
               <button
                 type="button"
                 @click="marcarTodosRol(false)"
                 :disabled="esRolSuperAdmin"
-                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-rose-500/20 active:scale-95'"
-                class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 transition-all inline-flex items-center gap-1.5">
-                <i class="fa-solid fa-ban text-[10px]"></i> Bloquear Todo
+                :class="esRolSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'hover:bg-rose-500/20 hover:border-rose-500/40 hover:shadow-lg hover:shadow-rose-500/10 active:scale-95'"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all inline-flex items-center gap-2 shadow-sm backdrop-blur-sm">
+                <i class="fa-solid fa-ban text-xs"></i>
+                <span>Bloquear Todo</span>
               </button>
             </div>
           </div>
 
-          <!-- Pestañas de Selección de Roles -->
-          <div class="flex flex-wrap items-center gap-2 border-b border-[var(--border-color,#334155)] pb-4">
-            <template x-for="rol in roles" :key="rol.id">
-              <button
-                type="button"
-                @click="seleccionarRol(rol.id)"
-                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center gap-2"
-                :class="rolSeleccionadoId === rol.id 
-                  ? 'bg-amber-500 text-slate-900 shadow-md shadow-amber-500/20 font-bold' 
-                  : 'bg-[var(--table-header,#0f172a)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-[var(--border-color,#334155)]'">
-                <i class="fa-solid" :class="rol.nombre_rol === 'SUPERADMIN' ? 'fa-crown text-amber-900' : 'fa-user-tag'"></i>
-                <span x-text="rol.nombre_rol"></span>
-              </button>
-            </template>
+          <!-- Selector de Roles: Navegación Estilo Dock Glassmórfico Compacto -->
+          <div class="p-1 sm:p-1.5 rounded-xl bg-slate-900/80 border border-slate-800 shadow-inner backdrop-blur-md">
+            <div class="flex items-center gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto scrollbar-none">
+              <template x-for="rol in roles" :key="rol.id">
+                <button
+                  type="button"
+                  @click="seleccionarRol(rol.id)"
+                  class="flex-1 min-w-fit px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 group relative whitespace-nowrap shadow-sm active:scale-95"
+                  :class="[
+                    rolSeleccionadoId === rol.id 
+                      ? ((rol.nombre_rol === 'SUPERADMIN') 
+                          ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/60 scale-[1.01]' 
+                          : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/50 scale-[1.01]')
+                      : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-slate-700/70 hover:border-slate-500/80'
+                  ]">
+                  <i class="fa-solid text-[11px] sm:text-xs transition-transform group-hover:scale-110" 
+                     :class="[iconoRol(rol.nombre_rol), colorIconoRol(rol.nombre_rol, rolSeleccionadoId === rol.id)]"></i>
+                  <span x-text="rol.nombre_rol"></span>
+                  <span x-show="rol.nombre_rol === 'SUPERADMIN'" class="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
+                    :class="rolSeleccionadoId === rol.id ? 'bg-black/20 text-slate-950' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'">
+                    Maestro
+                  </span>
+                </button>
+              </template>
+            </div>
           </div>
 
           <!-- Banner Informativo para SUPERADMIN -->
           <template x-if="esRolSuperAdmin">
-            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3 shadow-inner">
-              <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-crown text-amber-400 text-sm"></i>
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3.5 shadow-inner">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0 text-amber-400 text-base shadow-sm">
+                <i class="fa-solid fa-crown"></i>
               </div>
-              <div>
-                <p class="font-bold text-amber-400">Rol Maestro SUPERADMIN (Acceso Total Permanente)</p>
+              <div class="leading-relaxed">
+                <p class="font-bold text-amber-400 text-sm">Rol Maestro SUPERADMIN (Acceso Total Permanente)</p>
                 <p class="text-amber-200/80 mt-0.5">Este rol posee acceso irrestricto en todas las vistas y acciones del sistema a nivel arquitectónico. Los permisos permanecen activos y bloqueados por seguridad.</p>
               </div>
             </div>
@@ -416,15 +641,17 @@
 
           <!-- Barra de Alerta: Cambios Pendientes de Guardar -->
           <template x-if="hayCambiosPendientes && !esRolSuperAdmin">
-            <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-lg shadow-amber-500/10 animate-pulse">
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xl shadow-amber-500/10">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/30 flex items-center justify-center text-amber-300 flex-shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/30 border border-amber-500/50 flex items-center justify-center text-amber-300 flex-shrink-0">
                   <i class="fa-solid fa-triangle-exclamation text-sm"></i>
                 </div>
                 <div>
-                  <span class="font-bold text-white">Tienes cambios sin guardar para el rol:</span>
-                  <span class="ml-1 px-2 py-0.5 rounded bg-amber-500/30 text-amber-300 font-bold" x-text="rolActual?.nombre_rol"></span>
-                  <p class="text-xs text-amber-200/80 mt-0.5">Recuerda pulsar "Guardar Cambios" para aplicar esta configuración a la base de datos.</p>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-white">Tienes cambios sin guardar para el rol:</span>
+                    <span class="px-2 py-0.5 rounded-md bg-amber-500/30 border border-amber-500/40 text-amber-200 font-bold" x-text="rolActual?.nombre_rol"></span>
+                  </div>
+                  <p class="text-xs text-amber-200/80 mt-0.5">Pulsa "Guardar Permisos" para aplicar esta configuración permanentemente en base de datos.</p>
                 </div>
               </div>
 
@@ -432,14 +659,14 @@
                 <button
                   type="button"
                   @click="cargarMatrizPermisos(); hayCambiosPendientes = false;"
-                  class="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
+                  class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
                   Descartar
                 </button>
                 <button
                   type="button"
                   @click="guardarPermisosRol()"
                   :disabled="guardandoPermisos"
-                  class="px-4 py-2 rounded-lg text-xs font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition-all shadow-md shadow-amber-500/20 inline-flex items-center gap-1.5">
+                  class="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 transition-all shadow-lg shadow-amber-500/25 inline-flex items-center gap-2 active:scale-95">
                   <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
                   <span x-text="guardandoPermisos ? 'Guardando...' : 'Guardar Ahora'"></span>
                 </button>
@@ -447,153 +674,208 @@
             </div>
           </template>
 
-          <!-- Barra de Búsqueda de Módulos -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <!-- Barra de Búsqueda y Métricas de Permisos -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
+            <!-- Input Búsqueda -->
             <div class="relative flex-1 max-w-md">
-              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
               <input
                 type="text"
                 x-model="busquedaModulo"
                 placeholder="Filtrar módulos (ej: Solicitudes, Usuarios, Plantas...)"
-                class="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500">
+                class="w-full pl-9 pr-8 py-2.5 rounded-xl text-xs bg-slate-900/80 border border-slate-700/70 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/80 focus:ring-2 focus:ring-amber-500/20 transition-all">
+              <button
+                type="button"
+                x-show="busquedaModulo"
+                @click="busquedaModulo = ''"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
             </div>
 
-            <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-              <span>Configurando rol:</span>
-              <span class="font-bold text-[var(--text-primary)]" x-text="rolActual ? rolActual.nombre_rol : ''"></span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 font-mono" x-text="`${modulosFiltrados.length} módulos`"></span>
+            <!-- Métricas del Rol Actual -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-2 text-slate-300">
+                <span class="text-slate-400 text-[11px]">Rol activo:</span>
+                <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                  <i class="fa-solid text-xs" :class="iconoRol(rolActual?.nombre_rol)"></i>
+                  <span x-text="rolActual ? rolActual.nombre_rol : ''"></span>
+                </span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-1.5 font-mono text-[11px] text-slate-300">
+                <i class="fa-solid fa-shield-halved text-indigo-400 text-[10px]"></i>
+                <span class="text-emerald-400 font-bold" x-text="permisosActivosRolActual"></span>
+                <span class="text-slate-500">/</span>
+                <span x-text="`${totalPermisosPosibles} permisos`"></span>
+              </div>
+              <span class="text-[11px] px-2.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-800/80 font-mono text-slate-300" x-text="`${modulosFiltrados.length} módulos`"></span>
             </div>
           </div>
 
           <!-- TABLA MATRIZ DE PERMISOS -->
-          <div class="overflow-x-auto rounded-xl border border-[var(--border-color,#334155)] shadow-lg">
-            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <div class="overflow-x-auto rounded-2xl border border-slate-800 shadow-xl bg-slate-950/40 backdrop-blur-sm">
+            <table class="w-full text-left border-collapse rbac-table text-xs sm:text-sm">
               <thead>
-                <tr class="bg-[var(--table-header,#0f172a)] text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-semibold border-b border-[var(--border-color,#334155)]">
-                  <th class="p-3.5 sm:p-4">Módulo del Sistema</th>
-                  <th class="p-3.5 sm:p-4 text-center">Acceso (Ver)</th>
-                  <th class="p-3.5 sm:p-4 text-center">Crear</th>
-                  <th class="p-3.5 sm:p-4 text-center">Editar</th>
-                  <th class="p-3.5 sm:p-4 text-center">Eliminar</th>
-                  <th class="p-3.5 sm:p-4 text-center">Aprobar</th>
-                  <th class="p-3.5 sm:p-4 text-center">Acciones Rápidas</th>
+                <tr class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[11px] font-bold border-b border-slate-800">
+                  <th class="py-4 px-4 text-left">
+                    <span class="inline-flex items-center gap-2 text-slate-300">
+                      <i class="fa-solid fa-cubes text-xs text-indigo-400"></i>
+                      Módulo del Sistema
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+                      ACCESO (VER)
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_#0ea5e9]"></span>
+                      CREAR
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]"></span>
+                      EDITAR
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_6px_#f43f5e]"></span>
+                      ELIMINAR
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_#a855f7]"></span>
+                      APROBAR
+                    </span>
+                  </th>
+                  <th class="py-4 px-3 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold">
+                      <i class="fa-solid fa-bolt text-[10px] text-amber-400"></i>
+                      ACCIONES
+                    </span>
+                  </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[var(--border-color,#334155)]">
+              <tbody class="divide-y divide-slate-800/80">
                 <template x-for="mod in modulosFiltrados" :key="mod">
-                  <tr class="hover:bg-white/[0.02] transition-colors"
-                    :class="getPermiso(mod, 'ver') ? '' : 'opacity-60 bg-rose-500/[0.02]'">
+                  <tr class="hover:bg-white/[0.03] transition-colors group"
+                    :class="getPermiso(mod, 'ver') ? '' : 'opacity-65 bg-slate-900/30'">
                     <!-- Nombre del Módulo -->
-                    <td class="p-3.5 sm:p-4 font-medium text-[var(--text-primary)]">
+                    <td class="py-3.5 px-4 font-medium">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700/50 flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <i class="fa-solid text-xs" :class="iconoModulo(mod)"></i>
+                        <div class="w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                          :class="bgIconoModulo(mod)">
+                          <i class="fa-solid text-sm" :class="iconoModulo(mod)"></i>
                         </div>
                         <div>
-                          <p class="font-semibold text-xs sm:text-sm" x-text="formatoModulo(mod)"></p>
-                          <span class="text-[10px] text-[var(--text-muted)] font-mono" x-text="mod"></span>
+                          <p class="font-semibold text-xs sm:text-sm text-slate-100 group-hover:text-white transition-colors" x-text="formatoModulo(mod)"></p>
+                          <span class="text-[10px] text-slate-400 font-mono" x-text="mod"></span>
                         </div>
                       </div>
                     </td>
 
                     <!-- Switch: Ver -->
-                    <td class="p-3.5 sm:p-4 text-center">
+                    <td class="py-3.5 px-3 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'ver')"
                         :disabled="esRolSuperAdmin"
-                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de visualización'"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
-                        :class="[
-                          getPermiso(mod, 'ver') ? 'bg-emerald-500' : 'bg-slate-700',
-                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                        ]">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="getPermiso(mod, 'ver') ? 'translate-x-5' : 'translate-x-0'"></span>
+                        :data-tooltip="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : (getPermiso(mod, 'ver') ? 'Desactivar acceso a este módulo' : 'Habilitar acceso a este módulo')"
+                        class="rbac-toggle toggle-ver"
+                        :class="{
+                          'is-active': getPermiso(mod, 'ver'),
+                          'opacity-80 cursor-not-allowed': esRolSuperAdmin
+                        }">
+                        <span class="rbac-toggle-thumb"></span>
                       </button>
                     </td>
 
                     <!-- Switch: Crear -->
-                    <td class="p-3.5 sm:p-4 text-center">
+                    <td class="py-3.5 px-3 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'crear')"
-                        :disabled="esRolSuperAdmin"
-                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de creación'"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
-                        :class="[
-                          getPermiso(mod, 'crear') ? 'bg-sky-500' : 'bg-slate-700',
-                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                        ]">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="getPermiso(mod, 'crear') ? 'translate-x-5' : 'translate-x-0'"></span>
+                        :disabled="esRolSuperAdmin || !getPermiso(mod, 'ver')"
+                        :data-tooltip="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : (!getPermiso(mod, 'ver') ? 'Requiere habilitar acceso (VER) primero' : 'Alternar permiso de creación')"
+                        class="rbac-toggle toggle-crear"
+                        :class="{
+                          'is-active': getPermiso(mod, 'crear'),
+                          'opacity-30 cursor-not-allowed': !getPermiso(mod, 'ver') && !esRolSuperAdmin,
+                          'opacity-80 cursor-not-allowed': esRolSuperAdmin
+                        }">
+                        <span class="rbac-toggle-thumb"></span>
                       </button>
                     </td>
 
                     <!-- Switch: Editar -->
-                    <td class="p-3.5 sm:p-4 text-center">
+                    <td class="py-3.5 px-3 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'editar')"
-                        :disabled="esRolSuperAdmin"
-                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de edición'"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
-                        :class="[
-                          getPermiso(mod, 'editar') ? 'bg-amber-500' : 'bg-slate-700',
-                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                        ]">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="getPermiso(mod, 'editar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                        :disabled="esRolSuperAdmin || !getPermiso(mod, 'ver')"
+                        :data-tooltip="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : (!getPermiso(mod, 'ver') ? 'Requiere habilitar acceso (VER) primero' : 'Alternar permiso de edición')"
+                        class="rbac-toggle toggle-editar"
+                        :class="{
+                          'is-active': getPermiso(mod, 'editar'),
+                          'opacity-30 cursor-not-allowed': !getPermiso(mod, 'ver') && !esRolSuperAdmin,
+                          'opacity-80 cursor-not-allowed': esRolSuperAdmin
+                        }">
+                        <span class="rbac-toggle-thumb"></span>
                       </button>
                     </td>
 
                     <!-- Switch: Eliminar -->
-                    <td class="p-3.5 sm:p-4 text-center">
+                    <td class="py-3.5 px-3 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'eliminar')"
-                        :disabled="esRolSuperAdmin"
-                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso de eliminación'"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
-                        :class="[
-                          getPermiso(mod, 'eliminar') ? 'bg-rose-500' : 'bg-slate-700',
-                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                        ]">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="getPermiso(mod, 'eliminar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                        :disabled="esRolSuperAdmin || !getPermiso(mod, 'ver')"
+                        :data-tooltip="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : (!getPermiso(mod, 'ver') ? 'Requiere habilitar acceso (VER) primero' : 'Alternar permiso de eliminación')"
+                        class="rbac-toggle toggle-eliminar"
+                        :class="{
+                          'is-active': getPermiso(mod, 'eliminar'),
+                          'opacity-30 cursor-not-allowed': !getPermiso(mod, 'ver') && !esRolSuperAdmin,
+                          'opacity-80 cursor-not-allowed': esRolSuperAdmin
+                        }">
+                        <span class="rbac-toggle-thumb"></span>
                       </button>
                     </td>
 
                     <!-- Switch: Aprobar -->
-                    <td class="p-3.5 sm:p-4 text-center">
+                    <td class="py-3.5 px-3 text-center">
                       <button type="button"
                         @click="togglePermiso(mod, 'aprobar')"
-                        :disabled="esRolSuperAdmin"
-                        :title="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : 'Alternar permiso especial de aprobación'"
-                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
-                        :class="[
-                          getPermiso(mod, 'aprobar') ? 'bg-purple-500' : 'bg-slate-700',
-                          esRolSuperAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                        ]">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="getPermiso(mod, 'aprobar') ? 'translate-x-5' : 'translate-x-0'"></span>
+                        :disabled="esRolSuperAdmin || !getPermiso(mod, 'ver')"
+                        :data-tooltip="esRolSuperAdmin ? 'Superadmin tiene acceso total permanente' : (!getPermiso(mod, 'ver') ? 'Requiere habilitar acceso (VER) primero' : 'Alternar permiso especial de aprobación')"
+                        class="rbac-toggle toggle-aprobar"
+                        :class="{
+                          'is-active': getPermiso(mod, 'aprobar'),
+                          'opacity-30 cursor-not-allowed': !getPermiso(mod, 'ver') && !esRolSuperAdmin,
+                          'opacity-80 cursor-not-allowed': esRolSuperAdmin
+                        }">
+                        <span class="rbac-toggle-thumb"></span>
                       </button>
                     </td>
 
                     <!-- Acciones Rápidas del Módulo -->
-                    <td class="p-3.5 sm:p-4 text-center">
-                      <div class="flex items-center justify-center gap-2">
+                    <td class="py-3.5 px-3 text-center">
+                      <div class="flex items-center justify-center gap-1.5">
                         <button type="button"
                           @click="marcarTodosModulo(mod, true)"
                           :disabled="esRolSuperAdmin"
-                          title="Habilitar todas las acciones de esta fila"
-                          class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/40 transition-all shadow-sm"
-                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'hover:scale-110 active:scale-95'">
-                          <i class="fa-solid fa-check text-[10px]"></i>
+                          data-tooltip="Habilitar todas las acciones de este módulo"
+                          class="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 transition-all shadow-sm active:scale-95"
+                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed' : ''">
+                          <i class="fa-solid fa-check text-xs"></i>
                         </button>
                         <button type="button"
                           @click="marcarTodosModulo(mod, false)"
                           :disabled="esRolSuperAdmin"
-                          title="Deshabilitar todas las acciones de esta fila"
-                          class="w-7 h-7 rounded-full flex items-center justify-center bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 transition-all shadow-sm"
-                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'hover:scale-110 active:scale-95'">
-                          <i class="fa-solid fa-xmark text-[10px]"></i>
+                          data-tooltip="Bloquear todas las acciones de este módulo"
+                          class="w-7 h-7 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/30 transition-all shadow-sm active:scale-95"
+                          :class="esRolSuperAdmin ? 'opacity-30 cursor-not-allowed' : ''">
+                          <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                       </div>
                     </td>
@@ -603,12 +885,13 @@
                 <!-- Estado vacío si el filtro no coincide -->
                 <template x-if="modulosFiltrados.length === 0">
                   <tr>
-                    <td colspan="7" class="p-8 text-center text-[var(--text-muted)]">
-                      <div class="w-12 h-12 rounded-full bg-slate-800/80 mx-auto flex items-center justify-center mb-3">
-                        <i class="fa-solid fa-magnifying-glass text-base opacity-60"></i>
+                    <td colspan="7" class="p-10 text-center text-slate-400">
+                      <div class="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700/60 mx-auto flex items-center justify-center mb-3 text-amber-400">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
                       </div>
-                      <p class="font-medium">No se encontraron módulos con el término "<span class="text-amber-400" x-text="busquedaModulo"></span>"</p>
-                      <button type="button" @click="busquedaModulo = ''" class="mt-2 text-xs text-amber-400 hover:underline">
+                      <p class="font-semibold text-slate-200">No se encontraron módulos con el término "<span class="text-amber-400" x-text="busquedaModulo"></span>"</p>
+                      <p class="text-xs text-slate-500 mt-1">Prueba con otro término de búsqueda o limpia el filtro.</p>
+                      <button type="button" @click="busquedaModulo = ''" class="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/25 transition-all">
                         Limpiar filtro de búsqueda
                       </button>
                     </td>
@@ -619,26 +902,40 @@
           </div>
 
           <!-- BOTÓN GUARDAR CAMBIOS -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-[var(--border-color,#334155)]">
-            <div class="text-xs text-[var(--text-muted)]">
-              <span x-show="hayCambiosPendientes" class="inline-flex items-center gap-1.5 text-amber-400 font-semibold">
-                <i class="fa-solid fa-circle-dot text-[8px] animate-ping"></i> Tienes cambios pendientes por guardar
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-slate-800">
+            <div class="text-xs">
+              <span x-show="hayCambiosPendientes" class="inline-flex items-center gap-2 text-amber-400 font-semibold px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                Tienes modificaciones pendientes por guardar para este rol
               </span>
-              <span x-show="!hayCambiosPendientes" class="inline-flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <i class="fa-solid fa-circle-check text-[10px]"></i> Configuración sincronizada con la base de datos
+              <span x-show="!hayCambiosPendientes" class="inline-flex items-center gap-2 text-emerald-400 font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <i class="fa-solid fa-circle-check text-xs"></i>
+                Permisos sincronizados con la base de datos
               </span>
             </div>
 
             <div class="flex items-center gap-3 justify-end">
               <button
                 type="button"
+                x-show="hayCambiosPendientes && !esRolSuperAdmin"
+                @click="cargarMatrizPermisos(); hayCambiosPendientes = false;"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-all">
+                Descartar Cambios
+              </button>
+              <button
+                type="button"
                 @click="guardarPermisosRol()"
                 :disabled="guardandoPermisos || esRolSuperAdmin"
-                class="px-6 py-3 rounded-xl text-sm font-bold transition-all inline-flex items-center gap-2"
+                class="px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all inline-flex items-center gap-2 shadow-lg"
                 :class="[
                   esRolSuperAdmin 
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-60' 
-                    : (hayCambiosPendientes ? 'bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg shadow-amber-500/30 scale-105 active:scale-95' : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700')
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
+                    : (hayCambiosPendientes 
+                        ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-500/25 scale-[1.02] active:scale-95' 
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700')
                 ]">
                 <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : (hayCambiosPendientes ? 'fa-floppy-disk' : 'fa-check')"></i>
                 <span x-text="guardandoPermisos ? 'Guardando en Base de Datos...' : (esRolSuperAdmin ? 'Permisos Fijos (SuperAdmin)' : `Guardar Permisos para ${rolActual ? rolActual.nombre_rol : 'Rol'}`)"></span>

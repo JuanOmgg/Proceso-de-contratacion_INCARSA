@@ -28,6 +28,10 @@ function appShell() {
       return false;
     },
 
+    get esAdminOSuperAdmin() {
+      return this.tieneRol('ADMINISTRADOR', 'SUPERADMIN');
+    },
+
     puedeModulo(mod) {
       if (this.activeRole === "SUPERADMIN") return true;
       if (typeof window.puedeModulo === "function") {
@@ -120,6 +124,16 @@ function appShell() {
       // Escuchar apertura remota de modal de notificaciones
       window.addEventListener("open-notificaciones-modal", () => {
         this.abrirModalTodasNotificaciones();
+      });
+
+      // Escuchar actualizaciones de notificaciones (al revisar solicitudes en cualquier sección)
+      window.addEventListener("notificaciones-actualizadas", () => {
+        this.cargarNotificaciones();
+      });
+      window.addEventListener("storage", (e) => {
+        if (e.key === "incarsa_notificaciones_reload") {
+          this.cargarNotificaciones();
+        }
       });
 
       this.cargarNotificaciones();
@@ -839,6 +853,9 @@ function solicitudesTable() {
             if (idx > -1) {
               this.solicitudes[idx] = { ...this.solicitudes[idx], ...this.selected };
             }
+            // Refrescar conteo de notificaciones ya que se marcó como leída
+            this.cargarNotificaciones();
+            localStorage.setItem("incarsa_notificaciones_reload", Date.now().toString());
           }
         }
       } catch (err) {
@@ -888,7 +905,24 @@ function usersSection() {
     selectedUser: null,
     cargando: true,
 
+    tieneRol(...roles) {
+      if (typeof window.tieneRol === "function") {
+        return window.tieneRol(...roles);
+      }
+      return false;
+    },
+
+    get esAdminOSuperAdmin() {
+      return this.tieneRol('ADMINISTRADOR', 'SUPERADMIN');
+    },
+
     async init() {
+      // Restringir exclusivamente a ADMINISTRADOR y SUPERADMIN
+      if (!this.esAdminOSuperAdmin) {
+        this.cargando = false;
+        return;
+      }
+
       // 1. Usar datos precargados desde el splash
       try {
         const preUsers = sessionStorage.getItem("incarsa_preloaded_usuarios");
@@ -1062,6 +1096,15 @@ function syncDashboardChartsTheme() {
 }
 
 function initDashboardCharts() {
+  const esAdminOSuper = (typeof window.tieneRol === "function") 
+    ? window.tieneRol('ADMINISTRADOR', 'SUPERADMIN') 
+    : false;
+
+  // Si el usuario no es Administrador ni SuperAdmin, no cargar ni renderizar las gráficas
+  if (!esAdminOSuper) {
+    return;
+  }
+
   const cfg = getChartThemeConfig();
 
   async function graficoMeses() {

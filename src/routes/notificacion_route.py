@@ -8,6 +8,7 @@ from src.loaders.notificacion_loader import (
     contar_no_leidas_db,
     marcar_leida_db,
     marcar_todas_leidas_db,
+    marcar_leida_por_solicitud_db,
     emitir_difusion_superadmin_db,
     obtener_historial_difusion_db,
 )
@@ -26,6 +27,12 @@ class NotificacionCreate(BaseModel):
 
 
 class MarcarTodasRequest(BaseModel):
+    id_usuario: Optional[int] = None
+    id_rol: Optional[int] = None
+
+
+class MarcarPorSolicitudRequest(BaseModel):
+    id_o_codigo: str
     id_usuario: Optional[int] = None
     id_rol: Optional[int] = None
 
@@ -79,6 +86,25 @@ def marcar_todas_como_leidas(payload: MarcarTodasRequest, current_user: dict = D
     return {
         "estado": "OK",
         "mensaje": "Todas las notificaciones fueron marcadas como leídas.",
+    }
+
+
+@router.patch("/marcar-leida-solicitud", status_code=status.HTTP_200_OK)
+def marcar_leida_por_solicitud(payload: MarcarPorSolicitudRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Marca como leídas las notificaciones asociadas a una solicitud cuando el usuario entra a revisarla.
+    """
+    user_id = payload.id_usuario or current_user.get("id")
+    rol_id = payload.id_rol or current_user.get("id_rol")
+    afectadas = marcar_leida_por_solicitud_db(
+        id_o_codigo=payload.id_o_codigo,
+        id_usuario=user_id,
+        id_rol=rol_id
+    )
+    return {
+        "estado": "OK",
+        "mensaje": f"{afectadas} notificación(es) marcada(s) como leída(s).",
+        "afectadas": afectadas
     }
 
 

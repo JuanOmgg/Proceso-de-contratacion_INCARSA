@@ -5,12 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>500 · Error del servidor · INCARSA</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="/static/img/icono.png">
+<link rel="shortcut icon" href="/static/img/icono.png">
+
+<!-- Tailwind CSS Compilado Local -->
+<link rel="stylesheet" href="/static/css/tailwind.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/error-pages.css">
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/error-pages.css?v=20260906_v8">
+<style>
+.error-500-clean-number {
+  font-family: 'Space Grotesk', var(--font-display), sans-serif;
+  font-weight: 800;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-stroke: 2px #c084fc;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 8px rgba(192, 132, 252, 0.7),
+    0 0 20px rgba(192, 132, 252, 0.45);
+  filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.55));
+}
+</style>
 </head>
 
 <body class="antialiased">
@@ -19,34 +41,38 @@
   <div class="loader"></div>
 </div>
 
-<div class="error-page" style="--error-color: var(--state-revision); --error-color-bg: var(--state-revision-bg);">
+<div class="error-page" style="--error-color: #a855f7; --error-color-bg: #faf5ff;">
   <div class="error-hazard-bg"></div>
 
   <div class="error-brand-mark">
-    <div class="w-9 h-9 rounded-lg bg-[var(--state-revision)] flex items-center justify-center flex-shrink-0">
-      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    <div class="w-9 h-9 rounded-lg bg-purple-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-600/30">
+      <i class="fa-solid fa-triangle-exclamation text-white text-sm"></i>
     </div>
     <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
   </div>
 
-  <p class="error-code-hero">500</p>
+  <div class="relative flex items-center justify-center">
+    <!-- Brillo ambiental púrpura detrás del 500 -->
+    <div class="absolute -inset-6 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <p class="error-code-hero error-500-clean-number select-none">500</p>
+  </div>
 
-  <p class="error-code">Error 500</p>
-  <h1 class="error-title">Error interno del servidor</h1>
+  <p class="error-code error-500-code-glow">Error 500</p>
+  <h1 class="error-title error-500-title-glow">Error interno del servidor</h1>
   <p class="error-description">
     Algo salió mal de nuestro lado. El equipo técnico ya fue notificado automáticamente.
   </p>
 
   <div class="error-actions">
-    <button type="button" onclick="location.reload()" class="bg-[var(--state-revision)] w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2 text-white">
+    <button type="button" onclick="location.reload()" class="error-btn-primary error-btn-500 w-full rounded-lg px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2">
       <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar
     </button>
-    <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+    <button type="button" onclick="history.back()" class="error-btn-secondary w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
       <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
     </button>
   </div>
 </div>
 
-<script src="assets/js/page-transition.js"></script>
+<script src="/static/js/page-transition.js"></script>
 </body>
 </html>

@@ -434,6 +434,27 @@ function revisionSolicitudApp() {
 
         this.solicitud = this.normalizar(data);
 
+        // Si se ingresa a revisar la solicitud desde cualquier lugar (listado, búsqueda, URL directa),
+        // marcar automáticamente las notificaciones pendientes de esta solicitud como leídas para su usuario/rol.
+        try {
+          const codOId = data.codigo || data.id || this.solicitudId;
+          const userSes = this.usuarioSesion || {};
+          fetch(`/api/v1/notificaciones/marcar-leida-solicitud`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_o_codigo: String(codOId),
+              id_usuario: userSes.id || null,
+              id_rol: userSes.id_rol || null
+            })
+          }).then(() => {
+            window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+            localStorage.setItem("incarsa_notificaciones_reload", Date.now().toString());
+          }).catch(() => {});
+        } catch (eNotif) {
+          console.warn("Aviso al auto-marcar notificación como leída:", eNotif);
+        }
+
         // Cargar dictámenes previos desde backend o storage local
         if (Array.isArray(data.revisiones)) {
           this.revisionesHistorial = data.revisiones;

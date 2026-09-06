@@ -7,7 +7,7 @@
   <title>{% block title %}INCARSA{% endblock %}</title>
 
   <!-- Favicon / Ícono de la pestaña del navegador -->
-  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
 
@@ -24,15 +24,83 @@
     })();
   </script>
 
-  <!-- Guardián de Navegación (Auth Guard): Redirige a login si no hay token -->
+  <!-- Guardián de Navegación y Permisos de Rol (Auth Guard + RBAC) -->
   <script>
     (function () {
       try {
         var token = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
         if (!token) {
           window.location.replace('/login');
+          return;
         }
-      } catch (e) {}
+
+        var path = window.location.pathname.toLowerCase();
+        // Rutas universales / libres de validación
+        if (path === '/' || path === '/dashboard' || path.includes('/login') || path.includes('/403') || path.includes('/404') || path.includes('/500') || path.includes('/503') || path.includes('/splash-loading') || path.includes('/cargando')) {
+          return;
+        }
+
+        var sesionStr = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+        if (!sesionStr) return;
+        var sesion = JSON.parse(sesionStr);
+        var rol = (sesion && sesion.rol ? String(sesion.rol) : '').trim().toUpperCase();
+
+        // SUPERADMIN siempre tiene acceso total
+        if (rol === 'SUPERADMIN') return;
+
+        // Permisos dinámicos si están cargados
+        var permisos = null;
+        try {
+          permisos = JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
+        } catch (e) {}
+
+        function tieneAcceso(modulo, rolesPermitidos) {
+          if (permisos && permisos[modulo] && permisos[modulo].ver !== undefined) {
+            return !!permisos[modulo].ver;
+          }
+          return rolesPermitidos.indexOf(rol) !== -1;
+        }
+
+        var denegado = false;
+
+        // 1. Módulo Usuarios y Formulario de Usuarios (Solo Administrador)
+        if (path === '/usuarios' || path.startsWith('/usuarios/') || path.includes('formulario-usuarios') || path.includes('usuario-formulario')) {
+          if (!tieneAcceso('usuarios', ['ADMINISTRADOR'])) {
+            denegado = true;
+          }
+        }
+        // 2. Módulo Nueva Solicitud
+        else if (path === '/solicitudes/nueva' || path.includes('formulario-solicitudes') || path.includes('solicitudes-formulario')) {
+          if (!tieneAcceso('nueva_solicitud', ['ADMINISTRADOR', 'GESTION DOCUMENTAL', 'SST', 'GESCO', 'SCR'])) {
+            denegado = true;
+          }
+        }
+        // 3. Módulo Procesamiento
+        else if (path === '/procesamiento' || path.startsWith('/procesamiento/')) {
+          if (!tieneAcceso('procesamiento', ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR'])) {
+            denegado = true;
+          }
+        }
+        // 4. Módulo Antecedentes
+        else if (path === '/antecedentes' || path.startsWith('/antecedentes/')) {
+          if (!tieneAcceso('antecedentes', ['ADMINISTRADOR', 'SCR'])) {
+            denegado = true;
+          }
+        }
+        // 5. Panel de Superadmin
+        else if (path === '/superadmin' || path.startsWith('/superadmin/')) {
+          if (rol !== 'SUPERADMIN') {
+            denegado = true;
+          }
+        }
+
+        if (denegado) {
+          console.warn('⛔ [RBAC] Acceso denegado a la ruta ' + path + ' para el rol: ' + rol);
+          window.location.replace('/403');
+        }
+      } catch (e) {
+        console.warn('Error en guardián de permisos:', e);
+      }
     })();
   </script>
 
@@ -43,13 +111,8 @@
     }
   </style>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class'
-    }
-  </script>
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
 
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
