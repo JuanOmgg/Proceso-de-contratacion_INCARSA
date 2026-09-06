@@ -552,9 +552,10 @@ html.dark select option:checked {
   color: var(--text-primary) !important;
 }
 
-:root.dark h2, h3 {
+:root.dark h2,
+:root.dark h3 {
   border-color: #2b2a2a !important;
-  color:  #a7a4a4 !important;
+  color: #f1f5f9 !important;
 }
 
 :root.dark span{

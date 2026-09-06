@@ -144,11 +144,14 @@ function revisionSolicitudApp() {
 
     // Formulario de dictamen del rol activo
     dictamenForm: {
-      decision: "aprobar", // 'aprobar' | 'rechazar' | 'devolver'
+      decision: "aprobar", // 'preaprobar' | 'aprobar' | 'rechazar' | 'devolver'
       motivoRechazo: "",
       motivoDevolucion: "",
       observaciones: ""
     },
+
+    // Modal de confirmación rápida para solicitudes pre-aprobadas
+    showModalConfirmacionPreaprobada: false,
 
     // Verificación individual de ítems (Checklist de auditoría)
     verificaciones: {
@@ -377,6 +380,12 @@ function revisionSolicitudApp() {
       }
 
       await this.cargarSolicitud();
+
+      // Si la URL contiene el parámetro ?confirmar=true y la solicitud está preaprobada en estado POR APROBAR
+      const paramsConfirmar = params.get("confirmar");
+      if ((paramsConfirmar === "true" || paramsConfirmar === "1") && (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.pre_aprobado && this.solicitud?.estado === "POR APROBAR") {
+        setTimeout(() => this.abrirModalConfirmacionPreaprobada(), 350);
+      }
     },
 
     mostrarToast(mensaje, tipo = "success") {
@@ -435,6 +444,13 @@ function revisionSolicitudApp() {
         // Preseleccionar planta para dictamen
         if (this.misPlantasDictaminables && this.misPlantasDictaminables.length > 0) {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
+        }
+
+        // Si es SCR o SuperAdmin y la solicitud está en estados previos a 'POR APROBAR', preseleccionar 'preaprobar'
+        if ((this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud.estado !== "POR APROBAR") {
+          this.dictamenForm.decision = "preaprobar";
+        } else {
+          this.dictamenForm.decision = "aprobar";
         }
 
         // Cargar vigencias de antecedentes de cada ingresante
@@ -983,6 +999,7 @@ function revisionSolicitudApp() {
       const revs = this.revisionesHistorial || [];
       const revScr = revs.find(r => String(r.rol).toUpperCase() === 'SCR');
       return {
+        preaprobado: Boolean(this.solicitud?.pre_aprobado) || revScr?.decision === 'PREAPROBADO',
         aprobado: revScr?.decision === 'APROBADO' || this.solicitud?.estado === 'APROBADO',
         rechazado: revScr?.decision === 'RECHAZADO' || (this.solicitud?.estado === 'RECHAZADO' && revScr?.decision === 'RECHAZADO'),
         revisor: revScr?.nombre_revisor || '',
@@ -990,6 +1007,24 @@ function revisionSolicitudApp() {
         observacion: revScr?.observacion || '',
         motivoRechazo: revScr?.motivo_rechazo || ''
       };
+    },
+
+    get observacionesSSTGESCO() {
+      const revs = this.revisionesHistorial || [];
+      return revs.filter(r => {
+        const rol = String(r.rol || "").toUpperCase();
+        return (rol === 'SST' || rol === 'GESCO') && (r.observacion || r.motivo_rechazo || r.motivo_devolucion);
+      }).map(r => {
+        const planta = (this.plantasSolicitud || []).find(p => Number(p.id) === Number(r.id_planta));
+        return {
+          rol: r.rol,
+          revisor: r.nombre_revisor || 'Auditor',
+          planta: planta?.nombre || r.planta_nombre || (r.id_planta ? `Planta ${r.id_planta}` : 'General'),
+          decision: r.decision,
+          observacion: r.observacion || r.motivo_rechazo || r.motivo_devolucion || '',
+          fecha: r.fecha_revision ? new Date(r.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : ''
+        };
+      });
     },
 
     get totalPlantasCompletadas() {
@@ -1082,9 +1117,9 @@ function revisionSolicitudApp() {
         return true;
       }
 
-      // SCR solo puede dictaminar cuando ya está 'POR APROBAR'
+      // SCR puede dictaminar (Pre-aprobar o devolver/rechazar) en estados previos, o aprobar en 'POR APROBAR'
       if (this.rolActual === "SCR") {
-        return estado === "POR APROBAR";
+        return estado === "POR APROBAR" || estado === "EN REVISIÓN" || estado === "EN REVISION" || estado === "ENVIADO";
       }
 
       return false;
@@ -1134,6 +1169,7 @@ function revisionSolicitudApp() {
         let decisionBackend = "APROBADO";
         if (decision === "rechazar") decisionBackend = "RECHAZADO";
         else if (decision === "devolver") decisionBackend = "DEVUELTO";
+        else if (decision === "preaprobar") decisionBackend = "PREAPROBADO";
 
         const payloadDictamen = {
           id_planta: (this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null,
@@ -1160,11 +1196,16 @@ function revisionSolicitudApp() {
         if (res.ok) {
           const dataRes = await res.json();
           this.solicitud.estado = dataRes.nuevo_estado;
+          if (decision === "preaprobar" || decisionBackend === "PREAPROBADO") {
+            this.solicitud.pre_aprobado = true;
+          }
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
-          const mensajeToast = decision === "devolver"
-            ? `Solicitud devuelta a Gestión Documental con enlace de edición única.`
-            : `Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`;
+          const mensajeToast = decision === "preaprobar"
+            ? `Solicitud PRE-APROBADA por SCR. Continuará con el flujo de plantas hasta 'POR APROBAR'.`
+            : (decision === "devolver"
+                ? `Solicitud devuelta a Gestión Documental con enlace de edición única.`
+                : `Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`);
           this.mostrarToast(mensajeToast, "success");
         } else {
           const errData = await res.json().catch(() => ({}));
@@ -1183,6 +1224,65 @@ function revisionSolicitudApp() {
       } catch (err) {
         console.error("Error al emitir dictamen:", err);
         this.mostrarToast("Error al registrar dictamen: " + err.message, "error");
+      } finally {
+        this.guardando = false;
+      }
+    },
+
+    abrirModalConfirmacionPreaprobada() {
+      this.showModalConfirmacionPreaprobada = true;
+    },
+
+    cerrarModalConfirmacionPreaprobada() {
+      this.showModalConfirmacionPreaprobada = false;
+    },
+
+    irAFormularioDictamen() {
+      this.cerrarModalConfirmacionPreaprobada();
+      const el = document.getElementById("seccion-dictamen");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+
+    async confirmarAprobacionFinalPreaprobada() {
+      this.guardando = true;
+      try {
+        const nombreUsuario = this.usuarioSesion?.nombres 
+          ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
+          : `Auditor SCR (${this.rolActual})`;
+
+        const payload = {
+          id_planta: null,
+          rol: this.rolActual || "SCR",
+          decision: "APROBADO",
+          observacion: "Aprobación definitiva confirmada por SCR tras superar revisiones de SST y GESCO.",
+          id_usuario: this.usuarioSesion?.id || null,
+          nombre_revisor: nombreUsuario
+        };
+
+        const targetId = this.solicitud?.id || this.solicitudId;
+        const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const dataRes = await res.json();
+          this.solicitud.estado = dataRes.nuevo_estado || "APROBADO";
+          this.revisionesHistorial = dataRes.revisiones || [];
+          this.guardarRevisionesEnStorage();
+          this.cerrarModalConfirmacionPreaprobada();
+          this.mostrarToast("¡Solicitud Aprobada Definitivamente!", "success");
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
+          this.mostrarToast(`Error al confirmar aprobación: ${errMsg}`, "error");
+        }
+      } catch (err) {
+        console.error("Error al confirmar aprobación:", err);
+        this.mostrarToast("Error de conexión al aprobar: " + err.message, "error");
       } finally {
         this.guardando = false;
       }

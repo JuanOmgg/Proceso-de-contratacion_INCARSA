@@ -379,6 +379,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     solicitud["fecha_fin"] = str(solicitud["fecha_fin"])
                 if solicitud.get("fecha_creacion"):
                     solicitud["fecha_creacion"] = str(solicitud["fecha_creacion"])
+                solicitud["pre_aprobado"] = bool(solicitud.get("pre_aprobado", False))
 
                 # 3. Obtener las plantas asociadas (vía tabla intermedia 'visita')
                 cursor.execute(
@@ -516,8 +517,10 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
         id_planta = dictamen.get("id_planta")
         rol = str(dictamen.get("rol", "")).strip().upper()
         decision_raw = str(dictamen.get("decision", "")).strip().lower()
-        if "devolv" in decision_raw or "devuelt" in decision_raw or "correcci" in decision_raw:
+        if "devolv" in decision_raw or "devuelt" in decision_raw or "correcci" in decision_raw or "devolver" in decision_raw:
             decision = "DEVUELTO"
+        elif "preaprob" in decision_raw or "pre-aprob" in decision_raw or "pre_aprob" in decision_raw:
+            decision = "PREAPROBADO"
         elif "rechaz" in decision_raw:
             decision = "RECHAZADO"
         else:
@@ -534,9 +537,9 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por, pre_aprobado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por, pre_aprobado FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
@@ -624,6 +627,19 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         "UPDATE solicitudes SET estado = 'RECHAZADO', observaciones = %s WHERE id = %s",
                         (obs_rechazo, real_id)
                     )
+                elif decision == "PREAPROBADO":
+                    # SCR o SuperAdmin pre-aprueba la solicitud en etapas previas
+                    nuevo_estado = sol.get("estado", "EN REVISIÓN")
+                    obs_pre = f"[PRE-APROBADO por {rol}]: {observacion}".strip()
+                    cursor.execute(
+                        """
+                        UPDATE solicitudes 
+                        SET pre_aprobado = 1,
+                            observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                        WHERE id = %s
+                        """,
+                        (obs_pre, real_id)
+                    )
                 elif rol == "SCR":
                     nuevo_estado = "APROBADO"
                     cursor.execute(
@@ -697,6 +713,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 """,
                                 (r_gd["id"], tit, msg, tipo_notif, link_edicion)
                             )
+                    elif decision == "PREAPROBADO":
+                        tit = f"Solicitud {cod_sol} Pre-aprobada por SCR"
+                        msg = f"SCR ha emitido visto bueno preliminar (Pre-aprobación) para {cod_sol}. Continuará con las revisiones técnicas de SST y GESCO."
+                        tipo_notif = "info"
+                        if id_creador:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
+                            )
                     elif id_creador:
                         if decision == "RECHAZADO":
                             tit = f"Solicitud {cod_sol} Rechazada"
@@ -721,22 +749,73 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
 
                     # Si pasó a POR APROBAR, alertar al rol SCR para el visto bueno final
                     if nuevo_estado == "POR APROBAR":
-                        cursor.execute("SELECT id FROM roles WHERE nombre_rol = 'SCR' LIMIT 1")
+                        cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
                         r_scr = cursor.fetchone()
                         if r_scr:
-                            cursor.execute(
-                                """
-                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                                VALUES (%s, %s, %s, %s, %s)
-                                """,
-                                (
-                                    r_scr["id"],
-                                    f"Solicitud {cod_sol} lista para visto bueno final",
-                                    f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR.",
-                                    "warning",
-                                    f"/solicitudes/revision/{cod_sol}"
+                            cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                            sol_pre = cursor.fetchone()
+                            esta_preaprobada = bool(sol_pre.get("pre_aprobado")) if sol_pre else False
+
+                            if esta_preaprobada:
+                                # Notificación especializada con observaciones de SST y GESCO
+                                cursor.execute(
+                                    """
+                                    SELECT sr.rol, p.nombre AS planta_nombre, sr.nombre_revisor, sr.decision, sr.observacion
+                                    FROM solicitud_revisiones sr
+                                    LEFT JOIN planta p ON sr.id_planta = p.id
+                                    WHERE sr.id_solicitud = %s AND UPPER(sr.rol) IN ('SST', 'GESCO')
+                                    ORDER BY sr.fecha_revision ASC
+                                    """,
+                                    (real_id,)
                                 )
-                            )
+                                revs_tecnicas = cursor.fetchall() or []
+                                items_obs = []
+                                for rt in revs_tecnicas:
+                                    r_rol = rt.get("rol", "")
+                                    r_pl = f" ({rt.get('planta_nombre')})" if rt.get("planta_nombre") else ""
+                                    r_obs = (rt.get("observacion") or "").strip()
+                                    if r_obs:
+                                        items_obs.append(f"• {r_rol}{r_pl}: {r_obs}")
+
+                                if items_obs:
+                                    bloque_obs = "\nObservaciones remitidas por SST / GESCO:\n" + "\n".join(items_obs)
+                                else:
+                                    bloque_obs = "\nSin observaciones adicionales de SST ni GESCO."
+
+                                tit_scr = f"⚡ Solicitud Preaprobada {cod_sol} en 'Por Aprobar'"
+                                msg_scr = (
+                                    f"La solicitud {cod_sol} que dejaste PREAPROBADA completó las revisiones de SST y GESCO y ya está en 'Por Aprobar'.\n"
+                                    f"{bloque_obs}\n"
+                                    f"Haz clic aquí para confirmar la aprobación definitiva o ingresar a revisarla."
+                                )
+                                cursor.execute(
+                                    """
+                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (
+                                        r_scr["id"],
+                                        tit_scr,
+                                        msg_scr,
+                                        "info",
+                                        f"/solicitudes/revision/{cod_sol}?confirmar=true"
+                                    )
+                                )
+                            else:
+                                # Notificación convencional
+                                cursor.execute(
+                                    """
+                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (
+                                        r_scr["id"],
+                                        f"Solicitud {cod_sol} lista para visto bueno final",
+                                        f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR.",
+                                        "warning",
+                                        f"/solicitudes/revision/{cod_sol}"
+                                    )
+                                )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación de dictamen: {e_notif}")
 
@@ -878,19 +957,59 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                     cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
                     r_scr = cursor.fetchone()
                     if r_scr:
-                        cursor.execute(
-                            """
-                            INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """,
-                            (
-                                r_scr["id"],
-                                f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR",
-                                f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final.",
-                                "warning",
-                                f"/solicitudes/revision/{cod_sol}"
+                        cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                        sol_pre = cursor.fetchone()
+                        esta_preaprobada = bool(sol_pre.get("pre_aprobado")) if sol_pre else False
+
+                        if esta_preaprobada:
+                            cursor.execute(
+                                """
+                                SELECT sr.rol, p.nombre AS planta_nombre, sr.observacion
+                                FROM solicitud_revisiones sr
+                                LEFT JOIN planta p ON sr.id_planta = p.id
+                                WHERE sr.id_solicitud = %s AND UPPER(sr.rol) IN ('SST', 'GESCO')
+                                ORDER BY sr.fecha_revision ASC
+                                """,
+                                (real_id,)
                             )
-                        )
+                            revs_tecnicas = cursor.fetchall() or []
+                            items_obs = []
+                            for rt in revs_tecnicas:
+                                r_rol = rt.get("rol", "")
+                                r_pl = f" ({rt.get('planta_nombre')})" if rt.get("planta_nombre") else ""
+                                r_obs = (rt.get("observacion") or "").strip()
+                                if r_obs:
+                                    items_obs.append(f"• {r_rol}{r_pl}: {r_obs}")
+
+                            bloque_obs = ("\nObservaciones previas SST / GESCO:\n" + "\n".join(items_obs)) if items_obs else "\nSin observaciones adicionales de SST ni GESCO."
+
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    f"⚡ Solicitud Preaprobada {cod_sol} corregida - En 'Por Aprobar'",
+                                    f"Gestión Documental corrigió {cod_sol}. Como fue preaprobada, puedes confirmar la aprobación definitiva o revisarla.\n{bloque_obs}",
+                                    "info",
+                                    f"/solicitudes/revision/{cod_sol}?confirmar=true"
+                                )
+                            )
+                        else:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR",
+                                    f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final.",
+                                    "warning",
+                                    f"/solicitudes/revision/{cod_sol}"
+                                )
+                            )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación a SCR tras corrección: {e_notif}")
 
@@ -960,6 +1079,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                         so.fecha_creacion,
                         so.estado,
                         {is_active_expr} AS is_active,
+                        COALESCE(so.pre_aprobado, 0) AS pre_aprobado,
 
                         GROUP_CONCAT(DISTINCT p.nombre SEPARATOR ', ') AS planta,
                         GROUP_CONCAT(DISTINCT p.id SEPARATOR ',') AS plantas_ids,
@@ -1123,6 +1243,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                         row['eq_computo'] = val_eq_computo if isinstance(val_eq_computo, list) else []
                         row['computos'] = row['eq_computo']
                         row['equipos'] = row['eq_computo']
+                    row['pre_aprobado'] = bool(row.get('pre_aprobado', False))
 
                 # Asociar documentos de vehículos si existen
                 try:

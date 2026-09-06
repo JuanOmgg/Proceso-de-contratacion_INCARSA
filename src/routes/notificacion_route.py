@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, status, Depends
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 from src.loaders.notificacion_loader import (
@@ -8,8 +8,10 @@ from src.loaders.notificacion_loader import (
     contar_no_leidas_db,
     marcar_leida_db,
     marcar_todas_leidas_db,
+    emitir_difusion_superadmin_db,
+    obtener_historial_difusion_db,
 )
-from src.utils.security import get_current_user
+from src.utils.security import get_current_user, require_role
 
 router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
 
@@ -103,3 +105,55 @@ def crear_notificacion(payload: NotificacionCreate, current_user: dict = Depends
         "id": notif_id,
         "mensaje": "Notificación creada con éxito.",
     }
+
+
+class DifusionSuperadminRequest(BaseModel):
+    titulo: str
+    mensaje: str
+    tipo: Optional[str] = "info"
+    enlace: Optional[str] = None
+    destinatario_tipo: str = "rol"  # "rol", "usuarios", "todos"
+    roles_ids: Optional[List[int]] = None
+    usuarios_ids: Optional[List[int]] = None
+
+
+@router.post("/difusion", status_code=status.HTTP_201_CREATED)
+def emitir_difusion(
+    payload: DifusionSuperadminRequest,
+    current_user: dict = Depends(require_role(["SUPERADMIN"]))
+):
+    """
+    Emite comunicados masivos o personalizados hacia roles o usuarios específicos (Exclusivo SuperAdmin).
+    """
+    res = emitir_difusion_superadmin_db(
+        titulo=payload.titulo,
+        mensaje=payload.mensaje,
+        tipo=payload.tipo or "info",
+        enlace=payload.enlace,
+        destinatario_tipo=payload.destinatario_tipo,
+        roles_ids=payload.roles_ids,
+        usuarios_ids=payload.usuarios_ids,
+    )
+    if not res.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=res.get("mensaje", "No fue posible emitir el comunicado.")
+        )
+    return res
+
+
+@router.get("/historial-difusion", status_code=status.HTTP_200_OK)
+def obtener_historial_difusion(
+    limit: int = Query(25, ge=1, le=100),
+    current_user: dict = Depends(require_role(["SUPERADMIN"]))
+):
+    """
+    Retorna el registro histórico de notificaciones y comunicados emitidos en la plataforma (Exclusivo SuperAdmin).
+    """
+    historial = obtener_historial_difusion_db(limit=limit)
+    return {
+        "estado": "OK",
+        "total": len(historial),
+        "historial": historial,
+    }
+

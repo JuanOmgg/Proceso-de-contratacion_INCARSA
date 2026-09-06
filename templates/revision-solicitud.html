@@ -260,9 +260,9 @@
             ============================================================= -->
             <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs">
               <div class="flex items-center justify-between flex-wrap gap-3 pb-3 mb-4 border-b border-[var(--border-subtle)]">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Ruta de Aprobación por Roles</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Ruta de Aprobación por Roles</span>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Estado actual:</span>
+                  <span class="text-xs text-slate-700 dark:text-slate-400 font-medium">Estado actual:</span>
                   <span class="status-pill text-xs font-bold font-mono tracking-wide" :class="estadoEstilos(solicitud.estado)" x-text="solicitud.estado"></span>
                 </div>
               </div>
@@ -296,14 +296,15 @@
 
                 <!-- Paso 3: SCR -->
                 <div class="revision-step-card step-scr p-3.5 rounded-xl border transition-all"
-                  :class="solicitud.estado === 'APROBADO' ? 'is-complete' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : 'is-locked')">
+                  :class="solicitud.estado === 'APROBADO' ? 'is-complete' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : (solicitud.pre_aprobado ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400' : 'is-locked'))">
                   <div class="flex items-center justify-between mb-1.5">
                     <span class="text-xs font-bold step-title">3. Aprobación SCR</span>
                     <i class="fa-solid fa-check-circle text-emerald-500 text-sm step-icon" x-show="solicitud.estado === 'APROBADO'"></i>
                     <i class="fa-solid fa-clock text-amber-400 text-xs step-icon" x-show="solicitud.estado === 'POR APROBAR'"></i>
-                    <i class="fa-solid fa-lock text-slate-500 text-xs step-icon" x-show="solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
+                    <i class="fa-solid fa-bolt text-cyan-400 text-xs step-icon" x-show="solicitud.pre_aprobado && solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
+                    <i class="fa-solid fa-lock text-slate-500 text-xs step-icon" x-show="!solicitud.pre_aprobado && solicitud.estado !== 'APROBADO' && solicitud.estado !== 'POR APROBAR'"></i>
                   </div>
-                  <p class="text-[11px] step-subtitle" x-text="solicitud.estado === 'POR APROBAR' ? 'Listo para dictamen SCR' : (solicitud.estado === 'APROBADO' ? 'Autorizado por SCR' : 'Bloqueado hasta aval SST+GESCO')"></p>
+                  <p class="text-[11px] step-subtitle" x-text="solicitud.estado === 'POR APROBAR' ? 'Listo para dictamen SCR' : (solicitud.estado === 'APROBADO' ? 'Autorizado por SCR' : (solicitud.pre_aprobado ? '⚡ Pre-aprobada por SCR' : 'Pendiente aval SST+GESCO'))"></p>
                 </div>
 
                 <!-- Paso 4: Finalizado -->
@@ -351,6 +352,93 @@
             </div>
 
             <!-- ============================================================
+               BANNER DE SOLICITUD PRE-APROBADA EN ESTADO "POR APROBAR" (SCR / SuperAdmin)
+            ============================================================= -->
+            <div x-show="solicitud.pre_aprobado && solicitud.estado === 'POR APROBAR' && (rolActual === 'SCR' || esSuperAdmin)"
+              class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/15 border-2 border-amber-500/40 dark:border-amber-400/50 shadow-lg space-y-4" x-cloak>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 text-lg shadow-sm">
+                    <i class="fa-solid fa-bolt text-amber-500 animate-pulse"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-slate-900 dark:text-white">Solicitud Pre-aprobada lista para Aprobación Final</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                        ⚡ Pre-aprobada por SCR
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                      Esta solicitud ya superó las revisiones de SST y GESCO en todas las plantas asignadas. Como ya fue pre-aprobada por SCR, puedes confirmar la aprobación final de inmediato o revisar las observaciones emitidas.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                  <button type="button" @click="irAFormularioDictamen()"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-eye text-xs"></i>
+                    <span>Revisar Expediente</span>
+                  </button>
+                  <button type="button" @click="abrirModalConfirmacionPreaprobada()"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-check-double text-xs"></i>
+                    <span>Confirmar Aprobación</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Observaciones emitidas por SST y GESCO -->
+              <div class="mt-2 pt-3 border-t border-amber-500/20">
+                <div class="flex items-center gap-2 mb-2">
+                  <i class="fa-solid fa-clipboard-list text-xs text-amber-600 dark:text-amber-400"></i>
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Dictámenes y Observaciones de SST / GESCO:</span>
+                </div>
+                <template x-if="observacionesSSTGESCO.length === 0">
+                  <p class="text-xs text-slate-500 italic">No se registraron observaciones adicionales por parte de SST y GESCO (ambos emitieron dictamen limpio).</p>
+                </template>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5" x-show="observacionesSSTGESCO.length > 0">
+                  <template x-for="(obs, idx) in observacionesSSTGESCO" :key="idx">
+                    <div class="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                          <span class="font-bold text-[11px] px-1.5 py-0.5 rounded"
+                            :class="obs.rol === 'SST' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200'"
+                            x-text="obs.rol"></span>
+                          <span class="font-semibold text-slate-700 dark:text-slate-300" x-text="obs.planta"></span>
+                        </div>
+                        <span class="text-[10px] text-slate-500" x-text="obs.fecha"></span>
+                      </div>
+                      <p class="text-slate-800 dark:text-slate-200 text-xs pl-1 border-l-2"
+                        :class="obs.decision === 'APROBADO' ? 'border-emerald-500' : 'border-red-500'"
+                        x-text="obs.observacion"></p>
+                      <div class="text-[10px] text-slate-500" x-text="'Revisor: ' + obs.revisor"></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============================================================
+               BANNER DE SOLICITUD YA PRE-APROBADA EN ESPERA DE PLANTAS (SCR / SuperAdmin)
+            ============================================================= -->
+            <div x-show="solicitud.pre_aprobado && solicitud.estado !== 'POR APROBAR'"
+              class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5" x-cloak>
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 text-sm">
+                <i class="fa-solid fa-bolt text-amber-500"></i>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-xs font-bold text-amber-900 dark:text-amber-200">Solicitud Pre-aprobada por SCR</h4>
+                  <span class="px-2 py-0.2 rounded-full text-[9px] font-bold bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200">En curso</span>
+                </div>
+                <p class="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Ya has emitido la pre-aprobación para esta solicitud. Se encuentra en etapa de auditoría en plantas por parte de SST y GESCO.
+                  Una vez completen sus revisiones y pase a <strong>"Por aprobar"</strong>, recibirás el resumen con las observaciones para tu confirmación final.
+                </p>
+              </div>
+            </div>
+
+            <!-- ============================================================
                LAYOUT DIVIDIDO: EXPEDIENTE (IZQUIERDA) + DICTAMEN (DERECHA)
             ============================================================= -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -363,7 +451,7 @@
                 <!-- 1. Ficha de Datos Generales -->
                 <div class="wizard-card revision-ficha-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
-                    <h3 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
+                    <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                       <i class="fa-solid fa-file-invoice text-red-500 text-base"></i>
                       <span>Datos de la Solicitud</span>
                     </h3>
@@ -372,33 +460,33 @@
 
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Empresa Origen</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Empresa Origen</span>
                       <strong class="text-slate-900 dark:text-white text-xs font-bold" x-text="solicitud.empresa_origen"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Empresa Contratista</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Empresa Contratista</span>
                       <strong class="text-slate-900 dark:text-white text-xs font-bold" x-text="solicitud.empresa_contratista"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Solicitado por</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Solicitado por</span>
                       <strong class="text-slate-900 dark:text-slate-100 text-xs font-bold" x-text="solicitud.diligenciador"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Vigencia de Ingreso</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Vigencia de Ingreso</span>
                       <strong class="text-slate-900 dark:text-slate-100 text-xs font-bold" x-text="solicitud.fecha_ingreso + ' → ' + solicitud.fecha_salida"></strong>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Nivel de Riesgo</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Nivel de Riesgo</span>
                       <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
                         :class="solicitud.nivel_de_riesgo === 'Alto' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40' : (solicitud.nivel_de_riesgo === 'Medio' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/40' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40')"
                         x-text="solicitud.nivel_de_riesgo"></span>
                     </div>
                     <div>
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] font-semibold mb-0.5">Plantas Autorizadas</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] font-bold mb-0.5">Plantas Autorizadas</span>
                       <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/40" x-text="solicitud.planta || solicitud.plantas || '—'"></span>
                     </div>
                     <div class="col-span-2 sm:col-span-3 pt-2 border-t border-[var(--border-subtle)]">
-                      <span class="text-slate-500 dark:text-slate-400 block text-[11px] mb-1 font-semibold">Actividad a Desarrollar</span>
+                      <span class="text-slate-700 dark:text-slate-300 block text-[11px] mb-1 font-bold">Actividad a Desarrollar</span>
                       <p class="revision-actividad-box p-3 rounded-xl border text-xs leading-relaxed" x-text="solicitud.actividad"></p>
                     </div>
                   </div>
@@ -408,7 +496,7 @@
                 <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
                     <div class="flex items-center gap-2.5 flex-wrap">
-                      <h3 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
+                      <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-users text-blue-600"></i> Personal e Ingresantes
                       </h3>
                       <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold" x-text="totalPersonas + ' personas'"></span>
@@ -453,7 +541,7 @@
                             </div>
                             <div>
                               <div class="flex items-center gap-2 flex-wrap">
-                                <h4 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white" x-text="persona.nombre"></h4>
+                                <h4 class="font-display font-bold text-sm text-slate-900 dark:text-white" x-text="persona.nombre"></h4>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
                                   :class="persona.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40'">
                                   <i class="fa-solid mr-0.5" :class="persona.autorizado ? 'fa-check' : 'fa-xmark'"></i>
@@ -462,7 +550,7 @@
 
                                 <!-- Indicador de Bloqueo tras Aprobación / Dictamen -->
                                 <span x-show="!puedeEditarAutorizacion"
-                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 inline-flex items-center gap-1 select-none"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10 inline-flex items-center gap-1 select-none"
                                   title="Autorización fijada: no editable tras haber emitido dictamen">
                                   <i class="fa-solid fa-lock text-[9px]"></i>
                                   <span>Fijado</span>
@@ -475,11 +563,11 @@
                                   <i class="fa-solid fa-clock-rotate-left text-[11px]"></i>
                                   <span>Antecedentes</span>
                                   <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold border"
-                                    :class="persona.estadoVigencia?.badgeClass || 'bg-slate-100 text-slate-600 border-slate-200'"
+                                    :class="persona.estadoVigencia?.badgeClass || 'bg-slate-100 text-slate-700 border-slate-300 font-semibold'"
                                     x-text="persona.estadoVigencia?.etiqueta || 'Consultar'"></span>
                                 </button>
                               </div>
-                              <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
+                              <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 font-medium" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
                             </div>
                           </div>
 
@@ -525,14 +613,14 @@
 
                         <!-- Botones de Documentos Adjuntos de la persona -->
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Expediente:</span>
+                          <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mr-1">Expediente:</span>
 
                           <template x-for="(doc, dIdx) in (persona.documentos || [])" :key="doc.id || doc.nombre_archivo || dIdx">
                             <button type="button" @click="abrirDocumento(doc, persona.nombre)"
                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition-all">
                               <i class="fa-regular fa-file-pdf text-red-500 text-[11px]"></i>
                               <span class="capitalize" x-text="(doc.tipo_doc || 'documento').replace('_', ' ')"></span>
-                              <i class="fa-solid fa-eye text-[10px] text-slate-400"></i>
+                              <i class="fa-solid fa-eye text-[10px] text-slate-500 dark:text-slate-400"></i>
                             </button>
                           </template>
 
@@ -548,7 +636,7 @@
                       </div>
                     </template>
 
-                    <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.personas.length === 0">
+                    <p class="text-xs text-slate-600 dark:text-slate-400 text-center py-4 font-medium" x-show="solicitud.personas.length === 0">
                       No se registraron ingresantes en esta solicitud.
                     </p>
                   </div>
@@ -558,7 +646,7 @@
                 <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
                     <div class="flex items-center gap-2.5 flex-wrap">
-                      <h3 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
+                      <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-truck-front text-amber-500"></i> Vehículos y Maquinaria
                       </h3>
                       <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold" x-text="totalVehiculos + ' vehículos'"></span>
@@ -605,7 +693,7 @@
                               <div class="flex items-center gap-2 flex-wrap">
                                 <span class="px-2.5 py-1 rounded font-mono font-bold text-xs bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-800 dark:text-white"
                                   x-text="veh.placa || 'Sin placa'"></span>
-                                <h4 class="font-display font-bold text-sm text-[var(--ink-900)] dark:text-white" x-text="veh.tipo || 'Vehículo'"></h4>
+                                <h4 class="font-display font-bold text-sm text-slate-900 dark:text-white" x-text="veh.tipo || 'Vehículo'"></h4>
                                 
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
                                   :class="veh.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40'">
@@ -615,14 +703,14 @@
 
                                 <!-- Indicador de Bloqueo tras Aprobación / Dictamen -->
                                 <span x-show="!puedeEditarAutorizacion"
-                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 inline-flex items-center gap-1 select-none"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10 inline-flex items-center gap-1 select-none"
                                   title="Autorización fijada: no editable tras haber emitido dictamen">
                                   <i class="fa-solid fa-lock text-[9px]"></i>
                                   <span>Fijado</span>
                                 </span>
                               </div>
-                              <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium" x-show="veh.conductor">
-                                <i class="fa-solid fa-user-gear text-[10px] mr-1 text-slate-400"></i>
+                              <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 font-medium" x-show="veh.conductor">
+                                <i class="fa-solid fa-user-gear text-[10px] mr-1 text-slate-500 dark:text-slate-400"></i>
                                 <span x-text="'Conductor: ' + veh.conductor"></span>
                               </p>
                             </div>
@@ -670,7 +758,7 @@
 
                         <!-- Documentos Adjuntos del vehículo -->
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Expediente vehículo:</span>
+                          <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mr-1">Expediente vehículo:</span>
 
                           <!-- Licencia de conducción si existe archivo adjunto -->
                           <template x-if="veh.licencia && veh.licencia !== '—' && veh.licencia !== ''">
@@ -679,7 +767,7 @@
                               title="Ver Licencia de Conducción">
                               <i class="fa-solid fa-id-card text-blue-600 text-[11px]"></i>
                               <span>Licencia</span>
-                              <i class="fa-solid fa-eye text-[10px] text-blue-400"></i>
+                              <i class="fa-solid fa-eye text-[10px] text-blue-500"></i>
                             </button>
                           </template>
 
@@ -688,14 +776,14 @@
                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 hover:border-amber-300 transition-all">
                               <i class="fa-regular fa-file-lines text-amber-600 text-[11px]"></i>
                               <span class="capitalize" x-text="(vdoc.tipo_doc || 'documento').replace('_', ' ')"></span>
-                              <i class="fa-solid fa-eye text-[10px] text-slate-400"></i>
+                              <i class="fa-solid fa-eye text-[10px] text-slate-500 dark:text-slate-400"></i>
                             </button>
                           </template>
                         </div>
                       </div>
                     </template>
 
-                    <p class="text-xs text-slate-400 text-center py-4" x-show="!solicitud.vehiculos || solicitud.vehiculos.length === 0">
+                    <p class="text-xs text-slate-600 dark:text-slate-400 text-center py-4 font-medium" x-show="!solicitud.vehiculos || solicitud.vehiculos.length === 0">
                       No se registraron vehículos para esta solicitud.
                     </p>
                   </div>
@@ -705,7 +793,7 @@
                 <div class="wizard-card p-6 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                     <div class="flex items-center gap-2">
-                      <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] dark:text-white flex items-center gap-2">
+                      <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-laptop text-emerald-500"></i> Equipos de Cómputo
                       </h3>
                       <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-500/40 text-[11px] font-bold shadow-xs" x-text="solicitud.computos.length"></span>
@@ -729,7 +817,7 @@
                     </template>
                   </div>
 
-                  <p class="text-xs text-slate-400 text-center py-4" x-show="solicitud.computos.length === 0">
+                  <p class="text-xs text-slate-600 dark:text-slate-400 text-center py-4 font-medium" x-show="solicitud.computos.length === 0">
                     No se declararon equipos de cómputo para el ingreso.
                   </p>
                 </div>
@@ -745,10 +833,10 @@
                 <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-xs space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                     <div>
-                      <h3 class="font-display font-semibold text-xs uppercase tracking-wider text-slate-500">
+                      <h3 class="font-display font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
                         Dictámenes por Planta
                       </h3>
-                      <p class="text-[10px] text-slate-400 mt-0.5">Aval independiente SST y GESCO</p>
+                      <p class="text-[10px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Aval independiente SST y GESCO</p>
                     </div>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                       :class="totalPlantas > 0 && totalPlantasCompletadas === totalPlantas ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
@@ -781,8 +869,8 @@
                             <span class="font-bold text-[10px] subitem-status"
                               x-text="plantaItem.sst.aprobado ? 'Aprobado' : (plantaItem.sst.rechazado ? 'Rechazado' : 'Pendiente')"></span>
                           </div>
-                          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1" x-show="plantaItem.sst.revisor" x-text="plantaItem.sst.revisor + ' · ' + plantaItem.sst.fecha"></p>
-                          <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-1 italic" x-show="plantaItem.sst.observacion" x-text="plantaItem.sst.observacion"></p>
+                          <p class="text-[10px] text-slate-700 dark:text-slate-300 font-medium mt-1" x-show="plantaItem.sst.revisor" x-text="plantaItem.sst.revisor + ' · ' + plantaItem.sst.fecha"></p>
+                          <p class="text-[10px] text-slate-700 dark:text-slate-300 mt-1 italic" x-show="plantaItem.sst.observacion" x-text="plantaItem.sst.observacion"></p>
                           <p class="text-[10px] text-red-600 dark:text-red-400 font-medium mt-1" x-show="plantaItem.sst.motivoRechazo" x-text="'Motivo: ' + plantaItem.sst.motivoRechazo"></p>
                         </div>
 
@@ -797,8 +885,8 @@
                             <span class="font-bold text-[10px] subitem-status"
                               x-text="plantaItem.gesco.aprobado ? 'Aprobado' : (plantaItem.gesco.rechazado ? 'Rechazado' : 'Pendiente')"></span>
                           </div>
-                          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1" x-show="plantaItem.gesco.revisor" x-text="plantaItem.gesco.revisor + ' · ' + plantaItem.gesco.fecha"></p>
-                          <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-1 italic" x-show="plantaItem.gesco.observacion" x-text="plantaItem.gesco.observacion"></p>
+                          <p class="text-[10px] text-slate-700 dark:text-slate-300 font-medium mt-1" x-show="plantaItem.gesco.revisor" x-text="plantaItem.gesco.revisor + ' · ' + plantaItem.gesco.fecha"></p>
+                          <p class="text-[10px] text-slate-700 dark:text-slate-300 mt-1 italic" x-show="plantaItem.gesco.observacion" x-text="plantaItem.gesco.observacion"></p>
                           <p class="text-[10px] text-red-600 dark:text-red-400 font-medium mt-1" x-show="plantaItem.gesco.motivoRechazo" x-text="'Motivo: ' + plantaItem.gesco.motivoRechazo"></p>
                         </div>
                       </div>
@@ -807,30 +895,31 @@
 
                   <!-- Dictamen Final SCR (Estilos idénticos al Paso 3 en su respectivo caso) -->
                   <div class="revision-step-card step-scr p-3.5 rounded-xl border transition-all"
-                    :class="dictamenSCR.aprobado ? 'is-complete' : (dictamenSCR.rechazado ? 'is-rejected' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : 'is-locked'))">
+                    :class="dictamenSCR.aprobado ? 'is-complete' : (dictamenSCR.rechazado ? 'is-rejected' : (solicitud.pre_aprobado ? 'is-active' : (solicitud.estado === 'POR APROBAR' ? 'is-active' : 'is-locked')))">
                     <div class="flex items-center justify-between mb-1.5">
                       <span class="text-xs font-bold step-title">Seguridad Corporativa (SCR)</span>
                       <div class="flex items-center gap-1.5">
                         <i class="fa-solid fa-check-circle text-sm step-icon" x-show="dictamenSCR.aprobado"></i>
                         <i class="fa-solid fa-xmark-circle text-sm step-icon" x-show="dictamenSCR.rechazado"></i>
-                        <i class="fa-solid fa-clock text-xs step-icon" x-show="solicitud.estado === 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
-                        <i class="fa-solid fa-lock text-xs step-icon" x-show="solicitud.estado !== 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
+                        <i class="fa-solid fa-bolt text-xs step-icon text-amber-500" x-show="solicitud.pre_aprobado && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
+                        <i class="fa-solid fa-clock text-xs step-icon" x-show="!solicitud.pre_aprobado && solicitud.estado === 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
+                        <i class="fa-solid fa-lock text-xs step-icon" x-show="!solicitud.pre_aprobado && solicitud.estado !== 'POR APROBAR' && !dictamenSCR.aprobado && !dictamenSCR.rechazado"></i>
                       </div>
                     </div>
                     <p class="text-[11px] step-subtitle"
-                      x-text="dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas')"></p>
+                      x-text="solicitud.pre_aprobado && !dictamenSCR.aprobado ? '⚡ Pre-aprobada por SCR' : (dictamenSCR.revisor ? (dictamenSCR.revisor + ' · ' + dictamenSCR.fecha) : (solicitud.estado === 'POR APROBAR' ? 'Listo para aval final de ingreso' : 'Requiere aval de todas las plantas'))"></p>
                     <p class="text-[10px] mt-1 italic opacity-80" x-show="dictamenSCR.observacion" x-text="dictamenSCR.observacion"></p>
                     <p class="text-[10px] font-semibold mt-1 text-red-500 dark:text-red-400" x-show="dictamenSCR.motivoRechazo" x-text="'Motivo: ' + dictamenSCR.motivoRechazo"></p>
                   </div>
                 </div>
 
                 <!-- Formulario de Emisión de Dictamen -->
-                <div class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-md space-y-4">
+                <div id="seccion-dictamen" class="wizard-card p-5 bg-white border border-[var(--border-subtle)] rounded-2xl shadow-md space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
-                    <h3 class="font-display font-semibold text-sm text-[var(--ink-900)] flex items-center gap-2">
+                    <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                       <i class="fa-solid fa-stamp text-[var(--signal-500)]"></i> Emitir Dictamen
                     </h3>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700" x-text="'Rol: ' + rolActual"></span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200" x-text="'Rol: ' + rolActual"></span>
                   </div>
 
                   <template x-if="puedeDictaminar">
@@ -851,23 +940,35 @@
 
                       <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs flex items-center justify-between"
                         x-show="(rolActual === 'SST' || rolActual === 'GESCO') && misPlantasDictaminables.length === 1">
-                        <span class="text-slate-600 font-medium">Planta asignada:</span>
+                        <span class="text-slate-700 font-semibold">Planta asignada:</span>
                         <strong class="text-amber-900 font-bold" x-text="misPlantasDictaminables[0]?.nombre"></strong>
                       </div>
 
                       <!-- Selección Decisión -->
                       <div :class="(rolActual === 'SCR' || esSuperAdmin) ? 'grid grid-cols-3 gap-1.5 sm:gap-2' : 'grid grid-cols-2 gap-2'">
-                        <!-- Aprobar -->
-                        <label class="decision-card decision-card-aprobar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
-                          :class="dictamenForm.decision === 'aprobar' ? 'is-selected bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-300/60 dark:bg-emerald-950/40 dark:border-emerald-400 dark:text-emerald-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
-                          <input type="radio" name="decision" value="aprobar" x-model="dictamenForm.decision" class="hidden">
-                          <i class="fa-solid fa-circle-check text-emerald-500 text-sm sm:text-base mb-1"></i>
-                          <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Aprobar</span>
-                        </label>
+                        <!-- Pre-Aprobar (SCR cuando no está en POR APROBAR) -->
+                        <template x-if="(rolActual === 'SCR' || esSuperAdmin) && solicitud.estado !== 'POR APROBAR'">
+                          <label class="decision-card decision-card-preaprobar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
+                            :class="dictamenForm.decision === 'preaprobar' ? 'is-selected bg-amber-500/20 border-amber-500 text-amber-900 ring-2 ring-amber-300/60 dark:bg-amber-950/50 dark:border-amber-400 dark:text-amber-100' : 'bg-slate-50/80 border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
+                            <input type="radio" name="decision" value="preaprobar" x-model="dictamenForm.decision" class="hidden">
+                            <i class="fa-solid fa-bolt text-amber-500 text-sm sm:text-base mb-1"></i>
+                            <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Pre-Aprobar</span>
+                          </label>
+                        </template>
+
+                        <!-- Aprobar (SST, GESCO, o SCR cuando ya está en POR APROBAR) -->
+                        <template x-if="!((rolActual === 'SCR' || esSuperAdmin) && solicitud.estado !== 'POR APROBAR')">
+                          <label class="decision-card decision-card-aprobar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
+                            :class="dictamenForm.decision === 'aprobar' ? 'is-selected bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-300/60 dark:bg-emerald-950/40 dark:border-emerald-400 dark:text-emerald-100' : 'bg-slate-50/80 border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
+                            <input type="radio" name="decision" value="aprobar" x-model="dictamenForm.decision" class="hidden">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-sm sm:text-base mb-1"></i>
+                            <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Aprobar</span>
+                          </label>
+                        </template>
 
                         <!-- Rechazar -->
                         <label class="decision-card decision-card-rechazar py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
-                          :class="dictamenForm.decision === 'rechazar' ? 'is-selected bg-red-50 border-red-500 text-red-900 ring-2 ring-red-300/60 dark:bg-red-950/40 dark:border-red-400 dark:text-red-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
+                          :class="dictamenForm.decision === 'rechazar' ? 'is-selected bg-red-50 border-red-500 text-red-900 ring-2 ring-red-300/60 dark:bg-red-950/40 dark:border-red-400 dark:text-red-100' : 'bg-slate-50/80 border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
                           <input type="radio" name="decision" value="rechazar" x-model="dictamenForm.decision" class="hidden">
                           <i class="fa-solid fa-circle-xmark text-red-500 text-sm sm:text-base mb-1"></i>
                           <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Rechazar</span>
@@ -875,7 +976,7 @@
 
                         <!-- Opción Devolver para Corrección Única (SCR / SuperAdmin) -->
                         <label x-show="rolActual === 'SCR' || esSuperAdmin" class="decision-card decision-card-devolver py-2.5 px-1 sm:px-2 rounded-xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center min-h-[58px]"
-                          :class="dictamenForm.decision === 'devolver' ? 'is-selected bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-300/60 dark:bg-amber-950/40 dark:border-amber-400 dark:text-amber-100' : 'bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
+                          :class="dictamenForm.decision === 'devolver' ? 'is-selected bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-300/60 dark:bg-amber-950/40 dark:border-amber-400 dark:text-amber-100' : 'bg-slate-50/80 border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/80 dark:text-slate-300 dark:hover:bg-slate-800'">
                           <input type="radio" name="decision" value="devolver" x-model="dictamenForm.decision" class="hidden">
                           <i class="fa-solid fa-rotate-left text-amber-500 text-sm sm:text-base mb-1"></i>
                           <span class="text-[11px] sm:text-xs font-bold leading-none tracking-tight block w-full truncate">Devolver</span>
@@ -910,7 +1011,7 @@
 
                       <!-- Observaciones adicionales -->
                       <div class="space-y-1.5">
-                        <label class="form-label text-xs font-semibold text-slate-700 dark:text-slate-300">Observaciones adicionales</label>
+                        <label class="form-label text-xs font-bold text-slate-800 dark:text-slate-200">Observaciones adicionales</label>
                         <textarea x-model="dictamenForm.observaciones" rows="3"
                           placeholder="Notas complementarias para el expediente..."
                           class="input-field w-full rounded-xl p-3 text-xs resize-none dark:bg-slate-900/80 dark:text-white"></textarea>
@@ -918,39 +1019,40 @@
 
                       <!-- Resumen de Personal Autorizado -->
                       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-700/60 text-xs flex items-center justify-between" x-show="totalPersonas > 0">
-                        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
-                          <i class="fa-solid fa-users text-blue-500 text-xs"></i>
+                        <div class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
+                          <i class="fa-solid fa-users text-blue-600 text-xs"></i>
                           <span>Personal con acceso permitido:</span>
                         </div>
                         <div class="flex items-center gap-1.5 font-bold">
                           <span class="text-emerald-700 dark:text-emerald-400" x-text="totalPersonasAutorizadas + ' / ' + totalPersonas"></span>
-                          <span class="text-[10px] text-slate-400">ingresantes</span>
+                          <span class="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">ingresantes</span>
                         </div>
                       </div>
 
                       <!-- Resumen de Vehículos Autorizados -->
                       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-700/60 text-xs flex items-center justify-between" x-show="totalVehiculos > 0">
-                        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
-                          <i class="fa-solid fa-truck-front text-amber-500 text-xs"></i>
+                        <div class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
+                          <i class="fa-solid fa-truck-front text-amber-600 text-xs"></i>
                           <span>Vehículos con acceso permitido:</span>
                         </div>
                         <div class="flex items-center gap-1.5 font-bold">
                           <span class="text-emerald-700 dark:text-emerald-400" x-text="totalVehiculosAutorizados + ' / ' + totalVehiculos"></span>
-                          <span class="text-[10px] text-slate-400">vehículos</span>
+                          <span class="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">vehículos</span>
                         </div>
                       </div>
 
                       <!-- Botón de Envío -->
                       <button type="submit" :disabled="guardando"
                         class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 select-none"
-                        :class="dictamenForm.decision === 'rechazar' ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/20' : (dictamenForm.decision === 'devolver' ? 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-amber-900/20' : 'btn-signal')">
+                        :class="dictamenForm.decision === 'rechazar' ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/20' : (dictamenForm.decision === 'devolver' ? 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-amber-900/20' : (dictamenForm.decision === 'preaprobar' ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-900/20' : 'btn-signal'))">
                         <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
                         <template x-if="!guardando">
                           <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-bolt text-xs" x-show="dictamenForm.decision === 'preaprobar'"></i>
                             <i class="fa-solid fa-circle-check text-xs" x-show="dictamenForm.decision === 'aprobar'"></i>
                             <i class="fa-solid fa-circle-xmark text-xs" x-show="dictamenForm.decision === 'rechazar'"></i>
                             <i class="fa-solid fa-rotate-left text-xs" x-show="dictamenForm.decision === 'devolver'"></i>
-                            <span x-text="dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : (dictamenForm.decision === 'devolver' ? 'Devolver para Corrección' : 'Aprobar Solicitud')"></span>
+                            <span x-text="dictamenForm.decision === 'preaprobar' ? 'Registrar Pre-Aprobación' : (dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : (dictamenForm.decision === 'devolver' ? 'Devolver para Corrección' : 'Aprobar Solicitud'))"></span>
                           </span>
                         </template>
                       </button>
@@ -960,8 +1062,8 @@
                   <!-- Si no tiene permisos en esta etapa -->
                   <template x-if="!puedeDictaminar">
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
-                      <i class="fa-solid fa-lock text-slate-400 text-base"></i>
-                      <p class="text-xs text-slate-500 font-medium leading-relaxed">
+                      <i class="fa-solid fa-lock text-slate-500 text-base"></i>
+                      <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
                         Tu rol (<strong x-text="rolActual"></strong>) no tiene acciones pendientes para el estado actual (<strong x-text="solicitud.estado"></strong>).
                       </p>
                       <p class="text-[11px] text-emerald-700 font-medium p-2 rounded-lg bg-emerald-50 border border-emerald-200" 
@@ -974,8 +1076,8 @@
                         <i class="fa-solid fa-triangle-exclamation mr-1"></i>
                         No tienes asignada ninguna planta de esta solicitud. Tu perfil solo tiene autorización para sus plantas asignadas.
                       </p>
-                      <p class="text-[11px] text-slate-400" x-show="solicitud.estado === 'EN REVISIÓN' && rolActual === 'SCR'">
-                        Debes esperar a que <strong>SST</strong> y <strong>GESCO</strong> completen sus revisiones en todas las plantas para que pase a <em>"Por aprobar"</em>.
+                      <p class="text-[11px] text-slate-600 dark:text-slate-400 font-medium" x-show="(solicitud.estado === 'RECHAZADO' || solicitud.estado === 'APROBADO') && rolActual === 'SCR'">
+                        Esta solicitud ya ha finalizado su ciclo de aprobación.
                       </p>
                     </div>
                   </template>
@@ -1085,8 +1187,8 @@
           </div>
 
           <!-- Ficha de Información del Archivo -->
-          <div class="w-full p-3.5 sm:p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)] space-y-2">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-dashed border-[var(--paper-shadow)]">
+          <div class="w-full p-3 sm:p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)]">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <span class="font-semibold text-[var(--paper-ink)] flex items-center gap-2 truncate">
                 <i class="fa-solid fa-file-check text-emerald-500"></i>
                 <span x-text="docActual.nombreArchivo"></span>
@@ -1094,11 +1196,6 @@
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 w-fit flex-shrink-0">
                 <i class="fa-solid fa-shield-check"></i> Documento Verificado
               </span>
-            </div>
-            
-            <div class="flex items-center justify-between gap-2 pt-0.5">
-              <span class="text-[11px] flex-shrink-0">Ruta de archivo:</span>
-              <span class="font-mono text-[10.5px] text-[var(--paper-ink)] truncate max-w-[70%]" x-text="docActual.url"></span>
             </div>
           </div>
 
@@ -1534,6 +1631,83 @@
         </div>
 
         <div class="modal-serrated"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+       MODAL DE CONFIRMACIÓN RÁPIDA: SOLICITUD PRE-APROBADA (SCR)
+    ============================================================= -->
+    <div x-show="showModalConfirmacionPreaprobada" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      x-cloak>
+      <div class="modal-card relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4"
+        @click.outside="cerrarModalConfirmacionPreaprobada()">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white">Confirmar Aprobación Final</h3>
+              <p class="text-xs text-slate-500">Solicitud Pre-Aprobada por SCR</p>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModalConfirmacionPreaprobada()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs text-slate-700 dark:text-slate-300">
+          <p>
+            La solicitud <strong class="text-slate-900 dark:text-white" x-text="'#' + (solicitud?.codigo_radicado || solicitud?.id)"></strong> fue pre-aprobada previamente por SCR y las auditorías de <strong>SST</strong> y <strong>GESCO</strong> ya han concluido favorablemente en todas las plantas.
+          </p>
+
+          <!-- Resumen de observaciones -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="flex items-center justify-between font-semibold text-slate-800 dark:text-slate-200">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-clipboard-check text-emerald-500"></i> Observaciones de Plantas:</span>
+              <span class="text-[10px] text-slate-500" x-text="observacionesSSTGESCO.length + ' dictámenes registrados'"></span>
+            </div>
+            <template x-if="observacionesSSTGESCO.length === 0">
+              <p class="text-[11px] text-slate-500 italic">No hubo observaciones especiales (SST y GESCO aprobaron sin novedades).</p>
+            </template>
+            <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1" x-show="observacionesSSTGESCO.length > 0">
+              <template x-for="(obs, idx) in observacionesSSTGESCO" :key="idx">
+                <div class="text-[11px] p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-0.5">
+                    <strong class="text-slate-800 dark:text-slate-200" x-text="obs.rol + ' - ' + obs.planta"></strong>
+                    <span x-text="obs.fecha"></span>
+                  </div>
+                  <p class="text-slate-700 dark:text-slate-300" x-text="obs.observacion"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-500">
+            Puedes confirmar la aprobación definitiva directamente ahora, o cerrar este modal para revisar el expediente completo.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" @click="cerrarModalConfirmacionPreaprobada()"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            Revisar Detalle
+          </button>
+          <button type="button" @click="confirmarAprobacionFinalPreaprobada()" :disabled="guardando"
+            class="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 flex items-center gap-2">
+            <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
+            <i class="fa-solid fa-check-double text-xs" x-show="!guardando"></i>
+            <span x-text="guardando ? 'Aprobando...' : 'Confirmar Aprobación Final'"></span>
+          </button>
+        </div>
+
       </div>
     </div>
 

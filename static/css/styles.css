@@ -46,7 +46,7 @@
   --bg-app: #f7f5ef;
   --surface: #FFFFFF;
   --text-primary: #1c2033;
-  --text-muted: #6e6a5d;
+  --text-muted: #475569;
   --border-subtle: #e6e0d2;
 
   --font-display: "Space Grotesk", "Inter", sans-serif;
@@ -2263,8 +2263,9 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card .step-subtitle {
-  color: #64748b !important;
+  color: #475569 !important;
   font-size: 11px;
+  font-weight: 500;
 }
 
 /* Paso 1: Radicación (Completado: Cian / Teal) */
@@ -2403,15 +2404,16 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-title {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-icon {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-subtitle {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+  font-weight: 500;
 }
 
 /* Paso 4: Dictamen Final */
@@ -2468,7 +2470,8 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-subtitle {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+  font-weight: 500;
 }
 
 :root:not(.dark) .role-badge-sst {
@@ -2489,6 +2492,78 @@ table td .inline-flex {
   border: 1px solid #fde68a !important;
 }
 
+/* Panel de Dictámenes por Planta en Modo Claro */
+:root:not(.dark) .planta-dictamen-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root:not(.dark) .planta-dictamen-header {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+:root:not(.dark) .planta-dictamen-header .planta-title {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .planta-dictamen-header .planta-icon {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .badge-planta-avalada {
+  background: #ecfdf5 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+:root:not(.dark) .badge-planta-pendiente {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+:root:not(.dark) .dictamen-subitem {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-subitem .subitem-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-aprobado {
+  background: #f0fdf4 !important;
+  border-color: #86efac !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-aprobado .subitem-status {
+  color: #15803d !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-rechazado {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-rechazado .subitem-status {
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-pendiente {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-pendiente .subitem-status {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
 /* Tarjeta Dictamen SCR - Idéntica a step-scr en Modo Claro */
 :root:not(.dark) .dictamen-scr-card {
   background: #ffffff !important;
@@ -2497,10 +2572,12 @@ table td .inline-flex {
 
 :root:not(.dark) .dictamen-scr-card .subitem-title {
   color: #0f172a !important;
+  font-weight: 700 !important;
 }
 
 :root:not(.dark) .dictamen-scr-card .subitem-subtitle {
-  color: #64748b !important;
+  color: #475569 !important;
+  font-weight: 500;
 }
 
 :root:not(.dark) .dictamen-scr-card.is-aprobado {
@@ -2568,10 +2645,12 @@ table td .inline-flex {
   color: #0f172a;
 }
 :root:not(.dark) .computo-serie-label {
-  color: #64748b;
+  color: #475569;
+  font-weight: 700;
 }
 :root:not(.dark) .computo-serie-val {
-  color: #334155;
+  color: #1e293b;
+  font-weight: 600;
 }
 
 /* Status pills en Modo Claro */
@@ -2652,6 +2731,11 @@ table td .inline-flex {
   font-weight: 600 !important;
 }
 
+:root:not(.dark) .wizard-card h2,
+:root:not(.dark) .wizard-card h3,
+:root:not(.dark) .wizard-card h4,
+:root:not(.dark) .text-\[var\(--ink-900\)\],
+:root:not(.dark) [class*="text-[var(--ink-900)]"],
 :root:not(.dark) .revision-ficha-card strong,
 :root:not(.dark) .revision-ficha-card .text-\[var\(--ink-900\)\],
 :root:not(.dark) .revision-ficha-card .text-slate-700,

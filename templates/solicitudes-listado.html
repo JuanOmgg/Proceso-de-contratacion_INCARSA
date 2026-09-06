@@ -191,15 +191,21 @@
                       <td class="px-4 py-3 font-medium text-[var(--text-primary)]" x-text="s.nombre_empresa || s.empresa_origen || s.nombre || '—'"></td>
                       <td class="px-4 py-3 text-[var(--text-muted)]" x-text="s.nombre_emContratista || s.empresa_contratista || '—'"></td>
                       <td class="px-3 py-3">
-                        <span class="status-pill select-none"
-                          :class="{
-                            'status-enviado': (s.estado || '').toUpperCase() === 'ENVIADO',
-                            'status-revision': (s.estado || '').toUpperCase().includes('REVISI'),
-                            'status-aprobar': (s.estado || '').toUpperCase() === 'POR APROBAR',
-                            'status-aprobado': (s.estado || '').toUpperCase() === 'APROBADO',
-                            'status-rechazado': (s.estado || '').toUpperCase() === 'RECHAZADO'
-                          }"
-                          x-text="s.estado || 'ENVIADO'"></span>
+                        <div class="flex flex-col gap-1 items-start">
+                          <span class="status-pill select-none"
+                            :class="{
+                              'status-enviado': (s.estado || '').toUpperCase() === 'ENVIADO',
+                              'status-revision': (s.estado || '').toUpperCase().includes('REVISI'),
+                              'status-aprobar': (s.estado || '').toUpperCase() === 'POR APROBAR',
+                              'status-aprobado': (s.estado || '').toUpperCase() === 'APROBADO',
+                              'status-rechazado': (s.estado || '').toUpperCase() === 'RECHAZADO'
+                            }"
+                            x-text="s.estado || 'ENVIADO'"></span>
+                          <span x-show="s.pre_aprobado" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 select-none" title="Pre-aprobada por SCR">
+                            <i class="fa-solid fa-bolt text-[9px] text-amber-600"></i>
+                            <span>Pre-aprobada</span>
+                          </span>
+                        </div>
                       </td>
                       <td class="px-4 py-3 text-[var(--text-muted)]" x-text="s.diligenciador || '—'"></td>
 

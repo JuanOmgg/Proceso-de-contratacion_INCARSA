@@ -178,6 +178,143 @@ function appShell() {
       }
     },
 
+    esNotifPreaprobada(n) {
+      if (!n) return false;
+      const enlace = String(n.enlace || "");
+      const titulo = String(n.titulo || "");
+      return enlace.includes("confirmar=true") || (titulo.toLowerCase().includes("preaprobada") && enlace.includes("/solicitudes/revision/"));
+    },
+
+    obtenerCodigoSolicitudDeNotif(n) {
+      if (!n || !n.enlace) return null;
+      const match = n.enlace.match(/\/solicitudes\/revision\/([^\/?#]+)/);
+      if (match && match[1]) return match[1];
+      return null;
+    },
+
+    async revisarSolicitudNotif(n) {
+      if (!n.leido) {
+        try {
+          const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
+            ? API.notificaciones 
+            : `${window.location.origin}/api/v1/notificaciones`;
+          await fetch(`${notifUrl}/${n.id}/leer`, { method: "PATCH" });
+          n.leido = true;
+          if (this.unreadNotificationsCount > 0) this.unreadNotificationsCount--;
+        } catch (e) {}
+      }
+      const cod = this.obtenerCodigoSolicitudDeNotif(n);
+      if (cod) {
+        window.location.href = `/solicitudes/revision/${cod}`;
+      } else if (n.enlace) {
+        window.location.href = n.enlace;
+      }
+    },
+
+    async confirmarAprobacionDirectaNotif(n) {
+      const cod = this.obtenerCodigoSolicitudDeNotif(n);
+      if (!cod) {
+        if (n.enlace) window.location.href = n.enlace;
+        return;
+      }
+
+      const sesion = (typeof getSesionActual === "function") ? getSesionActual() : null;
+      const nombreUsuario = sesion?.nombres 
+        ? `${sesion.nombres} ${sesion.apellidos || ''}`.trim() 
+        : (this.userDisplayName || "Auditor SCR");
+
+      const accionConfirmar = async () => {
+        n.aprobando = true;
+        try {
+          const payload = {
+            id_planta: null,
+            rol: "SCR",
+            decision: "APROBADO",
+            observacion: "Aprobación definitiva confirmada directamente desde el panel de notificaciones.",
+            id_usuario: this.userId || sesion?.id || null,
+            nombre_revisor: nombreUsuario
+          };
+          const res = await fetch(`${API.solicitudes}/${cod}/dictamen`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            n.aprobadoExitoso = true;
+            n.leido = true;
+            const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
+              ? API.notificaciones 
+              : `${window.location.origin}/api/v1/notificaciones`;
+            fetch(`${notifUrl}/${n.id}/leer`, { method: "PATCH" }).catch(() => {});
+            if (this.unreadNotificationsCount > 0) this.unreadNotificationsCount--;
+
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                icon: 'success',
+                title: '¡Solicitud Aprobada!',
+                text: `La solicitud #${cod} ha sido aprobada definitivamente con éxito.`,
+                timer: 3000,
+                showConfirmButton: false
+              });
+            } else if (typeof Alerta !== 'undefined') {
+              Alerta.fire({
+                type: 'success',
+                title: '¡Solicitud Aprobada!',
+                text: `La solicitud #${cod} ha sido aprobada definitivamente.`
+              });
+            }
+          } else {
+            const err = await res.json().catch(() => ({}));
+            const msg = err.detail || err.mensaje || "Error al aprobar la solicitud.";
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({ icon: 'error', title: 'Error', text: msg });
+            } else {
+              alert(`Error al aprobar: ${msg}`);
+            }
+          }
+        } catch (e) {
+          console.error("Error al aprobar desde notificación:", e);
+          alert("Error de conexión al aprobar la solicitud: " + e.message);
+        } finally {
+          n.aprobando = false;
+        }
+      };
+
+      if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+          title: '¿Confirmar Aprobación Final?',
+          html: `<p class="text-sm text-slate-300">¿Deseas dar la <strong>aprobación definitiva</strong> a la solicitud <strong>#${cod}</strong> sin ingresar a la ventana de revisión?</p>`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#10b981',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: '<i class="fa-solid fa-check-double mr-1.5"></i> Sí, Confirmar y Aprobar',
+          cancelButtonText: 'Cancelar',
+          background: '#0f172a',
+          color: '#f8fafc'
+        });
+        if (result.isConfirmed) {
+          await accionConfirmar();
+        }
+      } else if (typeof Alerta !== 'undefined') {
+        const res = await Alerta.fire({
+          type: 'question',
+          title: '¿Confirmar Aprobación?',
+          text: `¿Deseas aprobar definitivamente la solicitud #${cod} sin ingresar a la ventana de revisión?`,
+          confirmText: 'Sí, Aprobar',
+          cancelText: 'Cancelar',
+          showCancel: true
+        });
+        if (res.isConfirmed) {
+          await accionConfirmar();
+        }
+      } else {
+        if (confirm(`¿Deseas confirmar la aprobación definitiva de la solicitud #${cod}?`)) {
+          await accionConfirmar();
+        }
+      }
+    },
+
     async marcarTodasNotificacionesLeidas() {
       try {
         const notifUrl = (typeof API !== "undefined" && API.notificaciones) 

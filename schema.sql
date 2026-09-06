@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     token_edicion VARCHAR(64) NULL,
     token_edicion_usado BOOLEAN NOT NULL DEFAULT FALSE,
     motivo_devolucion TEXT NULL,
+    pre_aprobado BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (empresa_origen) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,

@@ -44,6 +44,24 @@ function superAdminPanel() {
     rolSeleccionadoId: 1, // Por defecto ADMINISTRADOR
     busquedaModulo: '',
 
+    // 3. Emisión de Mensajes y Comunicados Personalizados
+    mensajeForm: {
+      destinatarioTipo: 'rol', // 'rol', 'usuarios', 'todos'
+      rolesSeleccionados: [],  // array of IDs [4, 5, 7]
+      usuariosSeleccionados: [], // array of IDs [1, 2, ...]
+      tipo: 'info', // 'info', 'warning', 'error', 'success'
+      titulo: '',
+      mensaje: '',
+      enlace: ''
+    },
+    usuariosSistema: [],
+    busquedaUsuarioNotif: '',
+    cargandoUsuarios: false,
+    enviandoMensaje: false,
+    historialDifusion: [],
+    cargandoHistorial: false,
+    mostrarHistorial: false,
+
     get rolActual() {
       return this.roles.find(r => r.id === this.rolSeleccionadoId) || null;
     },
@@ -60,6 +78,37 @@ function superAdminPanel() {
         const nombreHumano = this.formatoModulo(m).toLowerCase();
         return m.toLowerCase().includes(q) || nombreHumano.includes(q);
       });
+    },
+
+    get usuariosFiltradosNotif() {
+      if (!this.busquedaUsuarioNotif.trim()) return this.usuariosSistema;
+      const q = this.busquedaUsuarioNotif.toLowerCase();
+      return this.usuariosSistema.filter(u => 
+        (u.nombre_completo || '').toLowerCase().includes(q) ||
+        (u.correo || '').toLowerCase().includes(q) ||
+        (u.rol || '').toLowerCase().includes(q)
+      );
+    },
+
+    get resumenDestinatarios() {
+      if (this.mensajeForm.destinatarioTipo === 'todos') {
+        return 'Todos los roles operativos del sistema';
+      }
+      if (this.mensajeForm.destinatarioTipo === 'rol') {
+        const cant = this.mensajeForm.rolesSeleccionados.length;
+        if (cant === 0) return 'Ningún rol seleccionado';
+        const nombres = this.roles
+          .filter(r => this.mensajeForm.rolesSeleccionados.includes(r.id))
+          .map(r => r.nombre_rol)
+          .join(', ');
+        return `${cant} rol(es): ${nombres}`;
+      }
+      if (this.mensajeForm.destinatarioTipo === 'usuarios') {
+        const cant = this.mensajeForm.usuariosSeleccionados.length;
+        if (cant === 0) return 'Ningún usuario seleccionado';
+        return `${cant} usuario(s) seleccionado(s)`;
+      }
+      return '';
     },
 
     // Total de módulos actualmente seleccionados para mantenimiento
@@ -122,7 +171,9 @@ function superAdminPanel() {
 
       await Promise.all([
         this.cargarEstadoMantenimiento(),
-        this.cargarMatrizPermisos()
+        this.cargarMatrizPermisos(),
+        this.cargarUsuariosSistema(),
+        this.cargarHistorialDifusion()
       ]);
 
       this.cargando = false;
@@ -567,6 +618,237 @@ function superAdminPanel() {
         superadmin: 'fa-shield-halved text-rose-400'
       };
       return iconos[mod] || 'fa-folder text-slate-400';
+    },
+
+    // -------------------------------------------------------------
+    // 3. COMUNICADOS Y MENSAJES PERSONALIZADOS
+    // -------------------------------------------------------------
+    async cargarUsuariosSistema() {
+      this.cargandoUsuarios = true;
+      try {
+        const res = await fetch('/api/v1/usuarios/getAll');
+        if (res.ok) {
+          const data = await res.json();
+          this.usuariosSistema = Array.isArray(data) ? data : [];
+        }
+      } catch (err) {
+        console.error('Error cargando usuarios para comunicados:', err);
+      } finally {
+        this.cargandoUsuarios = false;
+      }
+    },
+
+    async cargarHistorialDifusion() {
+      this.cargandoHistorial = true;
+      try {
+        const res = await fetch('/api/v1/notificaciones/historial-difusion?limit=20');
+        if (res.ok) {
+          const data = await res.json();
+          this.historialDifusion = Array.isArray(data.historial) ? data.historial : [];
+        }
+      } catch (err) {
+        console.error('Error cargando historial de difusión:', err);
+      } finally {
+        this.cargandoHistorial = false;
+      }
+    },
+
+    seleccionarTipoMensaje(tipo) {
+      this.mensajeForm.tipo = tipo;
+    },
+
+    toggleRolNotif(rolId) {
+      const idx = this.mensajeForm.rolesSeleccionados.indexOf(rolId);
+      if (idx >= 0) {
+        this.mensajeForm.rolesSeleccionados.splice(idx, 1);
+      } else {
+        this.mensajeForm.rolesSeleccionados.push(rolId);
+      }
+      this.mensajeForm.rolesSeleccionados = [...this.mensajeForm.rolesSeleccionados];
+    },
+
+    seleccionarTodosRolesNotif(habilitar) {
+      if (habilitar) {
+        this.mensajeForm.rolesSeleccionados = this.roles
+          .filter(r => !r.is_superadmin && (r.nombre_rol || '').trim().toUpperCase() !== 'SUPERADMIN')
+          .map(r => r.id);
+      } else {
+        this.mensajeForm.rolesSeleccionados = [];
+      }
+    },
+
+    toggleUsuarioNotif(userId) {
+      const idx = this.mensajeForm.usuariosSeleccionados.indexOf(userId);
+      if (idx >= 0) {
+        this.mensajeForm.usuariosSeleccionados.splice(idx, 1);
+      } else {
+        this.mensajeForm.usuariosSeleccionados.push(userId);
+      }
+      this.mensajeForm.usuariosSeleccionados = [...this.mensajeForm.usuariosSeleccionados];
+    },
+
+    seleccionarTodosUsuariosNotif(habilitar) {
+      if (habilitar) {
+        const filtradosIds = this.usuariosFiltradosNotif.map(u => u.id);
+        const setIds = new Set([...this.mensajeForm.usuariosSeleccionados, ...filtradosIds]);
+        this.mensajeForm.usuariosSeleccionados = Array.from(setIds);
+      } else {
+        this.mensajeForm.usuariosSeleccionados = [];
+      }
+    },
+
+    limpiarFormularioMensaje() {
+      this.mensajeForm = {
+        destinatarioTipo: 'rol',
+        rolesSeleccionados: [],
+        usuariosSeleccionados: [],
+        tipo: 'info',
+        titulo: '',
+        mensaje: '',
+        enlace: ''
+      };
+      this.busquedaUsuarioNotif = '';
+    },
+
+    formatearTiempoRelativoDifusion(fechaStr) {
+      if (!fechaStr) return '';
+      try {
+        const fecha = new Date(fechaStr.replace(' ', 'T'));
+        const ahora = new Date();
+        const diffSegundos = Math.floor((ahora - fecha) / 1000);
+        if (diffSegundos < 60) return 'Hace un momento';
+        const diffMinutos = Math.floor(diffSegundos / 60);
+        if (diffMinutos < 60) return `Hace ${diffMinutos} min`;
+        const diffHoras = Math.floor(diffMinutos / 60);
+        if (diffHoras < 24) return `Hace ${diffHoras} h`;
+        const diffDias = Math.floor(diffHoras / 24);
+        return `Hace ${diffDias} d`;
+      } catch (e) {
+        return fechaStr;
+      }
+    },
+
+    async enviarMensajePersonalizado() {
+      const form = this.mensajeForm;
+      const tit = (form.titulo || '').trim();
+      const msg = (form.mensaje || '').trim();
+
+      if (!tit) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Título requerido',
+            text: 'Por favor ingresa un título descriptivo para el comunicado.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+      if (!msg) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Mensaje requerido',
+            text: 'Por favor redacta el cuerpo o detalle del comunicado.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+
+      if (form.destinatarioTipo === 'rol' && form.rolesSeleccionados.length === 0) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin roles seleccionados',
+            text: 'Debes seleccionar al menos un rol de destino para emitir el mensaje.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+
+      if (form.destinatarioTipo === 'usuarios' && form.usuariosSeleccionados.length === 0) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin usuarios seleccionados',
+            text: 'Debes marcar al menos un usuario destinatario para enviar el mensaje.',
+            confirmButtonColor: '#f59e0b'
+          });
+        }
+        return;
+      }
+
+      const resumen = this.resumenDestinatarios;
+      if (typeof Swal !== 'undefined') {
+        const confirm = await Swal.fire({
+          title: '¿Confirmar emisión de comunicado?',
+          html: `
+            <div style="text-align:left; font-size:13px; line-height:1.6; margin-top:8px;">
+              <p><strong>Destinatarios:</strong> <span style="color:#f59e0b">${resumen}</span></p>
+              <p><strong>Tipo:</strong> <span style="text-transform:uppercase; font-family:monospace; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">${form.tipo}</span></p>
+              <p><strong>Título:</strong> ${tit}</p>
+            </div>
+          `,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, emitir comunicado',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#2563eb',
+          cancelButtonColor: '#64748b'
+        });
+
+        if (!confirm.isConfirmed) return;
+      }
+
+      this.enviandoMensaje = true;
+      try {
+        const payload = {
+          titulo: tit,
+          mensaje: msg,
+          tipo: form.tipo,
+          enlace: form.enlace ? form.enlace.trim() : null,
+          destinatario_tipo: form.destinatarioTipo,
+          roles_ids: form.destinatarioTipo === 'rol' ? form.rolesSeleccionados : [],
+          usuarios_ids: form.destinatarioTipo === 'usuarios' ? form.usuariosSeleccionados : []
+        };
+
+        const res = await fetch('/api/v1/notificaciones/difusion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok && data.exito) {
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Comunicado Emitido!',
+              text: data.mensaje || 'Las notificaciones fueron entregadas en tiempo real.',
+              timer: 3000,
+              showConfirmButton: false
+            });
+          }
+
+          this.limpiarFormularioMensaje();
+          await this.cargarHistorialDifusion();
+        } else {
+          throw new Error(data.detail || data.mensaje || 'No fue posible emitir el comunicado.');
+        }
+      } catch (err) {
+        console.error('Error enviando comunicado:', err);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al emitir',
+            text: err.message || 'Error de conexión con el servidor.'
+          });
+        }
+      } finally {
+        this.enviandoMensaje = false;
+      }
     }
   };
 }
