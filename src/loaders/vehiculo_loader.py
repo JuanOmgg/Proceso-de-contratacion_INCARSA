@@ -1,5 +1,6 @@
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
+from src.utils.file_manager import eliminar_documento_fisico
 
 COLUMNAS_PERMITIDAS_VEHICULOS = {"tipo", "placa"}
 
@@ -253,6 +254,23 @@ def UPDATE_vehiculo_db(vehiculo_id: int, campos: dict) -> dict:
 
                 # 2. Actualizar documentos anidados si fueron enviados
                 if documentos is not None:
+                    # Consultar documentos existentes en la BD
+                    cursor.execute("SELECT nom_documento FROM documentos_vehiculo WHERE id_vehiculo = %s", (vehiculo_id,))
+                    docs_existentes = cursor.fetchall() or []
+                    archivos_actuales = {d["nom_documento"] for d in docs_existentes if d.get("nom_documento")}
+
+                    # Identificar nuevos documentos
+                    archivos_nuevos = {
+                        (doc.get("nom_documento") or doc.get("nombre_archivo"))
+                        for doc in documentos
+                        if isinstance(doc, dict) and (doc.get("nom_documento") or doc.get("nombre_archivo"))
+                    }
+
+                    # Eliminar físicamente del servidor los archivos removidos
+                    archivos_a_eliminar = archivos_actuales - archivos_nuevos
+                    for archivo in archivos_a_eliminar:
+                        eliminar_documento_fisico(archivo)
+
                     cursor.execute(
                         "DELETE FROM documentos_vehiculo WHERE id_vehiculo = %s",
                         (vehiculo_id,),
@@ -299,7 +317,11 @@ def DELETE_vehiculo_db(vehiculo_id: int) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                # Eliminar primero documentos asociados
+                # 1. Obtener nombres de archivos de documentos asociados antes de eliminarlos de la BD
+                cursor.execute("SELECT nom_documento FROM documentos_vehiculo WHERE id_vehiculo = %s", (vehiculo_id,))
+                docs = cursor.fetchall() or []
+
+                # 2. Eliminar registros de la base de datos
                 cursor.execute("DELETE FROM documentos_vehiculo WHERE id_vehiculo = %s", (vehiculo_id,))
                 cursor.execute("DELETE FROM Veh_ingreso WHERE id_vehiculo = %s", (vehiculo_id,))
                 cursor.execute("DELETE FROM vehiculos WHERE id = %s", (vehiculo_id,))
@@ -309,6 +331,12 @@ def DELETE_vehiculo_db(vehiculo_id: int) -> dict:
                         "mensaje": f"Vehículo #{vehiculo_id} no existe para eliminar.",
                     }
                 conexion.commit()
+
+                # 3. Eliminar archivos físicos del disco/servidor
+                for d in docs:
+                    if d.get("nom_documento"):
+                        eliminar_documento_fisico(d["nom_documento"])
+
                 return {
                     "exito": True,
                     "mensaje": f"Vehículo #{vehiculo_id} eliminado exitosamente.",
@@ -344,3 +372,45 @@ def INSERT_documento_vehiculo_db(id_vehiculo: int, tipo_doc: str, nom_documento:
             "exito": False,
             "mensaje": f"Error en la base de datos: {e}",
         }
+
+
+def DELETE_documento_vehiculo_db(documento_id: int, id_vehiculo: int = None) -> dict:
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                if id_vehiculo:
+                    cursor.execute(
+                        "SELECT nom_documento FROM documentos_vehiculo WHERE id = %s AND id_vehiculo = %s",
+                        (documento_id, id_vehiculo)
+                    )
+                else:
+                    cursor.execute(
+                        "SELECT nom_documento FROM documentos_vehiculo WHERE id = %s",
+                        (documento_id,)
+                    )
+                doc = cursor.fetchone()
+                if not doc:
+                    return {"exito": False, "mensaje": "Documento de vehículo no encontrado."}
+
+                archivo = doc.get("nom_documento")
+
+                if id_vehiculo:
+                    cursor.execute(
+                        "DELETE FROM documentos_vehiculo WHERE id = %s AND id_vehiculo = %s",
+                        (documento_id, id_vehiculo)
+                    )
+                else:
+                    cursor.execute(
+                        "DELETE FROM documentos_vehiculo WHERE id = %s",
+                        (documento_id,)
+                    )
+                conexion.commit()
+
+                # Eliminar archivo físico del disco/servidor
+                if archivo:
+                    eliminar_documento_fisico(archivo)
+
+        return {"exito": True, "mensaje": "Documento de vehículo eliminado exitosamente."}
+    except Exception as e:
+        print(f"[LOADER VEHICULO] Error al eliminar documento de vehículo #{documento_id}: {e}")
+        return {"exito": False, "mensaje": f"Error en la base de datos: {e}"}

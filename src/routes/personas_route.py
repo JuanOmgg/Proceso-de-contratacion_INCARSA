@@ -5,6 +5,7 @@ from src.loaders.personas_loader import (
     GET_person_by_id_db,
     UPDATE_person_db,
     DELETE_person_db,
+    DELETE_documento_persona_db,
 )
 from src.services.personas import CREATE_person
 from src.utils.security import get_current_user, require_permission
@@ -79,5 +80,20 @@ def DELETE_person_rt(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje", "Error al eliminar persona.")
+        )
+    return resultado
+
+@router.delete("/{persona_id}/documentos/{documento_id}", status_code=status.HTTP_200_OK)
+@router.delete("/documentos/{documento_id}", status_code=status.HTTP_200_OK)
+def DELETE_documento_persona_rt(
+    documento_id: int,
+    persona_id: int = None,
+    current_user: dict = Depends(require_permission("personas", "editar"))
+):
+    resultado = DELETE_documento_persona_db(documento_id, persona_id)
+    if not resultado.get("exito", False):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=resultado.get("mensaje", "Error al eliminar el documento de la persona.")
         )
     return resultado

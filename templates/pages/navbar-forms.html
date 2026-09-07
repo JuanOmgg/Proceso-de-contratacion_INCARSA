@@ -92,19 +92,19 @@
                       </div>
 
                       <!-- Acciones en notificación de pre-aprobada -->
-                      <template x-if="esNotifPreaprobada(n)">
+                      <template x-if="(typeof esNotifPreaprobada === 'function' ? esNotifPreaprobada(n) : window.esNotifPreaprobada(n))">
                         <div class="mt-2.5">
                           <div x-show="n.aprobadoExitoso" class="py-1 px-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1.5">
                             <i class="fa-solid fa-circle-check text-xs"></i>
                             <span>Aprobación confirmada</span>
                           </div>
                           <div x-show="!n.aprobadoExitoso" class="flex items-center gap-2">
-                            <button type="button" @click.stop="revisarSolicitudNotif(n)"
+                            <button type="button" @click.stop="(typeof revisarSolicitudNotif === 'function' ? revisarSolicitudNotif(n) : window.revisarSolicitudNotif(n))"
                               class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                               <i class="fa-solid fa-eye text-[11px]"></i>
                               <span>Revisar</span>
                             </button>
-                            <button type="button" @click.stop="confirmarAprobacionDirectaNotif(n)" :disabled="n.aprobando"
+                            <button type="button" @click.stop="(typeof confirmarAprobacionDirectaNotif === 'function' ? confirmarAprobacionDirectaNotif(n) : window.confirmarAprobacionDirectaNotif(n))" :disabled="n.aprobando"
                               class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer"
                               :class="n.aprobando ? 'opacity-60 cursor-not-allowed' : ''">
                               <i class="fa-solid" :class="n.aprobando ? 'fa-circle-notch fa-spin text-[11px]' : 'fa-check-double text-[11px]'"></i>

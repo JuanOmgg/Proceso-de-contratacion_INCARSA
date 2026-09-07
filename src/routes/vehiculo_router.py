@@ -14,6 +14,7 @@ from src.services.vehiculo import (
     UPDATE_vehiculo as service_update_vehiculo,
     DELETE_vehiculo as service_delete_vehiculo,
     AGREGAR_documento_vehiculo as service_agregar_documento,
+    ELIMINAR_documento_vehiculo as service_eliminar_documento,
 )
 
 router = APIRouter(prefix="/api/v1/vehiculos", tags=["Vehículos"])
@@ -153,3 +154,26 @@ async def SUBIR_documento_vehiculo_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error interno al asociar el documento al vehículo: {e}"
         )
+
+
+@router.delete("/{vehiculo_id}/documentos/{documento_id}", status_code=status.HTTP_200_OK)
+@router.delete("/documentos/{documento_id}", status_code=status.HTTP_200_OK)
+def DELETE_documento_vehiculo_endpoint(
+    documento_id: int,
+    vehiculo_id: Optional[int] = None,
+    current_user: dict = Depends(require_permission("vehiculos", "editar")),
+):
+    print(f"🗑️ [DELETE DOC VEHÍCULO] Eliminando documento #{documento_id}...")
+    resultado = service_eliminar_documento(documento_id, vehiculo_id)
+
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=resultado.get("mensaje", "Error al eliminar documento del vehículo."),
+        )
+
+    return {
+        "exito": True,
+        "mensaje": resultado.get("mensaje"),
+    }
+

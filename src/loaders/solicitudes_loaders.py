@@ -665,7 +665,7 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         """,
                         (obs_pre, real_id)
                     )
-                elif rol == "SCR":
+                elif rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN") or (id_planta is None and decision == "APROBADO"):
                     nuevo_estado = "APROBADO"
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",

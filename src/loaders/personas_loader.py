@@ -1,4 +1,5 @@
 from database import GET_conexion
+from src.utils.file_manager import eliminar_documento_fisico
 
 
 def CREATE_person_db(person: dict) -> dict:
@@ -34,9 +35,10 @@ def CREATE_person_db(person: dict) -> dict:
                     """
                     valores_docs = [
                         (person_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""))
-                        for doc in documentos
+                        for doc in documentos if isinstance(doc, dict) and doc.get("nombre_archivo")
                     ]
-                    cursor.executemany(sql_docs, valores_docs)
+                    if valores_docs:
+                        cursor.executemany(sql_docs, valores_docs)
 
                 conexion.commit()
 
@@ -78,7 +80,7 @@ def GET_ALL_person_db() -> dict:
                 datos_person = cursor.fetchall()
 
                 # Obtener documentos de cada persona si existen
-                cursor.execute("SELECT persona_id, tipo_doc, nombre_archivo FROM documentos_persona")
+                cursor.execute("SELECT id, persona_id, tipo_doc, nombre_archivo FROM documentos_persona")
                 docs_db = cursor.fetchall()
                 docs_por_persona = {}
                 for doc in docs_db:
@@ -86,8 +88,10 @@ def GET_ALL_person_db() -> dict:
                     if pid not in docs_por_persona:
                         docs_por_persona[pid] = []
                     docs_por_persona[pid].append({
+                        "id": doc.get("id"),
                         "tipo_doc": doc["tipo_doc"],
-                        "nombre_archivo": doc["nombre_archivo"]
+                        "nombre_archivo": doc["nombre_archivo"],
+                        "url_acceso": f"/uploads/documentos/{doc['nombre_archivo']}"
                     })
 
                 for p in datos_person:
@@ -131,8 +135,11 @@ def GET_person_by_id_db(persona_id: int) -> dict:
                 if not p:
                     return {"exito": False, "mensaje": f"Persona con ID {persona_id} no encontrada."}
 
-                cursor.execute("SELECT tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s", (persona_id,))
-                p["documentos"] = cursor.fetchall() or []
+                cursor.execute("SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s", (persona_id,))
+                docs = cursor.fetchall() or []
+                for d in docs:
+                    d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
+                p["documentos"] = docs
                 if p.get("fecha_creacion"):
                     p["fecha_creacion"] = p["fecha_creacion"].isoformat() if hasattr(p["fecha_creacion"], "isoformat") else str(p["fecha_creacion"])
 
@@ -167,10 +174,27 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
 
                 documentos = person.get("documentos_ids", [])
                 if documentos is not None and isinstance(documentos, list):
+                    # 1. Consultar archivos actuales de la persona
+                    cursor.execute("SELECT nombre_archivo FROM documentos_persona WHERE persona_id = %s", (persona_id,))
+                    docs_existentes = cursor.fetchall() or []
+                    archivos_actuales = {d["nombre_archivo"] for d in docs_existentes if d.get("nombre_archivo")}
+
+                    # 2. Identificar los nuevos archivos recibidos
+                    archivos_nuevos = {
+                        doc.get("nombre_archivo") for doc in documentos 
+                        if isinstance(doc, dict) and doc.get("nombre_archivo")
+                    }
+
+                    # 3. Eliminar físicamente del servidor los archivos removidos
+                    archivos_a_eliminar = archivos_actuales - archivos_nuevos
+                    for archivo in archivos_a_eliminar:
+                        eliminar_documento_fisico(archivo)
+
+                    # 4. Actualizar tabla documentos_persona
                     cursor.execute("DELETE FROM documentos_persona WHERE persona_id = %s", (persona_id,))
                     valores_docs = [
                         (persona_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""))
-                        for doc in documentos if doc.get("nombre_archivo")
+                        for doc in documentos if isinstance(doc, dict) and doc.get("nombre_archivo")
                     ]
                     if valores_docs:
                         cursor.executemany(
@@ -188,9 +212,60 @@ def DELETE_person_db(persona_id: int) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                # 1. Obtener lista de archivos asociados antes de eliminarlos de la BD
+                cursor.execute("SELECT nombre_archivo FROM documentos_persona WHERE persona_id = %s", (persona_id,))
+                docs = cursor.fetchall() or []
+
+                # 2. Eliminar registros de la base de datos
                 cursor.execute("DELETE FROM documentos_persona WHERE persona_id = %s", (persona_id,))
                 cursor.execute("DELETE FROM personas WHERE id = %s", (persona_id,))
                 conexion.commit()
+
+                # 3. Eliminar archivos físicos del disco/servidor
+                for d in docs:
+                    if d.get("nombre_archivo"):
+                        eliminar_documento_fisico(d["nombre_archivo"])
+
         return {"exito": True, "mensaje": f"Persona {persona_id} eliminada exitosamente."}
     except Exception as e:
         return {"exito": False, "mensaje": f"Error al eliminar persona: {e}"}
+
+def DELETE_documento_persona_db(documento_id: int, persona_id: int = None) -> dict:
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                if persona_id:
+                    cursor.execute(
+                        "SELECT nombre_archivo FROM documentos_persona WHERE id = %s AND persona_id = %s",
+                        (documento_id, persona_id)
+                    )
+                else:
+                    cursor.execute(
+                        "SELECT nombre_archivo FROM documentos_persona WHERE id = %s",
+                        (documento_id,)
+                    )
+                doc = cursor.fetchone()
+                if not doc:
+                    return {"exito": False, "mensaje": "Documento no encontrado en la base de datos."}
+
+                archivo = doc.get("nombre_archivo")
+
+                if persona_id:
+                    cursor.execute(
+                        "DELETE FROM documentos_persona WHERE id = %s AND persona_id = %s",
+                        (documento_id, persona_id)
+                    )
+                else:
+                    cursor.execute(
+                        "DELETE FROM documentos_persona WHERE id = %s",
+                        (documento_id,)
+                    )
+                conexion.commit()
+
+                # Eliminar archivo físico del servidor
+                if archivo:
+                    eliminar_documento_fisico(archivo)
+
+        return {"exito": True, "mensaje": "Documento de la persona eliminado exitosamente."}
+    except Exception as e:
+        return {"exito": False, "mensaje": f"Error al eliminar documento de la persona: {e}"}
