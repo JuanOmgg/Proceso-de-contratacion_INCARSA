@@ -348,9 +348,72 @@
   color: #ffffff !important;
 }
 
+/* =========================================================
+   NAVBAR USER PILL (Modo Claro & Modo Oscuro)
+   ========================================================= */
+.navbar-user-btn {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+/* Modo Claro */
+:root:not(.dark) .navbar-user-btn {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .navbar-user-btn:hover,
+:root:not(.dark) .navbar-user-btn.navbar-user-btn-open {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14) !important;
+}
+
 :root:not(.dark) .topbar .inicialesUser {
-  background-color: var(--steel-200) !important;
-  color: var(--ink-900) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%) !important;
+  color: #0C767D !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Modo Oscuro Neón / Premium */
+:root.dark .navbar-user-btn {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.88) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+:root.dark .navbar-user-btn:hover,
+:root.dark .navbar-user-btn.navbar-user-btn-open {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+  border-color: rgba(3, 191, 191, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 16px rgba(3, 191, 191, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Indicador de estado en línea (Status dot) */
+.navbar-user-status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background-color: #10b981;
+  border: 2px solid #0C767D;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+  transition: all 0.2s ease;
+}
+
+:root.dark .navbar-user-status-dot {
+  background-color: #34d399;
+  border-color: #0f172a;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.85);
 }
 
 /* Shimmer suave y continuo sobre el topbar (SOLO en modo oscuro) */
@@ -404,6 +467,39 @@
   font-size: 10px;
   line-height: 1;
   animation: popIn 0.3s var(--ease-emphasized);
+}
+
+/* --- Animaciones para notificaciones en caliente ('en vivo') --- */
+@keyframes bellSwingRing {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(18deg) scale(1.18); }
+  20% { transform: rotate(-16deg) scale(1.18); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-12deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  70% { transform: rotate(5deg); }
+  80% { transform: rotate(-3deg); }
+  100% { transform: rotate(0) scale(1); }
+}
+
+.bell-ring-active {
+  animation: bellSwingRing 1.1s ease-in-out infinite alternate !important;
+  transform-origin: top center;
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.75)) !important;
+}
+
+@keyframes badgeBouncePulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.55); box-shadow: 0 0 16px rgba(239, 68, 68, 1); }
+  60% { transform: scale(0.9); }
+  80% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.badge-pulse-active {
+  animation: badgeBouncePulse 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 2 !important;
 }
 
 /* =========================================================
@@ -514,7 +610,7 @@
 }
 
 :root.dark .notification-item.is-unread {
-  background-color: rgba(12, 118, 125, 0.12) !important;
+  background-color: rgba(12, 118, 125, 0.14) !important;
   border-left-color: #03bfbf !important;
 }
 
@@ -523,7 +619,139 @@
 }
 
 :root.dark .notification-item.is-unread:hover {
-  background-color: rgba(12, 118, 125, 0.18) !important;
+  background-color: rgba(12, 118, 125, 0.22) !important;
+}
+
+/* =========================================================
+   Notification Items by Type (success, warning, error, info)
+   ========================================================= */
+
+/* SUCCESS */
+.notification-item.notif-item-success.is-unread {
+  background-color: #f0fdf4 !important;
+  border-left-color: #10b981 !important;
+}
+
+:root.dark .notification-item.notif-item-success.is-unread {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  border-left-color: #34d399 !important;
+}
+
+.notification-item.notif-item-success.is-unread:hover {
+  background-color: #dcfce7 !important;
+}
+
+:root.dark .notification-item.notif-item-success.is-unread:hover {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+.notification-item.notif-item-success:hover {
+  border-left-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+:root.dark .notification-item.notif-item-success:hover {
+  border-left-color: rgba(52, 211, 153, 0.5) !important;
+}
+
+.notification-item.notif-item-success .unread-dot {
+  background-color: #10b981 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8) !important;
+}
+
+/* WARNING */
+.notification-item.notif-item-warning.is-unread {
+  background-color: #fffbeb !important;
+  border-left-color: #f59e0b !important;
+}
+
+:root.dark .notification-item.notif-item-warning.is-unread {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+  border-left-color: #fbbf24 !important;
+}
+
+.notification-item.notif-item-warning.is-unread:hover {
+  background-color: #fef3c7 !important;
+}
+
+:root.dark .notification-item.notif-item-warning.is-unread:hover {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+.notification-item.notif-item-warning:hover {
+  border-left-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+:root.dark .notification-item.notif-item-warning:hover {
+  border-left-color: rgba(251, 191, 36, 0.5) !important;
+}
+
+.notification-item.notif-item-warning .unread-dot {
+  background-color: #f59e0b !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.8) !important;
+}
+
+/* ERROR / DANGER */
+.notification-item.notif-item-error.is-unread {
+  background-color: #fef2f2 !important;
+  border-left-color: #ef4444 !important;
+}
+
+:root.dark .notification-item.notif-item-error.is-unread {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-left-color: #ff5260 !important;
+}
+
+.notification-item.notif-item-error.is-unread:hover {
+  background-color: #fee2e2 !important;
+}
+
+:root.dark .notification-item.notif-item-error.is-unread:hover {
+  background-color: rgba(239, 68, 68, 0.24) !important;
+}
+
+.notification-item.notif-item-error:hover {
+  border-left-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+:root.dark .notification-item.notif-item-error:hover {
+  border-left-color: rgba(255, 82, 96, 0.5) !important;
+}
+
+.notification-item.notif-item-error .unread-dot {
+  background-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8) !important;
+}
+
+/* INFO / DEFAULT */
+.notification-item.notif-item-info.is-unread {
+  background-color: #f0f9ff !important;
+  border-left-color: #0C767D !important;
+}
+
+:root.dark .notification-item.notif-item-info.is-unread {
+  background-color: rgba(12, 118, 125, 0.14) !important;
+  border-left-color: #03bfbf !important;
+}
+
+.notification-item.notif-item-info.is-unread:hover {
+  background-color: #e0f2fe !important;
+}
+
+:root.dark .notification-item.notif-item-info.is-unread:hover {
+  background-color: rgba(12, 118, 125, 0.22) !important;
+}
+
+.notification-item.notif-item-info:hover {
+  border-left-color: rgba(12, 118, 125, 0.35) !important;
+}
+
+:root.dark .notification-item.notif-item-info:hover {
+  border-left-color: rgba(3, 191, 191, 0.45) !important;
+}
+
+.notification-item.notif-item-info .unread-dot {
+  background-color: #03bfbf !important;
+  box-shadow: 0 0 10px rgba(3, 191, 191, 0.8) !important;
 }
 
 .notification-title-unread {
@@ -612,8 +840,8 @@
   width: 8px;
   height: 8px;
   border-radius: 9999px;
-  background-color: var(--signal-500);
-  box-shadow: 0 0 8px rgba(250, 5, 26, 0.6);
+  background-color: #03bfbf;
+  box-shadow: 0 0 8px rgba(3, 191, 191, 0.6);
 }
 
 .notification-empty {

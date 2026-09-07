@@ -382,6 +382,10 @@ function solicitudesTable() {
                 this.permisosVersion++;
             });
 
+            // Recarga automática en caliente ante dictámenes o radicaciones
+            window.addEventListener("solicitudes-recargar", () => this.getSolicitudes());
+            window.addEventListener("solicitud-actualizada-en-caliente", () => this.getSolicitudes());
+
             await Promise.allSettled([
                 this.getEmpresas(),
                 this.getSolicitudes()

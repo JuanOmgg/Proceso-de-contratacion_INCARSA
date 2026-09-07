@@ -41,7 +41,13 @@
                 <template x-for="n in (notifications || []).slice(0, 3)" :key="n.id">
                   <div @click="marcarNotificacionLeida(n)"
                        class="notification-item flex items-start gap-3.5"
-                       :class="!n.leido ? 'is-unread' : ''">
+                       :class="{
+                         'is-unread': !n.leido,
+                         'notif-item-success': n.tipo === 'success',
+                         'notif-item-error': n.tipo === 'error' || n.tipo === 'danger',
+                         'notif-item-warning': n.tipo === 'warning',
+                         'notif-item-info': !n.tipo || n.tipo === 'info'
+                       }">
                     <div class="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm shadow-sm"
                          :class="{
                            'notif-icon-success': n.tipo === 'success',
@@ -64,6 +70,26 @@
                         <span class="notification-time text-[10px] flex-shrink-0 font-medium" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
                       </div>
                       <p class="notification-msg text-xs leading-relaxed" x-text="n.mensaje"></p>
+
+                      <!-- Enlace adjunto -->
+                      <div x-show="n.enlace" class="mt-2 max-w-full">
+                        <a :href="n.enlace" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                          class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all shadow-2xs group"
+                          :title="n.enlace">
+                          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                          <span class="truncate min-w-0" x-text="formatearTextoEnlace(n.enlace) || 'Abrir enlace'"></span>
+                        </a>
+                      </div>
+
+                      <!-- Documento adjunto descargable -->
+                      <div x-show="n.archivo_url" class="mt-2 max-w-full">
+                        <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                          class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 transition-all shadow-2xs group"
+                          :title="'Descargar ' + (n.archivo_nombre || 'documento')">
+                          <i class="fa-solid fa-file-arrow-down text-[10px] text-emerald-600 dark:text-emerald-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform"></i>
+                          <span class="truncate min-w-0" x-text="n.archivo_nombre || 'Descargar documento adjunto'"></span>
+                        </a>
+                      </div>
 
                       <!-- Acciones en notificación de pre-aprobada -->
                       <template x-if="esNotifPreaprobada(n)">
@@ -124,12 +150,18 @@
 
           <!-- Perfil -->
           <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-            <button @click="open = !open" class="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 pr-1 py-1 rounded-full">
-              <div
-                class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-[11px] sm:text-xs font-semibold flex-shrink-0"
-                x-text="userInitials"><b>LG</b></div>
-              <span class="hidden md:block text-sm font-medium text-white truncate max-w-[120px]" x-text="userDisplayName">Laura Gómez</span>
-              <i class="fa-solid fa-chevron-down text-[9px] text-[var(--text-muted)]"></i>
+            <button @click="open = !open"
+                    class="navbar-user-btn flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full group cursor-pointer transition-all duration-200"
+                    :class="open ? 'navbar-user-btn-open' : ''">
+              <div class="relative flex-shrink-0">
+                <div
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser flex items-center justify-center text-[11px] sm:text-xs font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                  x-text="userInitials"><b>LG</b></div>
+                <span class="navbar-user-status-dot"></span>
+              </div>
+              <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-white/70 transition-transform duration-200 group-hover:text-white"
+                 :class="open ? 'rotate-180 text-[#03bfbf]' : ''"></i>
             </button>
             <div x-show="open" x-transition x-cloak
               class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50">

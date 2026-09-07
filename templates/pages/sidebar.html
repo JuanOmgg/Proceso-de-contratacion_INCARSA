@@ -1249,8 +1249,11 @@
           <template x-for="n in notificacionesModalPagina" :key="n.id">
             <div class="p-3.5 rounded-xl border transition-all relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
               :class="!n.leido 
-                ? 'bg-blue-50/80 dark:bg-blue-950/25 border-blue-200 dark:border-blue-800/60 shadow-xs' 
-                : 'bg-white/80 dark:bg-[#18181b]/50 border-[var(--paper-shadow)] dark:border-white/10 hover:border-[var(--signal-500)]/40'">
+                ? (n.tipo === 'success' ? 'bg-emerald-50/80 dark:bg-emerald-950/25 border-emerald-300 dark:border-emerald-800/60 shadow-xs' :
+                   (n.tipo === 'warning' ? 'bg-amber-50/80 dark:bg-amber-950/25 border-amber-300 dark:border-amber-800/60 shadow-xs' :
+                   ((n.tipo === 'error' || n.tipo === 'danger') ? 'bg-rose-50/80 dark:bg-rose-950/25 border-rose-300 dark:border-rose-800/60 shadow-xs' :
+                   'bg-cyan-50/80 dark:bg-cyan-950/25 border-cyan-300 dark:border-cyan-800/60 shadow-xs')))
+                : 'bg-white/80 dark:bg-[#18181b]/50 border-[var(--paper-shadow)] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'">
               
               <div class="flex items-start gap-3 min-w-0 flex-1">
                 <!-- Icono de Tipo -->
@@ -1273,10 +1276,37 @@
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-wrap mb-0.5">
                     <h4 class="text-xs sm:text-[13px] font-bold text-[var(--paper-ink)]" x-text="n.titulo"></h4>
-                    <span x-show="!n.leido" class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-[var(--signal-500)] text-white shadow-xs">NUEVA</span>
+                    <span x-show="!n.leido" class="px-2 py-0.5 rounded-full text-[9.5px] font-bold text-white shadow-xs"
+                          :class="{
+                            'bg-emerald-600': n.tipo === 'success',
+                            'bg-amber-500': n.tipo === 'warning',
+                            'bg-rose-600': n.tipo === 'error' || n.tipo === 'danger',
+                            'bg-[#0C767D] dark:bg-[#03bfbf] dark:text-slate-900': !n.tipo || n.tipo === 'info'
+                          }">NUEVA</span>
                     <span class="text-[10px] text-[var(--paper-muted)] font-mono ml-auto" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
                   </div>
                   <p class="text-xs text-[var(--text-muted)] dark:text-zinc-300 leading-relaxed break-words" x-text="n.mensaje"></p>
+
+                  <!-- Enlace adjunto -->
+                  <div x-show="n.enlace" class="mt-2 max-w-full">
+                    <a :href="n.enlace" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all shadow-2xs group"
+                      :title="n.enlace">
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[9px] flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                      <span class="truncate min-w-0" x-text="formatearTextoEnlace(n.enlace) || 'Abrir enlace'"></span>
+                    </a>
+                  </div>
+
+                  <!-- Documento adjunto descargable -->
+                  <div x-show="n.archivo_url" class="mt-2 max-w-full">
+                    <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 transition-all shadow-2xs group"
+                      :title="'Descargar ' + (n.archivo_nombre || 'documento')">
+                      <i class="fa-solid fa-file-arrow-down text-[10px] text-emerald-600 dark:text-emerald-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform"></i>
+                      <span class="truncate min-w-0" x-text="n.archivo_nombre || 'Descargar documento adjunto'"></span>
+                    </a>
+                  </div>
+
                   <p x-show="n.fecha_creacion" class="text-[10px] text-[var(--paper-muted)] mt-1 font-mono flex items-center gap-1">
                     <i class="fa-regular fa-clock text-[9px]"></i>
                     <span x-text="n.fecha_creacion"></span>
@@ -1317,6 +1347,17 @@
                     <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                   </a>
                 </template>
+
+                <!-- Caso Notificación con archivo adjunto descargable -->
+                <template x-if="n.archivo_url">
+                  <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" @click="marcarNotificacionLeida(n)"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1.5 shadow-xs"
+                    :title="'Descargar ' + (n.archivo_nombre || 'archivo')">
+                    <i class="fa-solid fa-file-arrow-down text-[11px]"></i>
+                    <span>Descargar</span>
+                  </a>
+                </template>
+
                 <button type="button" @click="marcarNotificacionLeida(n)"
                   x-show="!n.leido"
                   class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 cursor-pointer"

@@ -204,6 +204,11 @@
       hideLoader();
     });
 
+    // Si la página ya cargó cuando el script se evalúa
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      hideLoader();
+    }
+
     // Ocultar de forma segura cuando el DOM y Alpine hayan terminado de cargar
     document.addEventListener("DOMContentLoaded", function () {
       hideLoader();
@@ -214,5 +219,10 @@
     document.addEventListener("alpine:initialized", function () {
       hideLoader();
     });
+
+    // Timeout de seguridad máximo (3s) para garantizar que el loader nunca se quede bloqueando la pantalla
+    setTimeout(function () {
+      hideLoader();
+    }, 3000);
   })();
 </script>

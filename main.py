@@ -33,10 +33,25 @@ from src.routes.superadmin_router import router as superadmin_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.utils.security import decode_access_token
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import asyncio
+    from src.utils.broadcaster import notification_broadcaster
+    try:
+        loop = asyncio.get_running_loop()
+        notification_broadcaster.set_loop(loop)
+        print("🚀 [STARTUP] NotificationBroadcaster conectado al loop asíncrono para SSE en tiempo real.")
+    except Exception as e:
+        print(f"⚠️ Aviso inicializando loop para notificaciones: {e}")
+    yield
+
 app = FastAPI(
     title="API - Proceso de Contratos",
     description="Servicio web para procesar, agilizar y ordenar solicitudes de ingreso de personas externas.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 origins = [
@@ -49,7 +64,7 @@ BASE_DIR = os.path.dirname(__file__)
 UPLOAD_DIR = os.path.abspath(os.path.join(BASE_DIR, "uploads"))
 DOCUMENTOS_DIR = os.path.join(UPLOAD_DIR, "documentos")
 
-subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general", "vehiculos"]
+subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general", "vehiculos", "notificaciones"]
 for sub in subcategorias:
     os.makedirs(os.path.join(DOCUMENTOS_DIR, sub), exist_ok=True)
 
@@ -147,6 +162,7 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
             "/superadmin",
             "/api/v1/superadmin",
             "/api/v1/sistema/mantenimiento",
+            "/api/v1/notificaciones/stream",
             "/docs",
             "/openapi.json"
         ]

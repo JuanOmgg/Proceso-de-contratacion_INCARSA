@@ -8,6 +8,8 @@ def crear_notificacion_db(
     mensaje: str,
     tipo: str = "info",
     enlace: Optional[str] = None,
+    archivo_url: Optional[str] = None,
+    archivo_nombre: Optional[str] = None,
     id_usuario: Optional[int] = None,
     rol_destino: Optional[int] = None,
 ) -> Optional[int]:
@@ -16,13 +18,13 @@ def crear_notificacion_db(
     Puede ir dirigida a un id_usuario específico, a un rol_destino, o a ambos.
     """
     sql = """
-        INSERT INTO notificaciones (id_usuario, rol_destino, titulo, mensaje, tipo, enlace, leido)
-        VALUES (%s, %s, %s, %s, %s, %s, FALSE)
+        INSERT INTO notificaciones (id_usuario, rol_destino, titulo, mensaje, tipo, enlace, archivo_url, archivo_nombre, leido)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, FALSE)
     """
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute(sql, (id_usuario, rol_destino, titulo, mensaje, tipo, enlace))
+                cursor.execute(sql, (id_usuario, rol_destino, titulo, mensaje, tipo, enlace, archivo_url, archivo_nombre))
                 conexion.commit()
                 return cursor.lastrowid
     except Exception as e:
@@ -40,7 +42,7 @@ def obtener_notificaciones_db(
     ordenadas de la más reciente a la más antigua.
     """
     sql = """
-        SELECT id, id_usuario, rol_destino, titulo, mensaje, tipo, enlace, leido, fecha_creacion
+        SELECT id, id_usuario, rol_destino, titulo, mensaje, tipo, enlace, archivo_url, archivo_nombre, leido, fecha_creacion
         FROM notificaciones
         WHERE (%s IS NOT NULL AND id_usuario = %s)
            OR (%s IS NOT NULL AND rol_destino = %s)
@@ -227,6 +229,8 @@ def emitir_difusion_superadmin_db(
     mensaje: str,
     tipo: str = "info",
     enlace: Optional[str] = None,
+    archivo_url: Optional[str] = None,
+    archivo_nombre: Optional[str] = None,
     destinatario_tipo: str = "rol",
     roles_ids: Optional[List[int]] = None,
     usuarios_ids: Optional[List[int]] = None,
@@ -243,10 +247,12 @@ def emitir_difusion_superadmin_db(
     tipos_validos = ("info", "warning", "error", "success")
     tipo_final = tipo.lower().strip() if tipo and tipo.lower().strip() in tipos_validos else "info"
     enlace_final = enlace.strip() if enlace and enlace.strip() else None
+    archivo_url_final = archivo_url.strip() if archivo_url and archivo_url.strip() else None
+    archivo_nombre_final = archivo_nombre.strip() if archivo_nombre and archivo_nombre.strip() else None
 
     sql = """
-        INSERT INTO notificaciones (id_usuario, rol_destino, titulo, mensaje, tipo, enlace, leido)
-        VALUES (%s, %s, %s, %s, %s, %s, FALSE)
+        INSERT INTO notificaciones (id_usuario, rol_destino, titulo, mensaje, tipo, enlace, archivo_url, archivo_nombre, leido)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, FALSE)
     """
 
     registros_insertados = 0
@@ -260,7 +266,7 @@ def emitir_difusion_superadmin_db(
                     cursor.execute("SELECT id, nombre_rol FROM roles WHERE UPPER(nombre_rol) != 'SUPERADMIN' ORDER BY id ASC")
                     roles_op = cursor.fetchall() or []
                     for r in roles_op:
-                        cursor.execute(sql, (None, r["id"], titulo, mensaje, tipo_final, enlace_final))
+                        cursor.execute(sql, (None, r["id"], titulo, mensaje, tipo_final, enlace_final, archivo_url_final, archivo_nombre_final))
                         registros_insertados += 1
                         detalles.append(f"Rol: {r.get('nombre_rol')}")
 
@@ -273,7 +279,7 @@ def emitir_difusion_superadmin_db(
                         cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (r_id,))
                         r_info = cursor.fetchone()
                         nom_rol = r_info["nombre_rol"] if r_info else f"ID {r_id}"
-                        cursor.execute(sql, (None, r_id, titulo, mensaje, tipo_final, enlace_final))
+                        cursor.execute(sql, (None, r_id, titulo, mensaje, tipo_final, enlace_final, archivo_url_final, archivo_nombre_final))
                         registros_insertados += 1
                         detalles.append(f"Rol: {nom_rol}")
 
@@ -286,7 +292,7 @@ def emitir_difusion_superadmin_db(
                         cursor.execute("SELECT CONCAT(nombres, ' ', apellidos) AS nombre FROM usuarios WHERE id = %s", (u_id,))
                         u_info = cursor.fetchone()
                         nom_u = u_info["nombre"] if u_info else f"Usuario #{u_id}"
-                        cursor.execute(sql, (u_id, None, titulo, mensaje, tipo_final, enlace_final))
+                        cursor.execute(sql, (u_id, None, titulo, mensaje, tipo_final, enlace_final, archivo_url_final, archivo_nombre_final))
                         registros_insertados += 1
                         detalles.append(nom_u)
 
@@ -312,7 +318,7 @@ def obtener_historial_difusion_db(limit: int = 25) -> List[Dict[str, Any]]:
     Retorna el historial de las últimas notificaciones emitidas en la plataforma.
     """
     sql = """
-        SELECT n.id, n.id_usuario, n.rol_destino, n.titulo, n.mensaje, n.tipo, n.enlace, n.leido, n.fecha_creacion,
+        SELECT n.id, n.id_usuario, n.rol_destino, n.titulo, n.mensaje, n.tipo, n.enlace, n.archivo_url, n.archivo_nombre, n.leido, n.fecha_creacion,
                CONCAT(u.nombres, ' ', u.apellidos) AS usuario_nombre,
                u.correo AS usuario_correo,
                r.nombre_rol AS rol_nombre

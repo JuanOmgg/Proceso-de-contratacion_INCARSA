@@ -730,17 +730,23 @@ html.dark select option:checked {
 
 
 :root.dark .inicialesUser {
-  background-color: #888181;
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 0 10px rgba(3, 191, 191, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(3, 191, 191, 0.5) !important;
+  letter-spacing: 0.02em;
+  transition: all 0.25s ease;
 }
 
-:root.dark .inicialesUser:hover {
-  background-color: #e90909;
-  color: var(--text-primary);
-  justify-content: center;
-  align-items: center;
+:root.dark .inicialesUser:hover,
+:root.dark .navbar-user-btn:hover .inicialesUser {
+  background: linear-gradient(135deg, #0d828a 0%, #1aebeb 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(3, 191, 191, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  border-color: #34d399 !important;
 }
 
 :root.dark .section-users:hover {
@@ -4255,54 +4261,75 @@ html.dark .swal2-container {
   z-index: 100000 !important;
 }
 
-/* 1. Toasts flotantes con Glassmorphism oscuro */
+/* 1. Toasts flotantes sutiles con Glassmorphism oscuro */
 :root.dark .swal2-popup.swal2-toast,
 html.dark .swal2-popup.swal2-toast {
-  background: rgba(18, 18, 24, 0.94) !important;
-  backdrop-filter: blur(20px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 14px !important;
-  padding: 12px 18px !important;
+  background: rgba(15, 23, 42, 0.94) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
   color: #f8fafc !important;
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 4px 10px -2px rgba(0, 0, 0, 0.3) !important;
   transition: all 0.25s ease !important;
+  max-width: 380px !important;
 }
 
 :root.dark .swal2-toast .swal2-title,
 html.dark .swal2-toast .swal2-title {
   color: #f8fafc !important;
   font-family: var(--font-sans, 'Inter', sans-serif) !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   margin: 0 !important;
-  padding: 0 0 0 8px !important;
+  padding: 0 !important;
   letter-spacing: -0.01em !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .swal2-toast .swal2-html-container,
 html.dark .swal2-toast .swal2-html-container {
   color: #94a3b8 !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 !important;
 }
 
-/* 2. Neones en Toasts según tipo */
-/* --- ÉXITO (Neón Verde Esmeralda) --- */
+:root.dark .swal2-toast .swal2-close,
+html.dark .swal2-toast .swal2-close {
+  color: #64748b !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+  margin: 4px 4px 0 0 !important;
+  transition: color 0.15s ease !important;
+}
+:root.dark .swal2-toast .swal2-close:hover,
+html.dark .swal2-toast .swal2-close:hover {
+  color: #e2e8f0 !important;
+}
+
+:root.dark .swal2-toast .swal2-icon,
+html.dark .swal2-toast .swal2-icon {
+  transform: scale(0.65) !important;
+  margin: 0 6px 0 0 !important;
+  filter: none !important;
+}
+
+/* 2. Toasts según tipo - Sutil y elegante en Modo Oscuro */
+/* --- ÉXITO --- */
 :root.dark .swal2-toast.swal2-icon-success,
 :root.dark .swal2-toast:has(.swal2-success),
 html.dark .swal2-toast.swal2-icon-success,
 html.dark .swal2-toast:has(.swal2-success) {
-  border-color: rgba(16, 185, 129, 0.55) !important;
-  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
-              0 0 20px rgba(16, 185, 129, 0.38), 
-              inset 0 0 12px rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-success,
 html.dark .swal2-toast .swal2-icon.swal2-success {
   border-color: #10b981 !important;
   color: #10b981 !important;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85)) !important;
+  filter: none !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'],
 html.dark .swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
@@ -4310,32 +4337,31 @@ html.dark .swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
 }
 :root.dark .swal2-toast .swal2-icon.swal2-success .swal2-success-ring,
 html.dark .swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
-  border-color: rgba(16, 185, 129, 0.45) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
 }
 :root.dark .swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
 :root.dark .swal2-toast.swal2-icon-success .swal2-timer-progress-bar,
 html.dark .swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
 html.dark .swal2-toast.swal2-icon-success .swal2-timer-progress-bar {
-  background: linear-gradient(90deg, #10b981, #34d399) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.9) !important;
-  height: 3px !important;
+  background: #10b981 !important;
+  box-shadow: none !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
 }
 
-/* --- ERROR (Neón Rojo Carmesí / Signal) --- */
+/* --- ERROR --- */
 :root.dark .swal2-toast.swal2-icon-error,
 :root.dark .swal2-toast:has(.swal2-error),
 html.dark .swal2-toast.swal2-icon-error,
 html.dark .swal2-toast:has(.swal2-error) {
-  border-color: rgba(239, 68, 68, 0.6) !important;
-  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
-              0 0 22px rgba(239, 68, 68, 0.45), 
-              inset 0 0 12px rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-error,
 html.dark .swal2-toast .swal2-icon.swal2-error {
   border-color: #ef4444 !important;
   color: #ef4444 !important;
-  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)) !important;
+  filter: none !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'],
 html.dark .swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
@@ -4345,59 +4371,58 @@ html.dark .swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
 :root.dark .swal2-toast.swal2-icon-error .swal2-timer-progress-bar,
 html.dark .swal2-toast:has(.swal2-error) .swal2-timer-progress-bar,
 html.dark .swal2-toast.swal2-icon-error .swal2-timer-progress-bar {
-  background: linear-gradient(90deg, #ef4444, #f87171) !important;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.9) !important;
-  height: 3px !important;
+  background: #ef4444 !important;
+  box-shadow: none !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
 }
 
-/* --- ADVERTENCIA (Neón Ámbar / Dorado) --- */
+/* --- ADVERTENCIA --- */
 :root.dark .swal2-toast.swal2-icon-warning,
 :root.dark .swal2-toast:has(.swal2-warning),
 html.dark .swal2-toast.swal2-icon-warning,
 html.dark .swal2-toast:has(.swal2-warning) {
-  border-color: rgba(245, 158, 11, 0.6) !important;
-  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
-              0 0 20px rgba(245, 158, 11, 0.42), 
-              inset 0 0 12px rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-warning,
 html.dark .swal2-toast .swal2-icon.swal2-warning {
   border-color: #f59e0b !important;
   color: #f59e0b !important;
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.9)) !important;
+  filter: none !important;
 }
 :root.dark .swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
 :root.dark .swal2-toast.swal2-icon-warning .swal2-timer-progress-bar,
 html.dark .swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
 html.dark .swal2-toast.swal2-icon-warning .swal2-timer-progress-bar {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.9) !important;
-  height: 3px !important;
+  background: #f59e0b !important;
+  box-shadow: none !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
 }
 
-/* --- INFORMACIÓN (Neón Cian Eléctrico) --- */
+/* --- INFORMACIÓN --- */
 :root.dark .swal2-toast.swal2-icon-info,
 :root.dark .swal2-toast:has(.swal2-info),
 html.dark .swal2-toast.swal2-icon-info,
 html.dark .swal2-toast:has(.swal2-info) {
-  border-color: rgba(6, 182, 212, 0.6) !important;
-  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.8), 
-              0 0 20px rgba(6, 182, 212, 0.42), 
-              inset 0 0 12px rgba(6, 182, 212, 0.15) !important;
+  border-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
 }
 :root.dark .swal2-toast .swal2-icon.swal2-info,
 html.dark .swal2-toast .swal2-icon.swal2-info {
   border-color: #06b6d4 !important;
   color: #06b6d4 !important;
-  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.9)) !important;
+  filter: none !important;
 }
 :root.dark .swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
 :root.dark .swal2-toast.swal2-icon-info .swal2-timer-progress-bar,
 html.dark .swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
 html.dark .swal2-toast.swal2-icon-info .swal2-timer-progress-bar {
-  background: linear-gradient(90deg, #06b6d4, #22d3ee) !important;
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.9) !important;
-  height: 3px !important;
+  background: #06b6d4 !important;
+  box-shadow: none !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
 }
 
 /* 3. Modales completos SweetAlert2 en Modo Oscuro con resplandor */

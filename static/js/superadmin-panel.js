@@ -52,7 +52,11 @@ function superAdminPanel() {
       tipo: 'info', // 'info', 'warning', 'error', 'success'
       titulo: '',
       mensaje: '',
-      enlace: ''
+      enlace: '',
+      archivo: null,
+      archivoNombre: '',
+      archivoUrl: '',
+      archivoTamano: ''
     },
     usuariosSistema: [],
     busquedaUsuarioNotif: '',
@@ -767,9 +771,80 @@ function superAdminPanel() {
         tipo: 'info',
         titulo: '',
         mensaje: '',
-        enlace: ''
+        enlace: '',
+        archivo: null,
+        archivoNombre: '',
+        archivoUrl: '',
+        archivoTamano: ''
       };
       this.busquedaUsuarioNotif = '';
+      const input = document.getElementById('archivoAdjuntoNotifInput');
+      if (input) input.value = '';
+    },
+
+    manejarArchivoNotif(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const maxBytes = 25 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Archivo demasiado grande',
+            text: 'El tamaño máximo permitido para adjuntos es de 25 MB.'
+          });
+        }
+        event.target.value = '';
+        return;
+      }
+
+      this.mensajeForm.archivo = file;
+      this.mensajeForm.archivoNombre = file.name;
+      
+      // Formatear tamaño legible
+      if (file.size < 1024) {
+        this.mensajeForm.archivoTamano = file.size + ' B';
+      } else if (file.size < 1024 * 1024) {
+        this.mensajeForm.archivoTamano = (file.size / 1024).toFixed(1) + ' KB';
+      } else {
+        this.mensajeForm.archivoTamano = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+    },
+
+    quitarArchivoNotif() {
+      this.mensajeForm.archivo = null;
+      this.mensajeForm.archivoNombre = '';
+      this.mensajeForm.archivoUrl = '';
+      this.mensajeForm.archivoTamano = '';
+      const input = document.getElementById('archivoAdjuntoNotifInput');
+      if (input) input.value = '';
+    },
+
+    obtenerIconoArchivo(nombre) {
+      if (!nombre) return 'fa-file-lines text-slate-300';
+      const ext = (nombre.split('.').pop() || '').toLowerCase();
+      if (['pdf'].includes(ext)) return 'fa-file-pdf text-rose-400';
+      if (['doc', 'docx'].includes(ext)) return 'fa-file-word text-blue-400';
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-file-excel text-emerald-400';
+      if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint text-amber-400';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'fa-file-zipper text-yellow-400';
+      if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) return 'fa-file-image text-purple-400';
+      return 'fa-file-lines text-slate-300';
+    },
+
+    formatearTextoEnlace(url) {
+      if (!url) return '';
+      const u = String(url).trim();
+      try {
+        if (u.startsWith('http://') || u.startsWith('https://')) {
+          const parsed = new URL(u);
+          const domain = parsed.hostname.replace(/^www\./, '');
+          const path = parsed.pathname !== '/' ? parsed.pathname : '';
+          return domain + (path.length > 25 ? path.substring(0, 20) + '…' : path);
+        }
+      } catch (e) {}
+      return u;
     },
 
     formatearTiempoRelativoDifusion(fechaStr) {
@@ -844,6 +919,9 @@ function superAdminPanel() {
 
       const resumen = this.resumenDestinatarios;
       if (typeof Swal !== 'undefined') {
+        const docHtml = form.archivo
+          ? `<p><strong>Documento:</strong> <span style="color:#10b981"><i class="fa-solid fa-paperclip"></i> ${form.archivoNombre} (${form.archivoTamano})</span></p>`
+          : '';
         const confirm = await Swal.fire({
           title: '¿Confirmar emisión de comunicado?',
           html: `
@@ -851,6 +929,7 @@ function superAdminPanel() {
               <p><strong>Destinatarios:</strong> <span style="color:#f59e0b">${resumen}</span></p>
               <p><strong>Tipo:</strong> <span style="text-transform:uppercase; font-family:monospace; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">${form.tipo}</span></p>
               <p><strong>Título:</strong> ${tit}</p>
+              ${docHtml}
             </div>
           `,
           icon: 'question',
@@ -866,11 +945,35 @@ function superAdminPanel() {
 
       this.enviandoMensaje = true;
       try {
+        let archivoUrlSubido = null;
+        let archivoNombreSubido = null;
+
+        // Si se adjuntó un archivo, subirlo primero
+        if (form.archivo) {
+          const formData = new FormData();
+          formData.append('file', form.archivo);
+
+          const resUpload = await fetch('/api/v1/notificaciones/subir-adjunto', {
+            method: 'POST',
+            body: formData
+          });
+
+          const dataUpload = await resUpload.json();
+          if (!resUpload.ok || !dataUpload.exito) {
+            throw new Error(dataUpload.detail || dataUpload.mensaje || 'Error al subir el archivo adjunto.');
+          }
+
+          archivoUrlSubido = dataUpload.url_archivo;
+          archivoNombreSubido = dataUpload.nombre_archivo;
+        }
+
         const payload = {
           titulo: tit,
           mensaje: msg,
           tipo: form.tipo,
           enlace: form.enlace ? form.enlace.trim() : null,
+          archivo_url: archivoUrlSubido,
+          archivo_nombre: archivoNombreSubido,
           destinatario_tipo: form.destinatarioTipo,
           roles_ids: form.destinatarioTipo === 'rol' ? form.rolesSeleccionados : [],
           usuarios_ids: form.destinatarioTipo === 'usuarios' ? form.usuariosSeleccionados : []

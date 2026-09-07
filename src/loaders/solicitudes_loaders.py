@@ -1,8 +1,10 @@
 import json
 import secrets
 import string
+from datetime import datetime
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
+from src.utils.broadcaster import notification_broadcaster
 
 def Generate_unique_code(cursor) -> str:
     """
@@ -296,6 +298,8 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         roles_revisores = cursor.fetchall() or []
                         for r_rev in roles_revisores:
                             if cod_val:
+                                tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
+                                msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
                                 cursor.execute(
                                     """
                                     INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -303,12 +307,33 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                     """,
                                     (
                                         r_rev["id"],
-                                        f"Nueva solicitud para revisión ({r_rev['nombre_rol']})",
-                                        f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}.",
+                                        tit_notif,
+                                        msg_notif,
                                         "info",
                                         f"/solicitudes/revision/{cod_val}"
                                     )
                                 )
+                                # Notificar en caliente a cada rol revisor
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_notif,
+                                        "mensaje": msg_notif,
+                                        "tipo": "info",
+                                        "enlace": f"/solicitudes/revision/{cod_val}",
+                                        "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        "leido": False,
+                                        "rol_destino": r_rev["id"]
+                                    },
+                                    target_role_id=r_rev["id"]
+                                )
+
+                        # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
+                        if cod_val:
+                            notification_broadcaster.notificar_cambio_solicitud(
+                                codigo_solicitud=cod_val,
+                                nuevo_estado="ENVIADO",
+                                detalle="Nueva solicitud radicada en el sistema"
+                            )
                     except Exception as e_notif:
                         print(f"⚠️ Aviso al generar notificación de nueva solicitud: {e_notif}")
 
@@ -687,6 +712,8 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                     cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
                     id_creador = sol.get("diligenciado_por")
                     
+                    now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                     if decision == "DEVUELTO":
                         tit = f"⚠️ Solicitud {cod_sol} devuelta para corrección"
                         msg = f"SCR ha devuelto la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Inconsistencias detectadas'}. Haz clic para ingresar a la edición única."
@@ -701,6 +728,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 """,
                                 (id_creador, tit, msg, tipo_notif, link_edicion)
                             )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": link_edicion,
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "id_usuario": id_creador
+                                },
+                                target_user_id=id_creador
+                            )
                         
                         # También alertar al rol GESTION DOCUMENTAL
                         cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) LIKE '%DOCUMENTAL%' LIMIT 1")
@@ -713,6 +752,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 """,
                                 (r_gd["id"], tit, msg, tipo_notif, link_edicion)
                             )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": link_edicion,
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "rol_destino": r_gd["id"]
+                                },
+                                target_role_id=r_gd["id"]
+                            )
                     elif decision == "PREAPROBADO":
                         tit = f"Solicitud {cod_sol} Pre-aprobada por SCR"
                         msg = f"SCR ha emitido visto bueno preliminar (Pre-aprobación) para {cod_sol}. Continuará con las revisiones técnicas de SST y GESCO."
@@ -724,6 +775,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 VALUES (%s, %s, %s, %s, %s)
                                 """,
                                 (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "id_usuario": id_creador
+                                },
+                                target_user_id=id_creador
                             )
                     elif id_creador:
                         if decision == "RECHAZADO":
@@ -745,6 +808,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             VALUES (%s, %s, %s, %s, %s)
                             """,
                             (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
+                        )
+                        notification_broadcaster.notificar_nueva(
+                            {
+                                "titulo": tit,
+                                "mensaje": msg,
+                                "tipo": tipo_notif,
+                                "enlace": f"/solicitudes/revision/{cod_sol}",
+                                "fecha_creacion": now_notif_str,
+                                "leido": False,
+                                "id_usuario": id_creador
+                            },
+                            target_user_id=id_creador
                         )
 
                     # Si pasó a POR APROBAR, alertar al rol SCR para el visto bueno final
@@ -801,8 +876,22 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                         f"/solicitudes/revision/{cod_sol}?confirmar=true"
                                     )
                                 )
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_scr,
+                                        "mensaje": msg_scr,
+                                        "tipo": "info",
+                                        "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
+                                        "fecha_creacion": now_notif_str,
+                                        "leido": False,
+                                        "rol_destino": r_scr["id"]
+                                    },
+                                    target_role_id=r_scr["id"]
+                                )
                             else:
                                 # Notificación convencional
+                                tit_conv = f"Solicitud {cod_sol} lista para visto bueno final"
+                                msg_conv = f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR."
                                 cursor.execute(
                                     """
                                     INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -810,12 +899,31 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                     """,
                                     (
                                         r_scr["id"],
-                                        f"Solicitud {cod_sol} lista para visto bueno final",
-                                        f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR.",
+                                        tit_conv,
+                                        msg_conv,
                                         "warning",
                                         f"/solicitudes/revision/{cod_sol}"
                                     )
                                 )
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_conv,
+                                        "mensaje": msg_conv,
+                                        "tipo": "warning",
+                                        "enlace": f"/solicitudes/revision/{cod_sol}",
+                                        "fecha_creacion": now_notif_str,
+                                        "leido": False,
+                                        "rol_destino": r_scr["id"]
+                                    },
+                                    target_role_id=r_scr["id"]
+                                )
+
+                    # Notificar en caliente a todas las vistas abiertas sobre el cambio de estado de la solicitud
+                    notification_broadcaster.notificar_cambio_solicitud(
+                        codigo_solicitud=cod_sol,
+                        nuevo_estado=nuevo_estado,
+                        detalle=f"Dictamen de {rol}: {decision}"
+                    )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación de dictamen: {e_notif}")
 
@@ -983,6 +1091,8 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
 
                             bloque_obs = ("\nObservaciones previas SST / GESCO:\n" + "\n".join(items_obs)) if items_obs else "\nSin observaciones adicionales de SST ni GESCO."
 
+                            tit_corregida = f"⚡ Solicitud Preaprobada {cod_sol} corregida - En 'Por Aprobar'"
+                            msg_corregida = f"Gestión Documental corrigió {cod_sol}. Como fue preaprobada, puedes confirmar la aprobación definitiva o revisarla.\n{bloque_obs}"
                             cursor.execute(
                                 """
                                 INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -990,13 +1100,27 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                                 """,
                                 (
                                     r_scr["id"],
-                                    f"⚡ Solicitud Preaprobada {cod_sol} corregida - En 'Por Aprobar'",
-                                    f"Gestión Documental corrigió {cod_sol}. Como fue preaprobada, puedes confirmar la aprobación definitiva o revisarla.\n{bloque_obs}",
+                                    tit_corregida,
+                                    msg_corregida,
                                     "info",
                                     f"/solicitudes/revision/{cod_sol}?confirmar=true"
                                 )
                             )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit_corregida,
+                                    "mensaje": msg_corregida,
+                                    "tipo": "info",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
+                                    "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "leido": False,
+                                    "rol_destino": r_scr["id"]
+                                },
+                                target_role_id=r_scr["id"]
+                            )
                         else:
+                            tit_conv = f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR"
+                            msg_conv = f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final."
                             cursor.execute(
                                 """
                                 INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -1004,12 +1128,31 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                                 """,
                                 (
                                     r_scr["id"],
-                                    f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR",
-                                    f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final.",
+                                    tit_conv,
+                                    msg_conv,
                                     "warning",
                                     f"/solicitudes/revision/{cod_sol}"
                                 )
                             )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit_conv,
+                                    "mensaje": msg_conv,
+                                    "tipo": "warning",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
+                                    "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "leido": False,
+                                    "rol_destino": r_scr["id"]
+                                },
+                                target_role_id=r_scr["id"]
+                            )
+
+                    # Notificar en caliente cambio de solicitud
+                    notification_broadcaster.notificar_cambio_solicitud(
+                        codigo_solicitud=cod_sol,
+                        nuevo_estado="POR APROBAR",
+                        detalle="Solicitud corregida y retornada a revisión final de SCR"
+                    )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación a SCR tras corrección: {e_notif}")
 

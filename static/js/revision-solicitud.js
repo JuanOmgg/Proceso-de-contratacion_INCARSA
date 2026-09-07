@@ -477,10 +477,10 @@ function revisionSolicitudApp() {
         // Cargar vigencias de antecedentes de cada ingresante
         await this.cargarVigenciasPersonas();
 
-        // 🌟 REGLA DE NEGOCIO: Si está en 'ENVIADO' y entra SST o GESCO, pasa automáticamente a 'EN REVISIÓN'
+        // Si la solicitud está en 'ENVIADO' y entra un rol auditor/revisor, actualizar visualmente a 'EN REVISIÓN'
         const estadoActual = (this.solicitud.estado || "").toUpperCase();
         if (estadoActual === "ENVIADO" && (this.rolActual === "SST" || this.rolActual === "GESCO" || this.rolActual === "Administrador")) {
-          await this.cambiarEstado("EN REVISIÓN", false);
+          this.solicitud.estado = "EN REVISIÓN";
         }
 
       } catch (e) {
@@ -822,22 +822,6 @@ function revisionSolicitudApp() {
           locales[idx].personas = this.solicitud.personas;
           localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
         }
-
-        // Sincronizar con backend si existe
-        if (this.solicitudId && this.solicitud?.personas) {
-          const payloadPersonas = this.solicitud.personas.map(p => ({
-            id: p.id,
-            id_persona: p.id,
-            autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-            motivo: p.motivo_rechazo || p.motivo || null
-          }));
-
-          fetch(`${API.solicitudes}/${this.solicitudId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ personas: payloadPersonas })
-          }).catch(err => console.warn("Aviso al sincronizar ingresantes en backend:", err.message));
-        }
       } catch (e) {
         console.warn("No se pudo guardar personas en storage:", e);
       }
@@ -905,23 +889,6 @@ function revisionSolicitudApp() {
         if (idx > -1) {
           locales[idx].vehiculos = this.solicitud.vehiculos;
           localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
-        }
-
-        // Sincronizar con backend si existe
-        if (this.solicitudId && this.solicitud?.vehiculos) {
-          const payloadVehiculos = this.solicitud.vehiculos.map(v => ({
-            id: v.id,
-            id_vehiculo: v.id,
-            autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
-            motivo: v.motivo_rechazo || v.motivo || null,
-            licencia_doc: v.licencia_doc || v.licencia || 0
-          }));
-
-          fetch(`${API.solicitudes}/${this.solicitudId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ vehiculos: payloadVehiculos })
-          }).catch(err => console.warn("Aviso al sincronizar vehículos en backend:", err.message));
         }
       } catch (e) {
         console.warn("No se pudo guardar vehículos en storage:", e);
@@ -1223,11 +1190,21 @@ function revisionSolicitudApp() {
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
           const mensajeToast = decision === "preaprobar"
-            ? `Solicitud PRE-APROBADA por SCR. Continuará con el flujo de plantas hasta 'POR APROBAR'.`
+            ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
             : (decision === "devolver"
-                ? `Solicitud devuelta a Gestión Documental con enlace de edición única.`
-                : `Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`);
+                ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
+                : (decision === "rechazar"
+                    ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
+                    : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
           this.mostrarToast(mensajeToast, "success");
+
+          // Redirigir a procesamiento tras completar la acción para evitar bloqueos o error 403
+          setTimeout(() => {
+            if (typeof window.showPageLoader === "function") {
+              window.showPageLoader();
+            }
+            window.location.href = "/procesamiento";
+          }, 1200);
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -1295,7 +1272,15 @@ function revisionSolicitudApp() {
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
           this.cerrarModalConfirmacionPreaprobada();
-          this.mostrarToast("¡Solicitud Aprobada Definitivamente!", "success");
+          this.mostrarToast("¡Solicitud Aprobada Definitivamente! Redirigiendo...", "success");
+
+          // Redirigir a procesamiento
+          setTimeout(() => {
+            if (typeof window.showPageLoader === "function") {
+              window.showPageLoader();
+            }
+            window.location.href = "/procesamiento";
+          }, 1200);
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -1321,39 +1306,6 @@ function revisionSolicitudApp() {
           localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
         }
       } catch (e) {}
-
-      // Actualizar en Backend
-      try {
-        const payloadPatch = {
-          estado: nuevoEstado,
-          observaciones: this.solicitud.observaciones
-        };
-        if (this.solicitud?.personas && Array.isArray(this.solicitud.personas)) {
-          payloadPatch.personas = this.solicitud.personas.map(p => ({
-            id: p.id,
-            id_persona: p.id,
-            autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-            motivo: p.motivo_rechazo || p.motivo || null
-          }));
-        }
-        if (this.solicitud?.vehiculos && Array.isArray(this.solicitud.vehiculos)) {
-          payloadPatch.vehiculos = this.solicitud.vehiculos.map(v => ({
-            id: v.id,
-            id_vehiculo: v.id,
-            autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
-            motivo: v.motivo_rechazo || v.motivo || null,
-            licencia_doc: v.licencia_doc || v.licencia || 0
-          }));
-        }
-
-        await fetch(`${API.solicitudes}/${this.solicitudId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadPatch)
-        });
-      } catch (err) {
-        console.warn("No se pudo actualizar estado en backend vía PATCH:", err);
-      }
     },
 
     // -------------------------------------------------------------
@@ -1418,7 +1370,8 @@ function revisionSolicitudApp() {
 
     async cargarVigenciasPersonas() {
       if (!this.solicitud || !Array.isArray(this.solicitud.personas)) return;
-      for (const p of this.solicitud.personas) {
+      
+      const tareas = this.solicitud.personas.map(async (p) => {
         const idPersona = p.id_persona || p.id;
         const ident = String(p.identificacion || "").trim();
 
@@ -1431,13 +1384,13 @@ function revisionSolicitudApp() {
           p.responsable = localSaved.responsable;
           p.anotaciones = localSaved.anotaciones;
           p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
-          continue;
+          return;
         }
 
         // 2. Si ya tiene fecha_consulta en el objeto
         if (p.fecha_consulta) {
           p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
-          continue;
+          return;
         }
 
         // 3. Consultar backend si existe registro previo
@@ -1453,7 +1406,7 @@ function revisionSolicitudApp() {
                 p.responsable = data.responsable;
                 p.anotaciones = data.anotaciones;
                 p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
-                continue;
+                return;
               }
             }
           }
@@ -1467,7 +1420,9 @@ function revisionSolicitudApp() {
           icono: 'fa-solid fa-circle-check',
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
         };
-      }
+      });
+
+      await Promise.all(tareas);
     },
 
     parsearFechaLocal(fechaStr) {

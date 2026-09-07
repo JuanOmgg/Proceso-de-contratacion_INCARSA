@@ -206,12 +206,18 @@
 
           <!-- Perfil -->
           <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-            <button @click="open = !open" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/10 transition-colors">
-              <div
-                class="w-8 h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-xs font-semibold"
-                x-text="userInitials"><b>LG</b></div>
-              <span class="hidden md:block text-sm font-medium text-white" x-text="userDisplayName">Laura Gómez</span>
-              <i class="fa-solid fa-chevron-down text-[10px] text-white/60"></i>
+            <button @click="open = !open"
+                    class="navbar-user-btn flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full group cursor-pointer transition-all duration-200"
+                    :class="open ? 'navbar-user-btn-open' : ''">
+              <div class="relative flex-shrink-0">
+                <div
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser flex items-center justify-center text-[11px] sm:text-xs font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                  x-text="userInitials"><b>LG</b></div>
+                <span class="navbar-user-status-dot"></span>
+              </div>
+              <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-white/70 transition-transform duration-200 group-hover:text-white"
+                 :class="open ? 'rotate-180 text-[#03bfbf]' : ''"></i>
             </button>
             <div x-show="open" x-transition x-cloak
               class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50 text-[var(--text-primary)]">

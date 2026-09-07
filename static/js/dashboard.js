@@ -55,6 +55,13 @@ function appShell() {
       return fechaStr || "";
     },
 
+    formatearTextoEnlace(url) {
+      if (typeof window.formatearTextoEnlace === "function") {
+        return window.formatearTextoEnlace(url);
+      }
+      return url || "";
+    },
+
     get notificacionesFiltradas() {
       let lista = this.notifications || [];
       if (this.filtroNotifTab === 'no_leidas') {
@@ -126,12 +133,49 @@ function appShell() {
         this.abrirModalTodasNotificaciones();
       });
 
+      // Escuchar notificaciones en caliente vía SSE
+      window.addEventListener("notificacion-en-caliente", (e) => {
+        const notif = e.detail;
+        if (notif) {
+          const existe = (this.notifications || []).some(n => n.id && notif.id && String(n.id) === String(notif.id));
+          if (!existe) {
+            this.notifications.unshift(notif);
+            this.unreadNotificationsCount = (this.unreadNotificationsCount || 0) + 1;
+          }
+        }
+      });
+
+      window.addEventListener("notificacion-en-caliente-remota", (e) => {
+        const notif = e.detail;
+        if (notif) {
+          const existe = (this.notifications || []).some(n => n.id && notif.id && String(n.id) === String(notif.id));
+          if (!existe) {
+            this.notifications.unshift(notif);
+            this.unreadNotificationsCount = (this.unreadNotificationsCount || 0) + 1;
+          }
+        }
+      });
+
+      window.addEventListener("notificaciones-leidas-sync", (e) => {
+        const data = e.detail || {};
+        if (data.todas) {
+          (this.notifications || []).forEach(n => n.leido = true);
+          this.unreadNotificationsCount = 0;
+        } else if (data.id_notificacion) {
+          const target = (this.notifications || []).find(n => String(n.id) === String(data.id_notificacion));
+          if (target && !target.leido) {
+            target.leido = true;
+            if (this.unreadNotificationsCount > 0) this.unreadNotificationsCount--;
+          }
+        }
+      });
+
       // Escuchar actualizaciones de notificaciones (al revisar solicitudes en cualquier sección)
       window.addEventListener("notificaciones-actualizadas", () => {
         this.cargarNotificaciones();
       });
       window.addEventListener("storage", (e) => {
-        if (e.key === "incarsa_notificaciones_reload") {
+        if (e.key === "incarsa_notificaciones_reload" || e.key === "incarsa_notif_reload") {
           this.cargarNotificaciones();
         }
       });
@@ -681,6 +725,22 @@ function dashboardCards() {
       } finally {
         this.cargando = false;
       }
+
+      // Escuchar eventos en caliente para refrescar contadores automáticamente
+      window.addEventListener("solicitud-actualizada-en-caliente", () => this.recargar());
+      window.addEventListener("solicitudes-recargar", () => this.recargar());
+    },
+
+    async recargar() {
+      try {
+        const res = await fetch(`${API.solicitudes}/getall`);
+        if (res.ok) {
+          const data = await res.json();
+          const raw = Array.isArray(data) ? data : (data.datos || []);
+          this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
+          this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
+        }
+      } catch (e) {}
     },
 
     get counts() {
@@ -782,6 +842,22 @@ function solicitudesTable() {
       } finally {
         this.cargando = false;
       }
+
+      // Escuchar eventos en caliente para refrescar la tabla automáticamente
+      window.addEventListener("solicitud-actualizada-en-caliente", () => this.recargar());
+      window.addEventListener("solicitudes-recargar", () => this.recargar());
+    },
+
+    async recargar() {
+      try {
+        const res = await fetch(`${API.solicitudes}/getall`);
+        if (res.ok) {
+          const data = await res.json();
+          const raw = Array.isArray(data) ? data : (data.datos || []);
+          const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
+          this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
+        }
+      } catch (e) {}
     },
 
     estadoClass(estado) {

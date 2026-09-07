@@ -111,9 +111,8 @@ function cerrarSesionUsuario() {
         }
 
         // Si el backend responde 403 Forbidden en peticiones autenticadas
-        if (response.status === 403 && esApiInterna && !window.location.pathname.includes("/403") && !window.location.pathname.includes("/login")) {
-            console.warn("⛔ [AUTH] Acceso denegado (403). Redirigiendo a /403...");
-            window.location.replace("/403");
+        if (response.status === 403 && esApiInterna) {
+            console.warn("⛔ [AUTH] Petición no autorizada o recurso denegado (403):", resource);
         }
 
         return response;
@@ -140,6 +139,321 @@ function formatearTiempoRelativo(fechaStr) {
         return fechaStr;
     }
 }
+
+function formatearTextoEnlace(url) {
+    if (!url) return '';
+    const u = String(url).trim();
+    try {
+        if (u.startsWith('http://') || u.startsWith('https://')) {
+            const parsed = new URL(u);
+            const domain = parsed.hostname.replace(/^www\./, '');
+            const path = parsed.pathname !== '/' ? parsed.pathname : '';
+            return domain + (path.length > 25 ? path.substring(0, 20) + '…' : path);
+        }
+    } catch (e) {}
+    return u;
+}
+window.formatearTextoEnlace = formatearTextoEnlace;
+
+// ============================================================================
+// SERVICIO DE NOTIFICACIONES EN TIEMPO REAL ('EN CALIENTE') - SSE & WEB AUDIO
+// ============================================================================
+function reproducirSonidoNotificacion() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const ahora = ctx.currentTime;
+
+        // Oscilador 1: Tono base suave (F5 -> A5)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(698.46, ahora);
+        osc1.frequency.exponentialRampToValueAtTime(880, ahora + 0.12);
+
+        gain1.gain.setValueAtTime(0, ahora);
+        gain1.gain.linearRampToValueAtTime(0.18, ahora + 0.03);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ahora + 0.55);
+
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+
+        // Oscilador 2: Armónico brillante (A5 -> C#6)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, ahora + 0.09);
+        osc2.frequency.exponentialRampToValueAtTime(1108.73, ahora + 0.22);
+
+        gain2.gain.setValueAtTime(0, ahora);
+        gain2.gain.setValueAtTime(0, ahora + 0.09);
+        gain2.gain.linearRampToValueAtTime(0.14, ahora + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ahora + 0.7);
+
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+
+        osc1.start(ahora);
+        osc1.stop(ahora + 0.6);
+        osc2.start(ahora + 0.09);
+        osc2.stop(ahora + 0.75);
+    } catch (e) {
+        // En navegadores con políticas estrictas de autoplay antes del primer clic
+    }
+}
+window.reproducirSonidoNotificacion = reproducirSonidoNotificacion;
+
+function animarCampanaNotificaciones() {
+    try {
+        const campanas = document.querySelectorAll('.topbar .fa-bell, button[title="Notificaciones"] i');
+        campanas.forEach(el => {
+            el.classList.remove('bell-ring-active');
+            void el.offsetWidth; // Reflow para reiniciar animación
+            el.classList.add('bell-ring-active');
+            setTimeout(() => el.classList.remove('bell-ring-active'), 3200);
+        });
+
+        const badges = document.querySelectorAll('.badge-count');
+        badges.forEach(b => {
+            b.classList.remove('badge-pulse-active');
+            void b.offsetWidth;
+            b.classList.add('badge-pulse-active');
+            setTimeout(() => b.classList.remove('badge-pulse-active'), 1800);
+        });
+    } catch (e) {}
+}
+window.animarCampanaNotificaciones = animarCampanaNotificaciones;
+
+function mostrarToastNotificacion(n) {
+    if (!n) return;
+    const tipo = (n.tipo || 'info').toLowerCase();
+    let titulo = n.titulo || 'Nueva Notificación';
+    // Limpiar emojis al inicio del título si ya los trae para evitar duplicación visual
+    titulo = titulo.replace(/^[⚠️ℹ️✅❌🔔]+\s*/, '');
+    const mensaje = n.mensaje || '';
+    const enlace = n.enlace || '';
+    const archivoUrl = n.archivo_url || '';
+    const archivoNombre = n.archivo_nombre || '';
+
+    if (typeof Swal !== 'undefined') {
+        const isDark = document.documentElement.classList.contains('dark');
+
+        let iconHtml = '';
+        let accentColor = '#0C767D';
+
+        if (tipo === 'danger' || tipo === 'error') {
+            accentColor = isDark ? '#f87171' : '#ef4444';
+            iconHtml = `<div class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20"><i class="fa-solid fa-circle-xmark"></i></div>`;
+        } else if (tipo === 'warning') {
+            accentColor = isDark ? '#fbbf24' : '#d97706';
+            iconHtml = `<div class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20"><i class="fa-solid fa-triangle-exclamation"></i></div>`;
+        } else if (tipo === 'success') {
+            accentColor = isDark ? '#34d399' : '#059669';
+            iconHtml = `<div class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-circle-check"></i></div>`;
+        } else {
+            accentColor = isDark ? '#38bdf8' : '#0284c7';
+            iconHtml = `<div class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] bg-sky-500/10 text-sky-500 dark:text-sky-400 border border-sky-500/20"><i class="fa-solid fa-bell"></i></div>`;
+        }
+
+        const htmlContent = `
+            <div class="flex items-start gap-2.5 text-left w-full py-0.5">
+                ${iconHtml}
+                <div class="flex-1 min-w-0">
+                    <div class="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100 tracking-tight leading-snug truncate pr-3">
+                        ${titulo}
+                    </div>
+                    <div class="mt-0.5 text-[11.5px] leading-relaxed text-slate-500 dark:text-slate-400 font-normal line-clamp-3 select-none">
+                        ${mensaje}
+                    </div>
+                    ${archivoUrl ? `
+                        <div class="mt-2">
+                            <a href="${archivoUrl}" target="_blank" download class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                <i class="fa-solid fa-file-arrow-down text-emerald-500"></i> ${archivoNombre || 'Adjunto'}
+                            </a>
+                        </div>
+                    ` : ''}
+                    ${enlace ? `
+                        <div class="mt-2 pt-0.5 flex items-center gap-2">
+                            <a href="${enlace}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 transition-colors shadow-xs">
+                                <span>Abrir</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-70"></i>
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            showCloseButton: true,
+            timer: 7500,
+            timerProgressBar: true,
+            background: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+            color: isDark ? '#f8fafc' : '#0f172a',
+            customClass: {
+                popup: 'incarsa-toast-subtle shadow-xl'
+            },
+            didOpen: (toast) => {
+                toast.style.borderLeft = `3px solid ${accentColor}`;
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                if (enlace) {
+                    toast.style.cursor = 'pointer';
+                    toast.addEventListener('click', (e) => {
+                        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && !e.target.closest('a') && !e.target.closest('button')) {
+                            window.location.href = enlace;
+                        }
+                    });
+                }
+            }
+        });
+
+        Toast.fire({
+            html: htmlContent
+        });
+    }
+}
+window.mostrarToastNotificacion = mostrarToastNotificacion;
+
+// Canal BroadcastChannel para sincronizar entre pestañas del mismo navegador
+const notifChannel = (typeof window.BroadcastChannel !== 'undefined')
+    ? new BroadcastChannel('incarsa_notificaciones_stream')
+    : null;
+
+window.NotificacionesRealtime = (function() {
+    let eventSource = null;
+    let reconectarTimer = null;
+    let activo = false;
+    let intentosReconexion = 0;
+
+    function conectar() {
+        const token = getAuthToken();
+        if (!token) return;
+        if (eventSource) {
+            try { eventSource.close(); } catch(e) {}
+        }
+
+        const streamUrl = `${API_BASE_URL}/api/v1/notificaciones/stream?token=${encodeURIComponent(token)}`;
+
+        try {
+            eventSource = new EventSource(streamUrl);
+
+            eventSource.addEventListener("connected", (e) => {
+                activo = true;
+                intentosReconexion = 0;
+                console.log("⚡ [NOTIFICACIONES EN CALIENTE] Canal SSE conectado exitosamente:", e.data);
+            });
+
+            eventSource.addEventListener("nueva_notificacion", (e) => {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    const notif = parsed.data || parsed;
+                    console.log("🔔 [NOTIFICACIONES EN CALIENTE] Recibida en vivo:", notif);
+
+                    // 1. Chime auditivo suave
+                    reproducirSonidoNotificacion();
+
+                    // 2. Toast interactivo flotante
+                    mostrarToastNotificacion(notif);
+
+                    // 3. Vibración/pulso visual en la campana
+                    animarCampanaNotificaciones();
+
+                    // 4. Despachar a Alpine y vistas
+                    window.dispatchEvent(new CustomEvent("notificacion-en-caliente", { detail: notif }));
+                    window.dispatchEvent(new CustomEvent("notificaciones-actualizadas", { detail: notif }));
+
+                    // 5. Notificar a otras pestañas
+                    if (notifChannel) {
+                        notifChannel.postMessage({ type: 'NUEVA_NOTIFICACION', notif });
+                    }
+                    localStorage.setItem("incarsa_notif_reload", String(Date.now()));
+                } catch (err) {
+                    console.error("Error al procesar notificación en vivo:", err);
+                }
+            });
+
+            eventSource.addEventListener("notificaciones_leidas", (e) => {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    window.dispatchEvent(new CustomEvent("notificaciones-leidas-sync", { detail: parsed.data || parsed }));
+                } catch(err) {}
+            });
+
+            eventSource.addEventListener("solicitud_actualizada", (e) => {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    console.log("⚡ [NOTIFICACIONES EN CALIENTE] Solicitud actualizada:", parsed.data);
+                    window.dispatchEvent(new CustomEvent("solicitud-actualizada-en-caliente", { detail: parsed.data }));
+                    window.dispatchEvent(new CustomEvent("solicitudes-recargar"));
+                } catch(err) {}
+            });
+
+            eventSource.onerror = function() {
+                activo = false;
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                intentosReconexion++;
+                const delay = Math.min(1000 * Math.pow(1.5, intentosReconexion), 15000);
+                clearTimeout(reconectarTimer);
+                reconectarTimer = setTimeout(() => {
+                    if (getAuthToken()) {
+                        conectar();
+                    }
+                }, delay);
+            };
+        } catch (err) {
+            console.error("Error conectando a EventSource:", err);
+        }
+    }
+
+    // Escuchar mensajes de sincronización de otras pestañas
+    if (notifChannel) {
+        notifChannel.onmessage = function(ev) {
+            if (ev.data && ev.data.type === 'NUEVA_NOTIFICACION') {
+                animarCampanaNotificaciones();
+                window.dispatchEvent(new CustomEvent("notificacion-en-caliente-remota", { detail: ev.data.notif }));
+                window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+            }
+        };
+    }
+
+    // Iniciar conexión inmediatamente si el usuario ya está autenticado
+    if (getAuthToken()) {
+        conectar();
+    }
+
+    // Reconectar si la pestaña vuelve de estar en segundo plano
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && !activo && getAuthToken()) {
+            conectar();
+        }
+    });
+
+    return {
+        conectar,
+        desconectar() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            activo = false;
+        },
+        get estaConectado() {
+            return activo;
+        }
+    };
+})();
 
 // ============================================================================
 // Función global de validación de roles para Alpine y cualquier script
@@ -457,6 +771,7 @@ function appShellStub() {
         },
 
         formatearTiempoRelativo: formatearTiempoRelativo,
+        formatearTextoEnlace: formatearTextoEnlace,
 
         get notificacionesFiltradas() {
             let lista = this.notifications || [];
@@ -538,12 +853,49 @@ function appShellStub() {
                 this.abrirModalTodasNotificaciones();
             });
 
+            // Escuchar notificaciones en caliente vía SSE
+            window.addEventListener("notificacion-en-caliente", (e) => {
+                const notif = e.detail;
+                if (notif) {
+                    const existe = (this.notifications || []).some(n => n.id && notif.id && String(n.id) === String(notif.id));
+                    if (!existe) {
+                        this.notifications.unshift(notif);
+                        this.unreadNotificationsCount = (this.unreadNotificationsCount || 0) + 1;
+                    }
+                }
+            });
+
+            window.addEventListener("notificacion-en-caliente-remota", (e) => {
+                const notif = e.detail;
+                if (notif) {
+                    const existe = (this.notifications || []).some(n => n.id && notif.id && String(n.id) === String(notif.id));
+                    if (!existe) {
+                        this.notifications.unshift(notif);
+                        this.unreadNotificationsCount = (this.unreadNotificationsCount || 0) + 1;
+                    }
+                }
+            });
+
+            window.addEventListener("notificaciones-leidas-sync", (e) => {
+                const data = e.detail || {};
+                if (data.todas) {
+                    (this.notifications || []).forEach(n => n.leido = true);
+                    this.unreadNotificationsCount = 0;
+                } else if (data.id_notificacion) {
+                    const target = (this.notifications || []).find(n => String(n.id) === String(data.id_notificacion));
+                    if (target && !target.leido) {
+                        target.leido = true;
+                        if (this.unreadNotificationsCount > 0) this.unreadNotificationsCount--;
+                    }
+                }
+            });
+
             // Escuchar actualizaciones de notificaciones al revisar solicitudes
             window.addEventListener("notificaciones-actualizadas", () => {
                 this.cargarNotificaciones();
             });
             window.addEventListener("storage", (e) => {
-                if (e.key === "incarsa_notificaciones_reload") {
+                if (e.key === "incarsa_notificaciones_reload" || e.key === "incarsa_notif_reload") {
                     this.cargarNotificaciones();
                 }
             });
