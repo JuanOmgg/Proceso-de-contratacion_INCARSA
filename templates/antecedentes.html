@@ -3,10 +3,7 @@
 {% block title %}Antecedentes · INCARSA{% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/antecedentes.js') }}"></script>
-  <script src="{{ url_for('static', path='js/plantas.js') }}"></script>
-  <script src="{{ url_for('static', path='js/contratistas.js') }}"></script>
-  <script src="{{ url_for('static', path='js/vehiculos.js') }}"></script>
+  <script src="{{ url_for('static', path='js/antecedentes.js') }}?v=3.5"></script>
 {% endblock %}
 
 {% block content %}
@@ -100,7 +97,7 @@
             <!-- Buscador general -->
             <div class="search-input-wrapper flex-1 min-w-[240px]">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model="search" placeholder="Buscar persona por nombre, cargo o documento..."
+              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar persona por nombre, cargo o documento..."
                 class="input-field w-full rounded-lg py-2 text-xs sm:text-sm">
             </div>
 

@@ -2,9 +2,7 @@
  * usuarios-listado.js
  * Componente Alpine.js de la tabla de Usuarios: búsqueda, filtros,
  * paginación y acciones (editar / activar-desactivar / eliminar).
- * Depende de mock-usuarios.js (debe cargarse antes que este archivo).
- * Sustituir las mutaciones sobre MOCK_USUARIOS por llamadas al
- * backend cuando exista (GET con query params, PATCH, DELETE).
+ * Conectado directamente a las APIs REST del backend (FastAPI).
  */ 
 
 function usuariosCards() {
@@ -39,9 +37,8 @@ function usuariosCards() {
         this.actualizarConteo(usuarios);
 
       } catch (error) {
-        console.warn("Backend no disponible para tarjetas, cargando desde MOCK:", error.message);
-        const mock = typeof MOCK_USUARIOS !== 'undefined' ? MOCK_USUARIOS : [];
-        this.actualizarConteo(mock);
+        console.warn("Aviso al consultar usuarios para tarjetas:", error.message);
+        this.actualizarConteo([]);
       } finally {
         this.cargando = false;
       }

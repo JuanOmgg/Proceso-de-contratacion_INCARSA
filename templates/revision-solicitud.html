@@ -109,8 +109,8 @@
 </style>
 {% endblock %}
 
-{% block extra_js%}
-  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}"></script>
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=3.5"></script>
 {% endblock %}
 
 {% block content %}
@@ -385,10 +385,11 @@
                     <i class="fa-solid fa-eye text-xs"></i>
                     <span>Revisar Expediente</span>
                   </button>
-                  <button type="button" @click="abrirModalConfirmacionPreaprobada()"
-                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 transition-all flex items-center gap-1.5">
-                    <i class="fa-solid fa-check-double text-xs"></i>
-                    <span>Confirmar Aprobación</span>
+                  <button type="button" @click="confirmarAprobacionFinalPreaprobada()" :disabled="guardando"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                    <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
+                    <i class="fa-solid fa-check-double text-xs" x-show="!guardando"></i>
+                    <span x-text="guardando ? 'Aprobando...' : 'Confirmar Aprobación'"></span>
                   </button>
                 </div>
               </div>

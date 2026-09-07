@@ -157,7 +157,7 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/usuarios-listado.js') }}"></script>
+  <script src="{{ url_for('static', path='js/usuarios-listado.js') }}?v=3.5"></script>
 {% endblock %}
 
 {% block content %}
@@ -224,7 +224,7 @@
           <div class="filter-bar p-4 flex flex-col lg:flex-row lg:items-center gap-3">
             <div class="search-input-wrapper flex-1">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model="search" placeholder="Buscar..."
+              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar..."
                 class="input-field w-full rounded-lg py-2.5 text-sm">
             </div>
 

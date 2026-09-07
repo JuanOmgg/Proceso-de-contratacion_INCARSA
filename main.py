@@ -13,8 +13,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -99,6 +99,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Compresión Gzip para transferir CSS, JS, HTML y JSON con hasta un 80% menos de peso
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 MODULO_NOMBRES = {
     "dashboard": "Dashboard y Estadísticas",
@@ -236,6 +239,92 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
 
     return await call_next(request)
 
+# ============================================================================
+# MIDDLEWARE DE SEGURIDAD HTTP (OWASP Best Practices)
+# ============================================================================
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """
+    Inyecta cabeceras HTTP de seguridad recomendadas por OWASP en todas las respuestas
+    del servidor para mitigar vectores de ataque web comunes.
+    """
+    response = await call_next(request)
+    
+    # 1. Protección contra ataques de confusión de tipo MIME (MIME-Sniffing).
+    # Impide que los navegadores intenten "adivinar" e interpretar archivos subidos (ej. en /uploads)
+    # como scripts ejecutables (.js o .html) si el servidor los declaró como imágenes o binarios.
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    
+    # 2. Protección contra Clickjacking (Secuestro de clic).
+    # Evita que sitios de terceros incrusten esta aplicación dentro de un <iframe> invisible
+    # para engañar a los usuarios y robar clics o credenciales. 'SAMEORIGIN' permite que 
+    # la propia aplicación incruste vistas internas (como previsualizadores de documentos propios).
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    
+    # 3. Filtro XSS reflejado para navegadores heredados.
+    # Fuerza al navegador a bloquear completamente la renderización de la página si detecta
+    # un ataque de Cross-Site Scripting (XSS) reflejado en la solicitud.
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    
+    # 4. Control de privacidad de Referrer (fuga de URLs internas).
+    # Al navegar hacia sitios externos, no envía rutas completas ni parámetros de consulta
+    # (protegiendo tokens, IDs o datos privados en la URL), enviando únicamente el dominio de origen.
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # 5. Restricción de permisos y APIs sensibles del dispositivo (Permissions-Policy).
+    # Deshabilita explícitamente el acceso por defecto a cámara, micrófono y geolocalización,
+    # impidiendo que librerías de terceros o scripts maliciosos puedan acceder al hardware del cliente.
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    
+    return response
+
+# ============================================================================
+# MIDDLEWARE DE POLÍTICAS DE CACHÉ HTTP (Cache-Control)
+# ============================================================================
+@app.middleware("http")
+async def cache_control_middleware(request: Request, call_next):
+    """
+    Gestiona las directivas Cache-Control para optimizar la velocidad de navegación.
+    - Los recursos estáticos (CSS, JS, iconos) se guardan en la memoria local del navegador.
+    - Los datos dinámicos de la API y las vistas HTML no se cachean para garantizar datos en vivo.
+    """
+    response = await call_next(request)
+    
+    # Si la ruta ya definió una política específica (ej. SSE 'no-cache, no-transform'), respetarla
+    if "Cache-Control" in response.headers:
+        return response
+
+    path = request.url.path
+
+    # 1. Archivos estáticos versionados (/static: css, js, fuentes, imágenes de interfaz)
+    # Cacheo público de 24 horas (86,400s) con stale-while-revalidate para respuesta inmediata.
+    # Al cambiar el parámetro de versión en HTML (?v=3.4), el navegador descarga el nuevo automáticamente.
+    if path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+
+    # 2. Ícono de la pestaña del navegador (favicon.ico)
+    # Cacheo de 7 días (604,800s) ya que rara vez cambia.
+    elif path == "/favicon.ico":
+        response.headers["Cache-Control"] = "public, max-age=604800"
+
+    # 3. Documentos y adjuntos subidos por usuarios (/uploads)
+    # Cacheo 'private' de 1 hora para que los proxys públicos no almacenen documentos sensibles.
+    elif path.startswith("/uploads/"):
+        response.headers["Cache-Control"] = "private, max-age=3600, must-revalidate"
+
+    # 4. Endpoints dinámicos de la API (/api/...)
+    # Nunca se cachean en disco o proxies para asegurar que el usuario vea cambios en tiempo real.
+    elif path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+
+    # 5. Páginas HTML dinámicas servidas por Jinja2
+    # Deben revalidarse para verificar autenticación y estado de sesión.
+    elif "text/html" in response.headers.get("content-type", ""):
+        response.headers["Cache-Control"] = "no-cache, private, must-revalidate"
+
+    return response
+
 app.include_router(solicitud_router)
 app.include_router(usuario_router, prefix="/api/v1")
 app.include_router(emp_contratista_router)
@@ -345,7 +434,16 @@ async def get_error_403(request: Request):
         status_code=403
     )
 
-# Manejo de errores
+@app.get("/500")
+@app.get("/error-500")
+async def get_error_500(request: Request):
+    return templates.TemplateResponse(
+        name="errors/error-500.html",
+        request=request,
+        status_code=500
+    )
+
+# Manejo centralizado de excepciones HTTP de Starlette / FastAPI
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if "text/html" in request.headers.get("Accept", ""):
@@ -368,6 +466,15 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
                 )
             except Exception:
                 pass
+        elif exc.status_code == 500:
+            try:
+                return templates.TemplateResponse(
+                    name="errors/error-500.html",
+                    request=request,
+                    status_code=500
+                )
+            except Exception:
+                pass
         elif exc.status_code == 503:
             try:
                 mantenimiento = GET_mantenimiento_status()
@@ -385,6 +492,31 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail, "status_code": exc.status_code},
+    )
+
+# Manejo centralizado de excepciones no controladas de Python (Error 500 inesperado)
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    import traceback
+    print(f"🔥 [ERROR 500 INTERNO] en {request.method} {request.url.path}: {exc}")
+    traceback.print_exc()
+
+    if "text/html" in request.headers.get("Accept", ""):
+        try:
+            return templates.TemplateResponse(
+                name="errors/error-500.html",
+                request=request,
+                status_code=500
+            )
+        except Exception:
+            pass
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Ocurrió un error interno en el servidor. El equipo técnico ha sido notificado.",
+            "status_code": 500
+        },
     )
 
 if __name__ == "__main__":

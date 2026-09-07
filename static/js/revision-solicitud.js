@@ -384,7 +384,7 @@ function revisionSolicitudApp() {
       // Si la URL contiene el parámetro ?confirmar=true y la solicitud está preaprobada en estado POR APROBAR
       const paramsConfirmar = params.get("confirmar");
       if ((paramsConfirmar === "true" || paramsConfirmar === "1") && (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.pre_aprobado && this.solicitud?.estado === "POR APROBAR") {
-        setTimeout(() => this.abrirModalConfirmacionPreaprobada(), 350);
+        setTimeout(() => this.confirmarAprobacionFinalPreaprobada(), 350);
       }
     },
 
@@ -410,18 +410,15 @@ function revisionSolicitudApp() {
             data = await res.json();
           }
         } catch (errApi) {
-          console.warn("Fallo al obtener solicitud del backend, buscando en mock:", errApi);
+          console.warn("Fallo al obtener solicitud del backend, buscando en cache local:", errApi);
         }
 
-        // Si no responde la API, buscar en mockData o localStorage
+        // Si no responde la API, buscar en cache local
         if (!data) {
           const locales = JSON.parse(localStorage.getItem("incarsa_solicitudes") || "[]");
           const creadas = JSON.parse(localStorage.getItem("incarsa_solicitudes_creadas") || "[]");
           const todasLocales = [...locales, ...creadas];
           data = todasLocales.find(s => String(s.id) === String(this.solicitudId));
-          if (!data && typeof MOCK_SOLICITUDES !== "undefined") {
-            data = MOCK_SOLICITUDES.find(s => String(s.id) === String(this.solicitudId));
-          }
         }
 
         if (!data) {
@@ -1246,9 +1243,11 @@ function revisionSolicitudApp() {
     async confirmarAprobacionFinalPreaprobada() {
       this.guardando = true;
       try {
-        const nombreUsuario = this.usuarioSesion?.nombres 
+        const nombreUsuario = this.usuarioSesion?.nombre || (this.usuarioSesion?.nombres 
           ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
-          : `Auditor SCR (${this.rolActual})`;
+          : `Auditor SCR (${this.rolActual || 'SCR'})`);
+
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
 
         const payload = {
           id_planta: null,
@@ -1260,9 +1259,12 @@ function revisionSolicitudApp() {
         };
 
         const targetId = this.solicitud?.id || this.solicitudId;
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: headers,
           body: JSON.stringify(payload)
         });
 

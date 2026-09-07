@@ -1,7 +1,6 @@
 /**
  * auth.js
  * Componente Alpine.js del formulario de inicio de sesión y recuperación de contraseña en pasos.
- * Depende de mockData.js (debe cargarse antes que este archivo).
  */
 
 function loginForm() {
@@ -294,14 +293,6 @@ function loginForm() {
           throw new Error("No se pudo actualizar la contraseña.");
         }
 
-        // Actualizar en mock si el usuario existe en MOCK_USUARIOS
-        try {
-          if (typeof MOCK_USUARIOS !== "undefined" && Array.isArray(MOCK_USUARIOS)) {
-            const u = MOCK_USUARIOS.find(usr => (usr.correo || "").toLowerCase() === (this.olvide.correo || "").toLowerCase());
-            if (u) u.contrasena = p1;
-          }
-        } catch (e) {}
-
         this.olvide.enviando = false;
         this.olvide.paso = 4;
 
@@ -312,28 +303,8 @@ function loginForm() {
 
       } catch (err) {
         console.warn("Error en actualizarContrasena:", err);
-
-        // Si fue un error de validación de backend explícito
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("NetworkError")) {
-          this.olvide.enviando = false;
-          this.olvide.error = err.message;
-          return;
-        }
-
-        // Si el backend no estaba conectado (fallback para mock)
-        try {
-          if (typeof MOCK_USUARIOS !== "undefined" && Array.isArray(MOCK_USUARIOS)) {
-            const u = MOCK_USUARIOS.find(usr => (usr.correo || "").toLowerCase() === (this.olvide.correo || "").toLowerCase());
-            if (u) u.contrasena = p1;
-          }
-        } catch (e) {}
-
         this.olvide.enviando = false;
-        this.olvide.paso = 4;
-
-        setTimeout(() => {
-          this.finalizarRecuperacion();
-        }, 2400);
+        this.olvide.error = err.message || "Error al actualizar la contraseña.";
       }
     },
 
@@ -457,31 +428,7 @@ function loginForm() {
         }
       } catch (errApi) {
         console.warn("Intento de conexión con /auth/login falló:", errApi);
-      }
-
-      // 2. Modo mock fallback si no se encontró en backend
-      if (!matchedUser && typeof MOCK_USUARIOS !== "undefined") {
-        const mockMatch = MOCK_USUARIOS.find(
-          u => u.correo.toLowerCase() === this.correo.trim().toLowerCase()
-        );
-        if (mockMatch) {
-          if (mockMatch.is_active === 0 || mockMatch.is_active === false || mockMatch.is_active === "0") {
-            await new Promise(r => setTimeout(r, 450));
-            this.splash.activo = false;
-            this.submitting = false;
-            this.error = "Tu cuenta se encuentra inactiva. Comunícate con el administrador.";
-            return;
-          }
-          matchedUser = {
-            nombre: `${mockMatch.nombres} ${mockMatch.apellidos}`.trim(),
-            correo: mockMatch.correo,
-            rol: mockMatch.rol || "GESTOR DE DOCUMENTACIÓN",
-            id: mockMatch.id || 1,
-            id_rol: 2,
-            plantas_ids: [],
-            plantas: []
-          };
-        }
+        this.error = "Error de conexión con el servidor. Intente nuevamente.";
       }
 
       // Si no existe el usuario, cerrar splash y mostrar error

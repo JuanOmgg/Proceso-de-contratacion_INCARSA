@@ -3,7 +3,6 @@
  * Componente Alpine.js del módulo de Procesamiento (trazabilidad).
  * Muestra una tarjeta por solicitud con un timeline de progreso simple:
  * Enviado → En revisión → Por aprobar → Aprobado/Rechazado.
- * Depende de mockData.js (debe cargarse antes que este archivo).
  */
 
 function procesamientoBoard() {
@@ -369,10 +368,8 @@ function procesamientoBoard() {
         const data = await response.json();
         this.solicitudes = Array.isArray(data) ? data : (data.datos || data.data || []);
       } catch (error) {
-        console.warn("Error en el getSolicitudes/procesamiento.js:", error);
-        if (typeof MOCK_SOLICITUDES !== 'undefined') {
-          this.solicitudes = MOCK_SOLICITUDES;
-        }
+        console.warn("Aviso al consultar solicitudes en procesamiento:", error);
+        if (!this.solicitudes) this.solicitudes = [];
       }
     },
 

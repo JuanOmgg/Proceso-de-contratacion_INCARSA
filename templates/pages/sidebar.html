@@ -383,7 +383,7 @@
                 Plantas registradas
               </span>
               <div class="flex items-center gap-2 w-full sm:w-auto">
-                <input type="text" x-model="busqueda" @input="resetPage()" placeholder="Buscar planta..."
+                <input type="text" x-model.debounce.250ms="busqueda" @input.debounce.250ms="resetPage()" placeholder="Buscar planta..."
                   class="input-field rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)] w-full sm:w-44">
                 <!-- Custom Dropdown para filtroEmpresa en modal plantas -->
                 <div class="relative w-full sm:w-44 text-left" x-data="{ openEmp: false }" @click.outside="openEmp = false">
@@ -668,7 +668,7 @@
                 Empresas registradas
               </span>
               <div class="w-48 sm:w-56">
-                <input type="text" x-model="search" placeholder="Buscar contratista..."
+                <input type="text" x-model.debounce.250ms="search" placeholder="Buscar contratista..."
                   class="input-field w-full rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)]">
               </div>
             </div>
@@ -1012,7 +1012,7 @@
                 Vehículos registrados
               </span>
               <div class="w-48 sm:w-56">
-                <input type="text" x-model="search" placeholder="Buscar placa, tipo..."
+                <input type="text" x-model.debounce.250ms="search" placeholder="Buscar placa, tipo..."
                   class="input-field w-full rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)]">
               </div>
             </div>
@@ -1317,19 +1317,19 @@
               <!-- Acciones de la Notificación -->
               <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--paper-shadow)] w-full sm:w-auto justify-end">
                 <!-- Caso Solicitud Pre-aprobada: 2 botones (Revisar y Confirmar) -->
-                <template x-if="(typeof esNotifPreaprobada === 'function' ? esNotifPreaprobada(n) : window.esNotifPreaprobada(n))">
+                <template x-if="esNotifPreaprobada(n)">
                   <div class="flex items-center gap-2">
                     <div x-show="n.aprobadoExitoso" class="py-1 px-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
                       <i class="fa-solid fa-circle-check"></i>
                       <span>Aprobación confirmada</span>
                     </div>
                     <div x-show="!n.aprobadoExitoso" class="flex items-center gap-1.5">
-                      <button type="button" @click="(typeof revisarSolicitudNotif === 'function' ? revisarSolicitudNotif(n) : window.revisarSolicitudNotif(n)); (typeof cerrarModalTodasNotificaciones === 'function' ? cerrarModalTodasNotificaciones() : null)"
+                      <button type="button" @click.stop="revisarSolicitudNotif(n); cerrarModalTodasNotificaciones()"
                         class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1 shadow-xs cursor-pointer">
                         <i class="fa-solid fa-eye text-[11px]"></i>
                         <span>Revisar</span>
                       </button>
-                      <button type="button" @click="(typeof confirmarAprobacionDirectaNotif === 'function' ? confirmarAprobacionDirectaNotif(n) : window.confirmarAprobacionDirectaNotif(n))" :disabled="n.aprobando"
+                      <button type="button" @click.stop="confirmarAprobacionDirectaNotif(n)" :disabled="n.aprobando"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1 shadow-xs cursor-pointer"
                         :class="n.aprobando ? 'opacity-60 cursor-not-allowed' : ''">
                         <i class="fa-solid" :class="n.aprobando ? 'fa-circle-notch fa-spin text-[11px]' : 'fa-check-double text-[11px]'"></i>

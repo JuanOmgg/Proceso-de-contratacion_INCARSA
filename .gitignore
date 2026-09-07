@@ -25,3 +25,12 @@ GUIA_ALEMBIC.md
 
 # Node modules
 node_modules/
+
+# Linters, testers & dev caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Temporary scratch scripts & logs
+scratch/
+*.log

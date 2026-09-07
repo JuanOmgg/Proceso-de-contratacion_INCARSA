@@ -1,0 +1,266 @@
+/**
+ * permisos.js — Sistema Global de Control de Acceso Basado en Roles (RBAC) y Permisos Dinámicos (INCARSA)
+ * 
+ * Gestiona:
+ * - Validación de roles activos (`window.tieneRol`).
+ * - Caché y recarga en caliente de matriz de permisos por usuario (`window.recargarMisPermisos`).
+ * - Comprobación granular de acceso a módulos (`window.puedeModulo`).
+ * - Comprobación granular de permisos de acción: ver, crear, editar, eliminar, aprobar (`window.puedeAccion`).
+ * - Regla de negocio para edición condicional de solicitudes (`window.puedeEditarSolicitud`).
+ */
+
+(function () {
+  'use strict';
+
+  /**
+   * Valida si el usuario activo posee alguno de los roles solicitados.
+   * El rol 'SUPERADMIN' tiene bypass total automático.
+   */
+  function tieneRol(...roles) {
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+
+    const miRol = (sesion?.rol || 'ADMINISTRADOR').trim().toUpperCase();
+
+    // SuperAdmin tiene acceso total automático
+    if (miRol === 'SUPERADMIN') {
+      return true;
+    }
+
+    const listaRoles = roles.flat().filter(Boolean).map(r => String(r).trim().toUpperCase());
+    return listaRoles.includes(miRol);
+  }
+  window.tieneRol = tieneRol;
+
+  /**
+   * Permisos dinámicos cacheados en memoria / storage
+   */
+  window.permisosActivos = (function () {
+    try {
+      return JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  /**
+   * Consulta al endpoint de permisos del backend para refrescar la matriz en caliente
+   */
+  async function recargarMisPermisos() {
+    try {
+      const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+      if (!token) return {};
+
+      const res = await fetch('/api/v1/roles/mis-permisos');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.permisos) {
+          sessionStorage.setItem('incarsa_permisos', JSON.stringify(data.permisos));
+          localStorage.setItem('incarsa_permisos', JSON.stringify(data.permisos));
+          window.permisosActivos = data.permisos;
+          window.dispatchEvent(new CustomEvent('permisos-actualizados', { detail: data.permisos }));
+          return data.permisos;
+        }
+      }
+    } catch (e) {
+      console.warn('Aviso cargando permisos dinámicos:', e);
+    }
+    return {};
+  }
+  window.recargarMisPermisos = recargarMisPermisos;
+
+  /**
+   * Verifica si el usuario activo tiene permiso para ver/acceder a un módulo específico
+   */
+  function puedeModulo(modulo) {
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+
+    const miRol = (sesion?.rol || '').trim().toUpperCase();
+    if (miRol === 'SUPERADMIN') return true;
+
+    try {
+      const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
+      if (permisos && permisos[modulo] && permisos[modulo].ver !== undefined) {
+        return !!permisos[modulo].ver;
+      }
+    } catch (e) {}
+
+    // Fallbacks de compatibilidad por rol si no se ha cargado la matriz
+    const fallbacks = {
+      'dashboard': true,
+      'solicitudes': true,
+      'nueva_solicitud': ['ADMINISTRADOR', 'GESTION DOCUMENTAL', 'SST', 'GESCO', 'SCR'].includes(miRol),
+      'usuarios': ['ADMINISTRADOR'].includes(miRol),
+      'nuevo_usuario': ['ADMINISTRADOR'].includes(miRol),
+      'plantas': ['ADMINISTRADOR', 'SCR'].includes(miRol),
+      'contratistas': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
+      'vehiculos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
+      'personas': true,
+      'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR'].includes(miRol),
+      'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),
+      'superadmin': miRol === 'SUPERADMIN'
+    };
+
+    return fallbacks[modulo] !== undefined ? fallbacks[modulo] : true;
+  }
+  window.puedeModulo = puedeModulo;
+
+  /**
+   * Verifica si el usuario activo puede ejecutar una acción (ver, crear, editar, eliminar, aprobar) en un módulo
+   */
+  function puedeAccion(modulo, accion) {
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+
+    const miRol = (sesion?.rol || '').trim().toUpperCase();
+    if (miRol === 'SUPERADMIN') return true;
+
+    try {
+      const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
+      if (permisos && permisos[modulo] && permisos[modulo][accion] !== undefined) {
+        return !!permisos[modulo][accion];
+      }
+    } catch (e) {}
+
+    // Por defecto el administrador tiene permiso de acción si no hay regla específica contraria
+    if (miRol === 'ADMINISTRADOR') return true;
+    return false;
+  }
+  window.puedeAccion = puedeAccion;
+
+  /**
+   * Regla de negocio: Determina si una solicitud puede ser editada por el usuario
+   * - SuperAdmin siempre puede editar
+   * - Los demás usuarios requieren permiso y que la solicitud esté en estado 'ENVIADO'
+   */
+  function puedeEditarSolicitud(solicitud) {
+    if (!solicitud) return false;
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+
+    const miRol = (sesion?.rol || '').trim().toUpperCase();
+    if (miRol === 'SUPERADMIN') return true;
+
+    if (!puedeAccion('solicitudes', 'editar') && !puedeAccion('dashboard', 'editar')) {
+      return false;
+    }
+
+    const est = String(solicitud.estado || '').trim().toUpperCase();
+    return est === 'ENVIADO';
+  }
+  window.puedeEditarSolicitud = puedeEditarSolicitud;
+
+  /**
+   * Guardián de navegación síncrono.
+   * Valida si el usuario está autenticado y si tiene autorización (RBAC) para la ruta actual.
+   * Redirige a /login o /403 si el acceso no es permitido.
+   */
+  function validarRutaActual() {
+    try {
+      const token = (typeof getAuthToken === 'function') 
+        ? getAuthToken() 
+        : (sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token'));
+      
+      const path = (window.location.pathname || '').toLowerCase();
+      
+      // Rutas universales / libres de validación
+      if (
+        path === '/' ||
+        path === '/dashboard' ||
+        path.includes('/revision') ||
+        path.includes('/login') ||
+        path.includes('/403') ||
+        path.includes('/404') ||
+        path.includes('/500') ||
+        path.includes('/503') ||
+        path.includes('/splash-loading') ||
+        path.includes('/cargando')
+      ) {
+        return true;
+      }
+
+      // Si no hay token de autenticación, redirigir a login
+      if (!token) {
+        window.location.replace('/login');
+        return false;
+      }
+
+      // Si es SuperAdmin, acceso total irrestricto
+      if (tieneRol('SUPERADMIN')) {
+        return true;
+      }
+
+      let denegado = false;
+
+      // 1. Módulo Usuarios y Formulario de Usuarios
+      if (path === '/usuarios' || path.startsWith('/usuarios/') || path.includes('formulario-usuarios') || path.includes('usuario-formulario')) {
+        if (!puedeModulo('usuarios')) denegado = true;
+      }
+      // 2. Módulo Nueva Solicitud
+      else if (path === '/solicitudes/nueva' || path.includes('formulario-solicitudes') || path.includes('solicitudes-formulario')) {
+        if (!puedeModulo('nueva_solicitud')) denegado = true;
+      }
+      // 3. Módulo Procesamiento
+      else if (path === '/procesamiento' || path.startsWith('/procesamiento/')) {
+        if (!puedeModulo('procesamiento')) denegado = true;
+      }
+      // 4. Módulo Antecedentes
+      else if (path === '/antecedentes' || path.startsWith('/antecedentes/')) {
+        if (!puedeModulo('antecedentes')) denegado = true;
+      }
+      // 5. Panel SuperAdmin
+      else if (path === '/superadmin' || path.startsWith('/superadmin/')) {
+        if (!puedeModulo('superadmin')) denegado = true;
+      }
+
+      if (denegado) {
+        console.warn('⛔ [RBAC] Acceso denegado a la ruta ' + path + ' para el usuario actual.');
+        window.location.replace('/403');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      console.warn('Error en guardián de permisos:', e);
+      return true;
+    }
+  }
+  window.validarRutaActual = validarRutaActual;
+
+  // Ejecución inmediata del guardián al cargarse el script para evitar FOUC
+  validarRutaActual();
+
+  // Auto-sincronizar permisos frescos si el usuario tiene sesión activa
+  document.addEventListener('DOMContentLoaded', () => {
+    const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+    if (token) {
+      recargarMisPermisos();
+    }
+  });
+
+})();

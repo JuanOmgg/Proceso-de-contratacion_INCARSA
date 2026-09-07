@@ -5,7 +5,7 @@
  * Este archivo gestiona todo el ciclo de vida del formulario de solicitudes:
  * 1. Control del Stepper (Paso 1 a 4: navegación, validaciones y guardado).
  * 2. Carga asíncrona de catálogos desde el backend FastAPI (Empresas y Contratistas).
- * 3. Modo Edición (carga datos desde URL `?edit=ID` o MOCK_SOLICITUDES).
+ * 3. Modo Edición (carga datos desde URL `?edit=ID` o API del backend).
  * 4. Integración del calendario Flatpickr para fechas de ingreso y salida.
  * 5. Búsqueda y registro modal de Empresas Contratistas y Personas.
  * 6. Gestión dinámica de tablas de Vehículos y Equipos de cómputo.
@@ -296,7 +296,7 @@ function solicitudWizard() {
     },
 
     /**
-     * Si la URL incluye ?edit=ID, busca la solicitud en la API, localStorage o MOCK y precarga el formulario
+     * Si la URL incluye ?edit=ID, busca la solicitud en la API o localStorage y precarga el formulario
      */
     async inicializarModoEdicion() {
       const params = new URLSearchParams(window.location.search);
@@ -356,10 +356,6 @@ function solicitudWizard() {
         } catch (e) {}
       }
 
-      // 4. Fallback a MOCK_SOLICITUDES
-      if (!found && typeof MOCK_SOLICITUDES !== "undefined") {
-        found = MOCK_SOLICITUDES.find(s => String(s.id).toLowerCase() === String(editParam).toLowerCase());
-      }
 
       if (found) {
         const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
@@ -877,13 +873,13 @@ function solicitudWizard() {
       );
       if (dePlantasApi.length > 0) return dePlantasApi;
 
-      // Fallback si la empresa tiene plantas en mock o disponibles
-      const mockEmp = (this.empresasDisponibles || []).find(e => 
+      // Fallback si la empresa tiene plantas anidadas en su objeto
+      const empMatch = (this.empresasDisponibles || []).find(e => 
         String(e.id) === String(empresaId) || 
         (empNombre && e.nombre && e.nombre.toLowerCase() === empNombre.toLowerCase())
       );
-      if (mockEmp && Array.isArray(mockEmp.plantas)) {
-        return mockEmp.plantas;
+      if (empMatch && Array.isArray(empMatch.plantas)) {
+        return empMatch.plantas;
       }
 
       return [];
@@ -1737,14 +1733,7 @@ function solicitudWizard() {
     // ========================================================================
     nextSolicitudId() {
       const year = new Date().getFullYear();
-      if (typeof MOCK_SOLICITUDES === "undefined") {
-        return `SOL-${year}-0001`;
-      }
-      const nums = MOCK_SOLICITUDES
-        .map(s => parseInt(s.id.split("-")[2], 10))
-        .filter(n => !isNaN(n));
-      const next = (nums.length ? Math.max(...nums) : 0) + 1;
-      return `SOL-${year}-${String(next).padStart(4, "0")}`;
+      return `SOL-${year}-0001`;
     },
 
     /**

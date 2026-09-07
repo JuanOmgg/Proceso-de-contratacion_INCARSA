@@ -1,15 +1,29 @@
-@import "./navbar-sidebar.css";
-
-/* =========================================================
-   INCARSA · Sistema de Gestión de Solicitudes de Acceso
-   Design tokens + estilos custom (complementan Tailwind)
-   ========================================================= */
+/* ==========================================================================
+   INCARSA · SISTEMA DE GESTIÓN Y PROCESAMIENTO DE CONTRATOS
+   Hoja Maestra de Estilos (styles.css)
+   ==========================================================================
+   TABLA DE CONTENIDO (Navegación Rápida: presiona Ctrl + F y busca la clave)
+   --------------------------------------------------------------------------
+   [01-VARS]      -> Tokens de Diseño, Paleta Industrial y Tipografías
+   [02-BASE]      -> Resets, FOUC, Accesibilidad, Scrollbars y Dropdowns
+   [03-CARDS]     -> Tarjetas de Estadísticas (Neon Gauges) y Dashboard
+   [04-TABLES]    -> Tablas de Datos, Filas, Buscadores y Paginación
+   [05-BADGES]    -> Pastillas de Estado, Chips de Riesgo y Roles
+   [06-WIZARD]    -> Stepper, Línea de Tiempo y Formulario de Solicitudes
+   [07-REVISION]  -> Paneles de Dictamen (SST, GESCO, SCR) y Expedientes
+   [08-TICKETS]   -> Modales Estilo Ticket, Bordes Dentados y SweetAlert2
+   [09-OVERLAYS]  -> Transiciones de Pantalla, Splash Loader y Tooltips
+   [10-NETWORK]   -> Centinela de Red (Banner de Conexión Offline / Online)
+   ========================================================================== */
 
 /* Prevenir parpadeo de modales y elementos condicionales de Alpine (FOUC) */
 [x-cloak], [x-cloak] * {
   display: none !important;
 }
 
+/* ==========================================================================
+   [01-VARS] TOKENS DE DISEÑO Y PALETA CORPORATIVA
+   ========================================================================== */
 :root {
   /* --- Paleta: identidad "control industrial" ---
      Azul acero = autoridad / seguridad corporativa
@@ -220,6 +234,9 @@ h4,
   font-family: var(--font-display);
 }
 
+/* ==========================================================================
+   [02-BASE] RESETS, ACCESIBILIDAD, SCROLLBARS Y DROPDOWNS
+   ========================================================================== */
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
@@ -314,10 +331,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
    (Estilos extraídos a assets/css/navbar-sidebar.css)
    ========================================================= */
 
-/* =========================================================
-   COUNTER CARDS (signature: "placas de control")
-   Barra lateral de color = estado, como señalética de planta.
-   ========================================================= */
+/* ==========================================================================
+   [03-CARDS] COUNTER CARDS (Placas de control) Y PANELES DASHBOARD
+   ========================================================================== */
 .gauge-card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
@@ -381,9 +397,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 }
 
 
-/* =========================================================
-   TABLE
-   ========================================================= */
+/* ==========================================================================
+   [04-TABLES] TABLAS DE DATOS, FILAS, FILTROS Y BUSCADORES
+   ========================================================================== */
 .data-table th {
   background: var(--steel-100);
   color: var(--text-muted);
@@ -464,9 +480,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--text-muted);
 }
 
-/* =========================================================
-   TARJETAS DE DECISIÓN DEL DICTAMEN (APROBAR / RECHAZAR / DEVOLVER)
-   ========================================================= */
+/* ==========================================================================
+   [07-REVISION] DICTÁMENES (APROBAR / RECHAZAR / DEVOLVER) Y FICHAS
+   ========================================================================== */
 .decision-card {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
@@ -705,11 +721,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   outline: none;
 }
 
-/* =========================================================
-   WIZARD / STEPPER (solicitudes-formulario.html)
-   Reutiliza el lenguaje de "placa de control": ink-800 = paso
-   completado (estructura), signal-500 = paso activo (acción).
-   ========================================================= */
+/* ==========================================================================
+   [06-WIZARD] WIZARD / STEPPER (solicitudes-formulario.html)
+   ========================================================================== */
 .step-circle {
   width: 36px;
   height: 36px;
@@ -1239,9 +1253,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   animation: popIn 0.35s var(--ease-emphasized);
 }
 
-/* =========================================================
-   CHIPS DE NIVEL DE RIESGO (MODO CLARO - COLORES SÓLIDOS)
-   ========================================================= */
+/* ==========================================================================
+   [05-BADGES] CHIPS DE NIVEL DE RIESGO, STATUS PILLS Y ROLES
+   ========================================================================== */
 .chip-riesgo.chip-riesgo-bajo {
   background: #f0fdf4 !important;
   border: 1px solid #bbf7d0 !important;
@@ -1530,12 +1544,9 @@ span.flatpickr-weekday {
   cursor: pointer !important;
 }
 
-/* =========================================================
-   SPLASH / PANTALLA DE CARGA
-   Reutiliza el fondo de marca (login-brand) y el efecto
-   shimmer ya existente. El aro giratorio retoma el lenguaje
-   de las "placas de control" (gauge-card).
-   ========================================================= */
+/* ==========================================================================
+   [09-OVERLAYS] SPLASH PANTALLA DE CARGA, TRANSICIONES Y TOOLTIPS
+   ========================================================================== */
 @keyframes splashDot {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
@@ -1872,9 +1883,9 @@ table td .inline-flex {
   align-items: center !important;
 }
 
-/* =========================================================
-   ESTILO DE MODALES Y ALERTAS TICKET / PAPER (Inspirado en alertas.html)
-   ========================================================= */
+/* ==========================================================================
+   [08-TICKETS] ESTILO DE MODALES Y ALERTAS TICKET / PAPER PERFORADO
+   ========================================================================== */
 :root {
   --paper: #faf7f0;
   --paper-shadow: #e8e2d3;
@@ -2064,12 +2075,6 @@ table td .inline-flex {
   transform: translateX(4px) !important;
 }
 
-/*Intendo de responsive xd*/
-/* .gauge-card {
-  display: flex;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-} */
 /* =========================================================
    USUARIOS DEL SISTEMA (Cards de usuarios)
    ========================================================= */
@@ -3486,6 +3491,60 @@ table td .inline-flex {
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
+}
+
+/* ==========================================================================
+   [10-NETWORK] BANNER GLOBAL DE ESTADO DE RED (Offline / Online Status)
+   ========================================================================== */
+.network-status-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.network-status-banner.slide-down {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.network-status-banner.slide-up {
+  transform: translateY(-100%);
+}
+
+.network-status-banner.is-offline {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.network-status-banner.is-online {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.network-status-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.network-status-icon {
+  font-size: 0.875rem;
 }
 
 
