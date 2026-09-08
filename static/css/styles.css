@@ -1,15 +1,29 @@
-@import "./navbar-sidebar.css";
-
-/* =========================================================
-   INCARSA · Sistema de Gestión de Solicitudes de Acceso
-   Design tokens + estilos custom (complementan Tailwind)
-   ========================================================= */
+/* ==========================================================================
+   INCARSA · SISTEMA DE GESTIÓN Y PROCESAMIENTO DE CONTRATOS
+   Hoja Maestra de Estilos (styles.css)
+   ==========================================================================
+   TABLA DE CONTENIDO (Navegación Rápida: presiona Ctrl + F y busca la clave)
+   --------------------------------------------------------------------------
+   [01-VARS]      -> Tokens de Diseño, Paleta Industrial y Tipografías
+   [02-BASE]      -> Resets, FOUC, Accesibilidad, Scrollbars y Dropdowns
+   [03-CARDS]     -> Tarjetas de Estadísticas (Neon Gauges) y Dashboard
+   [04-TABLES]    -> Tablas de Datos, Filas, Buscadores y Paginación
+   [05-BADGES]    -> Pastillas de Estado, Chips de Riesgo y Roles
+   [06-WIZARD]    -> Stepper, Línea de Tiempo y Formulario de Solicitudes
+   [07-REVISION]  -> Paneles de Dictamen (SST, GESCO, SCR) y Expedientes
+   [08-TICKETS]   -> Modales Estilo Ticket, Bordes Dentados y SweetAlert2
+   [09-OVERLAYS]  -> Transiciones de Pantalla, Splash Loader y Tooltips
+   [10-NETWORK]   -> Centinela de Red (Banner de Conexión Offline / Online)
+   ========================================================================== */
 
 /* Prevenir parpadeo de modales y elementos condicionales de Alpine (FOUC) */
 [x-cloak], [x-cloak] * {
   display: none !important;
 }
 
+/* ==========================================================================
+   [01-VARS] TOKENS DE DISEÑO Y PALETA CORPORATIVA
+   ========================================================================== */
 :root {
   /* --- Paleta: identidad "control industrial" ---
      Azul acero = autoridad / seguridad corporativa
@@ -46,7 +60,7 @@
   --bg-app: #f7f5ef;
   --surface: #FFFFFF;
   --text-primary: #1c2033;
-  --text-muted: #6e6a5d;
+  --text-muted: #475569;
   --border-subtle: #e6e0d2;
 
   --font-display: "Space Grotesk", "Inter", sans-serif;
@@ -220,6 +234,9 @@ h4,
   font-family: var(--font-display);
 }
 
+/* ==========================================================================
+   [02-BASE] RESETS, ACCESIBILIDAD, SCROLLBARS Y DROPDOWNS
+   ========================================================================== */
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
@@ -314,10 +331,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
    (Estilos extraídos a assets/css/navbar-sidebar.css)
    ========================================================= */
 
-/* =========================================================
-   COUNTER CARDS (signature: "placas de control")
-   Barra lateral de color = estado, como señalética de planta.
-   ========================================================= */
+/* ==========================================================================
+   [03-CARDS] COUNTER CARDS (Placas de control) Y PANELES DASHBOARD
+   ========================================================================== */
 .gauge-card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
@@ -381,9 +397,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 }
 
 
-/* =========================================================
-   TABLE
-   ========================================================= */
+/* ==========================================================================
+   [04-TABLES] TABLAS DE DATOS, FILAS, FILTROS Y BUSCADORES
+   ========================================================================== */
 .data-table th {
   background: var(--steel-100);
   color: var(--text-muted);
@@ -449,6 +465,11 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--state-rechazado);
 }
 
+.status-devuelto {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
 .status-usuario-activo {
   background: var(--state-aprobado-bg);
   color: var(--state-aprobado);
@@ -457,6 +478,72 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 .status-usuario-inactivo {
   background: var(--state-rechazado-bg);
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   [07-REVISION] DICTÁMENES (APROBAR / RECHAZAR / DEVOLVER) Y FICHAS
+   ========================================================================== */
+.decision-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.625rem 0.375rem;
+  min-height: 3.75rem;
+}
+
+.decision-card:hover {
+  transform: translateY(-1px);
+}
+
+.decision-card:active {
+  transform: translateY(0);
+}
+
+.decision-card i {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.decision-card:hover i {
+  transform: scale(1.1);
+}
+
+.decision-card-aprobar.is-selected {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.decision-card-aprobar.is-selected i {
+  color: #059669;
+}
+
+.decision-card-rechazar.is-selected {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #991b1b;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.decision-card-rechazar.is-selected i {
+  color: #dc2626;
+}
+
+.decision-card-devolver.is-selected {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.decision-card-devolver.is-selected i {
+  color: #d97706;
 }
 
 .action-icon-btn {
@@ -485,6 +572,127 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--state-rechazado);
 }
 
+/* ============================================================
+   BOTONES DE ACCIÓN EN TABLAS Y LISTADOS (MODO CLARO)
+   Colores semánticos vibrantes, píldoras suaves y micro-interacciones
+============================================================ */
+
+/* 1. REVISAR EXPEDIENTE / DICTAMEN (Portapapeles - Indigo / Púrpura elegante) */
+:root:not(.dark) .action-icon-btn.text-indigo-600,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check) {
+  color: #4f46e5 !important;
+  background: rgba(79, 70, 229, 0.08) !important;
+  border: 1px solid rgba(79, 70, 229, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-indigo-600 i,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-indigo-600:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check):hover {
+  color: #3730a3 !important;
+  background: rgba(79, 70, 229, 0.18) !important;
+  border-color: rgba(79, 70, 229, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* 2. VER DETALLE (Ojo - Azul eléctrico / Sky profesional) */
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+  border: 1px solid rgba(2, 132, 199, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn):hover {
+  color: #0369a1 !important;
+  background: rgba(2, 132, 199, 0.18) !important;
+  border-color: rgba(2, 132, 199, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* 3. EDITAR (Lápiz - Ámbar cálido / Oro con gran contraste) */
+:root:not(.dark) .action-icon-btn.text-yellow-400,
+:root:not(.dark) .action-icon-btn.text-yellow-500,
+:root:not(.dark) .action-icon-btn.text-amber-500,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square),
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil) {
+  color: #d97706 !important;
+  background: rgba(217, 119, 6, 0.08) !important;
+  border: 1px solid rgba(217, 119, 6, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-yellow-400 i,
+:root:not(.dark) .action-icon-btn.text-yellow-500 i,
+:root:not(.dark) .action-icon-btn.text-amber-500 i,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-yellow-400:hover,
+:root:not(.dark) .action-icon-btn.text-yellow-500:hover,
+:root:not(.dark) .action-icon-btn.text-amber-500:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil):hover {
+  color: #92400e !important;
+  background: rgba(217, 119, 6, 0.18) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2) !important;
+}
+
+/* 4. ELIMINAR (Papelera - Rojo rubí nítido y enérgico) */
+:root:not(.dark) .action-icon-btn.text-red-500,
+:root:not(.dark) .action-icon-btn.text-red-600,
+:root:not(.dark) .action-icon-btn.danger,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can),
+:root:not(.dark) .action-icon-btn:has(> .fa-trash) {
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+  border: 1px solid rgba(220, 38, 38, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-red-500 i,
+:root:not(.dark) .action-icon-btn.text-red-600 i,
+:root:not(.dark) .action-icon-btn.danger i,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-red-500:hover,
+:root:not(.dark) .action-icon-btn.text-red-600:hover,
+:root:not(.dark) .action-icon-btn.danger:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash):hover {
+  color: #991b1b !important;
+  background: rgba(220, 38, 38, 0.18) !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2) !important;
+}
+
+:root:not(.dark) .action-icon-btn:active {
+  transform: scale(0.94) !important;
+}
+
 .password-toggle-btn {
   width: 28px;
   height: 28px;
@@ -492,16 +700,26 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   color: var(--text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  z-index: 10;
 }
 
 .password-toggle-btn:hover {
   background: var(--steel-100);
   color: var(--ink-800);
+  transform: translateY(-50%) scale(1.08) !important;
+}
+
+.password-toggle-btn:active {
+  transform: translateY(-50%) scale(0.95) !important;
 }
 
 /* =========================================================
@@ -579,6 +797,49 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   transform: translateY(0) scale(0.97);
 }
 
+/* Botones con estado de Visto Bueno / Revisión */
+.btn-visto-bueno-listo {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35), 0 0 10px rgba(5, 150, 105, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-listo:hover {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5), 0 0 16px rgba(52, 211, 153, 0.3) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.btn-visto-bueno-rechazado {
+  background: linear-gradient(135deg, #be123c 0%, #e11d48 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(251, 113, 133, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-rechazado:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%) !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.5) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.btn-visto-bueno-parcial {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(192, 132, 252, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-visto-bueno-parcial:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 100%) !important;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5) !important;
+  transform: translateY(-1.5px) !important;
+}
+
 .input-field {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
@@ -591,11 +852,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   outline: none;
 }
 
-/* =========================================================
-   WIZARD / STEPPER (solicitudes-formulario.html)
-   Reutiliza el lenguaje de "placa de control": ink-800 = paso
-   completado (estructura), signal-500 = paso activo (acción).
-   ========================================================= */
+/* ==========================================================================
+   [06-WIZARD] WIZARD / STEPPER (solicitudes-formulario.html)
+   ========================================================================== */
 .step-circle {
   width: 36px;
   height: 36px;
@@ -691,6 +950,10 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   border-radius: 14px;
   box-shadow: var(--shadow-card);
   transition: box-shadow 0.25s var(--ease-standard), transform 0.25s var(--ease-standard);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .tracking-card:hover {
@@ -1121,9 +1384,9 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   animation: popIn 0.35s var(--ease-emphasized);
 }
 
-/* =========================================================
-   CHIPS DE NIVEL DE RIESGO (MODO CLARO - COLORES SÓLIDOS)
-   ========================================================= */
+/* ==========================================================================
+   [05-BADGES] CHIPS DE NIVEL DE RIESGO, STATUS PILLS Y ROLES
+   ========================================================================== */
 .chip-riesgo.chip-riesgo-bajo {
   background: #f0fdf4 !important;
   border: 1px solid #bbf7d0 !important;
@@ -1412,12 +1675,9 @@ span.flatpickr-weekday {
   cursor: pointer !important;
 }
 
-/* =========================================================
-   SPLASH / PANTALLA DE CARGA
-   Reutiliza el fondo de marca (login-brand) y el efecto
-   shimmer ya existente. El aro giratorio retoma el lenguaje
-   de las "placas de control" (gauge-card).
-   ========================================================= */
+/* ==========================================================================
+   [09-OVERLAYS] SPLASH PANTALLA DE CARGA, TRANSICIONES Y TOOLTIPS
+   ========================================================================== */
 @keyframes splashDot {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
@@ -1584,7 +1844,8 @@ span.flatpickr-weekday {
 /* =========================================================
    TOOLTIPS MODERNOS (God-tier CSS)
    ========================================================= */
-[data-tooltip] {
+/* Solo relativo si el elemento no tiene ya posicionamiento explícito (evita romper elementos absolute como botones de contraseña) */
+[data-tooltip]:not(.absolute):not([class*="absolute"]):not([class*="fixed"]) {
   position: relative;
 }
 
@@ -1669,6 +1930,60 @@ span.flatpickr-weekday {
 }
 
 /* =========================================================
+   TOOLTIP GLOBAL FLOTANTE (ESTILOS MODERNOS PARA [title] Y [data-tooltip])
+   ========================================================= */
+.incarsa-global-tooltip {
+  position: absolute;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(3px) scale(0.96);
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1), transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.14s;
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  padding: 5.5px 11px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+  max-width: 320px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+:root.dark .incarsa-global-tooltip {
+  background: #020617;
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.8), 0 0 12px rgba(245, 196, 0, 0.08);
+}
+
+.incarsa-global-tooltip.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.incarsa-global-tooltip.pos-bottom {
+  transform: translateY(-3px) scale(0.96);
+}
+
+.incarsa-global-tooltip.pos-bottom.is-active {
+  transform: translateY(0) scale(1);
+}
+
+/* Ocultar pseudo-elementos [data-tooltip] para que la burbuja flotante universal sea la única y no se corte en tablas */
+[data-tooltip]::before,
+[data-tooltip]::after {
+  display: none !important;
+}
+
+/* =========================================================
    CENTRADOS GLOBALES DE TABLAS Y LISTADOS
    ========================================================= */
 .data-table,
@@ -1700,9 +2015,9 @@ table td .inline-flex {
   align-items: center !important;
 }
 
-/* =========================================================
-   ESTILO DE MODALES Y ALERTAS TICKET / PAPER (Inspirado en alertas.html)
-   ========================================================= */
+/* ==========================================================================
+   [08-TICKETS] ESTILO DE MODALES Y ALERTAS TICKET / PAPER PERFORADO
+   ========================================================================== */
 :root {
   --paper: #faf7f0;
   --paper-shadow: #e8e2d3;
@@ -1892,12 +2207,6 @@ table td .inline-flex {
   transform: translateX(4px) !important;
 }
 
-/*Intendo de responsive xd*/
-/* .gauge-card {
-  display: flex;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-} */
 /* =========================================================
    USUARIOS DEL SISTEMA (Cards de usuarios)
    ========================================================= */
@@ -2149,8 +2458,9 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card .step-subtitle {
-  color: #64748b !important;
+  color: #475569 !important;
   font-size: 11px;
+  font-weight: 500;
 }
 
 /* Paso 1: Radicación (Completado: Cian / Teal) */
@@ -2264,6 +2574,24 @@ table td .inline-flex {
   color: #92400e !important;
 }
 
+:root:not(.dark) .revision-step-card.step-scr.is-rejected {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.14), inset 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-title {
+  color: #991b1b !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .revision-step-card.step-scr.is-rejected .step-subtitle {
+  color: #b91c1c !important;
+}
+
 :root:not(.dark) .revision-step-card.step-scr.is-locked {
   background: #f8fafc !important;
   border-color: #e2e8f0 !important;
@@ -2271,15 +2599,16 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-title {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-icon {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 :root:not(.dark) .revision-step-card.step-scr.is-locked .step-subtitle {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+  font-weight: 500;
 }
 
 /* Paso 4: Dictamen Final */
@@ -2336,7 +2665,187 @@ table td .inline-flex {
 }
 
 :root:not(.dark) .revision-step-card.step-dictamen.is-locked .step-subtitle {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+  font-weight: 500;
+}
+
+:root:not(.dark) .role-badge-sst {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+:root:not(.dark) .role-badge-gesco {
+  background: #f3e8ff !important;
+  color: #7e22ce !important;
+  border: 1px solid #d8b4fe !important;
+}
+
+:root:not(.dark) .role-badge-scr {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+}
+
+/* Panel de Dictámenes por Planta en Modo Claro */
+:root:not(.dark) .planta-dictamen-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root:not(.dark) .planta-dictamen-header {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+:root:not(.dark) .planta-dictamen-header .planta-title {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .planta-dictamen-header .planta-icon {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .badge-planta-avalada {
+  background: #ecfdf5 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+:root:not(.dark) .badge-planta-pendiente {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+:root:not(.dark) .dictamen-subitem {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-subitem .subitem-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-aprobado {
+  background: #f0fdf4 !important;
+  border-color: #86efac !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-aprobado .subitem-status {
+  color: #15803d !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-rechazado {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-rechazado .subitem-status {
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-pendiente {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-subitem.is-pendiente .subitem-status {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+/* Tarjeta Dictamen SCR - Idéntica a step-scr en Modo Claro */
+:root:not(.dark) .dictamen-scr-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card .subitem-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card .subitem-subtitle {
+  color: #475569 !important;
+  font-weight: 500;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-aprobado {
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.14), inset 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-aprobado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-aprobado .subitem-icon {
+  color: #059669 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar {
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.14), inset 0 0 0 1px rgba(245, 158, 11, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-por-aprobar .subitem-icon {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-rechazado {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.14), inset 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-rechazado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-rechazado .subitem-icon {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-bloqueado {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  opacity: 0.7 !important;
+}
+
+:root:not(.dark) .dictamen-scr-card.is-bloqueado .subitem-status,
+:root:not(.dark) .dictamen-scr-card.is-bloqueado .subitem-icon {
+  color: #64748b !important;
+}
+
+/* Equipos de Cómputo Cards - Modo Claro */
+:root:not(.dark) .computo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root:not(.dark) .computo-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+:root:not(.dark) .computo-icon-box {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+:root:not(.dark) .computo-title {
+  color: #0f172a;
+}
+:root:not(.dark) .computo-serie-label {
+  color: #475569;
+  font-weight: 700;
+}
+:root:not(.dark) .computo-serie-val {
+  color: #1e293b;
+  font-weight: 600;
 }
 
 /* Status pills en Modo Claro */
@@ -2417,6 +2926,11 @@ table td .inline-flex {
   font-weight: 600 !important;
 }
 
+:root:not(.dark) .wizard-card h2,
+:root:not(.dark) .wizard-card h3,
+:root:not(.dark) .wizard-card h4,
+:root:not(.dark) .text-\[var\(--ink-900\)\],
+:root:not(.dark) [class*="text-[var(--ink-900)]"],
 :root:not(.dark) .revision-ficha-card strong,
 :root:not(.dark) .revision-ficha-card .text-\[var\(--ink-900\)\],
 :root:not(.dark) .revision-ficha-card .text-slate-700,
@@ -2508,6 +3022,14 @@ table td .inline-flex {
   border: 1.5px solid #cbd5e1 !important;
   border-radius: 12px !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+:root:not(.dark) .persona-controls-group.is-locked {
+  opacity: 0.65 !important;
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
 }
 
 :root:not(.dark) .btn-autorizar-action.is-active {
@@ -2693,6 +3215,472 @@ table td .inline-flex {
   border: 1px solid var(--paper-shadow) !important;
   font-weight: 700 !important;
 }
+
+/* =========================================================
+   BADGES DE PERFIL Y USUARIO (MODAL Y TABLA)
+   ========================================================= */
+.user-status-modal-activo {
+  background: #e3f3e8;
+  color: #2f8f5b;
+  border: 1px solid #bfe3cc;
+}
+
+.user-status-modal-inactivo {
+  background: #fbe6e3;
+  color: #c1443c;
+  border: 1px solid #f5cac4;
+}
+
+.user-role-modal-badge {
+  background: #efe9dc;
+  color: #555048;
+  border: 1px solid var(--paper-shadow, #ded8ca);
+}
+
+.user-planta-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.user-planta-badge i,
+.user-planta-badge span.bullet-dot {
+  background-color: #f59e0b;
+  color: #d97706;
+}
+
+.user-table-planta-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.user-table-planta-badge i {
+  color: #d97706;
+}
+
+/* =========================================================
+   BANNER ZONAS AUTORIZADAS (SOLICITUDES)
+   ========================================================= */
+.banner-zonas-autorizadas {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  color: #78350f;
+}
+
+.banner-zonas-autorizadas .banner-zonas-icon {
+  background: #fef08a;
+  color: #b45309;
+}
+
+.banner-zonas-autorizadas .banner-zonas-title {
+  color: #78350f;
+}
+
+.banner-zonas-autorizadas .banner-zonas-text {
+  color: #92400e;
+}
+
+.banner-zonas-autorizadas .banner-zonas-badge {
+  background: #fde047;
+  color: #713f12;
+  border: 1px solid #facc15;
+}
+
+/* =========================================================
+   SWEETALERT2 PERSONALIZADO (BASE & MODO CLARO)
+   ========================================================= */
+.swal2-container {
+  z-index: 100000 !important;
+}
+
+/* Toasts flotantes sutiles */
+.swal2-popup.swal2-toast {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -3px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.25s ease !important;
+  max-width: 380px !important;
+}
+
+.swal2-toast .swal2-title {
+  color: #0f172a !important;
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.swal2-toast .swal2-html-container {
+  color: #64748b !important;
+  font-size: 12px !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 !important;
+}
+
+.swal2-toast .swal2-close {
+  font-size: 16px !important;
+  color: #94a3b8 !important;
+  padding: 0 !important;
+  margin: 4px 4px 0 0 !important;
+  transition: color 0.15s ease !important;
+}
+.swal2-toast .swal2-close:hover {
+  color: #475569 !important;
+}
+
+.swal2-toast .swal2-icon {
+  transform: scale(0.65) !important;
+  margin: 0 6px 0 0 !important;
+}
+
+/* Toasts según tipo en modo claro - Sutil */
+.swal2-toast.swal2-icon-success,
+.swal2-toast:has(.swal2-success) {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.1) !important;
+}
+.swal2-toast:has(.swal2-success) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-success .swal2-timer-progress-bar {
+  background: #10b981 !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
+}
+
+.swal2-toast.swal2-icon-error,
+.swal2-toast:has(.swal2-error) {
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  box-shadow: 0 8px 20px -4px rgba(239, 68, 68, 0.1) !important;
+}
+.swal2-toast:has(.swal2-error) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-error .swal2-timer-progress-bar {
+  background: #ef4444 !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
+}
+
+.swal2-toast.swal2-icon-warning,
+.swal2-toast:has(.swal2-warning) {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.1) !important;
+}
+.swal2-toast:has(.swal2-warning) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-warning .swal2-timer-progress-bar {
+  background: #f59e0b !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
+}
+
+.swal2-toast.swal2-icon-info,
+.swal2-toast:has(.swal2-info) {
+  border-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 8px 20px -4px rgba(6, 182, 212, 0.1) !important;
+}
+.swal2-toast:has(.swal2-info) .swal2-timer-progress-bar,
+.swal2-toast.swal2-icon-info .swal2-timer-progress-bar {
+  background: #06b6d4 !important;
+  height: 2px !important;
+  opacity: 0.6 !important;
+}
+
+/* Modales completos SweetAlert2 modo claro */
+.swal2-popup:not(.swal2-toast) {
+  background: #ffffff !important;
+  border: 1px solid var(--border-subtle, #e2e8f0) !important;
+  border-radius: 20px !important;
+  padding: 28px 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-title {
+  color: var(--ink-900, #0f172a) !important;
+  font-family: var(--font-display, 'Space Grotesk', sans-serif) !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-html-container {
+  color: var(--text-muted, #64748b) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-confirm {
+  background: var(--signal-500, #fa051a) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 24px !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.28) !important;
+  transition: all 0.2s ease !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(250, 5, 26, 0.38) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-cancel {
+  background: var(--steel-100, #f1f5f9) !important;
+  color: var(--ink-800, #1e293b) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 22px !important;
+  transition: all 0.2s ease !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+  background: #e2e8f0 !important;
+}
+
+/* =========================================================
+   DICTÁMENES EN MODAL TICKET (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .ticket-dictamen-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-dictamen-item.is-aprobado {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.08);
+}
+:root:not(.dark) .ticket-dictamen-item.is-rechazado {
+  background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
+}
+:root:not(.dark) .ticket-dictamen-item.is-pendiente {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+:root:not(.dark) .ticket-revisor-name {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-planta-tag {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-fecha {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-obs {
+  color: #334155;
+  border-left-color: #22c55e;
+}
+:root:not(.dark) .ticket-rechazo {
+  color: #dc2626;
+  border-left-color: #ef4444;
+}
+
+/* Badges de rol en ticket */
+:root:not(.dark) .ticket-role-badge.role-sst {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+:root:not(.dark) .ticket-role-badge.role-gesco {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+:root:not(.dark) .ticket-role-badge.role-scr {
+  background: #fef9c3;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+/* =========================================================
+   ELEMENTOS INTERNOS DEL MODAL TICKET (MODO CLARO)
+   ========================================================= */
+:root:not(.dark) .ticket-section-title {
+  color: #475569;
+}
+:root:not(.dark) .ticket-empty-msg {
+  color: #94a3b8;
+}
+:root:not(.dark) .ticket-table-wrapper {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-th-row {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+:root:not(.dark) .ticket-tbody {
+  border-color: #f1f5f9;
+}
+:root:not(.dark) .ticket-tr {
+  border-bottom-color: #f1f5f9;
+}
+:root:not(.dark) .ticket-tr:hover {
+  background: #f8fafc;
+}
+:root:not(.dark) .ticket-td-primary {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-td-muted {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-td-code {
+  color: #0284c7;
+}
+:root:not(.dark) .ticket-td-text {
+  color: #334155;
+}
+:root:not(.dark) .ticket-status-auth {
+  color: #16a34a;
+}
+:root:not(.dark) .ticket-status-unauth {
+  color: #dc2626;
+}
+:root:not(.dark) .ticket-card-item {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+:root:not(.dark) .ticket-card-item:hover {
+  border-color: #cbd5e1;
+}
+:root:not(.dark) .ticket-placa-badge {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-card-title {
+  color: #0f172a;
+}
+:root:not(.dark) .ticket-card-sub {
+  color: #64748b;
+}
+:root:not(.dark) .ticket-card-doc {
+  color: #334155;
+}
+:root:not(.dark) .ticket-card-error {
+  color: #dc2626;
+}
+
+/* =========================================================
+   PILLS DE ROLES DE USUARIO (MODO CLARO) - SIN PUNTO
+   ========================================================= */
+.status-usuario-rol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+.status-usuario-rol::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:root:not(.dark) .status-rol-admin {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+:root:not(.dark) .status-rol-gesco {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+:root:not(.dark) .status-rol-sst {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+:root:not(.dark) .status-rol-vigilante {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+:root:not(.dark) .status-rol-scr {
+  background: #ffe4e6;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+:root:not(.dark) .status-rol-documental {
+  background: #fdf2f8;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+}
+:root:not(.dark) .status-rol-default {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+/* ==========================================================================
+   [10-NETWORK] BANNER GLOBAL DE ESTADO DE RED (Offline / Online Status)
+   ========================================================================== */
+.network-status-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.network-status-banner.slide-down {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.network-status-banner.slide-up {
+  transform: translateY(-100%);
+}
+
+.network-status-banner.is-offline {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.network-status-banner.is-online {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.network-status-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.network-status-icon {
+  font-size: 0.875rem;
+}
+
+
+
 
 
 

@@ -30,9 +30,9 @@ def CREATE_user_db(usuario: dict) -> dict:
                 cursor.execute(sql_user, valores_user)
                 user_id = cursor.lastrowid
 
-                # Guardar plantas asignadas si es rol SST (3) o GESCO (4)
+                # Guardar plantas asignadas si es rol SST (5) o GESCO (6)
                 plantas_ids = usuario.get("plantas_ids") or []
-                if int(usuario.get("id_rol", 0)) in (3, 4) and plantas_ids:
+                if int(usuario.get("id_rol", 0)) in (5, 6) and plantas_ids:
                     for p_id in plantas_ids:
                         if str(p_id).isdigit():
                             cursor.execute(
@@ -155,6 +155,7 @@ def GET_BY_ROL_with_count_db() -> List[Dict[str, Any]]:
                     FROM usuarios u
                     LEFT JOIN roles r ON u.id_rol = r.id
                     WHERE u.is_active = 1
+                      AND UPPER(COALESCE(r.nombre_rol, '')) != 'SUPERADMIN'
                     GROUP BY r.id, r.nombre_rol
                     ORDER BY total DESC
                 """
@@ -191,6 +192,7 @@ def GET_ALL_users_db() -> dict:
                         u.fecha_creacion
                     FROM usuarios u
                     LEFT JOIN roles r ON u.id_rol = r.id
+                    WHERE UPPER(COALESCE(r.nombre_rol, '')) != 'SUPERADMIN'
                     ORDER BY u.id DESC
                 """)
                 datos_user = cursor.fetchall() or []
@@ -221,7 +223,7 @@ def GET_ALL_users_db() -> dict:
                     if row.get("num_telefono"):
                         row["num_telefono"] = str(row["num_telefono"])
 
-                print(f"📦 [LOADER] Se recuperaron {len(datos_user)} usuarios de la base de datos.")
+                print(f"[LOADER] Se recuperaron {len(datos_user)} usuarios de la base de datos.")
 
                 return {
                     "exito": True,
@@ -231,10 +233,10 @@ def GET_ALL_users_db() -> dict:
                 }
 
     except Exception as e:
-        print(f"❌❌ Error al consultar usuarios en la BD: {e} ❌❌")
+        print(f"[ERROR] Error al consultar usuarios en la BD: {e}")
         return {
             "exito": False,
-            "mensaje": f"❌❌ No fue posible encontrar los usuarios {e} ❌❌",
+            "mensaje": f"[ERROR] No fue posible encontrar los usuarios: {e}",
             "datos": [],
             "datos_user": []
         }
@@ -298,7 +300,7 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                             u_r = cursor.fetchone()
                             rol_actual = u_r["id_rol"] if u_r else 0
 
-                        if int(rol_actual) in (3, 4):
+                        if int(rol_actual) in (5, 6):
                             for p_id in raw_plantas:
                                 if str(p_id).isdigit():
                                     cursor.execute(
@@ -332,23 +334,37 @@ def DELETE_user_db(id_user: int) -> dict:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
 
+                # Proteger contra la eliminación del usuario SUPERADMIN
+                cursor.execute("""
+                    SELECT r.nombre_rol 
+                    FROM usuarios u 
+                    LEFT JOIN roles r ON u.id_rol = r.id 
+                    WHERE u.id = %s
+                """, (id_user,))
+                user_check = cursor.fetchone()
+                if user_check and user_check.get("nombre_rol", "").strip().upper() == "SUPERADMIN":
+                    return {
+                        "exito": False,
+                        "mensaje": "La cuenta con rol SUPERADMIN está protegida y no puede ser eliminada.",
+                    }
+
                 cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
 
                 if cursor.rowcount == 0:
                     return {
                         "exito": False,
-                        "mensaje": f"❌❌ El usuario con ID #{id_user} no existe. ❌❌",
+                        "mensaje": f"[ERROR] El usuario con ID #{id_user} no existe.",
                     }
                 conexion.commit()
 
         return {
             "exito": True,
-            "mensaje": f"✅✅ Usuario con ID {id_user} eliminado correctamente. ✅✅",
+            "mensaje": f"[OK] Usuario con ID {id_user} eliminado correctamente.",
         }            
 
     except Exception as e:
-        print(f"❌❌ Error al eliminar el usuario {id_user}: {e} ❌❌")
+        print(f"[ERROR] Error al eliminar el usuario {id_user}: {e}")
         return {
             "exito": False,
-            "mensaje": f"❌❌ Error al eliminar en la base de datos. {e} ❌❌",
+            "mensaje": f"[ERROR] Error al eliminar en la base de datos: {e}",
         }

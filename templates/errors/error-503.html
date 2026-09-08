@@ -5,12 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>503 · Mantenimiento del sistema · INCARSA</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="/static/img/icono.png">
+<link rel="shortcut icon" href="/static/img/icono.png">
+
+<!-- Tailwind CSS Compilado Local -->
+<link rel="stylesheet" href="/static/css/tailwind.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/error-pages.css">
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/error-pages.css?v=20260906_v5">
+<style>
+.error-503-clean-number {
+  font-family: 'Space Grotesk', var(--font-display), sans-serif;
+  font-weight: 800;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-stroke: 2px #f5c400;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 8px rgba(245, 196, 0, 0.6),
+    0 0 16px rgba(245, 196, 0, 0.35);
+  filter: drop-shadow(0 0 10px rgba(245, 196, 0, 0.45));
+}
+
+.error-503-title-glow {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-text-stroke: 1.2px #f5c400;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 8px rgba(245, 196, 0, 0.6),
+    0 0 16px rgba(245, 196, 0, 0.35) !important;
+  filter: drop-shadow(0 0 8px rgba(245, 196, 0, 0.45)) !important;
+}
+
+.error-503-timer-number {
+  font-family: 'Space Grotesk', monospace, sans-serif;
+  font-weight: 800;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-text-stroke: 1.2px #f5c400;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 8px rgba(245, 196, 0, 0.6),
+    0 0 16px rgba(245, 196, 0, 0.35) !important;
+  filter: drop-shadow(0 0 8px rgba(245, 196, 0, 0.45)) !important;
+}
+</style>
 </head>
 
 <body class="antialiased">
@@ -19,44 +67,219 @@
   <div class="loader"></div>
 </div>
 
-<div class="error-page" style="--error-color: #f5c400; --error-color-bg: #fef9c3;">
+<div class="error-page is-split" style="--error-color: #f5c400; --error-color-bg: #fef9c3;">
   <div class="error-hazard-bg"></div>
 
+  <!-- Marca corporativa superior izquierda -->
   <div class="error-brand-mark">
-    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#f5c400;">
-      <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+    <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20" style="background:#f5c400;">
+      <i class="fa-solid fa-screwdriver-wrench text-white text-sm"></i>
     </div>
-    <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
+    <span class="font-display font-semibold text-white tracking-wide">PSI</span>
   </div>
 
-  <p class="error-code-hero">503</p>
+  <!-- Contenedor principal dividido en 2 columnas -->
+  <div class="relative z-10 w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-8 md:gap-10 lg:gap-14 my-auto py-6">
+    
+    <!-- COLUMNA IZQUIERDA: Código 503 con brillo amarillo y descriptivo de módulos debajo -->
+    <div class="w-full md:w-5/12 flex flex-col items-center justify-center text-center">
+      <div class="relative flex items-center justify-center">
+        <!-- Brillo ambiental amarillo sutil detrás del 503 -->
+        <div class="absolute -inset-4 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
+        <p class="error-503-clean-number !my-0 !leading-none font-black select-none text-[120px] sm:text-[150px] md:text-[170px] lg:text-[210px] xl:text-[230px]">503</p>
+      </div>
 
-  <p class="error-code">Servicio 503</p>
-  <h1 class="error-title">En mantenimiento</h1>
-  <p class="error-description">
-    Estamos realizando mejoras al sistema. El servicio estará disponible nuevamente en unos minutos.
-  </p>
-
-  <div class="error-actions">
-    <button type="button" onclick="location.reload()" class="w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2 text-gray-900" style="background:#f5c400;">
-      <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
-    </button>
-    <button type="button" onclick="history.back()" class="btn-outline-light w-full rounded-lg px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
-      <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
-    </button>
-  </div>
-
-  <div class="error-info-card p-4 flex items-center gap-3 text-left">
-    <div class="error-info-icon w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
-      <i class="fa-regular fa-clock text-sm"></i>
+      <!-- Descriptivo de módulos ubicado debajo del 503 -->
+      <div class="mt-4 max-w-sm flex justify-center">
+        <span class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-lg shadow-amber-500/10 text-center leading-relaxed">
+          <i class="fa-solid {% if nombre_modulo_afectado %}fa-layer-group{% else %}fa-server{% endif %} text-amber-400 flex-shrink-0"></i>
+          <span>
+            {% if nombre_modulo_afectado %}
+              Módulo: {{ nombre_modulo_afectado }}
+            {% else %}
+              Mantenimiento Global
+            {% endif %}
+          </span>
+        </span>
+      </div>
     </div>
-    <div>
-      <p class="text-xs">Tiempo estimado</p>
-      <p class="text-sm font-medium">Disponible en aproximadamente 30 minutos</p>
+
+    <!-- DIVISOR VERTICAL EN ESCRITORIO -->
+    <div class="hidden md:block w-px self-stretch bg-gradient-to-b from-transparent via-amber-500/30 to-transparent my-2"></div>
+
+    <!-- COLUMNA DERECHA: Información y Controles Centralizados -->
+    <div class="w-full md:w-7/12 flex flex-col items-center justify-center text-center space-y-4">
+      
+      <!-- Título de la página -->
+      <h1 class="error-503-title-glow text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-center">
+        {% if nombre_modulo_afectado %}
+          Módulo en Mantenimiento
+        {% else %}
+          Mantenimiento Programado
+        {% endif %}
+      </h1>
+
+      <!-- Descripción explicativa -->
+      <p class="text-slate-300 text-sm sm:text-base leading-relaxed max-w-lg mx-auto text-center">
+        {{ mensaje if mensaje else 'Estamos realizando labores de optimización y mantenimiento programado en el sistema.' }}
+      </p>
+
+      <!-- Temporizador / Cronómetro de Cuenta Regresiva Centralizado -->
+      <div id="countdown-card" class="w-full max-w-md mx-auto p-4 sm:p-5 rounded-2xl bg-black/40 border border-amber-500/30 backdrop-blur-md shadow-xl shadow-black/30 text-center">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 mb-3 flex items-center justify-center gap-1.5 text-center">
+          <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+        </p>
+
+        <div class="grid grid-cols-3 gap-2.5 text-center my-1" id="timer-grid">
+          <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl py-2.5 px-3">
+            <span id="timer-hours" class="error-503-timer-number block font-mono text-2xl sm:text-3xl font-black leading-none">00</span>
+            <span class="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-200 font-semibold mt-1 block">Horas</span>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl py-2.5 px-3">
+            <span id="timer-minutes" class="error-503-timer-number block font-mono text-2xl sm:text-3xl font-black leading-none">00</span>
+            <span class="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-200 font-semibold mt-1 block">Minutos</span>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl py-2.5 px-3">
+            <span id="timer-seconds" class="error-503-timer-number block font-mono text-2xl sm:text-3xl font-black leading-none">00</span>
+            <span class="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-200 font-semibold mt-1 block">Segundos</span>
+          </div>
+        </div>
+
+        <div id="timer-status" class="mt-3 text-[11px] sm:text-xs text-slate-300 font-medium flex items-center justify-center gap-1.5 text-center">
+          <i class="fa-regular fa-clock text-amber-400"></i>
+          <span>{{ tiempo if tiempo else 'Estimado según labores técnicas' }}</span>
+        </div>
+      </div>
+
+      <!-- Botones de Acción Centralizados -->
+      <div class="w-full max-w-md mx-auto flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-0.5">
+        <button type="button" onclick="location.reload()" class="error-btn-primary error-btn-503 w-full sm:flex-1 rounded-xl px-5 py-2.5 text-sm font-bold inline-flex items-center justify-center gap-2 text-slate-950">
+          <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
+        </button>
+        {% if nombre_modulo_afectado %}
+          <a href="/dashboard" class="error-btn-secondary w-full sm:flex-1 rounded-xl px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+            <i class="fa-solid fa-gauge-high text-xs"></i> Ir al Dashboard
+          </a>
+        {% else %}
+          <button type="button" onclick="history.back()" class="error-btn-secondary w-full sm:flex-1 rounded-xl px-5 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2">
+            <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Enlace para Administradores Centralizado -->
+      <div class="pt-1 text-center">
+        <a href="/login" class="text-xs text-amber-400/80 hover:text-amber-300 inline-flex items-center gap-1.5 transition-colors">
+          <i class="fa-solid fa-shield-halved text-[11px]"></i> Acceso exclusivo para administradores
+        </a>
+      </div>
+
     </div>
   </div>
 </div>
 
-<script src="assets/js/page-transition.js"></script>
+<script>
+(async function initTimer() {
+  let serverFinRaw = "{{ temporizador_fin if temporizador_fin else '' }}";
+  let minutos = parseInt("{{ temporizador_minutos if temporizador_minutos else 30 }}", 10) || 30;
+
+  // Si no vino del servidor en el template, consultar en vivo a la API
+  if (!serverFinRaw) {
+    try {
+      const res = await fetch('/api/v1/sistema/mantenimiento');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.temporizador_fin) serverFinRaw = data.temporizador_fin;
+        if (data.temporizador_minutos) minutos = parseInt(data.temporizador_minutos, 10) || minutos;
+      }
+    } catch (e) {}
+  }
+
+  // Parsear el target time del servidor (epoch ms o ISO)
+  let serverTarget = null;
+  if (serverFinRaw) {
+    const num = Number(serverFinRaw);
+    if (!isNaN(num) && num > 100000000000) {
+      serverTarget = num;
+    } else {
+      const parsed = new Date(serverFinRaw).getTime();
+      if (!isNaN(parsed)) serverTarget = parsed;
+    }
+  }
+
+  // Persistencia inteligente en sessionStorage:
+  // Almacena { target: timestamp, minutos: X } para no reiniciarse en recargas (F5),
+  // pero actualizándose si el SuperAdmin cambia los minutos o genera un nuevo periodo.
+  const STORAGE_KEY = 'incarsa_503_active_timer';
+  let targetTime = null;
+
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
+    
+    if (serverTarget) {
+      // Si el servidor entregó un timestamp fijo:
+      // Si difiere en más de 4 segundos o los minutos cambiaron, es un nuevo tiempo configurado
+      if (!saved || Math.abs(saved.target - serverTarget) > 4000 || saved.minutos !== minutos) {
+        targetTime = serverTarget;
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ target: targetTime, minutos: minutos }));
+      } else {
+        // Es la misma sesión activa: respetar la cuenta regresiva en curso al recargar
+        targetTime = saved.target;
+      }
+    } else {
+      // Modo previsualización local (sin timestamp en base de datos):
+      // Si los minutos son idénticos y el target no ha expirado, mantener la cuenta al recargar
+      if (saved && saved.target && saved.minutos === minutos && saved.target > Date.now()) {
+        targetTime = saved.target;
+      } else {
+        // Si se cambiaron los minutos, iniciar nueva cuenta con el nuevo tiempo
+        targetTime = Date.now() + (minutos * 60 * 1000);
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ target: targetTime, minutos: minutos }));
+      }
+    }
+  } catch (e) {
+    targetTime = serverTarget || (Date.now() + (minutos * 60 * 1000));
+  }
+
+  if (!targetTime) {
+    targetTime = Date.now() + (minutos * 60 * 1000);
+  }
+
+  function updateClock() {
+    const now = Date.now();
+    const diff = targetTime - now;
+
+    const elH = document.getElementById('timer-hours');
+    const elM = document.getElementById('timer-minutes');
+    const elS = document.getElementById('timer-seconds');
+    const elStatus = document.getElementById('timer-status');
+
+    if (!elH || !elM || !elS) return;
+
+    if (diff <= 0) {
+      elH.textContent = "00";
+      elM.textContent = "00";
+      elS.textContent = "00";
+      if (elStatus) {
+        elStatus.innerHTML = '<span class="text-amber-400 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Culminando labores finales. Reanudación inminente.</span>';
+      }
+      return;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    elH.textContent = String(hours).padStart(2, '0');
+    elM.textContent = String(minutes).padStart(2, '0');
+    elS.textContent = String(seconds).padStart(2, '0');
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
+
+<script src="/static/js/page-transition.js"></script>
 </body>
 </html>

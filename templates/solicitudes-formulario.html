@@ -4,7 +4,7 @@
 
   <!-- Datos + lógica (deben ir antes de Alpine) -->
    {% block extra_js %}
-  <script src="{{ url_for('static', path='js/wizard.js') }}"></script>
+  <script src="{{ url_for('static', path='js/wizard.js') }}?v=3.5"></script>
   {% endblock %}
 
 {% block content %}
@@ -45,29 +45,140 @@
               title="Notificaciones">
               <i class="fa-regular fa-bell text-sm sm:text-base"></i>
               <span class="badge-count absolute top-0.5 right-0.5 sm:top-1.5 sm:right-1.5 rounded-full flex items-center justify-center px-1 text-[10px] sm:text-[11px] font-bold"
-                x-text="notifications.length"></span>
+                x-show="unreadNotificationsCount > 0"
+                x-text="unreadNotificationsCount" x-cloak></span>
             </button>
             <div x-show="notificationsOpen" x-transition x-cloak
-              class="notifications-panel absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-[320px] sm:max-w-80 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50">
-              <div class="px-4 py-3 border-b border-[var(--border-subtle)] font-semibold text-sm">Notificaciones</div>
-              <template x-for="n in notifications" :key="n.id">
-                <div
-                  class="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--steel-100)] text-sm">
-                  <p class="text-[var(--text-primary)]" x-text="n.texto"></p>
-                  <p class="text-xs text-[var(--text-muted)] mt-0.5" x-text="n.tiempo"></p>
+              class="notifications-panel absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-[350px] sm:max-w-[430px] overflow-hidden z-50">
+              <div class="notifications-header flex items-center justify-between">
+                <div class="font-semibold text-sm flex items-center gap-2.5">
+                  <span class="notifications-title font-semibold tracking-tight">Notificaciones</span>
+                  <span class="notifications-count-badge text-[11px] rounded-full font-medium"
+                        x-text="unreadNotificationsCount + ' no leídas'"></span>
                 </div>
-              </template>
+                <button type="button" @click="marcarTodasNotificacionesLeidas()"
+                        x-show="unreadNotificationsCount > 0"
+                        class="btn-mark-all">
+                  Marcar todas
+                </button>
+              </div>
+
+              <div class="max-h-[55vh] sm:max-h-96 overflow-y-auto custom-scroll">
+                <template x-for="n in (notifications || []).slice(0, 3)" :key="n.id">
+                  <div @click="marcarNotificacionLeida(n)"
+                       class="notification-item flex items-start gap-3.5"
+                       :class="{
+                         'is-unread': !n.leido,
+                         'notif-item-success': n.tipo === 'success',
+                         'notif-item-error': n.tipo === 'error' || n.tipo === 'danger',
+                         'notif-item-warning': n.tipo === 'warning',
+                         'notif-item-info': !n.tipo || n.tipo === 'info'
+                       }">
+                    <div class="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm shadow-sm"
+                         :class="{
+                           'notif-icon-success': n.tipo === 'success',
+                           'notif-icon-error': n.tipo === 'error' || n.tipo === 'danger',
+                           'notif-icon-warning': n.tipo === 'warning',
+                           'notif-icon-info': !n.tipo || n.tipo === 'info'
+                         }">
+                      <i class="fa-solid" :class="{
+                        'fa-circle-check': n.tipo === 'success',
+                        'fa-triangle-exclamation': n.tipo === 'error' || n.tipo === 'danger',
+                        'fa-bell': n.tipo === 'warning',
+                        'fa-info': !n.tipo || n.tipo === 'info'
+                      }"></i>
+                    </div>
+                    <div class="flex-1 min-w-0 pr-1">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <p class="text-[13px] truncate font-semibold"
+                           :class="!n.leido ? 'notification-title-unread' : 'notification-title-read'"
+                           x-text="n.titulo"></p>
+                        <span class="notification-time text-[10px] flex-shrink-0 font-medium" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
+                      </div>
+                      <p class="notification-msg text-xs leading-relaxed" x-text="n.mensaje"></p>
+
+                      <!-- Enlace adjunto -->
+                      <div x-show="n.enlace" class="mt-2 max-w-full">
+                        <a :href="n.enlace" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                          class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all shadow-2xs group"
+                          :title="n.enlace">
+                          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                          <span class="truncate min-w-0" x-text="formatearTextoEnlace(n.enlace) || 'Abrir enlace'"></span>
+                        </a>
+                      </div>
+
+                      <!-- Documento adjunto descargable -->
+                      <div x-show="n.archivo_url" class="mt-2 max-w-full">
+                        <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                          class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 transition-all shadow-2xs group"
+                          :title="'Descargar ' + (n.archivo_nombre || 'documento')">
+                          <i class="fa-solid fa-file-arrow-down text-[10px] text-emerald-600 dark:text-emerald-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform"></i>
+                          <span class="truncate min-w-0" x-text="n.archivo_nombre || 'Descargar documento adjunto'"></span>
+                        </a>
+                      </div>
+
+                      <!-- Acciones en notificación de pre-aprobada -->
+                      <template x-if="esNotifPreaprobada(n)">
+                        <div class="mt-2.5">
+                          <div x-show="n.aprobadoExitoso" class="py-1 px-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check text-xs"></i>
+                            <span>Aprobación confirmada</span>
+                          </div>
+                          <div x-show="!n.aprobadoExitoso" class="flex items-center gap-2">
+                            <button type="button" @click.stop="revisarSolicitudNotif(n)"
+                              class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                              <i class="fa-solid fa-eye text-[11px]"></i>
+                              <span>Revisar</span>
+                            </button>
+                            <button type="button" @click.stop="confirmarAprobacionDirectaNotif(n)" :disabled="n.aprobando"
+                              class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                              :class="n.aprobando ? 'opacity-60 cursor-not-allowed' : ''">
+                              <i class="fa-solid" :class="n.aprobando ? 'fa-circle-notch fa-spin text-[11px]' : 'fa-check-double text-[11px]'"></i>
+                              <span x-text="n.aprobando ? 'Aprobando...' : 'Confirmar'"></span>
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                    <span x-show="!n.leido" class="unread-dot flex-shrink-0 self-center ml-1"></span>
+                  </div>
+                </template>
+
+                <div x-show="notifications.length === 0" class="notification-empty py-10 text-center text-xs">
+                  <i class="fa-regular fa-bell-slash text-3xl mb-2.5 opacity-40 block"></i>
+                  No tienes notificaciones pendientes
+                </div>
+              </div>
+
+              <!-- Pie del Dropdown: Ver todas las notificaciones -->
+              <div class="p-2.5 bg-slate-50 dark:bg-black/30 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+                <span class="text-[11px] text-[var(--paper-muted)] font-medium pl-1.5"
+                      x-text="notifications.length > 3 ? ('Mostrando 3 de ' + notifications.length) : (notifications.length + ' en total')">
+                </span>
+                <button type="button" 
+                        @click="notificationsOpen = false; abrirModalTodasNotificaciones()"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-[var(--signal-500)] hover:bg-[var(--signal-500)]/10 transition-colors cursor-pointer">
+                  <span>Ver todas</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Perfil -->
           <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-            <button @click="open = !open" class="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 pr-1 py-1 rounded-full">
-              <div
-                class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser bg-[var(--steel-200)] text-[var(--ink-900)] flex items-center justify-center text-[11px] sm:text-xs font-semibold flex-shrink-0"
-                x-text="userInitials"><b>LG</b></div>
-              <span class="hidden md:block text-sm font-medium text-white truncate max-w-[120px]" x-text="userDisplayName">Laura Gómez</span>
-              <i class="fa-solid fa-chevron-down text-[9px] text-[var(--text-muted)]"></i>
+            <button @click="open = !open"
+                    class="navbar-user-btn flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full group cursor-pointer transition-all duration-200"
+                    :class="open ? 'navbar-user-btn-open' : ''">
+              <div class="relative flex-shrink-0">
+                <div
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser flex items-center justify-center text-[11px] sm:text-xs font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                  x-text="userInitials"><b>LG</b></div>
+                <span class="navbar-user-status-dot"></span>
+              </div>
+              <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName">Laura Gómez</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-white/70 transition-transform duration-200 group-hover:text-white"
+                 :class="open ? 'rotate-180 text-[#03bfbf]' : ''"></i>
             </button>
             <div x-show="open" x-transition x-cloak
               class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50">
@@ -89,6 +200,31 @@
       <!-- ---------- CONTENT ---------- -->
       <main class="flex-1 p-3 sm:p-6 min-w-0 max-w-full">
         <div class="max-w-4xl mx-auto space-y-4 sm:space-y-6 min-w-0 max-w-full">
+
+          <!-- ===== Banner de Solicitud Devuelta para Corrección Única ===== -->
+          <div x-show="solicitudDevuelta" x-cloak
+            class="p-4 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-700/60 shadow-sm flex items-start gap-3.5 transition-all">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
+                  Edición Única Habilitada
+                </span>
+                <span class="text-xs text-amber-700 dark:text-amber-300 font-medium">Devuelta por SCR para Corrección</span>
+              </div>
+              <h4 class="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">
+                Motivo de la Devolución:
+              </h4>
+              <p class="text-xs sm:text-sm text-amber-900 dark:text-amber-200 bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 font-medium leading-relaxed"
+                x-text="motivoDevolucion || 'Por favor corrige los datos inconsistentes de la solicitud identificados por SCR.'"></p>
+              <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-2 font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Esta sesión de edición es de <strong>un solo uso</strong>. Al guardar y enviar los cambios, la solicitud retornará directamente a <strong>SCR</strong> (Por Aprobar) para su dictamen final, sin repetir las revisiones de SST y GESCO.</span>
+              </p>
+            </div>
+          </div>
 
           <!-- ===== Stepper ===== -->
           <div class="wizard-stepper-container flex items-start justify-between sm:justify-start overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 scrollbar-none max-w-full" x-cloak>
@@ -117,12 +253,65 @@
               <i class="fa-solid fa-check text-2xl"></i>
             </div>
             <h2 class="font-display font-semibold text-xl mb-1"
-              x-text="isEdit ? 'Solicitud actualizada' : 'Solicitud enviada'"></h2>
+              x-text="solicitudDevuelta ? 'Solicitud corregida y retornada a SCR' : (isEdit ? 'Solicitud actualizada' : 'Solicitud enviada')"></h2>
             <p class="text-sm text-[var(--text-muted)]">Redirigiendo al dashboard…</p>
           </div>
 
           <!-- ===== Formulario ===== -->
           <form @submit.prevent x-show="!submitted" x-cloak class="wizard-card p-6 sm:p-8">
+
+            <!-- ===== PANEL SUPERADMIN: EDICIÓN DE ESTADO Y CONTROL ===== -->
+            <div x-show="isEdit && esSuperAdmin" x-cloak class="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 backdrop-blur-xs">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/20">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 text-slate-900 font-black text-xs shadow-xs">
+                    <i class="fa-solid fa-shield-halved"></i>
+                  </span>
+                  <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-[var(--ink-900)] tracking-tight">Edición Exclusiva SuperAdmin</h3>
+                    <p class="text-[11px] text-[var(--text-muted)]">Control total para modificar los datos y el estado de la solicitud en cualquier fase.</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 text-[var(--ink-900)] border border-[var(--border-subtle)] shadow-2xs"
+                    x-text="editId ? ('RAD: ' + editId) : 'ID: ' + (solicitudOriginal?.id || '—')"></span>
+                </div>
+              </div>
+
+              <!-- Selector de Estado de la Solicitud -->
+              <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex-1">
+                  <label class="block text-xs font-bold text-[var(--ink-900)] mb-1 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-amber-500 text-xs"></i>
+                    Estado de la solicitud
+                  </label>
+                  <p class="text-[11px] text-[var(--text-muted)]">Selecciona el nuevo estado con el que se guardará la solicitud.</p>
+                </div>
+                <div class="flex items-center gap-3 sm:w-80">
+                  <select x-model="form.estado" class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold">
+                    <option value="ENVIADO">ENVIADO</option>
+                    <option value="EN REVISIÓN">EN REVISIÓN</option>
+                    <option value="POR APROBAR">POR APROBAR</option>
+                    <option value="PRE-APROBADO">PRE-APROBADO</option>
+                    <option value="APROBADO">APROBADO</option>
+                    <option value="RECHAZADO">RECHAZADO</option>
+                  </select>
+                  <span class="status-pill inline-flex select-none shadow-xs font-semibold text-xs whitespace-nowrap"
+                    :class="estadoClass(form.estado)"
+                    x-text="form.estado || 'ENVIADO'"></span>
+                </div>
+              </div>
+
+              <!-- Nota reactiva sobre las aprobaciones según el estado elegido -->
+              <div x-show="form.estado === 'EN REVISIÓN' || form.estado === 'EN REVISION'" class="mt-3 p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11.5px] text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                <i class="fa-solid fa-rotate-left shrink-0 text-sm"></i>
+                <span>Al guardar en <b>EN REVISIÓN</b>, las aprobaciones hechas se desactivarán para que la solicitud vuelva a ser evaluada.</span>
+              </div>
+              <div x-show="form.estado === 'POR APROBAR'" class="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11.5px] text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved shrink-0 text-sm"></i>
+                <span>Al guardar en <b>POR APROBAR</b>, se mantendrán las aprobaciones de SST y GESCO, y se revertirá el dictamen de SCR.</span>
+              </div>
+            </div>
 
             <!-- ---------- PASO 1: Datos generales ---------- -->
             <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-[350ms]"
@@ -524,7 +713,7 @@
                                     Conductor asignado
                                   </label>
                                   <template x-if="personas.length > 0">
-                                    <select x-model="v.conductor" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                    <select x-model="v.conductor" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
                                       <option value="">-- Seleccionar conductor --</option>
                                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -534,7 +723,7 @@
                                   </template>
                                   <template x-if="personas.length === 0">
                                     <input type="text" x-model="v.conductor" placeholder="Nombre del conductor..."
-                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
                                   </template>
                                 </div>
 
@@ -644,6 +833,18 @@
                     <div>
                       <p class="text-[var(--text-muted)] text-xs">Fecha salida</p>
                       <p class="font-medium" x-text="form.fechaSalida || '—'"></p>
+                    </div>
+                    <div>
+                      <p class="text-[var(--text-muted)] text-xs">Solicitado por</p>
+                      <p class="font-medium" x-text="form.diligenciadoPor || '—'"></p>
+                    </div>
+                    <div x-show="isEdit && esSuperAdmin">
+                      <p class="text-[var(--text-muted)] text-xs">Estado de la solicitud</p>
+                      <div class="mt-0.5">
+                        <span class="status-pill inline-flex select-none shadow-xs font-semibold text-xs"
+                          :class="estadoClass(form.estado)"
+                          x-text="form.estado || 'ENVIADO'"></span>
+                      </div>
                     </div>
                     <div class="col-span-2 md:col-span-3">
                       <p class="text-[var(--text-muted)] text-xs">Actividad</p>
@@ -994,7 +1195,7 @@
                 <div>
                   <label class="form-label">Tipo de vehículo</label>
                   <select x-model="nuevoVehiculo.tipo"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
                     :class="vehiculoModalErrors.tipo ? 'has-error' : ''">
                     <template x-for="tipo in tiposVehiculo" :key="tipo">
                       <option :value="tipo" x-text="tipo"></option>
@@ -1017,7 +1218,7 @@
                   <label class="form-label">Conductor asignado (Opcional)</label>
                   <template x-if="personas.length > 0">
                     <select x-model="nuevoVehiculo.conductor"
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
                       <option value="">-- Seleccionar de personas de la solicitud --</option>
                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -1027,7 +1228,7 @@
                   </template>
                   <template x-if="personas.length === 0">
                     <input type="text" x-model="nuevoVehiculo.conductor" placeholder="Nombre completo del conductor..."
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
                   </template>
                 </div>
 

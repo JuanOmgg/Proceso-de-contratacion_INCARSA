@@ -159,3 +159,55 @@ async def guardar_documento_seguro(
         "tamano_bytes": tamano_en_bytes,
         "extension": extension,
     }
+
+
+def eliminar_documento_fisico(nombre_o_ruta: str) -> bool:
+    """
+    Busca y elimina físicamente un archivo de la carpeta 'uploads' (incluyendo subcarpetas).
+    Aplica validaciones de seguridad para evitar Directory Traversal y asegura que solo
+    se eliminen archivos dentro de la carpeta uploads del proyecto.
+
+    :param nombre_o_ruta: Nombre del archivo (ej. 'abc12345.pdf') o ruta relativa (ej. '/uploads/documentos/cedulas/abc.pdf').
+    :return: True si el archivo fue encontrado y eliminado con éxito, False en caso contrario.
+    """
+    if not nombre_o_ruta or not isinstance(nombre_o_ruta, str):
+        return False
+
+    # Extraer solo el nombre base para prevenir Directory Traversal
+    nombre_limpio = os.path.basename(nombre_o_ruta.strip().replace("\\", "/"))
+    if not nombre_limpio or nombre_limpio in (".", "..", ""):
+        return False
+
+    # Determinar ruta base absoluta de uploads
+    # file_manager.py se encuentra en /src/utils, por lo que subimos dos niveles hasta la raíz del proyecto
+    raiz_proyecto = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    directorio_uploads = os.path.abspath(os.path.join(raiz_proyecto, "uploads"))
+
+    eliminado = False
+    try:
+        # Recorrer uploads y todas sus subcarpetas buscando el archivo
+        for root, _, files in os.walk(directorio_uploads):
+            if nombre_limpio in files:
+                ruta_completa = os.path.abspath(os.path.join(root, nombre_limpio))
+                # Verificación estricta de seguridad: la ruta debe residir dentro de uploads
+                if ruta_completa.startswith(directorio_uploads) and os.path.isfile(ruta_completa):
+                    try:
+                        os.remove(ruta_completa)
+                        try:
+                            print(f"🗑️ [FILE DELETE] Archivo eliminado fisicamente de disco: {ruta_completa}")
+                        except Exception:
+                            print(f"[FILE DELETE] Archivo eliminado: {ruta_completa}")
+                        eliminado = True
+                    except Exception as e_del:
+                        try:
+                            print(f"⚠️ Error al eliminar archivo fisico '{ruta_completa}': {e_del}")
+                        except Exception:
+                            pass
+    except Exception as e:
+        try:
+            print(f"⚠️ Error en la busqueda de archivo fisico '{nombre_limpio}': {e}")
+        except Exception:
+            pass
+
+    return eliminado
+

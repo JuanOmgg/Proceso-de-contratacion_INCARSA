@@ -1,8 +1,10 @@
 import json
 import secrets
 import string
+from datetime import datetime
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
+from src.utils.broadcaster import notification_broadcaster
 
 def Generate_unique_code(cursor) -> str:
     """
@@ -209,7 +211,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                         if not ant_row:
                                             cursor.execute("""
                                                 INSERT INTO antecedentes (id_persona, id_empresa, ultima_revision, fecha_consulta, fecha_creacion)
-                                                VALUES (%s, %s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW())
+                                                VALUES (%s, %s, NULL, NULL, NOW())
                                             """, (p_id, emp_origen))
                                             ant_id = cursor.lastrowid
                                         else:
@@ -296,6 +298,8 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         roles_revisores = cursor.fetchall() or []
                         for r_rev in roles_revisores:
                             if cod_val:
+                                tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
+                                msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
                                 cursor.execute(
                                     """
                                     INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -303,12 +307,33 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                     """,
                                     (
                                         r_rev["id"],
-                                        f"Nueva solicitud para revisión ({r_rev['nombre_rol']})",
-                                        f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}.",
+                                        tit_notif,
+                                        msg_notif,
                                         "info",
                                         f"/solicitudes/revision/{cod_val}"
                                     )
                                 )
+                                # Notificar en caliente a cada rol revisor
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_notif,
+                                        "mensaje": msg_notif,
+                                        "tipo": "info",
+                                        "enlace": f"/solicitudes/revision/{cod_val}",
+                                        "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        "leido": False,
+                                        "rol_destino": r_rev["id"]
+                                    },
+                                    target_role_id=r_rev["id"]
+                                )
+
+                        # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
+                        if cod_val:
+                            notification_broadcaster.notificar_cambio_solicitud(
+                                codigo_solicitud=cod_val,
+                                nuevo_estado="ENVIADO",
+                                detalle="Nueva solicitud radicada en el sistema"
+                            )
                     except Exception as e_notif:
                         print(f"⚠️ Aviso al generar notificación de nueva solicitud: {e_notif}")
 
@@ -379,6 +404,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     solicitud["fecha_fin"] = str(solicitud["fecha_fin"])
                 if solicitud.get("fecha_creacion"):
                     solicitud["fecha_creacion"] = str(solicitud["fecha_creacion"])
+                solicitud["pre_aprobado"] = bool(solicitud.get("pre_aprobado", False))
 
                 # 3. Obtener las plantas asociadas (vía tabla intermedia 'visita')
                 cursor.execute(
@@ -407,7 +433,8 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 # 4. Obtener los vehículos asociados (vía tabla de rompimiento 'Veh_ingreso')
                 cursor.execute(
                     """
-                    SELECT v.id, v.tipo, v.placa, vi.licencia_doc
+                    SELECT v.id, v.tipo, v.placa, vi.licencia_doc,
+                           COALESCE(vi.autorizado, 1) AS autorizado, vi.motivo
                     FROM Veh_ingreso vi
                     INNER JOIN vehiculos v ON vi.id_vehiculo = v.id
                     WHERE vi.id_solicitud = %s
@@ -416,6 +443,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 )
                 vehiculos = cursor.fetchall() or []
                 for v in vehiculos:
+                    v["autorizado"] = bool(v.get("autorizado", True))
+                    v["motivo"] = v.get("motivo") or ""
+                    v["motivo_rechazo"] = v["motivo"]
                     lic = v.get("licencia_doc")
                     v["url_licencia"] = f"/uploads/documentos/vehiculos/{lic}" if lic else None
                     cursor.execute(
@@ -438,9 +468,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 cursor.execute(
                     """
                     SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
-                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo
+                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
+                           a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
+                    LEFT JOIN antecedentes a ON a.id_persona = p.id
                     WHERE i.id_solicitud = %s
                     """,
                     (real_id,),
@@ -454,7 +486,17 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         p_ids = [int(x.strip()) for x in raw_pids if x.strip().isdigit()]
                         if p_ids:
                             fmt = ",".join(["%s"] * len(p_ids))
-                            cursor.execute(f"SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, 1 AS autorizado, NULL AS motivo FROM personas p WHERE p.id IN ({fmt})", tuple(p_ids))
+                            cursor.execute(
+                                f"""
+                                SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                                       1 AS autorizado, NULL AS motivo,
+                                       a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
+                                FROM personas p
+                                LEFT JOIN antecedentes a ON a.id_persona = p.id
+                                WHERE p.id IN ({fmt})
+                                """,
+                                tuple(p_ids)
+                            )
                             personas = cursor.fetchall() or []
                     except Exception as e_pers:
                         print(f"⚠️ Error al resolver personas_ids de respaldo: {e_pers}")
@@ -462,6 +504,15 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 for p in personas:
                     p["autorizado"] = bool(p.get("autorizado", True))
                     p["motivo"] = p.get("motivo") or ""
+                    if p.get("fecha_consulta"):
+                        p["fecha_consulta"] = str(p["fecha_consulta"]).split(" ")[0]
+                    else:
+                        p["fecha_consulta"] = None
+                    if p.get("ultima_revision"):
+                        p["ultima_revision"] = str(p["ultima_revision"])
+                    else:
+                        p["ultima_revision"] = None
+
                     cursor.execute(
                         "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
                         (p["id"],),
@@ -470,14 +521,19 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     for d in docs:
                         d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
                     p["documentos"] = docs
+
                 solicitud["ingresantes"] = personas
+                solicitud["personas"] = personas
 
                 # 6. Obtener los equipos asociados
                 cursor.execute(
-                    "SELECT marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
+                    "SELECT id, marca, modelo, serie FROM equipos_solicitud WHERE solicitud_id = %s",
                     (real_id,),
                 )
-                solicitud["eq_computo"] = cursor.fetchall() or []
+                eqs = cursor.fetchall() or []
+                solicitud["eq_computo"] = eqs
+                solicitud["equipos"] = eqs
+                solicitud["computos"] = eqs
 
                 # 7. Obtener revisiones / dictámenes por planta
                 cursor.execute(
@@ -509,8 +565,16 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
         id_planta = dictamen.get("id_planta")
         rol = str(dictamen.get("rol", "")).strip().upper()
         decision_raw = str(dictamen.get("decision", "")).strip().lower()
-        decision = "RECHAZADO" if "rechaz" in decision_raw else "APROBADO"
-        motivo_rechazo = dictamen.get("motivo_rechazo") or ""
+        if "devolv" in decision_raw or "devuelt" in decision_raw or "correcci" in decision_raw or "devolver" in decision_raw:
+            decision = "DEVUELTO"
+        elif "preaprob" in decision_raw or "pre-aprob" in decision_raw or "pre_aprob" in decision_raw:
+            decision = "PREAPROBADO"
+        elif "rechaz" in decision_raw:
+            decision = "RECHAZADO"
+        else:
+            decision = "APROBADO"
+
+        motivo_rechazo = dictamen.get("motivo_rechazo") or dictamen.get("motivo_devolucion") or ""
         observacion = dictamen.get("observacion") or ""
         id_usuario = dictamen.get("id_usuario")
         nombre_revisor = dictamen.get("nombre_revisor") or ""
@@ -521,9 +585,9 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por, pre_aprobado FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id, estado FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por, pre_aprobado FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
@@ -552,23 +616,50 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 id_planta = p_list[0]
 
                 # 2. Insertar o actualizar en solicitud_revisiones
-                sql_upsert = """
-                    INSERT INTO solicitud_revisiones (
-                        id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
-                        decision, motivo_rechazo, observacion, fecha_revision
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                    ON DUPLICATE KEY UPDATE
-                        id_usuario = VALUES(id_usuario),
-                        nombre_revisor = VALUES(nombre_revisor),
-                        decision = VALUES(decision),
-                        motivo_rechazo = VALUES(motivo_rechazo),
-                        observacion = VALUES(observacion),
-                        fecha_revision = NOW()
-                """
-                cursor.execute(sql_upsert, (
-                    real_id, id_planta, rol, id_usuario, nombre_revisor,
-                    decision, motivo_rechazo, observacion
-                ))
+                if id_planta is None:
+                    cursor.execute(
+                        "SELECT id FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
+                        (real_id, rol)
+                    )
+                    rev_existente = cursor.fetchone()
+                    if rev_existente:
+                        cursor.execute(
+                            """
+                            UPDATE solicitud_revisiones
+                            SET id_usuario = %s, nombre_revisor = %s, decision = %s,
+                                motivo_rechazo = %s, observacion = %s, fecha_revision = NOW()
+                            WHERE id = %s
+                            """,
+                            (id_usuario, nombre_revisor, decision, motivo_rechazo, observacion, rev_existente["id"])
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO solicitud_revisiones (
+                                id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                                decision, motivo_rechazo, observacion, fecha_revision
+                            ) VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, NOW())
+                            """,
+                            (real_id, rol, id_usuario, nombre_revisor, decision, motivo_rechazo, observacion)
+                        )
+                else:
+                    sql_upsert = """
+                        INSERT INTO solicitud_revisiones (
+                            id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                            decision, motivo_rechazo, observacion, fecha_revision
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                        ON DUPLICATE KEY UPDATE
+                            id_usuario = VALUES(id_usuario),
+                            nombre_revisor = VALUES(nombre_revisor),
+                            decision = VALUES(decision),
+                            motivo_rechazo = VALUES(motivo_rechazo),
+                            observacion = VALUES(observacion),
+                            fecha_revision = NOW()
+                    """
+                    cursor.execute(sql_upsert, (
+                        real_id, id_planta, rol, id_usuario, nombre_revisor,
+                        decision, motivo_rechazo, observacion
+                    ))
 
                 # 3. Obtener todas las plantas de la solicitud (vía visita)
                 cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (real_id,))
@@ -586,19 +677,60 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
 
                 # 4. Determinar nuevo estado global de la solicitud
                 nuevo_estado = sol.get("estado", "EN REVISIÓN")
+                token_edicion = None
 
-                if decision == "RECHAZADO":
+                if decision == "DEVUELTO":
+                    nuevo_estado = "DEVUELTO PARA CORRECCIÓN"
+                    token_edicion = secrets.token_urlsafe(32)
+                    obs_devolucion = f"[DEVUELTO por {rol} para corrección]: {motivo_rechazo}. {observacion}".strip()
+                    cursor.execute(
+                        """
+                        UPDATE solicitudes 
+                        SET estado = 'DEVUELTO PARA CORRECCIÓN',
+                            token_edicion = %s,
+                            token_edicion_usado = FALSE,
+                            motivo_devolucion = %s,
+                            observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                        WHERE id = %s
+                        """,
+                        (token_edicion, motivo_rechazo or observacion, obs_devolucion, real_id)
+                    )
+                elif decision == "RECHAZADO":
                     nuevo_estado = "RECHAZADO"
                     obs_rechazo = f"[RECHAZADO por {rol}]: {motivo_rechazo}. {observacion}".strip()
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'RECHAZADO', observaciones = %s WHERE id = %s",
                         (obs_rechazo, real_id)
                     )
-                elif rol == "SCR":
+                elif decision == "PREAPROBADO":
+                    # SCR o SuperAdmin pre-aprueba la solicitud en etapas previas
+                    nuevo_estado = sol.get("estado", "EN REVISIÓN")
+                    obs_pre = f"[PRE-APROBADO por {rol}]: {observacion}".strip()
+                    cursor.execute(
+                        """
+                        UPDATE solicitudes 
+                        SET pre_aprobado = 1,
+                            observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                        WHERE id = %s
+                        """,
+                        (obs_pre, real_id)
+                    )
+                elif rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN") or (id_planta is None and decision == "APROBADO"):
                     nuevo_estado = "APROBADO"
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
                         (real_id,)
+                    )
+                    # Desactivar botones de confirmación en notificaciones previas de esta solicitud
+                    cod_sol_clean = sol.get("codigo") or f"RAD-{real_id:04d}"
+                    cursor.execute(
+                        """
+                        UPDATE notificaciones
+                        SET leido = TRUE,
+                            enlace = REPLACE(enlace, '?confirmar=true', '')
+                        WHERE enlace LIKE %s
+                        """,
+                        (f"%{cod_sol_clean}%",)
                     )
                 else:
                     # Es SST o GESCO aprobando
@@ -641,7 +773,83 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                     cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
                     id_creador = sol.get("diligenciado_por")
                     
-                    if id_creador:
+                    now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                    if decision == "DEVUELTO":
+                        tit = f"⚠️ Solicitud {cod_sol} devuelta para corrección"
+                        msg = f"SCR ha devuelto la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Inconsistencias detectadas'}. Haz clic para ingresar a la edición única."
+                        tipo_notif = "warning"
+                        link_edicion = f"/solicitudes/editar/{cod_sol}?token={token_edicion}"
+                        
+                        if id_creador:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (id_creador, tit, msg, tipo_notif, link_edicion)
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": link_edicion,
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "id_usuario": id_creador
+                                },
+                                target_user_id=id_creador
+                            )
+                        
+                        # También alertar al rol GESTION DOCUMENTAL
+                        cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) LIKE '%DOCUMENTAL%' LIMIT 1")
+                        r_gd = cursor.fetchone()
+                        if r_gd:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (r_gd["id"], tit, msg, tipo_notif, link_edicion)
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": link_edicion,
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "rol_destino": r_gd["id"]
+                                },
+                                target_role_id=r_gd["id"]
+                            )
+                    elif decision == "PREAPROBADO":
+                        tit = f"Solicitud {cod_sol} Pre-aprobada por SCR"
+                        msg = f"SCR ha emitido visto bueno preliminar (Pre-aprobación) para {cod_sol}. Continuará con las revisiones técnicas de SST y GESCO."
+                        tipo_notif = "info"
+                        if id_creador:
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit,
+                                    "mensaje": msg,
+                                    "tipo": tipo_notif,
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "id_usuario": id_creador
+                                },
+                                target_user_id=id_creador
+                            )
+                    elif id_creador:
                         if decision == "RECHAZADO":
                             tit = f"Solicitud {cod_sol} Rechazada"
                             msg = f"{rol} ha rechazado la solicitud {cod_sol}. Motivo: {motivo_rechazo or 'Sin motivo detallado'}"
@@ -662,25 +870,121 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             """,
                             (id_creador, tit, msg, tipo_notif, f"/solicitudes/revision/{cod_sol}")
                         )
+                        notification_broadcaster.notificar_nueva(
+                            {
+                                "titulo": tit,
+                                "mensaje": msg,
+                                "tipo": tipo_notif,
+                                "enlace": f"/solicitudes/revision/{cod_sol}",
+                                "fecha_creacion": now_notif_str,
+                                "leido": False,
+                                "id_usuario": id_creador
+                            },
+                            target_user_id=id_creador
+                        )
 
                     # Si pasó a POR APROBAR, alertar al rol SCR para el visto bueno final
                     if nuevo_estado == "POR APROBAR":
-                        cursor.execute("SELECT id FROM roles WHERE nombre_rol = 'SCR' LIMIT 1")
+                        cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
                         r_scr = cursor.fetchone()
                         if r_scr:
-                            cursor.execute(
-                                """
-                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                                VALUES (%s, %s, %s, %s, %s)
-                                """,
-                                (
-                                    r_scr["id"],
-                                    f"Solicitud {cod_sol} lista para visto bueno final",
-                                    f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR.",
-                                    "warning",
-                                    f"/solicitudes/revision/{cod_sol}"
+                            cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                            sol_pre = cursor.fetchone()
+                            esta_preaprobada = bool(sol_pre.get("pre_aprobado")) if sol_pre else False
+
+                            if esta_preaprobada:
+                                # Notificación especializada con observaciones de SST y GESCO
+                                cursor.execute(
+                                    """
+                                    SELECT sr.rol, p.nombre AS planta_nombre, sr.nombre_revisor, sr.decision, sr.observacion
+                                    FROM solicitud_revisiones sr
+                                    LEFT JOIN planta p ON sr.id_planta = p.id
+                                    WHERE sr.id_solicitud = %s AND UPPER(sr.rol) IN ('SST', 'GESCO')
+                                    ORDER BY sr.fecha_revision ASC
+                                    """,
+                                    (real_id,)
                                 )
-                            )
+                                revs_tecnicas = cursor.fetchall() or []
+                                items_obs = []
+                                for rt in revs_tecnicas:
+                                    r_rol = rt.get("rol", "")
+                                    r_pl = f" ({rt.get('planta_nombre')})" if rt.get("planta_nombre") else ""
+                                    r_obs = (rt.get("observacion") or "").strip()
+                                    if r_obs:
+                                        items_obs.append(f"• {r_rol}{r_pl}: {r_obs}")
+
+                                if items_obs:
+                                    bloque_obs = "\nObservaciones remitidas por SST / GESCO:\n" + "\n".join(items_obs)
+                                else:
+                                    bloque_obs = "\nSin observaciones adicionales de SST ni GESCO."
+
+                                tit_scr = f"⚡ Solicitud Preaprobada {cod_sol} en 'Por Aprobar'"
+                                msg_scr = (
+                                    f"La solicitud {cod_sol} que dejaste PREAPROBADA completó las revisiones de SST y GESCO y ya está en 'Por Aprobar'.\n"
+                                    f"{bloque_obs}\n"
+                                    f"Haz clic aquí para confirmar la aprobación definitiva o ingresar a revisarla."
+                                )
+                                cursor.execute(
+                                    """
+                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (
+                                        r_scr["id"],
+                                        tit_scr,
+                                        msg_scr,
+                                        "info",
+                                        f"/solicitudes/revision/{cod_sol}?confirmar=true"
+                                    )
+                                )
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_scr,
+                                        "mensaje": msg_scr,
+                                        "tipo": "info",
+                                        "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
+                                        "fecha_creacion": now_notif_str,
+                                        "leido": False,
+                                        "rol_destino": r_scr["id"]
+                                    },
+                                    target_role_id=r_scr["id"]
+                                )
+                            else:
+                                # Notificación convencional
+                                tit_conv = f"Solicitud {cod_sol} lista para visto bueno final"
+                                msg_conv = f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR."
+                                cursor.execute(
+                                    """
+                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    """,
+                                    (
+                                        r_scr["id"],
+                                        tit_conv,
+                                        msg_conv,
+                                        "warning",
+                                        f"/solicitudes/revision/{cod_sol}"
+                                    )
+                                )
+                                notification_broadcaster.notificar_nueva(
+                                    {
+                                        "titulo": tit_conv,
+                                        "mensaje": msg_conv,
+                                        "tipo": "warning",
+                                        "enlace": f"/solicitudes/revision/{cod_sol}",
+                                        "fecha_creacion": now_notif_str,
+                                        "leido": False,
+                                        "rol_destino": r_scr["id"]
+                                    },
+                                    target_role_id=r_scr["id"]
+                                )
+
+                    # Notificar en caliente a todas las vistas abiertas sobre el cambio de estado de la solicitud
+                    notification_broadcaster.notificar_cambio_solicitud(
+                        codigo_solicitud=cod_sol,
+                        nuevo_estado=nuevo_estado,
+                        detalle=f"Dictamen de {rol}: {decision}"
+                    )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación de dictamen: {e_notif}")
 
@@ -715,6 +1019,211 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
         print(f"❌ Error al registrar dictamen para solicitud #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al registrar dictamen: {e}"}
 
+
+def VALIDAR_token_edicion_db(solicitud_id: Any, token: str) -> dict:
+    try:
+        if not token or not str(token).strip():
+            return {"valido": False, "mensaje": "Token de edición no proporcionado."}
+        
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"valido": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+                
+                estado = str(sol.get("estado") or "").strip().upper()
+                if estado != "DEVUELTO PARA CORRECCIÓN":
+                    return {"valido": False, "mensaje": f"La solicitud no se encuentra en estado de corrección (estado actual: {estado})."}
+                
+                if sol.get("token_edicion_usado"):
+                    return {"valido": False, "mensaje": "El enlace de edición única ya fue utilizado previamente para esta solicitud."}
+                
+                stored_token = sol.get("token_edicion")
+                if not stored_token or stored_token != str(token).strip():
+                    return {"valido": False, "mensaje": "El token de edición no es válido o ha expirado."}
+                
+                return {
+                    "valido": True,
+                    "id": sol["id"],
+                    "codigo": sol.get("codigo"),
+                    "motivo_devolucion": sol.get("motivo_devolucion") or ""
+                }
+    except Exception as e:
+        print(f"❌ Error al validar token de edición: {e}")
+        return {"valido": False, "mensaje": f"Error interno al validar token: {e}"}
+
+
+def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optional[int] = None, nombre_usuario: Optional[str] = None) -> dict:
+    try:
+        if not token or not str(token).strip():
+            return {"exito": False, "mensaje": "Token de edición no proporcionado."}
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, codigo, estado, token_edicion, token_edicion_usado, motivo_devolucion FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                real_id = int(sol["id"])
+                cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
+                stored_token = sol.get("token_edicion")
+
+                if sol.get("token_edicion_usado"):
+                    return {"exito": False, "mensaje": "El token de edición ya fue utilizado previamente para esta solicitud."}
+                if not stored_token or stored_token != str(token).strip():
+                    return {"exito": False, "mensaje": "Token de edición no válido o expirado."}
+
+                # 1. Consumir token y pasar estado a 'POR APROBAR' (retorna directo a SCR)
+                cursor.execute(
+                    """
+                    UPDATE solicitudes 
+                    SET token_edicion_usado = TRUE,
+                        token_edicion = NULL,
+                        estado = 'POR APROBAR'
+                    WHERE id = %s
+                    """,
+                    (real_id,)
+                )
+
+                # 2. Limpiar el dictamen previo de SCR para permitir nueva aprobación directa
+                cursor.execute(
+                    "DELETE FROM solicitud_revisiones WHERE id_solicitud = %s AND UPPER(rol) = 'SCR'",
+                    (real_id,)
+                )
+
+                # 3. Registrar en auditoría de revisiones
+                cursor.execute(
+                    """
+                    INSERT INTO solicitud_revisiones (
+                        id_solicitud, rol, id_usuario, nombre_revisor,
+                        decision, observacion, fecha_revision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                    """,
+                    (
+                        real_id,
+                        "GESTION DOCUMENTAL",
+                        id_usuario,
+                        nombre_usuario or "Gestión Documental",
+                        "CORREGIDO",
+                        "Solicitud corregida mediante enlace de edición única y retornada directamente a SCR para aprobación final."
+                    )
+                )
+
+                # 4. Notificar a SCR que la solicitud fue corregida y está lista para su aprobación final
+                try:
+                    cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
+                    r_scr = cursor.fetchone()
+                    if r_scr:
+                        cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                        sol_pre = cursor.fetchone()
+                        esta_preaprobada = bool(sol_pre.get("pre_aprobado")) if sol_pre else False
+
+                        if esta_preaprobada:
+                            cursor.execute(
+                                """
+                                SELECT sr.rol, p.nombre AS planta_nombre, sr.observacion
+                                FROM solicitud_revisiones sr
+                                LEFT JOIN planta p ON sr.id_planta = p.id
+                                WHERE sr.id_solicitud = %s AND UPPER(sr.rol) IN ('SST', 'GESCO')
+                                ORDER BY sr.fecha_revision ASC
+                                """,
+                                (real_id,)
+                            )
+                            revs_tecnicas = cursor.fetchall() or []
+                            items_obs = []
+                            for rt in revs_tecnicas:
+                                r_rol = rt.get("rol", "")
+                                r_pl = f" ({rt.get('planta_nombre')})" if rt.get("planta_nombre") else ""
+                                r_obs = (rt.get("observacion") or "").strip()
+                                if r_obs:
+                                    items_obs.append(f"• {r_rol}{r_pl}: {r_obs}")
+
+                            bloque_obs = ("\nObservaciones previas SST / GESCO:\n" + "\n".join(items_obs)) if items_obs else "\nSin observaciones adicionales de SST ni GESCO."
+
+                            tit_corregida = f"⚡ Solicitud Preaprobada {cod_sol} corregida - En 'Por Aprobar'"
+                            msg_corregida = f"Gestión Documental corrigió {cod_sol}. Como fue preaprobada, puedes confirmar la aprobación definitiva o revisarla.\n{bloque_obs}"
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    tit_corregida,
+                                    msg_corregida,
+                                    "info",
+                                    f"/solicitudes/revision/{cod_sol}?confirmar=true"
+                                )
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit_corregida,
+                                    "mensaje": msg_corregida,
+                                    "tipo": "info",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
+                                    "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "leido": False,
+                                    "rol_destino": r_scr["id"]
+                                },
+                                target_role_id=r_scr["id"]
+                            )
+                        else:
+                            tit_conv = f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR"
+                            msg_conv = f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final."
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    tit_conv,
+                                    msg_conv,
+                                    "warning",
+                                    f"/solicitudes/revision/{cod_sol}"
+                                )
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit_conv,
+                                    "mensaje": msg_conv,
+                                    "tipo": "warning",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
+                                    "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "leido": False,
+                                    "rol_destino": r_scr["id"]
+                                },
+                                target_role_id=r_scr["id"]
+                            )
+
+                    # Notificar en caliente cambio de solicitud
+                    notification_broadcaster.notificar_cambio_solicitud(
+                        codigo_solicitud=cod_sol,
+                        nuevo_estado="POR APROBAR",
+                        detalle="Solicitud corregida y retornada a revisión final de SCR"
+                    )
+                except Exception as e_notif:
+                    print(f"⚠️ Aviso al registrar notificación a SCR tras corrección: {e_notif}")
+
+                conexion.commit()
+                return {"exito": True, "mensaje": "Token consumido y solicitud retornada directamente a SCR (POR APROBAR) con éxito."}
+    except Exception as e:
+        print(f"❌ Error al consumir token de edición: {e}")
+        return {"exito": False, "mensaje": f"Error interno al consumir token: {e}"}
+
+
 def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optional[int] = None):
 
     try:
@@ -735,11 +1244,16 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                 elif only_active is False:
                     condiciones.append(f"{is_active_expr} = 0")
 
-                # Si se provee id_usuario, verificar si tiene rol SST (3) o GESCO (4)
+                # Si se provee id_usuario, verificar si tiene rol SST (5) o GESCO (6)
                 if id_usuario:
-                    cursor.execute("SELECT id_rol FROM usuarios WHERE id = %s", (id_usuario,))
+                    cursor.execute("SELECT u.id_rol, r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
                     u_row = cursor.fetchone()
-                    if u_row and int(u_row.get("id_rol", 0)) in (3, 4):
+                    es_sst_gesco = False
+                    if u_row:
+                        r_id = int(u_row.get("id_rol") or 0)
+                        r_nom = str(u_row.get("nombre_rol") or "").strip().upper()
+                        es_sst_gesco = (r_id in (5, 6)) or (r_nom in ("SST", "GESCO"))
+                    if es_sst_gesco:
                         cursor.execute("SELECT id_planta FROM usuario_plantas WHERE id_usuario = %s", (id_usuario,))
                         p_rows = cursor.fetchall() or []
                         p_ids = [int(pr["id_planta"]) for pr in p_rows if pr.get("id_planta")]
@@ -769,6 +1283,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                         so.fecha_creacion,
                         so.estado,
                         {is_active_expr} AS is_active,
+                        COALESCE(so.pre_aprobado, 0) AS pre_aprobado,
 
                         GROUP_CONCAT(DISTINCT p.nombre SEPARATOR ', ') AS planta,
                         GROUP_CONCAT(DISTINCT p.id SEPARATOR ',') AS plantas_ids,
@@ -790,7 +1305,9 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                 vh.id,
                                 vh.tipo,
                                 vh.placa,
-                                IFNULL(vi.licencia_doc, 0)
+                                IFNULL(vi.licencia_doc, 0),
+                                IFNULL(vi.autorizado, 1),
+                                IFNULL(vi.motivo, '')
                             )
                             SEPARATOR '###'
                         ) AS vehiculos,
@@ -879,28 +1396,58 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                     except Exception:
                                         v_id = None
                                     lic_doc = partes[3].strip() if len(partes) > 3 and partes[3] else ""
+                                    aut_val = partes[4].strip() if len(partes) > 4 else "1"
+                                    mot_val = partes[5].strip() if len(partes) > 5 else ""
+                                    is_aut = False if aut_val in ('0', 'false', 'False', 0) else True
                                     v_list.append({
                                         'id': v_id,
                                         'tipo': partes[1] or None,
                                         'placa': partes[2] or None,
                                         'licencia_doc': lic_doc,
-                                        'licencia': lic_doc
+                                        'licencia': lic_doc,
+                                        'autorizado': is_aut,
+                                        'motivo': mot_val,
                                     })
                                 val_vehiculos = v_list
                         if isinstance(val_vehiculos, list):
                             row['vehiculos'] = [v for v in val_vehiculos if v is not None]
                             row['vehiculo'] = row['vehiculos']
                     
-                    if isinstance(row, dict) and 'eq_computo' in row:
+                    if isinstance(row, dict) and 'computos' in row:
+                        val_c = row['computos']
+                        if isinstance(val_c, str):
+                            if val_c.strip() == "":
+                                val_c = []
+                            else:
+                                c_list = []
+                                for item in val_c.split('###'):
+                                    if not item:
+                                        continue
+                                    partes = item.split('|||')
+                                    if len(partes) < 4:
+                                        continue
+                                    c_id = int(partes[0]) if partes[0].isdigit() else None
+                                    c_list.append({
+                                        'id': c_id,
+                                        'marca': partes[1] or "",
+                                        'modelo': partes[2] or "",
+                                        'serie': partes[3] or ""
+                                    })
+                                val_c = c_list
+                        row['computos'] = val_c if isinstance(val_c, list) else []
+                        row['eq_computo'] = row['computos']
+                        row['equipos'] = row['computos']
+                    elif isinstance(row, dict) and 'eq_computo' in row:
                         val_eq_computo = row['eq_computo']
                         if isinstance(val_eq_computo, str):
                             try:
                                 val_eq_computo = json.loads(val_eq_computo)
                             except Exception:
                                 val_eq_computo = []
-                        
-                        if isinstance(val_eq_computo, list):
-                            row['eq_computo'] = [e for e in val_eq_computo if e is not None]
+                        row['eq_computo'] = val_eq_computo if isinstance(val_eq_computo, list) else []
+                        row['computos'] = row['eq_computo']
+                        row['equipos'] = row['eq_computo']
+                    row['pre_aprobado'] = bool(row.get('pre_aprobado', False))
 
                 # Asociar documentos de vehículos si existen
                 try:
@@ -922,6 +1469,31 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                                 v["documentos"] = docs_por_veh[v["id"]]
                 except Exception:
                     pass
+
+                # Asociar revisiones y visto bueno por solicitud
+                try:
+                    cursor.execute("""
+                        SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
+                               sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                               sr.motivo_rechazo, sr.observacion, sr.fecha_revision
+                        FROM solicitud_revisiones sr
+                        LEFT JOIN planta p ON sr.id_planta = p.id
+                        ORDER BY sr.fecha_revision ASC
+                    """)
+                    revs_db = cursor.fetchall() or []
+                    revs_por_sol = {}
+                    for r in revs_db:
+                        sid = r.get("id_solicitud")
+                        if sid not in revs_por_sol:
+                            revs_por_sol[sid] = []
+                        if r.get("fecha_revision"):
+                            r["fecha_revision"] = str(r["fecha_revision"])
+                        revs_por_sol[sid].append(r)
+                    
+                    for row in datos:
+                        row["revisiones"] = revs_por_sol.get(row["id"], [])
+                except Exception as e_rev:
+                    print(f"⚠️ Aviso al cargar revisiones en GET_ALL_solicitudes_bd: {e_rev}")
                             
                 print(f"📦 [LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
         
@@ -972,52 +1544,93 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                 id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
                 cod_str = str(solicitud_id).strip().upper()
                 if id_num:
-                    cursor.execute("SELECT id FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                    cursor.execute("SELECT id, estado, observaciones FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
                 else:
-                    cursor.execute("SELECT id FROM solicitudes WHERE codigo = %s", (cod_str,))
+                    cursor.execute("SELECT id, estado, observaciones FROM solicitudes WHERE codigo = %s", (cod_str,))
                 sol = cursor.fetchone()
                 if not sol:
                     return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
                 real_id = int(sol["id"])
+                estado_actual = str(sol.get("estado") or "").strip().upper()
+                nuevo_estado = str(campos.get("estado") or "").strip().upper() if "estado" in campos else None
 
+                # Lógica de transición de estados por SuperAdmin:
+                if nuevo_estado and nuevo_estado != estado_actual:
+                    # 1. Si el superadmin cambia el estado a revisión (o enviado), las aprobaciones hechas se desactivan
+                    if nuevo_estado in ("EN REVISIÓN", "EN REVISION", "ENVIADO"):
+                        print(f"🔄 [UPDATE] SuperAdmin cambió solicitud #{real_id} a '{nuevo_estado}'. Desactivando todas las aprobaciones emitidas...")
+                        cursor.execute("DELETE FROM solicitud_revisiones WHERE id_solicitud = %s", (real_id,))
+                        # Limpiar observaciones si eran de rechazo y no enviaron una nueva
+                        if "observaciones" not in campos:
+                            obs_actual = str(sol.get("observaciones") or "")
+                            if "[RECHAZADO" in obs_actual:
+                                campos["observaciones"] = ""
+
+                    # 2. Si pasa de APROBADO o RECHAZADO a 'POR APROBAR' (o cambia a 'POR APROBAR'):
+                    #    mantiene las aprobaciones de SST y GESCO, pero revierte la de SCR
+                    elif nuevo_estado == "POR APROBAR":
+                        print(f"🔄 [UPDATE] SuperAdmin cambió solicitud #{real_id} de '{estado_actual}' a 'POR APROBAR'. Manteniendo SST y GESCO y revirtiendo dictamen de SCR...")
+                        cursor.execute(
+                            "DELETE FROM solicitud_revisiones WHERE id_solicitud = %s AND UPPER(rol) = 'SCR'",
+                            (real_id,)
+                        )
+                        # Asegurar que SST y GESCO mantengan su aprobación si habían sido observadas
+                        cursor.execute(
+                            "UPDATE solicitud_revisiones SET decision = 'APROBADO', motivo_rechazo = NULL WHERE id_solicitud = %s AND UPPER(rol) IN ('SST', 'GESCO') AND decision = 'RECHAZADO'",
+                            (real_id,)
+                        )
+                        # Limpiar observación de rechazo si venía de RECHAZADO
+                        if "observaciones" not in campos and estado_actual == "RECHAZADO":
+                            obs_actual = str(sol.get("observaciones") or "")
+                            if "[RECHAZADO por SCR]" in obs_actual or "[RECHAZADO" in obs_actual:
+                                campos["observaciones"] = ""
+
+                # Extraer y limpiar subtablas / relaciones
                 personas = campos.pop("personas", None)
                 if personas is None:
                     personas = campos.pop("ingresantes", None)
-                eq_computo = campos.pop("eq_computo", None)
+                raw_personas_ids = campos.pop("personas_ids", None)
+
+                plantas = campos.pop("plantas", None)
+                raw_plantas_ids = campos.pop("plantas_ids", None)
+
                 vehiculo = campos.pop("vehiculo", None)
                 if vehiculo is None:
                     vehiculo = campos.pop("vehiculos", None)
+                raw_vehiculos_ids = campos.pop("vehiculos_ids", None)
 
-                # Sincronizar personas e ingresantes (con estado autorizado y motivo)
-                if personas is not None or "personas_ids" in campos:
+                eq_computo = campos.pop("eq_computo", None)
+                if eq_computo is None:
+                    eq_computo = campos.pop("equipos", None)
+                if eq_computo is None:
+                    eq_computo = campos.pop("computos", None)
+
+                # 1. Sincronizar personas / ingresantes
+                resolved_personas_ids = []
+                if personas is not None or raw_personas_ids is not None:
                     lista_p = personas
-                    if lista_p is None and "personas_ids" in campos:
-                        raw_pids = campos["personas_ids"]
-                        if isinstance(raw_pids, list):
-                            campos["personas_ids"] = ",".join(map(str, raw_pids))
-                            lista_p = [{"id": pid, "autorizado": True, "motivo": None} for pid in raw_pids]
-                        elif isinstance(raw_pids, str):
-                            lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_pids.split(",") if x.strip().isdigit()]
+                    if lista_p is None and raw_personas_ids is not None:
+                        if isinstance(raw_personas_ids, list):
+                            lista_p = [{"id": pid, "autorizado": True, "motivo": None} for pid in raw_personas_ids]
+                        elif isinstance(raw_personas_ids, str):
+                            lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_personas_ids.split(",") if x.strip().isdigit()]
 
                     if isinstance(lista_p, list):
-                        cursor.execute(
-                            "DELETE FROM ingresantes WHERE id_solicitud = %s",
-                            (real_id,),
-                        )
+                        # Actualizar tabla ingresantes sin importar el estado
+                        cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
                         valores_ing = []
                         for item_p in lista_p:
                             if isinstance(item_p, dict):
                                 p_id = item_p.get("id") or item_p.get("id_persona")
                                 aut = item_p.get("autorizado", True)
-                                if aut is False or aut == 0 or aut == "0" or aut == "false":
-                                    aut_val = False
-                                else:
-                                    aut_val = True
+                                aut_val = False if aut in (False, 0, "0", "false") else True
                                 mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
-                                if p_id:
+                                if p_id and str(p_id).isdigit():
                                     valores_ing.append((real_id, int(p_id), aut_val, mot))
+                                    resolved_personas_ids.append(int(p_id))
                             elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
                                 valores_ing.append((real_id, int(item_p), True, None))
+                                resolved_personas_ids.append(int(item_p))
 
                         if valores_ing:
                             cursor.executemany(
@@ -1025,92 +1638,155 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                 valores_ing,
                             )
 
-                # Sincronizar plantas_ids y tabla intermedia visita si vienen en el payload
-                if "plantas_ids" in campos:
-                    raw_plids = campos["plantas_ids"]
-                    if isinstance(raw_plids, list):
-                        campos["plantas_ids"] = ",".join(map(str, raw_plids))
-                        cursor.execute(
-                            "DELETE FROM visita WHERE id_solicitud = %s",
-                            (real_id,),
+                        if resolved_personas_ids:
+                            campos["personas_ids"] = ",".join(map(str, resolved_personas_ids))
+                        elif isinstance(raw_personas_ids, list):
+                            campos["personas_ids"] = ",".join(map(str, raw_personas_ids))
+                        elif isinstance(raw_personas_ids, str):
+                            campos["personas_ids"] = raw_personas_ids
+
+                # 2. Sincronizar plantas / visita
+                if raw_plantas_ids is not None or plantas is not None:
+                    pids = []
+                    if raw_plantas_ids is not None:
+                        if isinstance(raw_plantas_ids, list):
+                            pids = [int(x) for x in raw_plantas_ids if str(x).isdigit()]
+                        elif isinstance(raw_plantas_ids, str):
+                            pids = [int(x.strip()) for x in raw_plantas_ids.split(",") if x.strip().isdigit()]
+                    elif isinstance(plantas, list):
+                        for pl in plantas:
+                            if isinstance(pl, dict) and pl.get("id"):
+                                pids.append(int(pl["id"]))
+                            elif isinstance(pl, (int, str)) and str(pl).isdigit():
+                                pids.append(int(pl))
+
+                    if pids:
+                        cursor.execute("DELETE FROM visita WHERE id_solicitud = %s", (real_id,))
+                        cursor.executemany(
+                            "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)",
+                            [(real_id, p_id) for p_id in pids],
                         )
-                        if raw_plids:
-                            cursor.executemany(
-                                "INSERT INTO visita (id_solicitud, id_planta) VALUES (%s, %s)",
-                                [(real_id, p_id) for p_id in raw_plids],
-                            )
+                        campos["plantas_ids"] = ",".join(map(str, pids))
 
-                if campos:
-                    columnas = [f"{col} = %s" for col in campos.keys()]
-                    sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
-                    valores = list(campos.values()) + [real_id]
-                    cursor.execute(sql_update, valores)
+                # 3. Sincronizar vehículos / Veh_ingreso
+                if vehiculo is not None or raw_vehiculos_ids is not None:
+                    if estado_actual not in ("APROBADO", "RECHAZADO"):
+                        cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                        resolved_vids = []
+                        if vehiculo and isinstance(vehiculo, list):
+                            for v in vehiculo:
+                                id_v = None
+                                lic_doc = 0
+                                aut_v = True
+                                mot_v = None
 
-                if vehiculo is not None:
-                    cursor.execute(
-                        "DELETE FROM Veh_ingreso WHERE id_solicitud = %s",
-                        (real_id,),
-                    )
-                    if vehiculo:
-                        for v in vehiculo:
-                            id_v = None
-                            lic_doc = (
-                                int(v.get("licencia_doc") or 0)
-                                if isinstance(v, dict)
-                                else 0
-                            )
+                                if isinstance(v, (int, str)) and str(v).isdigit():
+                                    id_v = int(v)
+                                elif isinstance(v, dict):
+                                    lic_doc = v.get("licencia_doc") or 0
+                                    aut = v.get("autorizado", True)
+                                    aut_v = False if aut in (False, 0, "0", "false") else True
+                                    mot_v = v.get("motivo") or v.get("motivo_rechazo") or None
 
-                            if isinstance(v, int):
-                                id_v = v
-                            elif isinstance(v, dict):
-                                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
-                                    id_v = int(v["id_vehiculo"])
-                                elif v.get("placa"):
-                                    placa_norm = v.get("placa")
-                                    tipo_norm = v.get("tipo", "VEHICULO")
+                                    if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
+                                        id_v = int(v["id_vehiculo"])
+                                    elif v.get("id") and str(v.get("id")).isdigit():
+                                        id_v = int(v["id"])
+                                    elif v.get("placa"):
+                                        placa_norm = str(v.get("placa")).strip().upper()
+                                        tipo_norm = str(v.get("tipo", "Camioneta")).strip()
+                                        cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
+                                        vehi_existente = cursor.fetchone()
+                                        if vehi_existente:
+                                            id_v = vehi_existente["id"]
+                                        else:
+                                            cursor.execute(
+                                                "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
+                                                (tipo_norm, placa_norm),
+                                            )
+                                            id_v = cursor.lastrowid
+
+                                if id_v:
+                                    resolved_vids.append(id_v)
                                     cursor.execute(
-                                        "SELECT id FROM vehiculos WHERE placa = %s",
-                                        (placa_norm,),
+                                        "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo) VALUES (%s, %s, %s, %s, %s)",
+                                        (real_id, id_v, lic_doc, aut_v, mot_v)
                                     )
-                                    vehi_existente = cursor.fetchone()
-                                    if vehi_existente:
-                                        id_v = vehi_existente["id"]
-                                    else:
-                                        cursor.execute(
-                                            "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
-                                            (tipo_norm, placa_norm),
-                                        )
-                                        id_v = cursor.lastrowid
 
-                            if id_v:
-                                sql_vehingreso = """
-                                    INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc)
-                                    VALUES (%s, %s, %s)
-                                """
-                                cursor.execute(
-                                    sql_vehingreso, (real_id, id_v, lic_doc)
-                                )
+                        if resolved_vids:
+                            campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
+                        elif raw_vehiculos_ids:
+                            if isinstance(raw_vehiculos_ids, list):
+                                campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
+                            elif isinstance(raw_vehiculos_ids, str):
+                                campos["vehiculos_ids"] = raw_vehiculos_ids
 
+                # 4. Sincronizar equipos de cómputo
                 if eq_computo is not None:
-                    cursor.execute(
-                        "DELETE FROM equipos_solicitud WHERE solicitud_id = %s",
-                        (real_id,),
-                    )
-                    if eq_computo:
-                        sql_eq = """
-                            INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie)
-                            VALUES (%s, %s, %s, %s)
-                        """
-                        valores_eq = [
-                            (
-                                real_id,
-                                eq.get("marca", ""),
-                                eq.get("modelo", ""),
-                                eq.get("serie", ""),
+                    cursor.execute("DELETE FROM equipos_solicitud WHERE solicitud_id = %s", (real_id,))
+                    if isinstance(eq_computo, list) and eq_computo:
+                        valores_eq = []
+                        for eq in eq_computo:
+                            if isinstance(eq, dict):
+                                m = str(eq.get("marca") or "").strip().upper()
+                                mod = str(eq.get("modelo") or "").strip().upper()
+                                s = str(eq.get("serie") or "").strip().upper()
+                                if m or mod or s:
+                                    valores_eq.append((real_id, m, mod, s))
+                        if valores_eq:
+                            cursor.executemany(
+                                "INSERT INTO equipos_solicitud (solicitud_id, marca, modelo, serie) VALUES (%s, %s, %s, %s)",
+                                valores_eq
                             )
-                            for eq in eq_computo
-                        ]
-                        cursor.executemany(sql_eq, valores_eq)
+
+                # 5. Normalizar FKs de empresa y contratista para solicitudes
+                if "empresa_origen" in campos:
+                    raw_eo = campos["empresa_origen"]
+                    if str(raw_eo).isdigit():
+                        campos["empresa_origen"] = int(raw_eo)
+                    elif raw_eo:
+                        cursor.execute("SELECT id FROM empresa WHERE nombre_empresa = %s LIMIT 1", (str(raw_eo),))
+                        row_e = cursor.fetchone()
+                        if row_e:
+                            campos["empresa_origen"] = int(row_e["id"])
+
+                if "empresa_contratista" in campos:
+                    raw_ec = campos["empresa_contratista"]
+                    if str(raw_ec).isdigit():
+                        campos["empresa_contratista"] = int(raw_ec)
+                    elif raw_ec:
+                        cursor.execute("SELECT id FROM emp_contratista WHERE nombre = %s LIMIT 1", (str(raw_ec),))
+                        row_c = cursor.fetchone()
+                        if row_c:
+                            campos["empresa_contratista"] = int(row_c["id"])
+
+                if "diligenciado_por" in campos:
+                    raw_dp = campos["diligenciado_por"]
+                    if str(raw_dp).isdigit():
+                        campos["diligenciado_por"] = int(raw_dp)
+
+                # 6. Filtrar solo columnas válidas escalares para la tabla solicitudes
+                valid_cols = {
+                    "codigo", "empresa_origen", "diligenciado_por", "nivel_de_riesgo",
+                    "tipo_personal", "empresa_contratista", "plantas_ids", "personas_ids",
+                    "vehiculos_ids", "fecha_inicio", "fecha_fin", "actividad",
+                    "observaciones", "estado", "is_active",
+                    "token_edicion", "token_edicion_usado", "motivo_devolucion"
+                }
+
+                campos_filtrados = {}
+                for k, v in campos.items():
+                    if k in valid_cols:
+                        if isinstance(v, list):
+                            campos_filtrados[k] = ",".join(map(str, v))
+                        else:
+                            campos_filtrados[k] = v
+
+                if campos_filtrados:
+                    columnas = [f"{col} = %s" for col in campos_filtrados.keys()]
+                    sql_update = f"UPDATE solicitudes SET {', '.join(columnas)} WHERE id = %s"
+                    valores = list(campos_filtrados.values()) + [real_id]
+                    cursor.execute(sql_update, valores)
 
                 conexion.commit()
 

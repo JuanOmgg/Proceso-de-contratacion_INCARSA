@@ -3,14 +3,13 @@
  * Componente Alpine.js del módulo de Procesamiento (trazabilidad).
  * Muestra una tarjeta por solicitud con un timeline de progreso simple:
  * Enviado → En revisión → Por aprobar → Aprobado/Rechazado.
- * Depende de mockData.js (debe cargarse antes que este archivo).
  */
 
 function procesamientoBoard() {
   return {
     search: "",
     filtroEstado: "TODOS",
-    filtroActivo: "activos", // "activos" | "inactivos" | "todos"
+    filtroActivo: "todos", // "todos" | "activos" | "inactivos"
     userRole: "",
 
     // Roles autorizados para filtrar entre activos, inactivos o ver todos
@@ -19,13 +18,16 @@ function procesamientoBoard() {
       "ADMINISTRADOR",
       "SUPERADMIN",
       "DIRECTOR",
-      "GERENTE"
+      "GERENTE",
+      "SST",
+      "GESCO",
+      "SCR",
+      "GESTION DOCUMENTAL"
     ],
 
     get puedeVerInactivos() {
-      if (!this.userRole) return true; // Por defecto en desarrollo/sin sesión
-      const rol = this.userRole.trim().toUpperCase();
-      return this.rolesPermitidosInactivos.some(r => rol === r || rol.includes(r));
+      // Todos los roles con acceso al módulo pueden visualizar y alternar entre activos, inactivos y todos
+      return true;
     },
 
     estadosFiltro: [
@@ -40,6 +42,7 @@ function procesamientoBoard() {
   estadoEstilos(estado){
     const est = (estado || '').trim().toUpperCase();
     if (est === 'ENVIADO') return 'status-enviado';
+    if (est.includes('DEVUELTO') || est.includes('CORRECCI')) return 'status-devuelto';
     if (est.includes('REVISI')) return 'status-revision';
     if (est.includes('APROBAR') || est === 'POR APROBAR') return 'status-aprobar';
     if (est === 'APROBADO') return 'status-aprobado';
@@ -251,11 +254,21 @@ function procesamientoBoard() {
       return rows;
     },
 
+    usuarioSesion: null,
+    userId: null,
+
     async init(){
       try {
-        const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-        if (sesion && sesion.rol) {
-          this.userRole = sesion.rol;
+        let sesion = null;
+        if (typeof getAuthSession === "function") {
+          sesion = getAuthSession();
+        } else {
+          sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        }
+        if (sesion) {
+          this.usuarioSesion = sesion;
+          this.userId = sesion.id;
+          this.userRole = sesion.rol || "";
         }
       } catch (e) {
         console.warn("No se pudo leer la sesión:", e);
@@ -269,17 +282,94 @@ function procesamientoBoard() {
       await this.getSolicitudes();
     },
 
+    getEstadoRevisionUsuario(solicitud) {
+      if (!solicitud) return 'pendiente';
+
+      const revs = Array.isArray(solicitud.revisiones) ? solicitud.revisiones : [];
+      const sesion = this.usuarioSesion || {};
+      const userId = Number(this.userId || sesion.id || 0);
+      const userRol = String(this.userRole || sesion.rol || "").trim().toUpperCase();
+      const userPlantasIds = Array.isArray(sesion.plantas_ids) ? sesion.plantas_ids.map(Number) : [];
+
+      // 1. Verificación directa por ID del usuario que emitió el dictamen
+      if (userId && revs.length > 0) {
+        const revUsuario = revs.find(r => Number(r.id_usuario) === userId);
+        if (revUsuario) {
+          return revUsuario.decision === 'RECHAZADO' ? 'rechazado' : 'aprobado';
+        }
+      }
+
+      // 2. Verificación por Rol técnico calificador (SST, GESCO, SCR):
+      if (['SST', 'GESCO', 'SCR'].includes(userRol) && revs.length > 0) {
+        // Filtrar revisiones registradas por el rol del usuario
+        const revsRol = revs.filter(r => String(r.rol || "").trim().toUpperCase() === userRol);
+        if (revsRol.length > 0) {
+          // Si el usuario tiene plantas asignadas (SST / GESCO), verificar si su planta fue calificada
+          if (userPlantasIds.length > 0) {
+            const revPlanta = revsRol.find(r => !r.id_planta || userPlantasIds.includes(Number(r.id_planta)));
+            if (revPlanta) {
+              return revPlanta.decision === 'RECHAZADO' ? 'rechazado' : 'aprobado';
+            }
+          } else {
+            // Si es SCR o no tiene filtro de plantas específico
+            const dictamenRol = revsRol[0];
+            return dictamenRol.decision === 'RECHAZADO' ? 'rechazado' : 'aprobado';
+          }
+        }
+      }
+
+      // 3. Si el usuario actual no ha calificado la solicitud, permanece estrictamente en "Pendiente"
+      return 'pendiente';
+    },
+
+    getBotonRevisionTexto(solicitud) {
+      const estado = this.getEstadoRevisionUsuario(solicitud);
+      if (estado === 'aprobado') return 'Visto Bueno Otorgado';
+      if (estado === 'rechazado') return 'Dictamen: Rechazado';
+      return 'Revisar Expediente';
+    },
+
+    getBotonRevisionClase(solicitud) {
+      const estado = this.getEstadoRevisionUsuario(solicitud);
+      if (estado === 'aprobado') {
+        return 'btn-visto-bueno-listo';
+      }
+      if (estado === 'rechazado') {
+        return 'btn-visto-bueno-rechazado';
+      }
+      if (estado === 'parcial') {
+        return 'btn-visto-bueno-parcial';
+      }
+      return 'btn-signal';
+    },
+
+    getBotonRevisionIcono(solicitud) {
+      const estado = this.getEstadoRevisionUsuario(solicitud);
+      if (estado === 'aprobado') return 'fa-solid fa-circle-check';
+      if (estado === 'rechazado') return 'fa-solid fa-circle-xmark';
+      if (estado === 'parcial') return 'fa-solid fa-clock-rotate-left';
+      return 'fa-solid fa-clipboard-check';
+    },
+
     async getSolicitudes(){
       try {
-        const response = await fetch(`${API.solicitudes}/getall`);
+        let sesion = null;
+        try {
+          sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        } catch (e) {}
+
+        let url = `${API.solicitudes}/getall`;
+        if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+          url += `?id_usuario=${sesion.id}`;
+        }
+
+        const response = await fetch(url);
         if(!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         this.solicitudes = Array.isArray(data) ? data : (data.datos || data.data || []);
       } catch (error) {
-        console.warn("Error en el getSolicitudes/procesamiento.js:", error);
-        if (typeof MOCK_SOLICITUDES !== 'undefined') {
-          this.solicitudes = MOCK_SOLICITUDES;
-        }
+        console.warn("Aviso al consultar solicitudes en procesamiento:", error);
+        if (!this.solicitudes) this.solicitudes = [];
       }
     },
 

@@ -4,21 +4,28 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class VehiculoSchema(BaseModel):
+    id: Optional[Union[int, str]] = None
     id_vehiculo: Optional[Union[int, str]] = None
     tipo: Optional[str] = None
     placa: Optional[str] = None
     conductor: Optional[str] = None
     licencia_doc: Optional[Union[str, int]] = None
     documentos: Optional[List[Any]] = None
+    autorizado: Optional[Union[bool, int, str]] = True
+    motivo: Optional[str] = None
+    motivo_rechazo: Optional[str] = None
 
 
 class EquipoComputoSchema(BaseModel):
+    model_config = {"extra": "ignore"}
+    id: Optional[Union[int, str]] = None
     marca: Optional[str] = "Genérica"
     modelo: Optional[str] = "General"
     serie: Optional[str] = "S/N"
 
 
 class BaseSolicitudSchema(BaseModel):
+    model_config = {"extra": "ignore"}
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
 
@@ -50,6 +57,7 @@ class BaseSolicitudSchema(BaseModel):
 
 class SolicitudInput(BaseSolicitudSchema):
     codigo: Optional[str] = None
+    codigo_radicado: Optional[str] = None
     empresa_origen: Union[int, str]
     diligenciado_por: Optional[Union[int, str]] = 1
     nivel_de_riesgo: Optional[str] = "Bajo"
@@ -77,18 +85,22 @@ class SolicitudInput(BaseSolicitudSchema):
     eq_computo: Optional[List[Union[Dict[str, Any], EquipoComputoSchema]]] = Field(
         default_factory=list
     )
+    equipos: Optional[List[Union[Dict[str, Any], EquipoComputoSchema]]] = None
+    computos: Optional[List[Union[Dict[str, Any], EquipoComputoSchema]]] = None
 
 
 class UPDATE_Schema_Optionals(BaseSolicitudSchema):
+    model_config = {"extra": "ignore"}
     codigo: Optional[str] = None
-    empresa_origen: Optional[int] = None
-    diligenciado_por: Optional[int] = None
+    codigo_radicado: Optional[str] = None
+    empresa_origen: Optional[Union[int, str]] = None
+    diligenciado_por: Optional[Union[int, str]] = None
     nivel_de_riesgo: Optional[str] = None
     tipo_personal: Optional[str] = None
-    empresa_contratista: Optional[int] = None
-    plantas_ids: Optional[list[int]] = None
-    personas_ids: Optional[list[int]] = None
-    vehiculos_ids: Optional[list[int]] = None
+    empresa_contratista: Optional[Union[int, str]] = None
+    plantas_ids: Optional[List[Union[int, str]]] = None
+    personas_ids: Optional[List[Union[int, str]]] = None
+    vehiculos_ids: Optional[List[Union[int, str]]] = None
     fecha_inicio: Optional[Union[str, date]] = None
     fecha_fin: Optional[Union[str, date]] = None
     actividad: Optional[str] = None
@@ -100,9 +112,12 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
     personas: Optional[List[Any]] = None
     ingresantes: Optional[List[Any]] = None
 
-    vehiculo: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
-    vehiculos: Optional[List[Union[VehiculoSchema, Dict[str, Any], int]]] = None
-    eq_computo: Optional[List[EquipoComputoSchema]] = None
+    vehiculo: Optional[List[Union[VehiculoSchema, Dict[str, Any], int, str]]] = None
+    vehiculos: Optional[List[Union[VehiculoSchema, Dict[str, Any], int, str]]] = None
+    eq_computo: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
+    equipos: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
+    computos: Optional[List[Union[EquipoComputoSchema, Dict[str, Any]]]] = None
+    token_edicion: Optional[str] = None
 
 
 class DictamenInput(BaseModel):
@@ -110,6 +125,7 @@ class DictamenInput(BaseModel):
     rol: str
     decision: str
     motivo_rechazo: Optional[str] = None
+    motivo_devolucion: Optional[str] = None
     observacion: Optional[str] = None
     id_usuario: Optional[int] = None
     nombre_revisor: Optional[str] = None

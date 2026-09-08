@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from src.schemas.planta_schema import PlantaInput, UpdatePlantaInput
 from src.services.planta import CREATE_planta
 from src.loaders.planta_loader import (
@@ -8,11 +8,12 @@ from src.loaders.planta_loader import (
     GET_ALL_planta_db
     )
 from src.transformers.planta_transformer import TRANSFORM_PLANTA
+from src.utils.security import get_current_user, require_permission
 
 router = APIRouter(prefix="/planta", tags=["Planta"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def CREATE_planta_rt(payload: PlantaInput):
+def CREATE_planta_rt(payload: PlantaInput, current_user: dict = Depends(require_permission("plantas", "crear"))):
 
     resultado = CREATE_planta(payload)
 
@@ -28,7 +29,7 @@ def CREATE_planta_rt(payload: PlantaInput):
 @router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_planta_rt():
+def GET_ALL_planta_rt(current_user: dict = Depends(get_current_user)):
 
     allPlantas = GET_ALL_planta_db()
 
@@ -42,7 +43,7 @@ def GET_ALL_planta_rt():
 
 
 @router.get("/{id_planta}", status_code=status.HTTP_200_OK)
-def GET_planta_rt(id_planta: int):
+def GET_planta_rt(id_planta: int, current_user: dict = Depends(get_current_user)):
 
     print(f"🔍 [GET] Buscando planta/zona con ID #{id_planta} en la base de datos")
     resultado = GET_planta_db(id_planta)
@@ -57,7 +58,7 @@ def GET_planta_rt(id_planta: int):
     return resultado
 
 @router.patch("/{id_planta}", status_code=status.HTTP_200_OK)
-def UPDATE_planta_rt(id_planta: int, payload: UpdatePlantaInput):
+def UPDATE_planta_rt(id_planta: int, payload: UpdatePlantaInput, current_user: dict = Depends(require_permission("plantas", "editar"))):
 
     print(f"🔄 [PATCH] Actualizando planta con ID #{id_planta} en la base de datos...")
     data_raw = payload.model_dump(exclude_unset=True)
@@ -84,7 +85,7 @@ def UPDATE_planta_rt(id_planta: int, payload: UpdatePlantaInput):
     return resultado
 
 @router.delete("/{id_planta}")
-def DELETE_planta_rt(id_planta: int):
+def DELETE_planta_rt(id_planta: int, current_user: dict = Depends(require_permission("plantas", "eliminar"))):
 
     print(f"🗑️ [DELETE] Eliminando planta #{id_planta} de la base de datos...")
     resultado = DELETE_planta_db(id_planta)

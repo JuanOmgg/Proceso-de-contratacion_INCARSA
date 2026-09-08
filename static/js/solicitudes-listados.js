@@ -104,11 +104,70 @@ function normalizarSolicitud(s) {
     let listaVehiculos = [];
     if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
         listaVehiculos = s.vehiculos.split('###').map(v => {
-            const [id, placa, marca, modelo, serie] = v.split('|||');
-            return { id, placa, marca, modelo, serie };
+            const partes = v.split('|||');
+            const id = partes[0];
+            const tipo = partes[1] || "Vehículo";
+            const placa = partes[2] || "—";
+            const licencia_doc = partes[3] || "";
+            const aut = partes[4];
+            const mot = partes[5] || "";
+            return {
+                id,
+                tipo,
+                placa,
+                licencia_doc,
+                licencia: licencia_doc,
+                autorizado: aut !== '0' && aut !== 0 && aut !== false && aut !== 'false',
+                motivo: mot
+            };
         });
-    } else if (Array.isArray(s.vehiculos)) {
-        listaVehiculos = s.vehiculos;
+    } else if (Array.isArray(s.vehiculos) || Array.isArray(s.vehiculo)) {
+        const rawV = Array.isArray(s.vehiculos) ? s.vehiculos : s.vehiculo;
+        listaVehiculos = rawV.map(v => ({
+            id: v.id || v.id_vehiculo,
+            tipo: v.tipo || "Vehículo",
+            placa: v.placa || "—",
+            conductor: v.conductor || "",
+            licencia_doc: v.licencia_doc || v.licencia || "",
+            licencia: v.licencia_doc || v.licencia || "",
+            autorizado: v.autorizado !== '0' && v.autorizado !== 0 && v.autorizado !== false && v.autorizado !== 'false',
+            motivo: v.motivo || v.motivo_rechazo || ""
+        }));
+    }
+
+    try {
+        const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
+        const localVeh = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
+        if (Array.isArray(localVeh) && localVeh.length > 0) {
+            listaVehiculos = listaVehiculos.map(lv => {
+                const match = localVeh.find(v => String(v.id) === String(lv.id) || (v.placa && v.placa === lv.placa));
+                if (match) {
+                    return {
+                        ...lv,
+                        autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
+                        motivo: match.motivo_rechazo || match.motivo || lv.motivo || ""
+                    };
+                }
+                return lv;
+            });
+        }
+    } catch (e) {}
+
+    let listaRevisiones = [];
+    if (Array.isArray(s.revisiones)) {
+        listaRevisiones = s.revisiones;
+    } else {
+        try {
+            const storageKeyRev = `incarsa_revisiones_${s.id}`;
+            const guardado = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+            if (guardado) {
+                if (Array.isArray(guardado.historial)) {
+                    listaRevisiones = guardado.historial;
+                } else if (Array.isArray(guardado)) {
+                    listaRevisiones = guardado;
+                }
+            }
+        } catch (e) {}
     }
 
     let listaPersonas = [];
@@ -175,7 +234,7 @@ function normalizarSolicitud(s) {
 
     const nombreEmpresaOrigen = s.nombre_empresa || s.empresa_origen || s.empresaOrigen || "INCARSA";
     const nombreContratista = s.nombre_emContratista || s.empresa_contratista || s.contratista || "—";
-    const diligenciadorNombre = s.diligenciador || s.diligenciado_por || s.diligenciadoPor || "Administrador";
+    const diligenciadorNombre = s.diligenciador || (typeof s.diligenciado_por === "string" ? s.diligenciado_por : null) || s.diligenciadoPor || "Administrador";
 
     return {
         id: s.id,
@@ -203,7 +262,8 @@ function normalizarSolicitud(s) {
         is_active: s.is_active,
         vehiculos: listaVehiculos,
         computos: listaComputos,
-        personas: listaPersonas
+        personas: listaPersonas,
+        revisiones: listaRevisiones
     };
 }
 
@@ -237,7 +297,7 @@ function solicitudesCards() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 3 || Number(sesion.id_rol) === 4 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -292,7 +352,40 @@ function solicitudesTable() {
         showDeleteModal: false,
         solicitudAEliminar: null,
 
+        // Reactividad de permisos RBAC
+        permisosVersion: 0,
+        puedeAccion(mod, acc) {
+            const _v = this.permisosVersion;
+            return window.puedeAccion(mod, acc);
+        },
+        puedeModulo(mod) {
+            const _v = this.permisosVersion;
+            return window.puedeModulo(mod);
+        },
+        puedeEditarSolicitud(s) {
+            const _v = this.permisosVersion;
+            if (typeof window.puedeEditarSolicitud === "function") {
+                return window.puedeEditarSolicitud(s);
+            }
+            if (!s) return false;
+            const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+            const miRol = (sesion?.rol || this.activeRole || "").trim().toUpperCase();
+            if (miRol === "SUPERADMIN") return true;
+
+            if (!this.puedeAccion("solicitudes", "editar")) return false;
+            const est = String(s.estado || "").trim().toUpperCase();
+            return est === "ENVIADO";
+        },
+
         async init() {
+            window.addEventListener("permisos-actualizados", () => {
+                this.permisosVersion++;
+            });
+
+            // Recarga automática en caliente ante dictámenes o radicaciones
+            window.addEventListener("solicitudes-recargar", () => this.getSolicitudes());
+            window.addEventListener("solicitud-actualizada-en-caliente", () => this.getSolicitudes());
+
             await Promise.allSettled([
                 this.getEmpresas(),
                 this.getSolicitudes()
@@ -316,7 +409,7 @@ function solicitudesTable() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 3 || Number(sesion.id_rol) === 4 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -410,9 +503,12 @@ function solicitudesTable() {
             const sesion = this.sesionUsuario;
             if (!sesion) return false;
             const rolId = Number(sesion.id_rol);
-            if (rolId === 3 || rolId === 4) return true;
-            const rolTexto = String(sesion.rol || "").toUpperCase();
-            return rolTexto.includes("SST") || rolTexto.includes("GESCO");
+            // ÚNICAMENTE SST (ID 5) y GESCO (ID 6) filtran por plantas
+            if (rolId === 5 || rolId === 6) return true;
+            // Otros roles conocidos (1=ADMIN, 2=SUPERADMIN, 3=VIGILANTE, 4=GESTION DOCUMENTAL, 7=SCR)
+            if (!isNaN(rolId) && rolId > 0 && rolId !== 5 && rolId !== 6) return false;
+            const rolTexto = String(sesion.rol || "").trim().toUpperCase();
+            return rolTexto === "SST" || rolTexto === "GESCO";
         },
 
         get plantasUsuario() {
@@ -539,12 +635,17 @@ function solicitudesTable() {
                 if (res.ok) {
                     const dataLive = await res.json();
                     if (dataLive && (dataLive.id || dataLive.codigo)) {
-                        this.selected = normalizarSolicitud(dataLive);
+                        this.selected = normalizarSolicitud({
+                            ...solicitud,
+                            ...dataLive
+                        });
                         const idx = this.solicitudes.findIndex(s => String(s.id) === String(solicitud.id));
                         if (idx > -1) {
                             this.solicitudes[idx] = this.selected;
                             this.notificarCambio();
                         }
+                        window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+                        localStorage.setItem("incarsa_notificaciones_reload", Date.now().toString());
                     }
                 }
             } catch (err) {
@@ -560,9 +661,10 @@ function solicitudesTable() {
         estadoClass(estado) {
             const e = (estado || "").toUpperCase();
             if (e === "ENVIADO") return "status-enviado";
+            if (e.includes("DEVUELTO") || e.includes("CORRECCI")) return "status-devuelto";
             if (e.includes("REVISION")) return "status-revision";
             if (e === "POR APROBAR") return "status-aprobar";
-            if (e === "APROBADO") return "status-aprobado";
+            if (e === "APROBADO" || e === "PRE-APROBADO") return "status-aprobado";
             if (e === "RECHAZADO") return "status-rechazado";
             return "status-enviado";
         },

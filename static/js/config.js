@@ -110,6 +110,11 @@ function cerrarSesionUsuario() {
             window.location.replace("/login?expired=1");
         }
 
+        // Si el backend responde 403 Forbidden en peticiones autenticadas
+        if (response.status === 403 && esApiInterna) {
+            console.warn("⛔ [AUTH] Petición no autorizada o recurso denegado (403):", resource);
+        }
+
         return response;
     };
 })();
@@ -135,192 +140,19 @@ function formatearTiempoRelativo(fechaStr) {
     }
 }
 
-// ============================================================================
-// Shell global de navegación y sesión de usuario para todas las vistas
-// ============================================================================
-function appShellStub() {
-    let sesion = getAuthSession();
-
-    const nombreUsuario = sesion ? (sesion.nombre || sesion.nombres || `${sesion.nombres || ''} ${sesion.apellidos || ''}`.trim() || "Usuario") : "Administrador Sistema";
-    const iniciales = nombreUsuario.split(" ").filter(Boolean).map(p => p[0]).join("").substring(0, 2).toUpperCase() || "AD";
-    const userId = sesion?.id || 1;
-    const roleId = sesion?.id_rol || 2;
-
-    return {
-        sidebarCollapsed: false,
-        sidebarOpenMobile: false,
-        notificationsOpen: false,
-        userId: userId,
-        roleId: roleId,
-        activeRole: sesion?.rol || "ADMINISTRADOR",
-        openModules: { formularios: false, tablas: true, procesamiento: false },
-        notifications: [],
-        unreadNotificationsCount: 0,
-        userDisplayName: nombreUsuario,
-        userInitials: iniciales,
-        darkMode: localStorage.getItem('darkMode') === 'true',
-
-        formatearTiempoRelativo: formatearTiempoRelativo,
-
-        init() {
-            // Aplicar el modo oscuro guardado al cargar la página
-            document.documentElement.classList.toggle('dark', this.darkMode);
-            this.cargarNotificaciones();
-            // Polling periódico cada 35 segundos
-            setInterval(() => this.cargarNotificaciones(), 35000);
-        },
-
-        async cargarNotificaciones() {
-            try {
-                const params = new URLSearchParams();
-                if (this.userId) params.append("id_usuario", this.userId);
-                if (this.roleId) params.append("id_rol", this.roleId);
-                const res = await fetch(`${API.notificaciones}?${params.toString()}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    this.notifications = data.notificaciones || [];
-                    this.unreadNotificationsCount = data.no_leidas || 0;
-                }
-            } catch (err) {
-                console.warn("Aviso al cargar notificaciones:", err);
-            }
-        },
-
-        async marcarNotificacionLeida(n) {
-            if (!n.leido) {
-                try {
-                    await fetch(`${API.notificaciones}/${n.id}/leer`, { method: "PATCH" });
-                    n.leido = true;
-                    if (this.unreadNotificationsCount > 0) {
-                        this.unreadNotificationsCount--;
-                    }
-                } catch (e) {
-                    console.warn("Aviso al marcar notificación como leída:", e);
-                }
-            }
-            if (n.enlace) {
-                window.location.href = n.enlace;
-            }
-        },
-
-        async marcarTodasNotificacionesLeidas() {
-            try {
-                await fetch(`${API.notificaciones}/marcar-todas-leidas`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id_usuario: this.userId, id_rol: this.roleId })
-                });
-                this.notifications.forEach(n => n.leido = true);
-                this.unreadNotificationsCount = 0;
-            } catch (e) {
-                console.warn("Aviso al marcar todas las notificaciones:", e);
-            }
-        },
-
-        toggleDarkMode() {
-            this.darkMode = !this.darkMode;
-            document.documentElement.classList.toggle('dark', this.darkMode);
-            localStorage.setItem('darkMode', this.darkMode);
-        },
-
-        toggleSidebar() {
-            this.sidebarCollapsed = !this.sidebarCollapsed;
-        },
-
-        toggleMobileSidebar() {
-            this.sidebarOpenMobile = !this.sidebarOpenMobile;
-        },
-
-        closeMobileSidebar() {
-            this.sidebarOpenMobile = false;
-        },
-
-        cerrarSesion() {
-            cerrarSesionUsuario();
+function formatearTextoEnlace(url) {
+    if (!url) return '';
+    const u = String(url).trim();
+    try {
+        if (u.startsWith('http://') || u.startsWith('https://')) {
+            const parsed = new URL(u);
+            const domain = parsed.hostname.replace(/^www\./, '');
+            const path = parsed.pathname !== '/' ? parsed.pathname : '';
+            return domain + (path.length > 25 ? path.substring(0, 20) + '…' : path);
         }
-    };
+    } catch (e) {}
+    return u;
 }
+window.formatearTextoEnlace = formatearTextoEnlace;
 
-/* =========================================================
-   Alerta — mini librería de alertas propia (sin dependencias)
-   API: Alerta.fire({ type, title, text, confirmText, cancelText, showCancel })
-   Devuelve una Promise<{ isConfirmed: boolean }>
-   ========================================================= */
-const Alerta = (() => {
 
-  const ICONS = {
-    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
-    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5L13.7 3.9a1 1 0 0 0-1.7 0Z"/></svg>',
-    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9.5"/></svg>'
-  };
-
-  function fire({
-    type = 'info',
-    title = '',
-    text = '',
-    confirmText = 'Aceptar',
-    cancelText = 'Cancelar',
-    showCancel = false
-  } = {}) {
-    return new Promise((resolve) => {
-      const overlay = document.createElement('div');
-      overlay.className = 'al-overlay';
-
-      overlay.innerHTML = `
-        <div class="al-card ${type}">
-          <div class="al-stamp">${ICONS[type] || ICONS.info}</div>
-          <h2 class="al-title"></h2>
-          <p class="al-text"></p>
-          <div class="al-actions">
-            ${showCancel ? `<button class="al-btn al-btn-cancel">${cancelText}</button>` : ''}
-            <button class="al-btn al-btn-confirm">${confirmText}</button>
-          </div>
-          <div class="al-serrated"></div>
-        </div>
-      `;
-
-      // set text content safely (avoids HTML injection from dynamic strings)
-      overlay.querySelector('.al-title').textContent = title;
-      overlay.querySelector('.al-text').textContent = text;
-
-      document.body.appendChild(overlay);
-      requestAnimationFrame(() => overlay.classList.add('show'));
-
-      function close(result) {
-        overlay.classList.remove('show');
-        setTimeout(() => overlay.remove(), 180);
-        resolve(result);
-      }
-
-      overlay.querySelector('.al-btn-confirm').addEventListener('click', () => close({ isConfirmed: true }));
-      const cancelBtn = overlay.querySelector('.al-btn-cancel');
-      if (cancelBtn) cancelBtn.addEventListener('click', () => close({ isConfirmed: false }));
-
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) close({ isConfirmed: false });
-      });
-      document.addEventListener('keydown', function esc(e) {
-        if (e.key === 'Escape') { close({ isConfirmed: false }); document.removeEventListener('keydown', esc); }
-      });
-    });
-  }
-
-  return { fire };
-})();
-
-async function confirmDemo() {
-  const { isConfirmed } = await Alerta.fire({
-    type: 'warning',
-    title: '¿Eliminar el archivo?',
-    text: 'Esta acción es permanente y no se puede deshacer.',
-    showCancel: true,
-    confirmText: 'Sí, eliminar',
-    cancelText: 'Cancelar'
-  });
-  Alerta.fire({
-    type: isConfirmed ? 'success' : 'info',
-    title: isConfirmed ? 'Eliminado' : 'Cancelado',
-    text: isConfirmed ? 'El archivo fue eliminado.' : 'No se realizó ningún cambio.'
-  });
-}

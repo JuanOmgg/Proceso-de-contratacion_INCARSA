@@ -144,11 +144,17 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                 antecedente = cursor.fetchone()
 
                 if not antecedente:
-                    # Crear el registro inicial con fecha_consulta = +1 año
-                    cursor.execute("""
-                        INSERT INTO antecedentes (id_persona, ultima_revision, fecha_consulta, fecha_creacion)
-                        VALUES (%s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW())
-                    """, (id_persona,))
+                    # Crear el registro inicial (solo si actualizar_revision=True se registra revisión activa)
+                    if actualizar_revision:
+                        cursor.execute("""
+                            INSERT INTO antecedentes (id_persona, ultima_revision, fecha_consulta, fecha_creacion)
+                            VALUES (%s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW())
+                        """, (id_persona,))
+                    else:
+                        cursor.execute("""
+                            INSERT INTO antecedentes (id_persona, ultima_revision, fecha_consulta, fecha_creacion)
+                            VALUES (%s, NULL, NULL, NOW())
+                        """, (id_persona,))
                     conexion.commit()
                     antecedente_id = cursor.lastrowid
                     cursor.execute("SELECT * FROM antecedentes WHERE id = %s", (antecedente_id,))
@@ -170,9 +176,11 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                 # 3. Obtener el historial completo consolidado de solicitudes
                 historial = OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona, antecedente_id)
 
-                # 4. Determinar la última empresa solicitante y auto-actualizar id_empresa
+                # 4. Determinar la última empresa y contratista desde el historial
+                nombre_contratista = None
                 if historial:
                     ultima_solicitud = historial[0]
+                    nombre_contratista = ultima_solicitud.get("nombre_contratista")
                     ultima_empresa_id = ultima_solicitud.get("id_empresa")
                     if ultima_empresa_id and antecedente.get("id_empresa") != ultima_empresa_id:
                         cursor.execute("""
@@ -181,7 +189,7 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                         conexion.commit()
                         antecedente["id_empresa"] = ultima_empresa_id
 
-                # 5. Obtener nombre de la última empresa si existe
+                # 5. Obtener nombre de la última empresa solicitante si existe
                 nombre_empresa = None
                 if antecedente.get("id_empresa"):
                     cursor.execute("SELECT nombre_empresa FROM empresa WHERE id = %s", (antecedente["id_empresa"],))
@@ -200,7 +208,10 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                     "anotaciones": antecedente.get("anotaciones"),
                     "id_empresa": antecedente.get("id_empresa"),
                     "nombre_empresa": nombre_empresa or "Sin registro de empresa",
-                    "ultima_revision": FORMATEAR_FECHA_STR(antecedente.get("ultima_revision")),
+                    "nombre_contratista": nombre_contratista or "Sin contratista registrado",
+                    "ultima_empresa_contratista": nombre_contratista or "Sin contratista registrado",
+                    "ultima_empresa_solicitante": nombre_contratista or "Sin contratista registrado",
+                    "ultima_revision": FORMATEAR_FECHA_STR(antecedente.get("ultima_revision")) if antecedente.get("fecha_consulta") else None,
                     "fecha_consulta": FORMATEAR_FECHA_STR(antecedente.get("fecha_consulta")),
                     "fecha_creacion": FORMATEAR_FECHA_STR(antecedente.get("fecha_creacion")),
                     "total_solicitudes": len(historial),
@@ -285,8 +296,8 @@ def ADD_historial_solicitud_db(id_persona: int, id_solicitud: int, id_empresa: i
                 ant = cursor.fetchone()
                 if not ant:
                     cursor.execute("""
-                        INSERT INTO antecedentes (id_persona, id_empresa, ultima_revision, fecha_consulta)
-                        VALUES (%s, %s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR))
+                        INSERT INTO antecedentes (id_persona, id_empresa, ultima_revision, fecha_consulta, fecha_creacion)
+                        VALUES (%s, %s, NULL, NULL, NOW())
                     """, (id_persona, id_empresa))
                     antecedente_id = cursor.lastrowid
                 else:
@@ -344,13 +355,15 @@ def GET_ALL_antecedentes_db() -> Dict[str, Any]:
                     id_per = p["id_persona"]
                     id_ant = p.get("id_antecedente")
 
-                    # Consultamos el historial completo para conteo real
+                    # Consultamos el historial completo para conteo real y última contratista
                     historial = OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_per, id_ant)
 
-                    # Si hay historial pero no tenía empresa en antecedente, tomamos la última
+                    nombre_contratista_final = None
                     nombre_empresa_final = p.get("nombre_empresa")
-                    if not nombre_empresa_final and historial:
-                        nombre_empresa_final = historial[0].get("nombre_empresa")
+                    if historial:
+                        nombre_contratista_final = historial[0].get("nombre_contratista")
+                        if not nombre_empresa_final:
+                            nombre_empresa_final = historial[0].get("nombre_empresa")
 
                     resultados.append({
                         "id": id_ant,
@@ -363,7 +376,10 @@ def GET_ALL_antecedentes_db() -> Dict[str, Any]:
                         "anotaciones": p.get("anotaciones") or "",
                         "id_empresa": p.get("id_empresa"),
                         "nombre_empresa": nombre_empresa_final or "Sin registros",
-                        "ultima_revision": FORMATEAR_FECHA_STR(p.get("ultima_revision")) or "No registrada",
+                        "nombre_contratista": nombre_contratista_final or "Sin contratista",
+                        "ultima_empresa_contratista": nombre_contratista_final or "Sin contratista",
+                        "ultima_empresa_solicitante": nombre_contratista_final or "Sin contratista",
+                        "ultima_revision": FORMATEAR_FECHA_STR(p.get("ultima_revision")) if p.get("fecha_consulta") else "No registrada",
                         "fecha_consulta": FORMATEAR_FECHA_STR(p.get("fecha_consulta")) or "Pendiente",
                         "total_solicitudes": len(historial)
                     })

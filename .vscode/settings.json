@@ -5,6 +5,13 @@
         "${workspaceFolder}/.venv/Lib/site-packages"
     ],
     "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.experiments.optOutFrom": [
+        "pythonDiscoveryUsingPET"
+    ],
+    "python.analysis.exclude": [
+        "**/node_modules/**",
+        "**/.venv/**"
+    ],
     "editor.defaultFormatter": "ms-python.black-formatter",
     "notebook.defaultFormatter": "ms-python.black-formatter",
     "liveServer.settings.port": 5501
