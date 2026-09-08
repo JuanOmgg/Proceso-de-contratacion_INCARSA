@@ -104,7 +104,7 @@
       'solicitudes': true,
       'nueva_solicitud': ['ADMINISTRADOR', 'GESTION DOCUMENTAL', 'SST', 'GESCO', 'SCR'].includes(miRol),
       'usuarios': ['ADMINISTRADOR'].includes(miRol),
-      'nuevo_usuario': ['ADMINISTRADOR'].includes(miRol),
+      'nuevo_usuario': ['ADMINISTRADOR', 'SCR'].includes(miRol),
       'plantas': ['ADMINISTRADOR', 'SCR'].includes(miRol),
       'contratistas': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'vehiculos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
@@ -217,30 +217,62 @@
 
       let denegado = false;
 
-      // 1. Módulo Usuarios y Formulario de Usuarios
-      if (path === '/usuarios' || path.startsWith('/usuarios/') || path.includes('formulario-usuarios') || path.includes('usuario-formulario')) {
-        if (!puedeModulo('usuarios')) denegado = true;
+      // Rutas del Formulario de Usuarios (crear / editar)
+      const esFormularioUsuario = 
+        path === '/usuarios/nuevo' || 
+        path === '/usuarios/nueva' || 
+        path.startsWith('/usuarios/editar') || 
+        path.includes('formulario-usuarios') || 
+        path.includes('usuario-formulario');
+
+      const esListadoUsuarios = !esFormularioUsuario && (path === '/usuarios' || path.startsWith('/usuarios/'));
+      const esNuevaSolicitud = path === '/solicitudes/nueva' || path.includes('formulario-solicitudes') || path.includes('solicitudes-formulario');
+      const esProcesamiento = path === '/procesamiento' || path.startsWith('/procesamiento/');
+      const esAntecedentes = path === '/antecedentes' || path.startsWith('/antecedentes/');
+      const esSuperAdmin = path === '/superadmin' || path.startsWith('/superadmin/');
+
+      function checkRuta() {
+        if (esFormularioUsuario) {
+          return puedeModulo('nuevo_usuario') || puedeModulo('usuarios');
+        }
+        if (esListadoUsuarios) {
+          return puedeModulo('usuarios');
+        }
+        if (esNuevaSolicitud) {
+          return puedeModulo('nueva_solicitud');
+        }
+        if (esProcesamiento) {
+          return puedeModulo('procesamiento');
+        }
+        if (esAntecedentes) {
+          return puedeModulo('antecedentes');
+        }
+        if (esSuperAdmin) {
+          return puedeModulo('superadmin');
+        }
+        return true;
       }
-      // 2. Módulo Nueva Solicitud
-      else if (path === '/solicitudes/nueva' || path.includes('formulario-solicitudes') || path.includes('solicitudes-formulario')) {
-        if (!puedeModulo('nueva_solicitud')) denegado = true;
-      }
-      // 3. Módulo Procesamiento
-      else if (path === '/procesamiento' || path.startsWith('/procesamiento/')) {
-        if (!puedeModulo('procesamiento')) denegado = true;
-      }
-      // 4. Módulo Antecedentes
-      else if (path === '/antecedentes' || path.startsWith('/antecedentes/')) {
-        if (!puedeModulo('antecedentes')) denegado = true;
-      }
-      // 5. Panel SuperAdmin
-      else if (path === '/superadmin' || path.startsWith('/superadmin/')) {
-        if (!puedeModulo('superadmin')) denegado = true;
+
+      if (!checkRuta()) {
+        denegado = true;
       }
 
       if (denegado) {
-        console.warn('⛔ [RBAC] Acceso denegado a la ruta ' + path + ' para el usuario actual.');
-        window.location.replace('/403');
+        // Antes de redirigir a 403, intentamos refrescar permisos del backend
+        // para evitar falsos positivos por caché local o cambios recientes en la matriz
+        recargarMisPermisos().then(permisosFrescos => {
+          if (permisosFrescos && Object.keys(permisosFrescos).length > 0) {
+            if (checkRuta()) {
+              // Permiso concedido tras refresco, no redirigir a 403
+              return;
+            }
+          }
+          console.warn('⛔ [RBAC] Acceso denegado a la ruta ' + path + ' para el usuario actual.');
+          window.location.replace('/403');
+        }).catch(() => {
+          console.warn('⛔ [RBAC] Acceso denegado a la ruta ' + path + ' para el usuario actual.');
+          window.location.replace('/403');
+        });
         return false;
       }
 

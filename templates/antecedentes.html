@@ -347,15 +347,15 @@
                 </div>
               </div>
 
-              <!-- 2. Última Empresa Solicitante -->
+              <!-- 2. Última Empresa Contratista -->
               <div class="historial-summary-card card-empresa p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
                 <div class="summary-icon-box w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-cyan-500/30">
-                  <i class="fa-solid fa-building"></i>
+                  <i class="fa-solid fa-briefcase"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Solicitante reciente</span>
+                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_contratista || detalleHistorial.nombre_contratista || detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                  <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
                 </div>
               </div>
 
@@ -601,15 +601,15 @@
             <!-- TARJETA INFORMATIVA: ESTADO DE REVISIÓN Y ÚLTIMA EMPRESA (AUTO-ACTUALIZADOS) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               
-              <!-- Última Empresa Solicitante -->
+              <!-- Última Empresa Contratista -->
               <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-cyan-500/30">
-                  <i class="fa-solid fa-building"></i>
+                  <i class="fa-solid fa-briefcase"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa Solicitante</span>
-                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Actualizada automáticamente</span>
+                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
+                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_contratista || formAntecedente.nombre_contratista || formAntecedente.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                  <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
                 </div>
               </div>
 

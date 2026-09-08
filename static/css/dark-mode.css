@@ -1628,18 +1628,24 @@ html.dark select option:checked {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   border-radius: 6px !important;
   background: transparent !important;
   color: #94a3b8 !important;
   border: none !important;
   cursor: pointer !important;
-  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+  z-index: 10 !important;
 }
 
 :root.dark .password-toggle-btn:hover {
   color: #00e5ff !important;
   background: rgba(0, 229, 255, 0.14) !important;
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.3) !important;
+  transform: translateY(-50%) scale(1.08) !important;
 }
 
 :root.dark .password-toggle-btn i {
@@ -2210,14 +2216,14 @@ html.dark select option:checked {
 
 /* =========================================================
    CHIPS DE FILTRO NEÓN FOSFORESCENTES (MODO OSCURO)
-   - Sin relleno interno en reposo (fondo transparente)
-   - Brillo liberado sin restricciones
-   - Halo neón envolvente
+   - Brillo libre y abierto (sin 'inset' ni encierro visual)
+   - Halo neón radiante, suave y difuso hacia el exterior
    ========================================================= */
 
 /* Estilo base unificado para todos los chips de estado e iconos */
 :root.dark .filter-status-chip {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: visible !important;
 }
 :root.dark .filter-status-chip i {
   color: currentColor !important;
@@ -2227,117 +2233,146 @@ html.dark select option:checked {
 
 /* 1. TODOS (Gris / Plata Neón) */
 :root.dark .chip-neon-todos {
-  background: transparent !important;
-  color: #cbd5e1 !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 7px rgba(255, 255, 255, 0.25) !important;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.4) !important;
 }
 :root.dark .chip-neon-todos:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 13px rgba(255, 255, 255, 0.45) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-todos.is-active {
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #ffffff !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.5) !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6), 0 0 25px rgba(255, 255, 255, 0.25) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
 }
 
-/* 2. ENVIADO (Cian Neón) */
+/* 2. ENVIADO (Cian Neón Eléctrico) */
 :root.dark .chip-neon-enviado {
-  background: transparent !important;
+  background: rgba(0, 240, 255, 0.05) !important;
   color: #00f0ff !important;
-  border: 1.5px solid rgba(0, 240, 255, 0.35) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 7px rgba(0, 240, 255, 0.3) !important;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.5) !important;
 }
 :root.dark .chip-neon-enviado:hover {
-  background: rgba(0, 240, 255, 0.08) !important;
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: #ffffff !important;
   border-color: #00f0ff !important;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25) !important;
+  box-shadow: 0 0 13px rgba(0, 240, 255, 0.55) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-enviado.is-active {
   background: rgba(0, 240, 255, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #00f0ff !important;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
-  text-shadow: 0 0 4px rgba(0, 240, 255, 0.4) !important;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.65), 0 0 26px rgba(0, 240, 255, 0.25) !important;
+  text-shadow: 0 0 8px #00f0ff !important;
 }
 
-/* 3. EN REVISIÓN (Morada / Violeta Neón) */
+/* 3. EN REVISIÓN (Violeta / Púrpura Neón) */
 :root.dark .chip-neon-revision {
-  background: transparent !important;
+  background: rgba(168, 85, 247, 0.05) !important;
   color: #c084fc !important;
-  border: 1.5px solid rgba(192, 132, 252, 0.35) !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.5) !important;
+  box-shadow: 0 0 7px rgba(192, 132, 252, 0.3) !important;
+  text-shadow: 0 0 4px rgba(192, 132, 252, 0.5) !important;
 }
 :root.dark .chip-neon-revision:hover {
-  background: rgba(192, 132, 252, 0.08) !important;
+  background: rgba(168, 85, 247, 0.12) !important;
+  color: #ffffff !important;
   border-color: #c084fc !important;
-  box-shadow: 0 0 8px rgba(192, 132, 252, 0.25) !important;
+  box-shadow: 0 0 13px rgba(192, 132, 252, 0.55) !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.8) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-revision.is-active {
   background: rgba(168, 85, 247, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #c084fc !important;
-  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35) !important;
-  text-shadow: 0 0 4px rgba(192, 132, 252, 0.4) !important;
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.65), 0 0 26px rgba(192, 132, 252, 0.25) !important;
+  text-shadow: 0 0 8px #c084fc !important;
 }
 
 /* 4. POR APROBAR (Ámbar / Oro Eléctrico Neón) */
 :root.dark .chip-neon-aprobar {
-  background: transparent !important;
+  background: rgba(255, 183, 0, 0.05) !important;
   color: #ffb700 !important;
-  border: 1.5px solid rgba(255, 183, 0, 0.35) !important;
+  border: 1.5px solid rgba(255, 183, 0, 0.5) !important;
+  box-shadow: 0 0 7px rgba(255, 183, 0, 0.3) !important;
+  text-shadow: 0 0 4px rgba(255, 183, 0, 0.5) !important;
 }
 :root.dark .chip-neon-aprobar:hover {
-  background: rgba(255, 183, 0, 0.08) !important;
+  background: rgba(255, 183, 0, 0.12) !important;
+  color: #ffffff !important;
   border-color: #ffb700 !important;
-  box-shadow: 0 0 8px rgba(255, 183, 0, 0.25) !important;
+  box-shadow: 0 0 13px rgba(255, 183, 0, 0.55) !important;
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-aprobar.is-active {
   background: rgba(255, 183, 0, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #ffb700 !important;
-  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
-  text-shadow: 0 0 4px rgba(255, 183, 0, 0.4) !important;
+  box-shadow: 0 0 15px rgba(255, 183, 0, 0.65), 0 0 26px rgba(255, 183, 0, 0.25) !important;
+  text-shadow: 0 0 8px #ffb700 !important;
 }
 
 /* 5. APROBADO / ACTIVOS (Verde Esmeralda Neón) */
 :root.dark .chip-neon-aprobado {
-  background: transparent !important;
+  background: rgba(0, 255, 157, 0.05) !important;
   color: #00ff9d !important;
-  border: 1.5px solid rgba(0, 255, 157, 0.35) !important;
+  border: 1.5px solid rgba(0, 255, 157, 0.5) !important;
+  box-shadow: 0 0 7px rgba(0, 255, 157, 0.3) !important;
+  text-shadow: 0 0 4px rgba(0, 255, 157, 0.5) !important;
 }
 :root.dark .chip-neon-aprobado:hover {
-  background: rgba(0, 255, 157, 0.08) !important;
+  background: rgba(0, 255, 157, 0.12) !important;
+  color: #ffffff !important;
   border-color: #00ff9d !important;
-  box-shadow: 0 0 8px rgba(0, 255, 157, 0.25) !important;
+  box-shadow: 0 0 13px rgba(0, 255, 157, 0.55) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-aprobado.is-active {
   background: rgba(0, 255, 157, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #00ff9d !important;
-  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
-  text-shadow: 0 0 4px rgba(0, 255, 157, 0.4) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 157, 0.65), 0 0 26px rgba(0, 255, 157, 0.25) !important;
+  text-shadow: 0 0 8px #00ff9d !important;
 }
 
 /* 6. RECHAZADO / INACTIVOS (Rojo Carmesí Neón) */
 :root.dark .chip-neon-rechazado {
-  background: transparent !important;
+  background: rgba(255, 42, 85, 0.05) !important;
   color: #ff2a55 !important;
-  border: 1.5px solid rgba(255, 42, 85, 0.35) !important;
+  border: 1.5px solid rgba(255, 42, 85, 0.5) !important;
+  box-shadow: 0 0 7px rgba(255, 42, 85, 0.3) !important;
+  text-shadow: 0 0 4px rgba(255, 42, 85, 0.5) !important;
 }
 :root.dark .chip-neon-rechazado:hover {
-  background: rgba(255, 42, 85, 0.08) !important;
+  background: rgba(255, 42, 85, 0.12) !important;
+  color: #ffffff !important;
   border-color: #ff2a55 !important;
-  box-shadow: 0 0 8px rgba(255, 42, 85, 0.25) !important;
+  box-shadow: 0 0 13px rgba(255, 42, 85, 0.55) !important;
+  text-shadow: 0 0 8px rgba(255, 42, 85, 0.8) !important;
+  transform: translateY(-1px) scale(1.03);
 }
 :root.dark .chip-neon-rechazado.is-active {
   background: rgba(255, 42, 85, 0.18) !important;
   color: #ffffff !important;
   border: 1.5px solid #ff2a55 !important;
-  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
-  text-shadow: 0 0 4px rgba(255, 42, 85, 0.4) !important;
+  box-shadow: 0 0 15px rgba(255, 42, 85, 0.65), 0 0 26px rgba(255, 42, 85, 0.25) !important;
+  text-shadow: 0 0 8px #ff2a55 !important;
 }
 
 /* =========================================================

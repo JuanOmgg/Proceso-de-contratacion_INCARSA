@@ -99,7 +99,7 @@ def require_role(roles_permitidos: list[str | int]):
         return current_user
     return rol_checker
 
-def require_permission(modulo: str, accion: str):
+def require_permission(modulo: str | list[str], accion: str):
     """Dependencia para validar permisos granulares por módulo y acción según DB."""
     def permission_checker(current_user: dict = Depends(get_current_user)):
         user_rol = str(current_user.get("rol", "")).strip().lower()
@@ -116,10 +116,14 @@ def require_permission(modulo: str, accion: str):
         from src.loaders.superadmin_loader import GET_permisos_rol_db
         perm_data = GET_permisos_rol_db(int(id_rol))
         permisos = perm_data.get("permisos", {})
-        if not permisos.get(modulo, {}).get(accion, False):
+
+        modulos = [modulo] if isinstance(modulo, str) else modulo
+        tiene_permiso = any(permisos.get(m, {}).get(accion, False) for m in modulos)
+        if not tiene_permiso:
+            mod_str = "/".join(modulos)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"No tienes permisos suficientes para '{accion}' en el módulo '{modulo}'."
+                detail=f"No tienes permisos suficientes para '{accion}' en el módulo '{mod_str}'."
             )
         return current_user
     return permission_checker

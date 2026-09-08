@@ -169,7 +169,11 @@ function usuarioForm() {
             } else {
               alert("Solo un usuario con rol SUPERADMIN puede editar a usuarios administradores.");
             }
-            window.location.replace("/usuarios");
+            if (typeof puedeModulo === 'function' && puedeModulo('usuarios')) {
+              window.location.replace("/usuarios");
+            } else {
+              window.location.replace("/dashboard");
+            }
             return;
           }
 
@@ -331,7 +335,11 @@ function usuarioForm() {
 
         this.submitted = true;
         setTimeout(() => {
-          window.location.href = "/usuarios";
+          if (typeof puedeModulo === 'function' && puedeModulo('usuarios')) {
+            window.location.href = "/usuarios";
+          } else {
+            window.location.href = "/dashboard";
+          }
         }, 1400);
 
       } catch (error) {

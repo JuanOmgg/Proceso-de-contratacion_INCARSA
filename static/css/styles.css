@@ -572,6 +572,127 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--state-rechazado);
 }
 
+/* ============================================================
+   BOTONES DE ACCIÓN EN TABLAS Y LISTADOS (MODO CLARO)
+   Colores semánticos vibrantes, píldoras suaves y micro-interacciones
+============================================================ */
+
+/* 1. REVISAR EXPEDIENTE / DICTAMEN (Portapapeles - Indigo / Púrpura elegante) */
+:root:not(.dark) .action-icon-btn.text-indigo-600,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check) {
+  color: #4f46e5 !important;
+  background: rgba(79, 70, 229, 0.08) !important;
+  border: 1px solid rgba(79, 70, 229, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-indigo-600 i,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-indigo-600:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-clipboard-check):hover {
+  color: #3730a3 !important;
+  background: rgba(79, 70, 229, 0.18) !important;
+  border-color: rgba(79, 70, 229, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* 2. VER DETALLE (Ojo - Azul eléctrico / Sky profesional) */
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn),
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+  border: 1px solid rgba(2, 132, 199, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-blue-600:not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn.text-blue-500:not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn):hover {
+  color: #0369a1 !important;
+  background: rgba(2, 132, 199, 0.18) !important;
+  border-color: rgba(2, 132, 199, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* 3. EDITAR (Lápiz - Ámbar cálido / Oro con gran contraste) */
+:root:not(.dark) .action-icon-btn.text-yellow-400,
+:root:not(.dark) .action-icon-btn.text-yellow-500,
+:root:not(.dark) .action-icon-btn.text-amber-500,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square),
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil) {
+  color: #d97706 !important;
+  background: rgba(217, 119, 6, 0.08) !important;
+  border: 1px solid rgba(217, 119, 6, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-yellow-400 i,
+:root:not(.dark) .action-icon-btn.text-yellow-500 i,
+:root:not(.dark) .action-icon-btn.text-amber-500 i,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-yellow-400:hover,
+:root:not(.dark) .action-icon-btn.text-yellow-500:hover,
+:root:not(.dark) .action-icon-btn.text-amber-500:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-pen-to-square):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-pencil):hover {
+  color: #92400e !important;
+  background: rgba(217, 119, 6, 0.18) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2) !important;
+}
+
+/* 4. ELIMINAR (Papelera - Rojo rubí nítido y enérgico) */
+:root:not(.dark) .action-icon-btn.text-red-500,
+:root:not(.dark) .action-icon-btn.text-red-600,
+:root:not(.dark) .action-icon-btn.danger,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can),
+:root:not(.dark) .action-icon-btn:has(> .fa-trash) {
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+  border: 1px solid rgba(220, 38, 38, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-red-500 i,
+:root:not(.dark) .action-icon-btn.text-red-600 i,
+:root:not(.dark) .action-icon-btn.danger i,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can) i,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-red-500:hover,
+:root:not(.dark) .action-icon-btn.text-red-600:hover,
+:root:not(.dark) .action-icon-btn.danger:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash-can):hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-trash):hover {
+  color: #991b1b !important;
+  background: rgba(220, 38, 38, 0.18) !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2) !important;
+}
+
+:root:not(.dark) .action-icon-btn:active {
+  transform: scale(0.94) !important;
+}
+
 .password-toggle-btn {
   width: 28px;
   height: 28px;
@@ -579,16 +700,26 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   color: var(--text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  z-index: 10;
 }
 
 .password-toggle-btn:hover {
   background: var(--steel-100);
   color: var(--ink-800);
+  transform: translateY(-50%) scale(1.08) !important;
+}
+
+.password-toggle-btn:active {
+  transform: translateY(-50%) scale(0.95) !important;
 }
 
 /* =========================================================
@@ -1713,7 +1844,8 @@ span.flatpickr-weekday {
 /* =========================================================
    TOOLTIPS MODERNOS (God-tier CSS)
    ========================================================= */
-[data-tooltip] {
+/* Solo relativo si el elemento no tiene ya posicionamiento explícito (evita romper elementos absolute como botones de contraseña) */
+[data-tooltip]:not(.absolute):not([class*="absolute"]):not([class*="fixed"]) {
   position: relative;
 }
 

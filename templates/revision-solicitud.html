@@ -110,7 +110,7 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=3.8"></script>
 {% endblock %}
 
 {% block content %}
@@ -571,7 +571,7 @@
                                   <span>Antecedentes</span>
                                   <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold border"
                                     :class="persona.estadoVigencia?.badgeClass || 'bg-slate-100 text-slate-700 border-slate-300 font-semibold'"
-                                    x-text="persona.estadoVigencia?.etiqueta || 'Consultar'"></span>
+                                    x-text="persona.estadoVigencia?.etiqueta || 'Sin revisión'"></span>
                                 </button>
                               </div>
                               <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 font-medium" x-text="(persona.tipo_doc || 'CC') + ' ' + persona.identificacion + ' · Cargo: ' + persona.cargo"></p>
@@ -1299,22 +1299,23 @@
               </div>
             </div>
 
-            <!-- 2. Última Empresa Solicitante -->
+            <!-- 2. Última Empresa Contratista -->
             <div class="historial-summary-card card-empresa p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
               <div class="summary-icon-box w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-cyan-500/30">
-                <i class="fa-solid fa-building"></i>
+                <i class="fa-solid fa-briefcase"></i>
               </div>
               <div class="min-w-0 flex-1">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                <span class="text-[11px] text-[var(--paper-muted)]">Solicitante reciente</span>
+                <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_contratista || detalleHistorial.nombre_contratista || detalleHistorial.ultima_empresa_solicitante || 'Sin contratista asignado'"></p>
+                <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
               </div>
             </div>
 
             <!-- 3. Vigencia Actual (Sin alterar) -->
             <div class="historial-summary-card card-vigencia p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
-              <div class="summary-icon-box w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-emerald-500/30">
-                <i class="fa-solid fa-calendar-check"></i>
+              <div class="summary-icon-box w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border"
+                :class="getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'sin_revision' ? 'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30' : (getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'vencido' ? 'bg-red-500/15 text-red-500 border-red-500/30' : (getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'por_vencer' ? 'bg-amber-500/15 text-amber-500 border-amber-500/30' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'))">
+                <i :class="getEstadoVigencia(detalleHistorial.fecha_consulta).icono"></i>
               </div>
               <div class="min-w-0 flex-1">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Vigencia Actual</span>
@@ -1475,7 +1476,7 @@
             class="btn-signal rounded-lg px-7 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm"
             title="Abrir formulario para renovar vigencia y editar notas">
             <i class="fa-solid fa-calendar-check"></i>
-            <span>Actualizar Vigencia</span>
+            <span x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'sin_revision' ? 'Registrar Revisión' : 'Actualizar Vigencia'"></span>
           </button>
         </div>
 
@@ -1545,15 +1546,15 @@
           <!-- TARJETAS INFORMATIVAS DE LA RENOVACIÓN -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            <!-- Última Empresa Solicitante -->
+            <!-- Última Empresa Contratista -->
             <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
               <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-cyan-500/30">
-                <i class="fa-solid fa-building"></i>
+                <i class="fa-solid fa-briefcase"></i>
               </div>
               <div class="min-w-0">
                 <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_solicitante || 'INCARSA S.A.S.'"></p>
-                <span class="text-[11px] text-[var(--paper-muted)]">Solicitante activa</span>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_contratista || formAntecedente.nombre_contratista || formAntecedente.ultima_empresa_solicitante || 'Sin contratista registrado'"></p>
+                <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
               </div>
             </div>
 

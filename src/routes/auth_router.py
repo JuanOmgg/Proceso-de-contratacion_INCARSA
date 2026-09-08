@@ -14,7 +14,8 @@ from src.schemas.auth_schema import (
     LoginInput,
     RecuperacionInput,
     VerificarCodigoInput,
-    RestablecerPasswordInput
+    RestablecerPasswordInput,
+    PerfilUpdateInput
 )
 
 from src.loaders.auth_loader import (
@@ -127,9 +128,80 @@ def login(payload: LoginInput):
 
 @router.get("/me", summary="Obtener perfil del usuario autenticado", status_code=status.HTTP_200_OK)
 def get_current_user_profile(current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("id")
+    from src.services.usuario import READ_user
+    if user_id:
+        res = READ_user(user_id)
+        if res.get("exito") and res.get("data"):
+            return {
+                "exito": True,
+                "usuario": res["data"]
+            }
     return {
         "exito": True,
         "usuario": current_user
+    }
+
+@router.patch("/me", summary="Actualizar perfil del usuario autenticado (teléfono y contraseña)", status_code=status.HTTP_200_OK)
+def update_current_user_profile(payload: PerfilUpdateInput, current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no autenticado."
+        )
+
+    updates = {}
+    if payload.num_telefono is not None:
+        t_clean = str(payload.num_telefono).strip()
+        if t_clean:
+            if not t_clean.isdigit():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El número de teléfono debe contener únicamente dígitos."
+                )
+            if len(t_clean) < 7 or len(t_clean) > 15:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El número de teléfono debe tener entre 7 y 15 dígitos."
+                )
+            updates["num_telefono"] = t_clean
+
+    if payload.contrasena is not None and str(payload.contrasena).strip():
+        pwd = str(payload.contrasena).strip()
+        if len(pwd) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La contraseña debe tener al menos 6 caracteres."
+            )
+        if payload.confirmar_contrasena is not None:
+            if pwd != str(payload.confirmar_contrasena).strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Las contraseñas ingresadas no coinciden."
+                )
+        updates["contrasena"] = pwd
+
+    if not updates:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se enviaron datos para actualizar."
+        )
+
+    from src.loaders.usuario_loader import UPDATE_user_db
+    res = UPDATE_user_db(int(user_id), updates)
+    if not res.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=res.get("mensaje", "Error al actualizar el perfil.")
+        )
+
+    from src.services.usuario import READ_user
+    user_fresco = READ_user(int(user_id))
+    return {
+        "exito": True,
+        "mensaje": "Perfil actualizado exitosamente.",
+        "usuario": user_fresco.get("data", {})
     }
 
 @router.post("/solicitar_recuperacion", status_code=status.HTTP_200_OK)

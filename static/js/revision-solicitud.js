@@ -607,12 +607,17 @@ function revisionSolicitudApp() {
         const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
         listaPersonas = rawP.map(p => ({
           id: p.id,
+          id_persona: p.id_persona || p.id,
           nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
           tipo_doc: p.tipo_doc || "CC",
           identificacion: p.identificacion || "—",
           cargo: p.cargo || "Operario",
           autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
           motivo_rechazo: p.motivo_rechazo || "",
+          fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
+          ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
+          responsable: p.responsable || null,
+          anotaciones: p.anotaciones || "",
           documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
             { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
             { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
@@ -1377,10 +1382,10 @@ function revisionSolicitudApp() {
         const idPersona = p.id_persona || p.id;
         const ident = String(p.identificacion || "").trim();
 
-        // 1. Ver si está en localStorage
+        // 1. Ver si está en localStorage (solo si fue guardado recientemente con fecha válida)
         const localKey = `incarsa_antecedente_${ident}`;
         const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
-        if (localSaved && localSaved.fecha_consulta) {
+        if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
           p.fecha_consulta = localSaved.fecha_consulta;
           p.ultima_revision = localSaved.ultima_revision;
           p.responsable = localSaved.responsable;
@@ -1389,8 +1394,8 @@ function revisionSolicitudApp() {
           return;
         }
 
-        // 2. Si ya tiene fecha_consulta en el objeto
-        if (p.fecha_consulta) {
+        // 2. Si ya tiene fecha_consulta válida en el objeto
+        if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
           p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
           return;
         }
@@ -1402,7 +1407,7 @@ function revisionSolicitudApp() {
             if (res.ok) {
               const resData = await res.json().catch(() => ({}));
               const data = resData.data || resData;
-              if (data && data.fecha_consulta) {
+              if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
                 p.fecha_consulta = data.fecha_consulta;
                 p.ultima_revision = data.ultima_revision;
                 p.responsable = data.responsable;
@@ -1414,14 +1419,8 @@ function revisionSolicitudApp() {
           }
         } catch (e) {}
 
-        // Fallback por defecto si no tiene registro previo
-        p.estadoVigencia = {
-          estado: 'vigente',
-          etiqueta: 'Vigente (365d)',
-          textoDias: '365 días restantes',
-          icono: 'fa-solid fa-circle-check',
-          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        };
+        // Fallback por defecto si no tiene registro previo de revisión: Sin revisión
+        p.estadoVigencia = this.getEstadoVigencia(null);
       });
 
       await Promise.all(tareas);
@@ -1613,9 +1612,10 @@ function revisionSolicitudApp() {
       this.limpiarFiltrosHistorial();
       this.showHistorialModal = true;
 
+      const contratistaSolicitud = this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || this.solicitud?.nombre_contratista || persona.contratista || "Sin contratista asignado";
       const empresaSolicitud = this.solicitud?.nombre_empresa || this.solicitud?.empresa_solicitante || "INCARSA S.A.S.";
 
-      // 1. Estado inicial conocido
+      // 1. Estado inicial conocido (usar la empresa contratista, no la solicitante)
       this.detalleHistorial = {
         id: persona.antecedente_id || null,
         id_persona: idPersona,
@@ -1627,7 +1627,8 @@ function revisionSolicitudApp() {
         responsable: persona.responsable || "Sin asignar",
         anotaciones: persona.anotaciones || "",
         id_empresa: null,
-        ultima_empresa_solicitante: empresaSolicitud,
+        ultima_empresa_contratista: contratistaSolicitud,
+        ultima_empresa_solicitante: contratistaSolicitud,
         ultima_revision: persona.ultima_revision || null,
         fecha_consulta: persona.fecha_consulta || null,
         total_solicitudes: 1,
@@ -1636,7 +1637,7 @@ function revisionSolicitudApp() {
             id: 1,
             codigo_radicado: this.solicitud?.codigo || "SOL-ACTUAL",
             nombre_empresa: empresaSolicitud,
-            nombre_contratista: this.solicitud?.nombre_contratista || persona.contratista || "Contratista asignado",
+            nombre_contratista: contratistaSolicitud,
             fecha_inicio: this.solicitud?.fecha_inicio || this.solicitud?.fecha_registro,
             fecha_fin: this.solicitud?.fecha_fin || this.solicitud?.fecha_estimada,
             fecha_solicitud: this.solicitud?.fecha_registro || new Date().toISOString()
@@ -1685,28 +1686,19 @@ function revisionSolicitudApp() {
           if (data.persona_cargo) this.detalleHistorial.persona_cargo = data.persona_cargo;
           if (data.responsable) this.detalleHistorial.responsable = data.responsable;
           if (data.anotaciones) this.detalleHistorial.anotaciones = data.anotaciones;
-          if (data.ultima_empresa_solicitante) this.detalleHistorial.ultima_empresa_solicitante = data.ultima_empresa_solicitante;
+          const contratistaBackend = data.ultima_empresa_contratista || data.nombre_contratista || (Array.isArray(data.historial) && data.historial.length > 0 ? data.historial[0].nombre_contratista : null);
+          const contratistaFinal = contratistaBackend || contratistaSolicitud;
+          this.detalleHistorial.ultima_empresa_contratista = contratistaFinal;
+          this.detalleHistorial.ultima_empresa_solicitante = contratistaFinal;
           if (data.ultima_revision) this.detalleHistorial.ultima_revision = data.ultima_revision;
           
-          this.detalleHistorial.fecha_consulta = data.fecha_consulta || this.calcularFechaConsulta(data.ultima_revision);
+          this.detalleHistorial.fecha_consulta = (data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") ? data.fecha_consulta : null;
           if (Array.isArray(data.historial) && data.historial.length > 0) {
             this.detalleHistorial.historial = data.historial;
             this.detalleHistorial.total_solicitudes = data.historial.length;
           }
-        } else if (localSaved) {
+        } else if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
           Object.assign(this.detalleHistorial, localSaved);
-        }
-
-        if (!this.detalleHistorial.fecha_consulta && this.detalleHistorial.ultima_revision) {
-          this.detalleHistorial.fecha_consulta = this.calcularFechaConsulta(this.detalleHistorial.ultima_revision);
-        }
-
-        // Si aún no tiene fecha, asignar una por defecto +1 año
-        if (!this.detalleHistorial.fecha_consulta) {
-          const hoy = new Date();
-          const unAnio = new Date(hoy);
-          unAnio.setFullYear(unAnio.getFullYear() + 1);
-          this.detalleHistorial.fecha_consulta = unAnio.toISOString();
         }
 
         persona.estadoVigencia = this.getEstadoVigencia(this.detalleHistorial.fecha_consulta);
@@ -1734,6 +1726,7 @@ function revisionSolicitudApp() {
       const masUnAnio = this.obtenerFechaMasUnAnio(ahora);
 
       const sesionNombre = this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Administrador Sistema";
+      const contratistaActual = item.ultima_empresa_contratista || item.nombre_contratista || item.ultima_empresa_solicitante || this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || "Sin contratista asignado";
 
       this.formAntecedente = {
         id: item.id || null,
@@ -1746,7 +1739,8 @@ function revisionSolicitudApp() {
         responsable: item.responsable && item.responsable !== "Sin asignar" ? item.responsable : sesionNombre,
         anotaciones: item.anotaciones || "",
         id_empresa: item.id_empresa || null,
-        ultima_empresa_solicitante: item.ultima_empresa_solicitante || this.solicitud?.nombre_empresa || "INCARSA S.A.S.",
+        ultima_empresa_contratista: contratistaActual,
+        ultima_empresa_solicitante: contratistaActual,
         ultima_revision: hoyLocal,
         fecha_consulta: masUnAnio,
         historial: Array.isArray(item.historial) ? item.historial : [],

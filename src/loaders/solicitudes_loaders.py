@@ -211,7 +211,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                         if not ant_row:
                                             cursor.execute("""
                                                 INSERT INTO antecedentes (id_persona, id_empresa, ultima_revision, fecha_consulta, fecha_creacion)
-                                                VALUES (%s, %s, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW())
+                                                VALUES (%s, %s, NULL, NULL, NOW())
                                             """, (p_id, emp_origen))
                                             ant_id = cursor.lastrowid
                                         else:
@@ -468,9 +468,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 cursor.execute(
                     """
                     SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
-                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo
+                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
+                           a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
+                    LEFT JOIN antecedentes a ON a.id_persona = p.id
                     WHERE i.id_solicitud = %s
                     """,
                     (real_id,),
@@ -484,7 +486,17 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         p_ids = [int(x.strip()) for x in raw_pids if x.strip().isdigit()]
                         if p_ids:
                             fmt = ",".join(["%s"] * len(p_ids))
-                            cursor.execute(f"SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, 1 AS autorizado, NULL AS motivo FROM personas p WHERE p.id IN ({fmt})", tuple(p_ids))
+                            cursor.execute(
+                                f"""
+                                SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                                       1 AS autorizado, NULL AS motivo,
+                                       a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
+                                FROM personas p
+                                LEFT JOIN antecedentes a ON a.id_persona = p.id
+                                WHERE p.id IN ({fmt})
+                                """,
+                                tuple(p_ids)
+                            )
                             personas = cursor.fetchall() or []
                     except Exception as e_pers:
                         print(f"⚠️ Error al resolver personas_ids de respaldo: {e_pers}")
@@ -492,6 +504,15 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 for p in personas:
                     p["autorizado"] = bool(p.get("autorizado", True))
                     p["motivo"] = p.get("motivo") or ""
+                    if p.get("fecha_consulta"):
+                        p["fecha_consulta"] = str(p["fecha_consulta"]).split(" ")[0]
+                    else:
+                        p["fecha_consulta"] = None
+                    if p.get("ultima_revision"):
+                        p["ultima_revision"] = str(p["ultima_revision"])
+                    else:
+                        p["ultima_revision"] = None
+
                     cursor.execute(
                         "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
                         (p["id"],),
@@ -500,7 +521,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     for d in docs:
                         d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
                     p["documentos"] = docs
+
                 solicitud["ingresantes"] = personas
+                solicitud["personas"] = personas
 
                 # 6. Obtener los equipos asociados
                 cursor.execute(
@@ -593,23 +616,50 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 id_planta = p_list[0]
 
                 # 2. Insertar o actualizar en solicitud_revisiones
-                sql_upsert = """
-                    INSERT INTO solicitud_revisiones (
-                        id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
-                        decision, motivo_rechazo, observacion, fecha_revision
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                    ON DUPLICATE KEY UPDATE
-                        id_usuario = VALUES(id_usuario),
-                        nombre_revisor = VALUES(nombre_revisor),
-                        decision = VALUES(decision),
-                        motivo_rechazo = VALUES(motivo_rechazo),
-                        observacion = VALUES(observacion),
-                        fecha_revision = NOW()
-                """
-                cursor.execute(sql_upsert, (
-                    real_id, id_planta, rol, id_usuario, nombre_revisor,
-                    decision, motivo_rechazo, observacion
-                ))
+                if id_planta is None:
+                    cursor.execute(
+                        "SELECT id FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
+                        (real_id, rol)
+                    )
+                    rev_existente = cursor.fetchone()
+                    if rev_existente:
+                        cursor.execute(
+                            """
+                            UPDATE solicitud_revisiones
+                            SET id_usuario = %s, nombre_revisor = %s, decision = %s,
+                                motivo_rechazo = %s, observacion = %s, fecha_revision = NOW()
+                            WHERE id = %s
+                            """,
+                            (id_usuario, nombre_revisor, decision, motivo_rechazo, observacion, rev_existente["id"])
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO solicitud_revisiones (
+                                id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                                decision, motivo_rechazo, observacion, fecha_revision
+                            ) VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, NOW())
+                            """,
+                            (real_id, rol, id_usuario, nombre_revisor, decision, motivo_rechazo, observacion)
+                        )
+                else:
+                    sql_upsert = """
+                        INSERT INTO solicitud_revisiones (
+                            id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                            decision, motivo_rechazo, observacion, fecha_revision
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                        ON DUPLICATE KEY UPDATE
+                            id_usuario = VALUES(id_usuario),
+                            nombre_revisor = VALUES(nombre_revisor),
+                            decision = VALUES(decision),
+                            motivo_rechazo = VALUES(motivo_rechazo),
+                            observacion = VALUES(observacion),
+                            fecha_revision = NOW()
+                    """
+                    cursor.execute(sql_upsert, (
+                        real_id, id_planta, rol, id_usuario, nombre_revisor,
+                        decision, motivo_rechazo, observacion
+                    ))
 
                 # 3. Obtener todas las plantas de la solicitud (vía visita)
                 cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (real_id,))
@@ -670,6 +720,17 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
                         (real_id,)
+                    )
+                    # Desactivar botones de confirmación en notificaciones previas de esta solicitud
+                    cod_sol_clean = sol.get("codigo") or f"RAD-{real_id:04d}"
+                    cursor.execute(
+                        """
+                        UPDATE notificaciones
+                        SET leido = TRUE,
+                            enlace = REPLACE(enlace, '?confirmar=true', '')
+                        WHERE enlace LIKE %s
+                        """,
+                        (f"%{cod_sol_clean}%",)
                     )
                 else:
                     # Es SST o GESCO aprobando

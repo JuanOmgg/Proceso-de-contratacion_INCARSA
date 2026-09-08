@@ -165,7 +165,17 @@
           const res = await fetch(`${notifUrl}?${params.toString()}`);
           if (res.ok) {
             const data = await res.json();
-            this.notifications = data.notificaciones || [];
+            const notifs = data.notificaciones || [];
+            if (window._solicitudesConfirmadasDirectas && window._solicitudesConfirmadasDirectas.size > 0) {
+              notifs.forEach(n => {
+                const c = window.obtenerCodigoSolicitudDeNotif ? window.obtenerCodigoSolicitudDeNotif(n) : null;
+                if (c && window._solicitudesConfirmadasDirectas.has(c)) {
+                  n.aprobadoExitoso = true;
+                  n.leido = true;
+                }
+              });
+            }
+            this.notifications = notifs;
             this.unreadNotificationsCount = data.no_leidas || 0;
           }
         } catch (err) {

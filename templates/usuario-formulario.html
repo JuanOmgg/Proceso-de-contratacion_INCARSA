@@ -6,7 +6,7 @@
   <script>
     window.__USUARIO_IDENTIFICADOR__ = "{{ usuario_identificador | default('', true) }}";
   </script>
-  <script src="{{ url_for('static', path='js/usuario-formulario.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/usuario-formulario.js') }}?v=3.6"></script>
 {% endblock %}
 
 {% block content %}
@@ -33,7 +33,7 @@
           <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
             <i class="fa-solid fa-bars text-base"></i>
           </button>
-          <a href="/usuarios" class="action-icon-btn text-white hidden sm:inline-flex" title="Volver al listado"><i
+          <a :href="(typeof puedeModulo === 'function' && puedeModulo('usuarios')) ? '/usuarios' : '/dashboard'" class="action-icon-btn text-white hidden sm:inline-flex" :title="(typeof puedeModulo === 'function' && puedeModulo('usuarios')) ? 'Volver al listado' : 'Volver al inicio'"><i
               class="fa-solid fa-arrow-left"></i></a>
           <h1 class="font-display font-semibold text-lg text-white"
             x-text="isEdit ? 'Editar usuario' : 'Nuevo usuario'"></h1>
@@ -277,7 +277,7 @@
 
             <!-- ---------- Navegación ---------- -->
             <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-[var(--border-subtle)]">
-              <a href="usuarios-listado.html"
+              <a :href="(typeof puedeModulo === 'function' && puedeModulo('usuarios')) ? '/usuarios' : '/dashboard'"
                 class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] transition-colors">
                 Cancelar
               </a>

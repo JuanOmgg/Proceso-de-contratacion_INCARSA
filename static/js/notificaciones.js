@@ -152,14 +152,21 @@ window.mostrarToastNotificacion = mostrarToastNotificacion;
 // ----------------------------------------------------------------------------
 // 3. FORMATO Y DETECCIÓN DE SOLICITUDES PREAPROBADAS
 // ----------------------------------------------------------------------------
+window._solicitudesConfirmadasDirectas = window._solicitudesConfirmadasDirectas || new Set();
+
 function esNotifPreaprobada(n) {
     if (!n) return false;
+    if (n.aprobadoExitoso) return true; // Permite mostrar el badge "Aprobación confirmada"
+    const cod = obtenerCodigoSolicitudDeNotif(n);
+    if (cod && window._solicitudesConfirmadasDirectas && window._solicitudesConfirmadasDirectas.has(cod)) {
+        return true; // Para que muestre el badge verde confirmado
+    }
     const enlace = String(n.enlace || "");
     const titulo = String(n.titulo || "");
     const mensaje = String(n.mensaje || "");
     return enlace.includes("confirmar=true") || 
-           (titulo.toLowerCase().includes("preaprobada") && (enlace.includes("/solicitudes/revision/") || titulo.includes("RAD-"))) ||
-           (mensaje.toLowerCase().includes("preaprobada") && enlace.includes("/solicitudes/revision/"));
+           ((titulo.toLowerCase().includes("preaprobada") || titulo.toLowerCase().includes("pre-aprobada")) && enlace.includes("/solicitudes/revision/")) ||
+           ((mensaje.toLowerCase().includes("preaprobada") || mensaje.toLowerCase().includes("pre-aprobada")) && enlace.includes("/solicitudes/revision/"));
 }
 window.esNotifPreaprobada = esNotifPreaprobada;
 
@@ -167,11 +174,14 @@ function obtenerCodigoSolicitudDeNotif(n) {
     if (!n) return null;
     if (n.codigo_solicitud) return String(n.codigo_solicitud).trim();
     if (n.cod_solicitud) return String(n.cod_solicitud).trim();
+    if (n.codigo) return String(n.codigo).trim();
     if (n.id_solicitud && isNaN(Number(n.id_solicitud))) return String(n.id_solicitud).trim();
 
     if (n.enlace) {
         const match = String(n.enlace).match(/\/solicitudes\/revision\/([^\/?#\s]+)/i);
         if (match && match[1]) return match[1].trim();
+        const matchRad = String(n.enlace).match(/(RAD-[A-Za-z0-9]+)/i);
+        if (matchRad && matchRad[1]) return matchRad[1].trim();
     }
     if (n.titulo) {
         const match = String(n.titulo).match(/(RAD-[A-Za-z0-9]+)/i);
@@ -181,6 +191,7 @@ function obtenerCodigoSolicitudDeNotif(n) {
         const match = String(n.mensaje).match(/(RAD-[A-Za-z0-9]+)/i);
         if (match && match[1]) return match[1].trim();
     }
+    if (n.id_solicitud) return String(n.id_solicitud).trim();
     return null;
 }
 window.obtenerCodigoSolicitudDeNotif = obtenerCodigoSolicitudDeNotif;
@@ -255,6 +266,9 @@ async function confirmarAprobacionDirectaNotif(n) {
         if (res.ok) {
             n.aprobadoExitoso = true;
             n.leido = true;
+            if (cod) window._solicitudesConfirmadasDirectas.add(cod);
+            if (n.enlace) n.enlace = n.enlace.replace("?confirmar=true", "").replace("&confirmar=true", "");
+
             const notifUrl = (typeof API !== "undefined" && API.notificaciones) 
                 ? API.notificaciones 
                 : `${window.location.origin}/api/v1/notificaciones`;
@@ -264,8 +278,14 @@ async function confirmarAprobacionDirectaNotif(n) {
                     headers: token ? { "Authorization": `Bearer ${token}` } : {}
                 }).catch(() => {});
             }
-            window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+
+            // Notificar a las tablas y vistas en caliente
             window.dispatchEvent(new CustomEvent("solicitud-actualizada-en-caliente", { detail: { codigo: cod, estado: "APROBADO" } }));
+            
+            // Retrasar levemente la recarga de notificaciones para que el usuario aprecie el estado aprobado
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+            }, 1200);
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -297,7 +317,11 @@ async function confirmarAprobacionDirectaNotif(n) {
         }
     } catch (e) {
         console.error("Error al aprobar desde notificación:", e);
-        alert("Error de conexión al aprobar la solicitud: " + e.message);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'error', title: 'Error de conexión', text: e.message, background: '#0f172a', color: '#f8fafc' });
+        } else {
+            alert("Error de conexión al aprobar la solicitud: " + e.message);
+        }
     } finally {
         n.aprobando = false;
     }

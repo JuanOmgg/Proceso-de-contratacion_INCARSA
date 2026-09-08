@@ -134,8 +134,8 @@
             </div>
 
             <!-- Chips de Filtro Estado + Limpiar filtros -->
-            <div class="flex items-center justify-between w-full lg:w-auto gap-2 py-1">
-              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div class="flex items-center justify-between w-full lg:w-auto gap-2 py-1 overflow-visible">
+              <div class="flex items-center gap-2 overflow-visible py-1.5 px-1">
                 <button type="button" @click="filtroEstado = 'todos'" 
                   class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
                   :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">

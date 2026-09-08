@@ -4,7 +4,7 @@ from src.schemas.usuario_schema import UsuarioInput, UsuarioResponse, UpdateUsua
 from src.services.usuario import CREATE_user, READ_user, DELETE_user
 from src.loaders.usuario_loader import DELETE_user_db, UPDATE_user_db, GET_ALL_users_db, GET_BY_ROL_with_count_db
 from src.transformers.usuario_transformer import TRANSFORM_USER
-from src.utils.security import get_current_user, require_role
+from src.utils.security import get_current_user, require_role, require_permission
 from typing import List, Dict, Any
 
 from src.loaders.roles_loader import GET_rol_by_id
@@ -12,7 +12,7 @@ from src.loaders.roles_loader import GET_rol_by_id
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 @router.post("/post", status_code=status.HTTP_201_CREATED)
-def CREATE_user_rt(payload: UsuarioInput, current_user: dict = Depends(require_role(["Administrador"]))):
+def CREATE_user_rt(payload: UsuarioInput, current_user: dict = Depends(require_permission(["nuevo_usuario", "usuarios"], "crear"))):
 
     # Regla: Solo SUPERADMIN puede crear usuarios con rol ADMINISTRADOR o SUPERADMIN
     rol_target = GET_rol_by_id(payload.id_rol)
@@ -81,7 +81,7 @@ def GET_user_rt(id_user: str, current_user: dict = Depends(get_current_user)):
 
 
 @router.patch("/{id_user}", status_code=status.HTTP_200_OK)
-def UPDATE_user_rt(id_user: int, payload: UpdateUsuarioInput, current_user: dict = Depends(require_role(["Administrador"]))):
+def UPDATE_user_rt(id_user: int, payload: UpdateUsuarioInput, current_user: dict = Depends(require_permission(["nuevo_usuario", "usuarios"], "editar"))):
 
     print(f"[USUARIOS] Actualizando usuario con ID #{id_user} en la base de datos...")
 
@@ -135,7 +135,7 @@ def UPDATE_user_rt(id_user: int, payload: UpdateUsuarioInput, current_user: dict
     return resultado
 
 @router.delete("/{id_user}")
-def Delete_user(id_user: int, current_user: dict = Depends(require_role(["Administrador"]))):
+def Delete_user(id_user: int, current_user: dict = Depends(require_permission("usuarios", "eliminar"))):
    
     # Regla: Los administradores no pueden eliminar a otros administradores (exclusivo SUPERADMIN)
     usuario_existente = READ_user(id_user)

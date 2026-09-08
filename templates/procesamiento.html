@@ -92,8 +92,8 @@
             </div>
           </div>
 
-          <!-- Derecha: Chips de Filtro Estado (Fila única desplazable en móvil) -->
-          <div class="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar max-w-full py-1.5 px-0.5 flex-shrink-0">
+          <!-- Derecha: Chips de Filtro Estado -->
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible max-w-full py-2 px-1 flex-shrink-0">
             <button type="button" @click="filtroEstado = 'TODOS'; resetPage()" 
               class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
               :class="filtroEstado === 'TODOS' ? 'is-active scale-105' : 'is-idle'">
