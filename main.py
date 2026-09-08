@@ -1,3 +1,13 @@
+from fastapi import Response
+from typing import Optional
+import sys
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 from fastapi.responses import JSONResponse
 import os
 import uvicorn
