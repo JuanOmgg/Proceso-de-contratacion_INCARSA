@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from src.loaders.empresa_loader import GET_empresas_con_plantas_bd
+from src.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/v1/empresas", tags=["Empresas"])
 
@@ -7,7 +8,7 @@ router = APIRouter(prefix="/api/v1/empresas", tags=["Empresas"])
 @router.get("/getAll", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_empresas():
+def GET_empresas(current_user: dict = Depends(get_current_user)):
     """
     Retorna todas las empresas con sus plantas anidadas.
     Respuesta: [{ id, nombre, plantas: [{ id, nombre }, ...] }, ...]

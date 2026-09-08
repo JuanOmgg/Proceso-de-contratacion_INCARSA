@@ -87,6 +87,16 @@ function revisionSolicitudApp() {
     rolActual: "SST", // 'SST' | 'GESCO' | 'SCR' | 'Administrador' | 'Gestion documental'
     rolNombre: "SST",
 
+    get esSuperAdmin() {
+      if (typeof tieneRol === 'function' && tieneRol('SUPERADMIN')) {
+        return true;
+      }
+      if (!this.usuarioSesion) return false;
+      const rol = String(this.usuarioSesion.rol || this.usuarioSesion.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion.id_rol || 0);
+      return rol === "SUPERADMIN" || idRol === 2;
+    },
+
     get userDisplayName() {
       if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
         return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
@@ -134,10 +144,14 @@ function revisionSolicitudApp() {
 
     // Formulario de dictamen del rol activo
     dictamenForm: {
-      decision: "aprobar", // 'aprobar' | 'rechazar'
+      decision: "aprobar", // 'preaprobar' | 'aprobar' | 'rechazar' | 'devolver'
       motivoRechazo: "",
+      motivoDevolucion: "",
       observaciones: ""
     },
+
+    // Modal de confirmación rápida para solicitudes pre-aprobadas
+    showModalConfirmacionPreaprobada: false,
 
     // Verificación individual de ítems (Checklist de auditoría)
     verificaciones: {
@@ -350,7 +364,8 @@ function revisionSolicitudApp() {
         );
         if (sesion) {
           this.usuarioSesion = sesion;
-          const rol = sesion.rol || sesion.nombre_rol || (sesion.id_rol === 1 ? "Administrador" : sesion.id_rol === 3 ? "SST" : sesion.id_rol === 4 ? "GESCO" : sesion.id_rol === 5 ? "SCR" : "Gestion documental");
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Gestion documental", 5: "SST", 6: "GESCO", 7: "SCR" };
+          const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Gestion documental";
           this.rolActual = rol;
           this.rolNombre = rol;
         }
@@ -365,6 +380,12 @@ function revisionSolicitudApp() {
       }
 
       await this.cargarSolicitud();
+
+      // Si la URL contiene el parámetro ?confirmar=true y la solicitud está preaprobada en estado POR APROBAR
+      const paramsConfirmar = params.get("confirmar");
+      if ((paramsConfirmar === "true" || paramsConfirmar === "1") && (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.pre_aprobado && this.solicitud?.estado === "POR APROBAR") {
+        setTimeout(() => this.confirmarAprobacionFinalPreaprobada(), 350);
+      }
     },
 
     mostrarToast(mensaje, tipo = "success") {
@@ -389,18 +410,15 @@ function revisionSolicitudApp() {
             data = await res.json();
           }
         } catch (errApi) {
-          console.warn("Fallo al obtener solicitud del backend, buscando en mock:", errApi);
+          console.warn("Fallo al obtener solicitud del backend, buscando en cache local:", errApi);
         }
 
-        // Si no responde la API, buscar en mockData o localStorage
+        // Si no responde la API, buscar en cache local
         if (!data) {
           const locales = JSON.parse(localStorage.getItem("incarsa_solicitudes") || "[]");
           const creadas = JSON.parse(localStorage.getItem("incarsa_solicitudes_creadas") || "[]");
           const todasLocales = [...locales, ...creadas];
           data = todasLocales.find(s => String(s.id) === String(this.solicitudId));
-          if (!data && typeof MOCK_SOLICITUDES !== "undefined") {
-            data = MOCK_SOLICITUDES.find(s => String(s.id) === String(this.solicitudId));
-          }
         }
 
         if (!data) {
@@ -412,6 +430,27 @@ function revisionSolicitudApp() {
         }
 
         this.solicitud = this.normalizar(data);
+
+        // Si se ingresa a revisar la solicitud desde cualquier lugar (listado, búsqueda, URL directa),
+        // marcar automáticamente las notificaciones pendientes de esta solicitud como leídas para su usuario/rol.
+        try {
+          const codOId = data.codigo || data.id || this.solicitudId;
+          const userSes = this.usuarioSesion || {};
+          fetch(`/api/v1/notificaciones/marcar-leida-solicitud`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_o_codigo: String(codOId),
+              id_usuario: userSes.id || null,
+              id_rol: userSes.id_rol || null
+            })
+          }).then(() => {
+            window.dispatchEvent(new CustomEvent("notificaciones-actualizadas"));
+            localStorage.setItem("incarsa_notificaciones_reload", Date.now().toString());
+          }).catch(() => {});
+        } catch (eNotif) {
+          console.warn("Aviso al auto-marcar notificación como leída:", eNotif);
+        }
 
         // Cargar dictámenes previos desde backend o storage local
         if (Array.isArray(data.revisiones)) {
@@ -425,13 +464,20 @@ function revisionSolicitudApp() {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
         }
 
+        // Si es SCR o SuperAdmin y la solicitud está en estados previos a 'POR APROBAR', preseleccionar 'preaprobar'
+        if ((this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud.estado !== "POR APROBAR") {
+          this.dictamenForm.decision = "preaprobar";
+        } else {
+          this.dictamenForm.decision = "aprobar";
+        }
+
         // Cargar vigencias de antecedentes de cada ingresante
         await this.cargarVigenciasPersonas();
 
-        // 🌟 REGLA DE NEGOCIO: Si está en 'ENVIADO' y entra SST o GESCO, pasa automáticamente a 'EN REVISIÓN'
+        // Si la solicitud está en 'ENVIADO' y entra un rol auditor/revisor, actualizar visualmente a 'EN REVISIÓN'
         const estadoActual = (this.solicitud.estado || "").toUpperCase();
         if (estadoActual === "ENVIADO" && (this.rolActual === "SST" || this.rolActual === "GESCO" || this.rolActual === "Administrador")) {
-          await this.cambiarEstado("EN REVISIÓN", false);
+          this.solicitud.estado = "EN REVISIÓN";
         }
 
       } catch (e) {
@@ -481,9 +527,12 @@ function revisionSolicitudApp() {
       let listaVehiculos = [];
       if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
         listaVehiculos = s.vehiculos.split('###').map(v => {
-          const [id, tipo, placa, licencia] = v.split('|||');
+          const [id, tipo, placa, licencia, autorizado, motivo_rechazo] = v.split('|||');
           return {
             id, tipo: tipo || "Vehículo", placa, licencia,
+            licencia_doc: licencia || "—",
+            autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+            motivo_rechazo: motivo_rechazo || "",
             documentos: [
               { tipo_doc: "soat", nombre_archivo: `SOAT_${placa || 'DOC'}.pdf` },
               { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${placa || 'DOC'}.pdf` },
@@ -498,6 +547,9 @@ function revisionSolicitudApp() {
           tipo: v.tipo || "Vehículo",
           placa: v.placa || "—",
           licencia: v.licencia_doc || v.licencia || "—",
+          licencia_doc: v.licencia_doc || v.licencia || "—",
+          autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
+          motivo_rechazo: v.motivo_rechazo || v.motivo || "",
           documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
             id: d.id || dIdx,
             tipo_doc: d.tipo_doc || "documento",
@@ -509,6 +561,25 @@ function revisionSolicitudApp() {
           ]
         }));
       }
+
+      // Cargar autorizaciones individuales de vehículos persistidas en localStorage
+      try {
+        const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
+        const vehiculosGuardados = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
+        if (Array.isArray(vehiculosGuardados) && vehiculosGuardados.length > 0) {
+          listaVehiculos = listaVehiculos.map(v => {
+            const match = vehiculosGuardados.find(vg => String(vg.id) === String(v.id) || (vg.placa && vg.placa === v.placa));
+            if (match) {
+              return {
+                ...v,
+                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
+                motivo_rechazo: match.motivo_rechazo || ""
+              };
+            }
+            return v;
+          });
+        }
+      } catch (e) {}
 
       let listaPersonas = [];
       if (typeof s.personas === 'string' && s.personas.trim() !== '') {
@@ -536,12 +607,17 @@ function revisionSolicitudApp() {
         const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
         listaPersonas = rawP.map(p => ({
           id: p.id,
+          id_persona: p.id_persona || p.id,
           nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
           tipo_doc: p.tipo_doc || "CC",
           identificacion: p.identificacion || "—",
           cargo: p.cargo || "Operario",
           autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
           motivo_rechazo: p.motivo_rechazo || "",
+          fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
+          ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
+          responsable: p.responsable || null,
+          anotaciones: p.anotaciones || "",
           documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
             { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
             { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
@@ -630,7 +706,66 @@ function revisionSolicitudApp() {
       return this.solicitud?.personas?.filter(p => p.autorizado === false).length || 0;
     },
 
+    // -------------------------------------------------------------
+    // Gestión de Autorización Individual de Vehículos
+    // -------------------------------------------------------------
+    get totalVehiculos() {
+      return this.solicitud?.vehiculos?.length || 0;
+    },
+
+    get totalVehiculosAutorizados() {
+      return this.solicitud?.vehiculos?.filter(v => v.autorizado === true).length || 0;
+    },
+
+    get totalVehiculosDenegados() {
+      return this.solicitud?.vehiculos?.filter(v => v.autorizado === false).length || 0;
+    },
+
+    get yaAproboRolActual() {
+      const estado = String(this.solicitud?.estado || "").toUpperCase();
+      if (estado === "APROBADO") return true;
+
+      // Si el rol es SST o GESCO, verificar si ya emitió dictamen en su planta o en la solicitud
+      if (this.rolActual === "SST" || this.rolActual === "GESCO") {
+        if (this.miPlantaYaFirmada) return true;
+        const revs = this.revisionesHistorial || [];
+        const tieneDictamen = revs.some(
+          r => String(r.rol).toUpperCase() === this.rolActual.toUpperCase() && 
+               (r.decision === "APROBADO" || r.decision === "RECHAZADO")
+        );
+        if (tieneDictamen && !this.puedeDictaminar) return true;
+        return false;
+      }
+
+      // Si el rol es SCR
+      if (this.rolActual === "SCR") {
+        return Boolean(this.dictamenSCR?.aprobado || this.dictamenSCR?.rechazado);
+      }
+
+      return false;
+    },
+
+    get puedeEditarAutorizacion() {
+      const estado = String(this.solicitud?.estado || "").toUpperCase();
+      // Si la solicitud ya está en estado final APROBADO o RECHAZADO
+      if (estado === "APROBADO" || estado === "RECHAZADO") {
+        return false;
+      }
+
+      // Si el usuario con su rol actual ya aprobó o emitió dictamen
+      if (this.yaAproboRolActual) {
+        return false;
+      }
+
+      // Solo puede editar quien tiene permisos y acciones activas para dictaminar en esta etapa
+      return Boolean(this.puedeDictaminar);
+    },
+
     setAutorizacionPersona(persona, estaAutorizado, motivo = "") {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
       persona.autorizado = estaAutorizado;
       if (!estaAutorizado && motivo) {
         persona.motivo_rechazo = motivo;
@@ -646,10 +781,15 @@ function revisionSolicitudApp() {
     },
 
     toggleAutorizacionPersona(persona) {
+      if (!this.puedeEditarAutorizacion) return;
       this.setAutorizacionPersona(persona, !persona.autorizado);
     },
 
     autorizarTodasPersonas() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = true;
@@ -660,6 +800,10 @@ function revisionSolicitudApp() {
     },
 
     denegarTodasPersonas() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = false;
@@ -669,6 +813,7 @@ function revisionSolicitudApp() {
     },
 
     async persistirPersonasEnStorage() {
+      if (!this.puedeEditarAutorizacion) return;
       try {
         const storageKey = `incarsa_solicitud_${this.solicitudId}_personas`;
         localStorage.setItem(storageKey, JSON.stringify(this.solicitud.personas));
@@ -679,24 +824,76 @@ function revisionSolicitudApp() {
           locales[idx].personas = this.solicitud.personas;
           localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
         }
-
-        // Sincronizar con backend si existe
-        if (this.solicitudId && this.solicitud?.personas) {
-          const payloadPersonas = this.solicitud.personas.map(p => ({
-            id: p.id,
-            id_persona: p.id,
-            autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-            motivo: p.motivo_rechazo || p.motivo || null
-          }));
-
-          fetch(`${API.solicitudes}/${this.solicitudId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ personas: payloadPersonas })
-          }).catch(err => console.warn("Aviso al sincronizar ingresantes en backend:", err.message));
-        }
       } catch (e) {
         console.warn("No se pudo guardar personas en storage:", e);
+      }
+    },
+
+    setAutorizacionVehiculo(vehiculo, estaAutorizado, motivo = "") {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
+      vehiculo.autorizado = estaAutorizado;
+      if (!estaAutorizado && motivo) {
+        vehiculo.motivo_rechazo = motivo;
+      } else if (estaAutorizado) {
+        vehiculo.motivo_rechazo = "";
+      }
+      this.persistirVehiculosEnStorage();
+      const placa = vehiculo.placa || "Vehículo";
+      this.mostrarToast(
+        estaAutorizado ? `✅ Vehículo [${placa}] ha sido autorizado` : `⛔ Acceso denegado a vehículo [${placa}]`,
+        estaAutorizado ? "success" : "info"
+      );
+    },
+
+    toggleAutorizacionVehiculo(vehiculo) {
+      if (!this.puedeEditarAutorizacion) return;
+      this.setAutorizacionVehiculo(vehiculo, !vehiculo.autorizado);
+    },
+
+    autorizarTodosVehiculos() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
+      if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      this.solicitud.vehiculos.forEach(v => {
+        v.autorizado = true;
+        v.motivo_rechazo = "";
+      });
+      this.persistirVehiculosEnStorage();
+      this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+    },
+
+    denegarTodosVehiculos() {
+      if (!this.puedeEditarAutorizacion) {
+        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        return;
+      }
+      if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      this.solicitud.vehiculos.forEach(v => {
+        v.autorizado = false;
+      });
+      this.persistirVehiculosEnStorage();
+      this.mostrarToast("Todos los vehículos han sido marcados como No Autorizados", "info");
+    },
+
+    async persistirVehiculosEnStorage() {
+      if (!this.puedeEditarAutorizacion) return;
+      try {
+        const storageKey = `incarsa_solicitud_${this.solicitudId}_vehiculos`;
+        localStorage.setItem(storageKey, JSON.stringify(this.solicitud.vehiculos));
+
+        const locales = JSON.parse(localStorage.getItem("incarsa_solicitudes") || "[]");
+        const idx = locales.findIndex(s => String(s.id) === String(this.solicitudId));
+        if (idx > -1) {
+          locales[idx].vehiculos = this.solicitud.vehiculos;
+          localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
+        }
+      } catch (e) {
+        console.warn("No se pudo guardar vehículos en storage:", e);
       }
     },
 
@@ -792,6 +989,7 @@ function revisionSolicitudApp() {
       const revs = this.revisionesHistorial || [];
       const revScr = revs.find(r => String(r.rol).toUpperCase() === 'SCR');
       return {
+        preaprobado: Boolean(this.solicitud?.pre_aprobado) || revScr?.decision === 'PREAPROBADO',
         aprobado: revScr?.decision === 'APROBADO' || this.solicitud?.estado === 'APROBADO',
         rechazado: revScr?.decision === 'RECHAZADO' || (this.solicitud?.estado === 'RECHAZADO' && revScr?.decision === 'RECHAZADO'),
         revisor: revScr?.nombre_revisor || '',
@@ -799,6 +997,24 @@ function revisionSolicitudApp() {
         observacion: revScr?.observacion || '',
         motivoRechazo: revScr?.motivo_rechazo || ''
       };
+    },
+
+    get observacionesSSTGESCO() {
+      const revs = this.revisionesHistorial || [];
+      return revs.filter(r => {
+        const rol = String(r.rol || "").toUpperCase();
+        return (rol === 'SST' || rol === 'GESCO') && (r.observacion || r.motivo_rechazo || r.motivo_devolucion);
+      }).map(r => {
+        const planta = (this.plantasSolicitud || []).find(p => Number(p.id) === Number(r.id_planta));
+        return {
+          rol: r.rol,
+          revisor: r.nombre_revisor || 'Auditor',
+          planta: planta?.nombre || r.planta_nombre || (r.id_planta ? `Planta ${r.id_planta}` : 'General'),
+          decision: r.decision,
+          observacion: r.observacion || r.motivo_rechazo || r.motivo_devolucion || '',
+          fecha: r.fecha_revision ? new Date(r.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : ''
+        };
+      });
     },
 
     get totalPlantasCompletadas() {
@@ -820,11 +1036,18 @@ function revisionSolicitudApp() {
 
     get miPlantaYaFirmada() {
       if (this.rolActual !== 'SST' && this.rolActual !== 'GESCO') return false;
-      const pid = Number(this.plantaSeleccionadaDictamen);
-      if (!pid) return false;
+      let pid = Number(this.plantaSeleccionadaDictamen);
+      if (!pid && this.misPlantasDictaminables.length > 0) {
+        pid = Number(this.misPlantasDictaminables[0].id);
+      } else if (!pid && this.plantasSolicitud.length > 0) {
+        pid = Number(this.plantasSolicitud[0].id);
+      }
+      const rolKey = this.rolActual.toLowerCase();
+      if (!pid) {
+        return this.matrizRevisionesPorPlanta.some(item => Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado));
+      }
       const item = this.matrizRevisionesPorPlanta.find(p => p.id === pid);
       if (!item) return false;
-      const rolKey = this.rolActual.toLowerCase();
       return Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado);
     },
 
@@ -862,6 +1085,12 @@ function revisionSolicitudApp() {
     },
 
     get puedeDictaminar() {
+      if (typeof window.puedeAccion === "function") {
+        if (!window.puedeAccion("solicitudes", "aprobar") && !window.puedeAccion("revision_solicitud", "aprobar")) {
+          return false;
+        }
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
 
       if (estado === "RECHAZADO" || estado === "APROBADO") {
@@ -878,9 +1107,9 @@ function revisionSolicitudApp() {
         return true;
       }
 
-      // SCR solo puede dictaminar cuando ya está 'POR APROBAR'
+      // SCR puede dictaminar (Pre-aprobar o devolver/rechazar) en estados previos, o aprobar en 'POR APROBAR'
       if (this.rolActual === "SCR") {
-        return estado === "POR APROBAR";
+        return estado === "POR APROBAR" || estado === "EN REVISIÓN" || estado === "EN REVISION" || estado === "ENVIADO";
       }
 
       return false;
@@ -908,10 +1137,16 @@ function revisionSolicitudApp() {
 
       const decision = this.dictamenForm.decision;
       const motivo = this.dictamenForm.motivoRechazo.trim();
+      const motivoDev = (this.dictamenForm.motivoDevolucion || "").trim();
       const obs = this.dictamenForm.observaciones.trim();
 
       if (decision === "rechazar" && !motivo) {
         this.mostrarToast("Debes ingresar el motivo del rechazo.", "error");
+        return;
+      }
+
+      if (decision === "devolver" && !motivoDev) {
+        this.mostrarToast("Debes ingresar el motivo de la devolución para corrección.", "error");
         return;
       }
 
@@ -921,15 +1156,24 @@ function revisionSolicitudApp() {
         : `Auditor (${this.rolActual})`;
 
       try {
+        let decisionBackend = "APROBADO";
+        if (decision === "rechazar") decisionBackend = "RECHAZADO";
+        else if (decision === "devolver") decisionBackend = "DEVUELTO";
+        else if (decision === "preaprobar") decisionBackend = "PREAPROBADO";
+
         const payloadDictamen = {
           id_planta: (this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null,
           rol: this.rolActual,
-          decision: decision === "rechazar" ? "RECHAZADO" : "APROBADO",
-          motivo_rechazo: decision === "rechazar" ? motivo : null,
+          decision: decisionBackend,
+          motivo_rechazo: decision === "rechazar" ? motivo : (decision === "devolver" ? motivoDev : null),
+          motivo_devolucion: decision === "devolver" ? motivoDev : null,
           observacion: obs || null,
           id_usuario: this.usuarioSesion?.id || null,
           nombre_revisor: nombreUsuario
         };
+
+        await this.persistirPersonasEnStorage();
+        await this.persistirVehiculosEnStorage();
 
         // Enviar a API Backend (usando solicitudId numérico o código)
         const targetId = this.solicitud?.id || this.solicitudId;
@@ -942,9 +1186,27 @@ function revisionSolicitudApp() {
         if (res.ok) {
           const dataRes = await res.json();
           this.solicitud.estado = dataRes.nuevo_estado;
+          if (decision === "preaprobar" || decisionBackend === "PREAPROBADO") {
+            this.solicitud.pre_aprobado = true;
+          }
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
-          this.mostrarToast(`Dictamen registrado exitosamente en la base de datos (${dataRes.nuevo_estado}).`, "success");
+          const mensajeToast = decision === "preaprobar"
+            ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
+            : (decision === "devolver"
+                ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
+                : (decision === "rechazar"
+                    ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
+                    : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
+          this.mostrarToast(mensajeToast, "success");
+
+          // Redirigir a procesamiento tras completar la acción para evitar bloqueos o error 403
+          setTimeout(() => {
+            if (typeof window.showPageLoader === "function") {
+              window.showPageLoader();
+            }
+            window.location.href = "/procesamiento";
+          }, 1200);
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -956,11 +1218,84 @@ function revisionSolicitudApp() {
 
         // Limpiar formulario
         this.dictamenForm.motivoRechazo = "";
+        this.dictamenForm.motivoDevolucion = "";
         this.dictamenForm.observaciones = "";
 
       } catch (err) {
         console.error("Error al emitir dictamen:", err);
         this.mostrarToast("Error al registrar dictamen: " + err.message, "error");
+      } finally {
+        this.guardando = false;
+      }
+    },
+
+    abrirModalConfirmacionPreaprobada() {
+      this.showModalConfirmacionPreaprobada = true;
+    },
+
+    cerrarModalConfirmacionPreaprobada() {
+      this.showModalConfirmacionPreaprobada = false;
+    },
+
+    irAFormularioDictamen() {
+      this.cerrarModalConfirmacionPreaprobada();
+      const el = document.getElementById("seccion-dictamen");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+
+    async confirmarAprobacionFinalPreaprobada() {
+      this.guardando = true;
+      try {
+        const nombreUsuario = this.usuarioSesion?.nombre || (this.usuarioSesion?.nombres 
+          ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
+          : `Auditor SCR (${this.rolActual || 'SCR'})`);
+
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+
+        const payload = {
+          id_planta: null,
+          rol: this.rolActual || "SCR",
+          decision: "APROBADO",
+          observacion: "Aprobación definitiva confirmada por SCR tras superar revisiones de SST y GESCO.",
+          id_usuario: this.usuarioSesion?.id || null,
+          nombre_revisor: nombreUsuario
+        };
+
+        const targetId = this.solicitud?.id || this.solicitudId;
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const dataRes = await res.json();
+          this.solicitud.estado = dataRes.nuevo_estado || "APROBADO";
+          this.revisionesHistorial = dataRes.revisiones || [];
+          this.guardarRevisionesEnStorage();
+          this.cerrarModalConfirmacionPreaprobada();
+          this.mostrarToast("¡Solicitud Aprobada Definitivamente! Redirigiendo...", "success");
+
+          // Redirigir a procesamiento
+          setTimeout(() => {
+            if (typeof window.showPageLoader === "function") {
+              window.showPageLoader();
+            }
+            window.location.href = "/procesamiento";
+          }, 1200);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
+          this.mostrarToast(`Error al confirmar aprobación: ${errMsg}`, "error");
+        }
+      } catch (err) {
+        console.error("Error al confirmar aprobación:", err);
+        this.mostrarToast("Error de conexión al aprobar: " + err.message, "error");
       } finally {
         this.guardando = false;
       }
@@ -978,30 +1313,6 @@ function revisionSolicitudApp() {
           localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
         }
       } catch (e) {}
-
-      // Actualizar en Backend
-      try {
-        const payloadPatch = {
-          estado: nuevoEstado,
-          observaciones: this.solicitud.observaciones
-        };
-        if (this.solicitud?.personas && Array.isArray(this.solicitud.personas)) {
-          payloadPatch.personas = this.solicitud.personas.map(p => ({
-            id: p.id,
-            id_persona: p.id,
-            autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-            motivo: p.motivo_rechazo || p.motivo || null
-          }));
-        }
-
-        await fetch(`${API.solicitudes}/${this.solicitudId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadPatch)
-        });
-      } catch (err) {
-        console.warn("No se pudo actualizar estado en backend vía PATCH:", err);
-      }
     },
 
     // -------------------------------------------------------------
@@ -1052,6 +1363,7 @@ function revisionSolicitudApp() {
     estadoEstilos(estado) {
       const e = (estado || "").toUpperCase();
       if (e === "ENVIADO") return "status-enviado";
+      if (e.includes("DEVUELTO") || e.includes("CORRECCI")) return "status-devuelto";
       if (e.includes("REVISI")) return "status-revision";
       if (e === "POR APROBAR") return "status-aprobar";
       if (e === "APROBADO") return "status-aprobado";
@@ -1065,26 +1377,27 @@ function revisionSolicitudApp() {
 
     async cargarVigenciasPersonas() {
       if (!this.solicitud || !Array.isArray(this.solicitud.personas)) return;
-      for (const p of this.solicitud.personas) {
+      
+      const tareas = this.solicitud.personas.map(async (p) => {
         const idPersona = p.id_persona || p.id;
         const ident = String(p.identificacion || "").trim();
 
-        // 1. Ver si está en localStorage
+        // 1. Ver si está en localStorage (solo si fue guardado recientemente con fecha válida)
         const localKey = `incarsa_antecedente_${ident}`;
         const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
-        if (localSaved && localSaved.fecha_consulta) {
+        if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
           p.fecha_consulta = localSaved.fecha_consulta;
           p.ultima_revision = localSaved.ultima_revision;
           p.responsable = localSaved.responsable;
           p.anotaciones = localSaved.anotaciones;
           p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
-          continue;
+          return;
         }
 
-        // 2. Si ya tiene fecha_consulta en el objeto
-        if (p.fecha_consulta) {
+        // 2. Si ya tiene fecha_consulta válida en el objeto
+        if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
           p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
-          continue;
+          return;
         }
 
         // 3. Consultar backend si existe registro previo
@@ -1094,27 +1407,23 @@ function revisionSolicitudApp() {
             if (res.ok) {
               const resData = await res.json().catch(() => ({}));
               const data = resData.data || resData;
-              if (data && data.fecha_consulta) {
+              if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
                 p.fecha_consulta = data.fecha_consulta;
                 p.ultima_revision = data.ultima_revision;
                 p.responsable = data.responsable;
                 p.anotaciones = data.anotaciones;
                 p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
-                continue;
+                return;
               }
             }
           }
         } catch (e) {}
 
-        // Fallback por defecto si no tiene registro previo
-        p.estadoVigencia = {
-          estado: 'vigente',
-          etiqueta: 'Vigente (365d)',
-          textoDias: '365 días restantes',
-          icono: 'fa-solid fa-circle-check',
-          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        };
-      }
+        // Fallback por defecto si no tiene registro previo de revisión: Sin revisión
+        p.estadoVigencia = this.getEstadoVigencia(null);
+      });
+
+      await Promise.all(tareas);
     },
 
     parsearFechaLocal(fechaStr) {
@@ -1303,9 +1612,10 @@ function revisionSolicitudApp() {
       this.limpiarFiltrosHistorial();
       this.showHistorialModal = true;
 
+      const contratistaSolicitud = this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || this.solicitud?.nombre_contratista || persona.contratista || "Sin contratista asignado";
       const empresaSolicitud = this.solicitud?.nombre_empresa || this.solicitud?.empresa_solicitante || "INCARSA S.A.S.";
 
-      // 1. Estado inicial conocido
+      // 1. Estado inicial conocido (usar la empresa contratista, no la solicitante)
       this.detalleHistorial = {
         id: persona.antecedente_id || null,
         id_persona: idPersona,
@@ -1317,7 +1627,8 @@ function revisionSolicitudApp() {
         responsable: persona.responsable || "Sin asignar",
         anotaciones: persona.anotaciones || "",
         id_empresa: null,
-        ultima_empresa_solicitante: empresaSolicitud,
+        ultima_empresa_contratista: contratistaSolicitud,
+        ultima_empresa_solicitante: contratistaSolicitud,
         ultima_revision: persona.ultima_revision || null,
         fecha_consulta: persona.fecha_consulta || null,
         total_solicitudes: 1,
@@ -1326,7 +1637,7 @@ function revisionSolicitudApp() {
             id: 1,
             codigo_radicado: this.solicitud?.codigo || "SOL-ACTUAL",
             nombre_empresa: empresaSolicitud,
-            nombre_contratista: this.solicitud?.nombre_contratista || persona.contratista || "Contratista asignado",
+            nombre_contratista: contratistaSolicitud,
             fecha_inicio: this.solicitud?.fecha_inicio || this.solicitud?.fecha_registro,
             fecha_fin: this.solicitud?.fecha_fin || this.solicitud?.fecha_estimada,
             fecha_solicitud: this.solicitud?.fecha_registro || new Date().toISOString()
@@ -1375,28 +1686,19 @@ function revisionSolicitudApp() {
           if (data.persona_cargo) this.detalleHistorial.persona_cargo = data.persona_cargo;
           if (data.responsable) this.detalleHistorial.responsable = data.responsable;
           if (data.anotaciones) this.detalleHistorial.anotaciones = data.anotaciones;
-          if (data.ultima_empresa_solicitante) this.detalleHistorial.ultima_empresa_solicitante = data.ultima_empresa_solicitante;
+          const contratistaBackend = data.ultima_empresa_contratista || data.nombre_contratista || (Array.isArray(data.historial) && data.historial.length > 0 ? data.historial[0].nombre_contratista : null);
+          const contratistaFinal = contratistaBackend || contratistaSolicitud;
+          this.detalleHistorial.ultima_empresa_contratista = contratistaFinal;
+          this.detalleHistorial.ultima_empresa_solicitante = contratistaFinal;
           if (data.ultima_revision) this.detalleHistorial.ultima_revision = data.ultima_revision;
           
-          this.detalleHistorial.fecha_consulta = data.fecha_consulta || this.calcularFechaConsulta(data.ultima_revision);
+          this.detalleHistorial.fecha_consulta = (data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") ? data.fecha_consulta : null;
           if (Array.isArray(data.historial) && data.historial.length > 0) {
             this.detalleHistorial.historial = data.historial;
             this.detalleHistorial.total_solicitudes = data.historial.length;
           }
-        } else if (localSaved) {
+        } else if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
           Object.assign(this.detalleHistorial, localSaved);
-        }
-
-        if (!this.detalleHistorial.fecha_consulta && this.detalleHistorial.ultima_revision) {
-          this.detalleHistorial.fecha_consulta = this.calcularFechaConsulta(this.detalleHistorial.ultima_revision);
-        }
-
-        // Si aún no tiene fecha, asignar una por defecto +1 año
-        if (!this.detalleHistorial.fecha_consulta) {
-          const hoy = new Date();
-          const unAnio = new Date(hoy);
-          unAnio.setFullYear(unAnio.getFullYear() + 1);
-          this.detalleHistorial.fecha_consulta = unAnio.toISOString();
         }
 
         persona.estadoVigencia = this.getEstadoVigencia(this.detalleHistorial.fecha_consulta);
@@ -1424,6 +1726,7 @@ function revisionSolicitudApp() {
       const masUnAnio = this.obtenerFechaMasUnAnio(ahora);
 
       const sesionNombre = this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Administrador Sistema";
+      const contratistaActual = item.ultima_empresa_contratista || item.nombre_contratista || item.ultima_empresa_solicitante || this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || "Sin contratista asignado";
 
       this.formAntecedente = {
         id: item.id || null,
@@ -1436,7 +1739,8 @@ function revisionSolicitudApp() {
         responsable: item.responsable && item.responsable !== "Sin asignar" ? item.responsable : sesionNombre,
         anotaciones: item.anotaciones || "",
         id_empresa: item.id_empresa || null,
-        ultima_empresa_solicitante: item.ultima_empresa_solicitante || this.solicitud?.nombre_empresa || "INCARSA S.A.S.",
+        ultima_empresa_contratista: contratistaActual,
+        ultima_empresa_solicitante: contratistaActual,
         ultima_revision: hoyLocal,
         fecha_consulta: masUnAnio,
         historial: Array.isArray(item.historial) ? item.historial : [],

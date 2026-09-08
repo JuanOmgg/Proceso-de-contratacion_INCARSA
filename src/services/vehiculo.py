@@ -11,6 +11,7 @@ from src.loaders.vehiculo_loader import (
     UPDATE_vehiculo_db,
     DELETE_vehiculo_db,
     INSERT_documento_vehiculo_db,
+    DELETE_documento_vehiculo_db,
 )
 
 
@@ -42,3 +43,8 @@ def DELETE_vehiculo(vehiculo_id: int) -> dict:
 
 def AGREGAR_documento_vehiculo(vehiculo_id: int, tipo_doc: str, nom_documento: str) -> dict:
     return INSERT_documento_vehiculo_db(vehiculo_id, tipo_doc, nom_documento)
+
+
+def ELIMINAR_documento_vehiculo(documento_id: int, vehiculo_id: int = None) -> dict:
+    return DELETE_documento_vehiculo_db(documento_id, vehiculo_id)
+

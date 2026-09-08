@@ -165,46 +165,18 @@
     window.showPageLoader = showLoader;
     window.hidePageLoader = hideLoader;
 
-    // Interceptar clics en enlaces internos navegables
-    document.addEventListener("click", function (e) {
-      if (e.defaultPrevented || e.button !== 0) return;
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-
-      const a = e.target.closest("a[href]");
-      if (!a) return;
-
-      const rawHref = a.getAttribute("href");
-      if (!rawHref || rawHref === "#" || rawHref.startsWith("#") || rawHref.startsWith("javascript:") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) {
-        return;
-      }
-      if (a.hasAttribute("download") || (a.target && a.target !== "_self")) {
-        return;
-      }
-
-      try {
-        const dest = new URL(a.href, window.location.href);
-        if (dest.origin !== window.location.origin) return;
-
-        // Si es exactamente la misma ruta, no recargar
-        const currentPath = window.location.pathname + window.location.search;
-        const destPath = dest.pathname + dest.search;
-        if (currentPath === destPath && dest.hash) return;
-
-        // Mostrar pantalla de carga y navegar con suavidad
-        e.preventDefault();
-        showLoader();
-        setTimeout(function () {
-          window.location.href = a.href;
-        }, 160);
-      } catch (err) {}
-    });
+    // Asegurar que esté oculto al cargar o interactuar
+    hideLoader();
 
     // Ocultar si la página se restaura desde la caché de historial del navegador (bfcache)
     window.addEventListener("pageshow", function () {
       hideLoader();
     });
 
-    // Ocultar de forma segura cuando el DOM y Alpine hayan terminado de cargar
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      hideLoader();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       hideLoader();
     });
@@ -214,5 +186,10 @@
     document.addEventListener("alpine:initialized", function () {
       hideLoader();
     });
+
+    // Timeout de seguridad máximo (1.2s) para garantizar que el loader nunca se quede bloqueando la pantalla
+    setTimeout(function () {
+      hideLoader();
+    }, 1200);
   })();
 </script>

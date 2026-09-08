@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from src.schemas.emp_contratista_schema import EmpContratistaInput, UpdateEmpContratistainput
 from src.services.emp_contratista import CREATE_emp_contratista
 from src.transformers.empContr_transformer import TRANSFORM_EMPCONTRATISTA
+from src.utils.security import get_current_user, require_permission
 from src.loaders.emp_contratista_loader import (
     GET_empCont_db, 
     UPDATE_empCont_db, 
@@ -12,7 +13,7 @@ from src.loaders.emp_contratista_loader import (
 router = APIRouter(prefix = "/emp_contratista", tags = ["Empresas Contratistas"])
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def CREATE_empContratista_rt(payload: EmpContratistaInput):
+def CREATE_empContratista_rt(payload: EmpContratistaInput, current_user: dict = Depends(require_permission("contratistas", "crear"))):
 
     resultado = CREATE_emp_contratista(payload)
 
@@ -28,7 +29,7 @@ def CREATE_empContratista_rt(payload: EmpContratistaInput):
 @router.get("/getall", status_code=status.HTTP_200_OK)
 @router.get("/", status_code=status.HTTP_200_OK)
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
-def GET_ALL_empCont_rt():
+def GET_ALL_empCont_rt(current_user: dict = Depends(get_current_user)):
 
     print("🔍 [GET] Consultando todas las empresas contratistas en la base de datos...")
 
@@ -46,7 +47,7 @@ def GET_ALL_empCont_rt():
 
 
 @router.get("/{empcont_id}", status_code=status.HTTP_200_OK)
-def GET_empContratista_rt(empcont_id: int):
+def GET_empContratista_rt(empcont_id: int, current_user: dict = Depends(get_current_user)):
 
     print(f"🔍 [GET] Buscando empresa contratista con ID #{empcont_id} en la base de datos")
     resultado = GET_empCont_db(empcont_id)
@@ -60,7 +61,7 @@ def GET_empContratista_rt(empcont_id: int):
     print(f"📦 [GET] Datos de la empresa #{empcont_id} recuperados con éxito.")
     return resultado
 @router.patch("/{empcont_id}", status_code=status.HTTP_200_OK)
-def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput):
+def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput, current_user: dict = Depends(require_permission("contratistas", "editar"))):
 
     print(f"🔄 [PATCH] Actualizando empresa contratista con ID #{empcont_id} en la base de datos... ")
     data_raw = payload.model_dump(exclude_unset=True) 
@@ -86,7 +87,7 @@ def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput
     return resultado
 
 @router.delete("/{empcont_id}", status_code=status.HTTP_200_OK)
-def DELETE_empContratista_rt(empcont_id: int):
+def DELETE_empContratista_rt(empcont_id: int, current_user: dict = Depends(require_permission("contratistas", "eliminar"))):
 
     print(f"🗑️ [DELETE] Eliminando empresa contratista con ID #{empcont_id} de la base de datos...")
     resultado = DELETE_empCont_db(empcont_id)

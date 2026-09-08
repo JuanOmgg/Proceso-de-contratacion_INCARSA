@@ -30,10 +30,11 @@ def upgrade() -> None:
 
     op.execute("""
         INSERT INTO roles (nombre_rol, descripcion) VALUES
-        ('Administrador', ''),
-        ('SuperAdmin', ''),
-        ('Vigilante', ''),
-        ('Gestion documental', ''),
+        ('ADMINISTRADOR', ''),
+        ('SUPERADMIN', ''),
+        ('VIGILANTE', ''),
+        ('CONTRATISTA', ''),
+        ('GESTION DOCUMENTAL', ''),
         ('SST', 'Seguridad y Salud en el Trabajo'),
         ('GESCO', 'Gestión del conocimiento'),
         ('SCR', 'Segurdad corporativa y riesgo')
@@ -98,7 +99,7 @@ def upgrade() -> None:
 
     op.execute("""
         INSERT INTO usuarios (id, nombres, apellidos, tipo_documento, num_documento, num_telefono, correo, contrasena, id_rol, is_active) VALUES
-        (1, 'Juan', 'Prieto', 'CC', '1212121212', '3000000000', 'juandeveloper2427@gmail.com', '$2b$12$MsmbFnqQWPQj.l35Je3yM.9D6j2jLYzq6J3Nas/kcVv.6S0Sp2zgu', 2, 1)
+        (1, 'Soporte', '', 'CC', '1212121212', '3000000000', 'juandeveloper2427@gmail.com', '$2b$12$MsmbFnqQWPQj.l35Je3yM.9D6j2jLYzq6J3Nas/kcVv.6S0Sp2zgu', 2, 1)
         ON DUPLICATE KEY UPDATE nombres = VALUES(nombres);
     """)
 

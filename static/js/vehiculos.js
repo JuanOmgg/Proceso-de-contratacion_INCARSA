@@ -12,6 +12,15 @@ function vehiculoManager() {
         mensajeExito: "",
         mensajeError: "",
 
+        isModuloMantenimiento(mod) {
+            return window.isModuloMantenimiento ? window.isModuloMantenimiento(mod || 'vehiculos') : false;
+        },
+        get estadoMantenimiento() {
+            return (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('mantenimiento'))
+                ? Alpine.store('mantenimiento')
+                : (window.estadoMantenimiento || {});
+        },
+
         // Modo edición
         editandoId: null,
 
@@ -290,6 +299,13 @@ function vehiculoManager() {
             this.mensajeError = "";
         },
 
+        puedeAccion(mod, acc) {
+            if (typeof window.puedeAccion === "function") {
+                return window.puedeAccion(mod, acc);
+            }
+            return true;
+        },
+
         async guardarVehiculo() {
             this.limpiarMensajes();
 
@@ -306,10 +322,18 @@ function vehiculoManager() {
             const docsValidos = (this.form.documentos || [])
                 .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
                 .map(d => ({
-                    tipo_doc: d.tipo_doc,
+                    tipo_doc: d.tipo_doc || "SOAT",
                     nom_documento: d.nombre_archivo.trim(),
                     nombre_archivo: d.nombre_archivo.trim()
                 }));
+
+            if (licencia_doc && !docsValidos.some(d => String(d.tipo_doc).toLowerCase().includes("licencia"))) {
+                docsValidos.push({
+                    tipo_doc: "licencia",
+                    nom_documento: licencia_doc,
+                    nombre_archivo: licencia_doc
+                });
+            }
 
             const payload = {
                 tipo: tipo,
@@ -322,9 +346,10 @@ function vehiculoManager() {
             this.guardando = true;
 
             try {
+                let res;
                 if (this.editandoId) {
                     // Actualizar (PATCH /api/v1/vehiculos/{id})
-                    const res = await fetch(`${API.vehiculos}/${this.editandoId}`, {
+                    res = await fetch(`${API.vehiculos}/${this.editandoId}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload)
@@ -338,7 +363,7 @@ function vehiculoManager() {
                     this.mensajeExito = `Vehículo ${placa} actualizado con éxito.`;
                 } else {
                     // Crear (POST /api/v1/vehiculos/)
-                    const res = await fetch(`${API.vehiculos}/`, {
+                    res = await fetch(`${API.vehiculos}/`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload)
@@ -354,6 +379,9 @@ function vehiculoManager() {
 
                 this.cancelarEdicion();
                 await this.cargarVehiculos();
+
+                // Notificar a otros módulos (como el wizard)
+                window.dispatchEvent(new CustomEvent("vehiculos-actualizados", { detail: { id: this.editandoId, ...payload } }));
 
                 setTimeout(() => {
                     this.limpiarMensajes();
@@ -388,6 +416,8 @@ function vehiculoManager() {
                 this.mensajeExito = `Vehículo ${placa} eliminado con éxito.`;
                 if (this.editandoId === id) this.cancelarEdicion();
                 await this.cargarVehiculos();
+
+                window.dispatchEvent(new CustomEvent("vehiculos-actualizados", { detail: { id, eliminado: true } }));
 
                 setTimeout(() => {
                     this.limpiarMensajes();

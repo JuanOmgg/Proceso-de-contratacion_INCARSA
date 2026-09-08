@@ -5,7 +5,7 @@
  * Este archivo gestiona todo el ciclo de vida del formulario de solicitudes:
  * 1. Control del Stepper (Paso 1 a 4: navegación, validaciones y guardado).
  * 2. Carga asíncrona de catálogos desde el backend FastAPI (Empresas y Contratistas).
- * 3. Modo Edición (carga datos desde URL `?edit=ID` o MOCK_SOLICITUDES).
+ * 3. Modo Edición (carga datos desde URL `?edit=ID` o API del backend).
  * 4. Integración del calendario Flatpickr para fechas de ingreso y salida.
  * 5. Búsqueda y registro modal de Empresas Contratistas y Personas.
  * 6. Gestión dinámica de tablas de Vehículos y Equipos de cómputo.
@@ -29,6 +29,9 @@ function solicitudWizard() {
     // ========================================================================
     isEdit: false, // True si se ingresó con el parámetro ?edit=SOL-XXXX
     editId: null, // ID de la solicitud que se está editando
+    solicitudDevuelta: false, // True si la solicitud fue devuelta por SCR para corrección única
+    motivoDevolucion: "", // Motivo o inconsistencias descritas por SCR
+    tokenEdicion: null, // Token de acceso único provisto por la notificación
 
     // ========================================================================
     // 3. CATÁLOGOS Y ARRAYS DE DATOS ACTIVOS
@@ -178,7 +181,9 @@ function solicitudWizard() {
       fechaSalida: "", // Fecha de finalización en formato YYYY-MM-DD
       nivelRiesgo: "", // "Bajo" | "Medio" | "Alto"
       actividad: "", // Descripción detallada de las labores a ejecutar
-      diligenciadoPor: "Juan Prieto" // Nombre del usuario autenticado
+      diligenciadoPor: "Juan Prieto", // Nombre del usuario autenticado
+      estado: "ENVIADO", // Estado editable por SUPERADMIN en modo edición
+      codigo: "" // Código de radicado en modo edición
     },
     aceptaVeracidad: false, // Checkbox de confirmación y veracidad en el Paso 4
 
@@ -232,6 +237,24 @@ function solicitudWizard() {
     // 6. INICIALIZACIÓN (Lifecycle Hook de Alpine)
     // ========================================================================
     async init() {
+      // Validar permisos RBAC de creación y edición
+      const isEditar = window.location.pathname.includes("editar") || new URLSearchParams(window.location.search).has("edit") || new URLSearchParams(window.location.search).has("codigo");
+      const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+      const esSuper = (miSesion?.rol || "").trim().toUpperCase() === "SUPERADMIN";
+
+      if (!esSuper) {
+        if (isEditar && !window.puedeAccion('solicitudes', 'editar')) {
+          console.warn("Acceso denegado: No tienes permiso para editar solicitudes.");
+          window.location.replace("/solicitudes");
+          return;
+        }
+        if (!isEditar && (!window.puedeAccion('solicitudes', 'crear') || !window.puedeModulo('nueva_solicitud'))) {
+          console.warn("Acceso denegado: No tienes permiso para crear solicitudes.");
+          window.location.replace("/solicitudes");
+          return;
+        }
+      }
+
       // 1. Cargar empresas, plantas, contratistas, personas y vehículos desde FastAPI
       await Promise.allSettled([
         this.cargarEmpresas(),
@@ -241,14 +264,39 @@ function solicitudWizard() {
         this.cargarVehiculos()
       ]);
 
+      // Escuchar eventos globales de sincronización de vehículos
+      window.addEventListener("vehiculos-actualizados", () => {
+        this.cargarVehiculos();
+      });
+
       // 2. Verificar si es modo edición
       await this.inicializarModoEdicion();
     },
 
     solicitudOriginal: null,
 
+    estadoClass(estado) {
+      const map = {
+        "ENVIADO": "status-enviado",
+        "EN REVISIÓN": "status-revision",
+        "EN REVISION": "status-revision",
+        "DEVUELTO PARA CORRECCIÓN": "status-devuelto",
+        "DEVUELTO": "status-devuelto",
+        "POR APROBAR": "status-aprobar",
+        "APROBADO": "status-aprobado",
+        "PRE-APROBADO": "status-aprobado",
+        "RECHAZADO": "status-rechazado"
+      };
+      return map[(estado || "").toUpperCase()] || "status-enviado";
+    },
+
+    get esSuperAdmin() {
+      const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+      return (miSesion?.rol || "").trim().toUpperCase() === "SUPERADMIN";
+    },
+
     /**
-     * Si la URL incluye ?edit=ID, busca la solicitud en la API, localStorage o MOCK y precarga el formulario
+     * Si la URL incluye ?edit=ID, busca la solicitud en la API o localStorage y precarga el formulario
      */
     async inicializarModoEdicion() {
       const params = new URLSearchParams(window.location.search);
@@ -308,12 +356,75 @@ function solicitudWizard() {
         } catch (e) {}
       }
 
-      // 4. Fallback a MOCK_SOLICITUDES
-      if (!found && typeof MOCK_SOLICITUDES !== "undefined") {
-        found = MOCK_SOLICITUDES.find(s => String(s.id).toLowerCase() === String(editParam).toLowerCase());
-      }
 
       if (found) {
+        const miSesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
+        const miRol = (miSesion?.rol || "").trim().toUpperCase();
+        const esSuper = (miRol === "SUPERADMIN");
+        const estadoSol = String(found.estado || "").trim().toUpperCase();
+        const tokenParam = params.get("token");
+
+        // Caso: Solicitud devuelta por SCR para corrección única
+        if (estadoSol === "DEVUELTO PARA CORRECCIÓN") {
+          if (!tokenParam && !esSuper) {
+            console.warn(`Acceso restringido: La solicitud ${editParam} fue devuelta para corrección única y requiere token de la notificación.`);
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "warning",
+                title: "Edición Única Restringida",
+                text: "Esta solicitud fue devuelta por SCR para corrección. Solo puedes ingresar a editarla a través del enlace de la notificación.",
+                confirmButtonColor: "#f59e0b"
+              });
+            } else if (typeof alert === "function") {
+              alert("Esta solicitud fue devuelta por SCR para corrección. Solo puedes ingresar a editarla a través del enlace de la notificación.");
+            }
+            window.location.replace("/solicitudes");
+            return;
+          }
+
+          if (tokenParam) {
+            try {
+              const targetId = found.id || editParam;
+              const resToken = await fetch(`${API.solicitudes}/${targetId}/validar-token-edicion?token=${encodeURIComponent(tokenParam)}`);
+              if (!resToken.ok) {
+                const errData = await resToken.json().catch(() => ({}));
+                const msgError = errData.detail || "El enlace de edición única no es válido o ya fue utilizado previamente.";
+                if (typeof Swal !== "undefined") {
+                  await Swal.fire({
+                    icon: "error",
+                    title: "Acceso denegado",
+                    text: msgError,
+                    confirmButtonColor: "#ef4444"
+                  });
+                } else if (typeof alert === "function") {
+                  alert(msgError);
+                }
+                window.location.replace("/solicitudes");
+                return;
+              }
+              const dataToken = await resToken.json();
+              this.tokenEdicion = tokenParam;
+              this.solicitudDevuelta = true;
+              this.motivoDevolucion = dataToken.motivo_devolucion || found.motivo_devolucion || "";
+            } catch (errToken) {
+              console.error("Error al validar token de edición única:", errToken);
+              if (typeof alert === "function") {
+                alert("Error de conexión al verificar el enlace de edición única.");
+              }
+              window.location.replace("/solicitudes");
+              return;
+            }
+          }
+        } else if (!esSuper && estadoSol !== "ENVIADO") {
+          // Si NO es SuperAdmin y no es DEVUELTO, solo puede editar en estado 'ENVIADO'
+          console.warn(`Acceso restringido: La solicitud ${editParam} está en estado '${estadoSol}'. Solo puede ser editada en estado 'ENVIADO', o por un usuario SUPERADMIN.`);
+          if (typeof alert === "function") {
+            alert(`La solicitud se encuentra en estado "${estadoSol}". Solo puede ser editada mientras esté en estado "ENVIADO", o por un usuario SUPERADMIN.`);
+          }
+          window.location.replace("/solicitudes");
+          return;
+        }
+
         console.log("✅ [MODO EDICIÓN] Solicitud encontrada para editar:", found);
         this.solicitudOriginal = found;
         this.cargarDatosEnFormulario(found);
@@ -449,6 +560,8 @@ function solicitudWizard() {
       this.form.nivelRiesgo = found.nivel_de_riesgo || found.nivelRiesgo || found.riesgo || "Bajo";
       this.form.actividad = found.actividad || "";
       this.form.diligenciadoPor = found.diligenciador || found.diligenciado_por || found.diligenciadoPor || "Juan Prieto";
+      this.form.estado = (found.estado || "ENVIADO").toUpperCase();
+      this.form.codigo = found.codigo || found.codigo_radicado || "";
 
       // 5. Personas
       let listaPersonas = [];
@@ -760,13 +873,13 @@ function solicitudWizard() {
       );
       if (dePlantasApi.length > 0) return dePlantasApi;
 
-      // Fallback si la empresa tiene plantas en mock o disponibles
-      const mockEmp = (this.empresasDisponibles || []).find(e => 
+      // Fallback si la empresa tiene plantas anidadas en su objeto
+      const empMatch = (this.empresasDisponibles || []).find(e => 
         String(e.id) === String(empresaId) || 
         (empNombre && e.nombre && e.nombre.toLowerCase() === empNombre.toLowerCase())
       );
-      if (mockEmp && Array.isArray(mockEmp.plantas)) {
-        return mockEmp.plantas;
+      if (empMatch && Array.isArray(empMatch.plantas)) {
+        return empMatch.plantas;
       }
 
       return [];
@@ -1620,14 +1733,7 @@ function solicitudWizard() {
     // ========================================================================
     nextSolicitudId() {
       const year = new Date().getFullYear();
-      if (typeof MOCK_SOLICITUDES === "undefined") {
-        return `SOL-${year}-0001`;
-      }
-      const nums = MOCK_SOLICITUDES
-        .map(s => parseInt(s.id.split("-")[2], 10))
-        .filter(n => !isNaN(n));
-      const next = (nums.length ? Math.max(...nums) : 0) + 1;
-      return `SOL-${year}-${String(next).padStart(4, "0")}`;
+      return `SOL-${year}-0001`;
     },
 
     /**
@@ -1726,16 +1832,19 @@ function solicitudWizard() {
       }));
 
       // Equipos de Cómputo
-      const equiposPayload = this.equipos.map(e => ({
-        marca: e.marca || "Genérica",
-        modelo: e.modelo || "General",
-        serie: e.serie || "S/N"
-      }));
+      const equiposPayload = (this.equipos || [])
+        .filter(e => (e.marca && e.marca.trim()) || (e.modelo && e.modelo.trim()) || (e.serie && e.serie.trim()))
+        .map(e => ({
+          marca: (e.marca || "").trim() || "Genérica",
+          modelo: (e.modelo || "").trim() || "General",
+          serie: (e.serie || "").trim() || "S/N"
+        }));
 
       // Payload para la API
       const payloadApi = {
         codigo_radicado: this.form.codigo || undefined,
         observaciones: this.form.observaciones || undefined,
+        estado: (this.isEdit && this.esSuperAdmin) ? (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO") : undefined,
         empresa_origen: empresaOrigenId,
         diligenciado_por: diligenciadorId,
         nivel_de_riesgo: this.form.nivelRiesgo || "Bajo",
@@ -1749,36 +1858,28 @@ function solicitudWizard() {
         actividad: this.form.actividad,
         is_active: true,
         vehiculo: vehiculosPayload,
-        eq_computo: equiposPayload
+        vehiculos: vehiculosPayload,
+        eq_computo: equiposPayload,
+        equipos: equiposPayload,
+        token_edicion: this.tokenEdicion || undefined
       };
 
       // ========================================================================
-      // MODO EDICIÓN (PUT / PATCH)
+      // MODO EDICIÓN (PATCH)
       // ========================================================================
       if (this.isEdit && this.editId) {
         try {
-          console.log(`📤 [PUT/PATCH] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
+          console.log(`📤 [PATCH] Actualizando solicitud ${this.editId} en FastAPI:`, payloadApi);
           
-          let response = await fetch(`${API.solicitudes}/${this.editId}`, {
-            method: "PUT",
+          const response = await fetch(`${API.solicitudes}/${this.editId}`, {
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payloadApi)
           });
 
           if (!response.ok) {
-            response = await fetch(`${API.solicitudes}/update/${this.editId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payloadApi)
-            });
-          }
-
-          if (!response.ok) {
-            response = await fetch(`${API.solicitudes}/${this.editId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payloadApi)
-            });
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
           }
 
           // Actualizar en localStorage si existe allí
@@ -1787,7 +1888,7 @@ function solicitudWizard() {
             const idx = guardadas.findIndex(s => String(s.id) === String(this.editId));
             const solicitudActualizada = {
               id: this.editId,
-              estado: this.solicitudOriginal?.estado || "ENVIADO",
+              estado: this.solicitudDevuelta ? "POR APROBAR" : (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO"),
               contratista: this.form.contratista,
               empresaOrigen: this.empresaNombre(this.form.empresas[0]),
               plantas: plantasIds,
@@ -1808,6 +1909,27 @@ function solicitudWizard() {
             localStorage.setItem("incarsa_solicitudes_creadas", JSON.stringify(guardadas));
           } catch (e) {}
 
+          // Sincronizar almacenamiento local de revisiones según nuevo estado
+          try {
+            const storageKeyRev = `incarsa_revisiones_${this.editId}`;
+            const nuevoEstado = this.solicitudDevuelta ? "POR APROBAR" : String(this.form.estado || "").trim().toUpperCase();
+            if (["EN REVISIÓN", "EN REVISION", "ENVIADO"].includes(nuevoEstado)) {
+              localStorage.removeItem(storageKeyRev);
+            } else if (nuevoEstado === "POR APROBAR") {
+              const dataRev = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+              if (dataRev) {
+                if (Array.isArray(dataRev)) {
+                  const filtradas = dataRev.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  localStorage.setItem(storageKeyRev, JSON.stringify(filtradas));
+                } else if (Array.isArray(dataRev.historial)) {
+                  dataRev.historial = dataRev.historial.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  if (dataRev.roles) delete dataRev.roles["SCR"];
+                  localStorage.setItem(storageKeyRev, JSON.stringify(dataRev));
+                }
+              }
+            }
+          } catch (e) {}
+
           this.submitted = true;
           setTimeout(() => {
             window.location.href = "/solicitudes";
@@ -1821,7 +1943,7 @@ function solicitudWizard() {
             const idx = guardadas.findIndex(s => String(s.id) === String(this.editId));
             const solicitudActualizada = {
               id: this.editId,
-              estado: this.solicitudOriginal?.estado || "ENVIADO",
+              estado: this.form.estado || this.solicitudOriginal?.estado || "ENVIADO",
               contratista: this.form.contratista,
               empresaOrigen: this.empresaNombre(this.form.empresas[0]),
               plantas: plantasIds,
@@ -1840,6 +1962,26 @@ function solicitudWizard() {
               guardadas.unshift(solicitudActualizada);
             }
             localStorage.setItem("incarsa_solicitudes_creadas", JSON.stringify(guardadas));
+          } catch (e) {}
+
+          try {
+            const storageKeyRev = `incarsa_revisiones_${this.editId}`;
+            const nuevoEstado = String(this.form.estado || "").trim().toUpperCase();
+            if (["EN REVISIÓN", "EN REVISION", "ENVIADO"].includes(nuevoEstado)) {
+              localStorage.removeItem(storageKeyRev);
+            } else if (nuevoEstado === "POR APROBAR") {
+              const dataRev = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
+              if (dataRev) {
+                if (Array.isArray(dataRev)) {
+                  const filtradas = dataRev.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  localStorage.setItem(storageKeyRev, JSON.stringify(filtradas));
+                } else if (Array.isArray(dataRev.historial)) {
+                  dataRev.historial = dataRev.historial.filter(r => String(r.rol || "").toUpperCase() !== "SCR");
+                  if (dataRev.roles) delete dataRev.roles["SCR"];
+                  localStorage.setItem(storageKeyRev, JSON.stringify(dataRev));
+                }
+              }
+            }
           } catch (e) {}
 
           this.submitted = true;

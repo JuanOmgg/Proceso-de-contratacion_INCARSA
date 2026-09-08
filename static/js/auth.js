@@ -1,7 +1,6 @@
 /**
  * auth.js
  * Componente Alpine.js del formulario de inicio de sesión y recuperación de contraseña en pasos.
- * Depende de mockData.js (debe cargarse antes que este archivo).
  */
 
 function loginForm() {
@@ -33,7 +32,7 @@ function loginForm() {
 
       const params = new URLSearchParams(window.location.search);
       if (params.get("expired")) {
-        this.error = "Tu sesión ha caducado o el token ha expirado. Inicia sesión nuevamente.";
+        this.error = "Tu sesión ha caducado.";
       }
     },
 
@@ -294,14 +293,6 @@ function loginForm() {
           throw new Error("No se pudo actualizar la contraseña.");
         }
 
-        // Actualizar en mock si el usuario existe en MOCK_USUARIOS
-        try {
-          if (typeof MOCK_USUARIOS !== "undefined" && Array.isArray(MOCK_USUARIOS)) {
-            const u = MOCK_USUARIOS.find(usr => (usr.correo || "").toLowerCase() === (this.olvide.correo || "").toLowerCase());
-            if (u) u.contrasena = p1;
-          }
-        } catch (e) {}
-
         this.olvide.enviando = false;
         this.olvide.paso = 4;
 
@@ -312,28 +303,8 @@ function loginForm() {
 
       } catch (err) {
         console.warn("Error en actualizarContrasena:", err);
-
-        // Si fue un error de validación de backend explícito
-        if (err.message && !err.message.includes("fetch") && !err.message.includes("NetworkError")) {
-          this.olvide.enviando = false;
-          this.olvide.error = err.message;
-          return;
-        }
-
-        // Si el backend no estaba conectado (fallback para mock)
-        try {
-          if (typeof MOCK_USUARIOS !== "undefined" && Array.isArray(MOCK_USUARIOS)) {
-            const u = MOCK_USUARIOS.find(usr => (usr.correo || "").toLowerCase() === (this.olvide.correo || "").toLowerCase());
-            if (u) u.contrasena = p1;
-          }
-        } catch (e) {}
-
         this.olvide.enviando = false;
-        this.olvide.paso = 4;
-
-        setTimeout(() => {
-          this.finalizarRecuperacion();
-        }, 2400);
+        this.olvide.error = err.message || "Error al actualizar la contraseña.";
       }
     },
 
@@ -364,7 +335,7 @@ function loginForm() {
       return true;
     },
 
-    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = [], token = null) {
+    guardarSesion(nombre, correo, rol, id = null, id_rol = null, plantas_ids = [], plantas = [], token = null, permisos = null) {
       const datos = { 
         nombre, 
         correo, 
@@ -381,16 +352,21 @@ function loginForm() {
       if (token) {
         sessionStorage.setItem("incarsa_token", token);
       }
+      if (permisos) {
+        sessionStorage.setItem("incarsa_permisos", JSON.stringify(permisos));
+      }
 
       // Si el usuario marcó "Recordarme", persistir permanentemente en localStorage
       if (this.recordarme) {
         localStorage.setItem("incarsa_session", JSON.stringify(datos));
         if (token) localStorage.setItem("incarsa_token", token);
+        if (permisos) localStorage.setItem("incarsa_permisos", JSON.stringify(permisos));
         localStorage.setItem("incarsa_recordado_correo", correo);
       } else {
         // Si NO marcó Recordarme, limpiar localStorage para que la sesión expire al cerrar el navegador
         localStorage.removeItem("incarsa_session");
         localStorage.removeItem("incarsa_token");
+        localStorage.removeItem("incarsa_permisos");
         localStorage.removeItem("incarsa_recordado_correo");
       }
     },
@@ -409,6 +385,7 @@ function loginForm() {
 
       let matchedUser = null;
       let accessToken = null;
+      let userPermisos = null;
 
       // 1. Intentar autenticación real contra el endpoint /auth/login
       try {
@@ -429,6 +406,7 @@ function loginForm() {
           if (resData.exito && resData.usuario) {
             matchedUser = resData.usuario;
             accessToken = resData.access_token;
+            userPermisos = resData.permisos || null;
           }
         } else {
           const errData = await response.json().catch(() => ({}));
@@ -450,31 +428,7 @@ function loginForm() {
         }
       } catch (errApi) {
         console.warn("Intento de conexión con /auth/login falló:", errApi);
-      }
-
-      // 2. Modo mock fallback si no se encontró en backend
-      if (!matchedUser && typeof MOCK_USUARIOS !== "undefined") {
-        const mockMatch = MOCK_USUARIOS.find(
-          u => u.correo.toLowerCase() === this.correo.trim().toLowerCase()
-        );
-        if (mockMatch) {
-          if (mockMatch.is_active === 0 || mockMatch.is_active === false || mockMatch.is_active === "0") {
-            await new Promise(r => setTimeout(r, 450));
-            this.splash.activo = false;
-            this.submitting = false;
-            this.error = "Tu cuenta se encuentra inactiva. Comunícate con el administrador.";
-            return;
-          }
-          matchedUser = {
-            nombre: `${mockMatch.nombres} ${mockMatch.apellidos}`.trim(),
-            correo: mockMatch.correo,
-            rol: mockMatch.rol || "GESTOR DE DOCUMENTACIÓN",
-            id: mockMatch.id || 1,
-            id_rol: 2,
-            plantas_ids: [],
-            plantas: []
-          };
-        }
+        this.error = "Error de conexión con el servidor. Intente nuevamente.";
       }
 
       // Si no existe el usuario, cerrar splash y mostrar error
@@ -496,7 +450,8 @@ function loginForm() {
         matchedUser.id_rol,
         matchedUser.plantas_ids,
         matchedUser.plantas,
-        accessToken
+        accessToken,
+        userPermisos
       );
 
       await this.ejecutarPrecargaCompleta(matchedUser);
@@ -550,6 +505,17 @@ function loginForm() {
           return data;
         }).catch(() => null);
 
+      const tPermisos = fetch("/api/v1/roles/mis-permisos")
+        .then(async r => {
+          if (!r.ok) return null;
+          const data = await r.json();
+          if (data && data.permisos) {
+            sessionStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+            localStorage.setItem("incarsa_permisos", JSON.stringify(data.permisos));
+            return data.permisos;
+          }
+        }).catch(() => null);
+
       const tLogo = new Promise(resolve => {
         const img = new Image();
         img.src = "/static/img/logo-sidebar.png";
@@ -557,7 +523,7 @@ function loginForm() {
         img.onerror = resolve;
       });
 
-      const tareas = [tSolicitudes, tPlantas, tContratistas, tNotificaciones, tLogo];
+      const tareas = [tSolicitudes, tPlantas, tContratistas, tNotificaciones, tPermisos, tLogo];
       let completadas = 0;
 
       tareas.forEach(p => {

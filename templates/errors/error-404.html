@@ -5,12 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 · Página no encontrada · INCARSA</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="/static/img/icono.png">
+<link rel="shortcut icon" href="/static/img/icono.png">
+
+<!-- Tailwind CSS Compilado Local -->
+<link rel="stylesheet" href="/static/css/tailwind.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/error-pages.css">
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/error-pages.css?v=20260906_v7">
+<style>
+.error-404-clean-number {
+  font-family: 'Space Grotesk', var(--font-display), sans-serif;
+  font-weight: 800;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-stroke: 2px #0ea5e9;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 8px rgba(14, 165, 233, 0.7),
+    0 0 20px rgba(14, 165, 233, 0.45);
+  filter: drop-shadow(0 0 14px rgba(14, 165, 233, 0.55));
+}
+</style>
 </head>
 
 <body class="antialiased">
@@ -29,34 +51,38 @@
     <span class="font-display font-semibold text-white tracking-wide">INCARSA</span>
   </div>
 
-  <p class="error-code-hero">404</p>
+  <div class="relative flex items-center justify-center">
+    <!-- Brillo ambiental azul detrás del 404 -->
+    <div class="absolute -inset-6 bg-sky-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <p class="error-code-hero error-404-clean-number select-none">404</p>
+  </div>
 
-  <p class="error-code">Error 404</p>
-  <h1 class="error-title">Página no encontrada</h1>
+  <p class="error-code error-404-code-glow">Error 404</p>
+  <h1 class="error-title error-404-title-glow">Página no encontrada</h1>
   <p class="error-description">
     La página que buscas no existe, fue movida o la dirección tiene un error de escritura.
   </p>
 
   <div class="error-actions">
-    <button type="button" onclick="history.back()" class="w-full rounded-lg px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2 text-white bg-sky-600 hover:bg-sky-500 shadow-md hover:shadow-sky-500/20 active:scale-95 transition-all">
+    <button type="button" onclick="history.back()" class="error-btn-primary error-btn-404 w-full rounded-lg px-5 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2">
       <i class="fa-solid fa-arrow-left text-xs"></i> Volver atrás
     </button>
   </div>
 
   <!-- Accesos rápidos -->
   <div class="grid grid-cols-3 gap-2 mt-2 w-full max-w-sm relative z-10">
-    <a href="dashboard.html" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
+    <a href="/dashboard" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
       <i class="fa-solid fa-gauge-high text-sky-400 text-xs"></i> Dashboard
     </a>
-    <a href="solicitudes-formulario.html" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
+    <a href="/solicitudes" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
       <i class="fa-solid fa-file-circle-plus text-sky-400 text-xs"></i> Solicitudes
     </a>
-    <a href="usuarios-listado.html" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
+    <a href="/usuarios" class="error-quick-link flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium hover:text-sky-300 hover:border-sky-400/40">
       <i class="fa-solid fa-users text-sky-400 text-xs"></i> Usuarios
     </a>
   </div>
 </div>
 
-<script src="assets/js/page-transition.js"></script>
+<script src="/static/js/page-transition.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 {% block title %}Procesamientos{% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/procesamiento.js')}}"></script>
+  <script src="{{ url_for('static', path='js/procesamiento.js') }}?v=3.5"></script>
 {% endblock %}
 
 {% block content %}
@@ -39,7 +39,7 @@
             <div class="relative flex-1 min-w-[160px] sm:max-w-xs">
               <i
                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
-              <input type="text" x-model="search" @input="resetPage()" placeholder="Buscar código (RAD-0001), contratista..."
+              <input type="text" x-model.debounce.250ms="search" @input.debounce.250ms="resetPage()" placeholder="Buscar código (RAD-0001), contratista..."
                 class="input-field w-full rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm">
             </div>
 
@@ -92,8 +92,8 @@
             </div>
           </div>
 
-          <!-- Derecha: Chips de Filtro Estado (Fila única desplazable en móvil) -->
-          <div class="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar max-w-full py-1.5 px-0.5 flex-shrink-0">
+          <!-- Derecha: Chips de Filtro Estado -->
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible max-w-full py-2 px-1 flex-shrink-0">
             <button type="button" @click="filtroEstado = 'TODOS'; resetPage()" 
               class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
               :class="filtroEstado === 'TODOS' ? 'is-active scale-105' : 'is-idle'">
@@ -130,30 +130,44 @@
         <!-- ===== Tarjetas de trazabilidad ===== -->
         <section class="grid lg:grid-cols-2 gap-5">
           <template x-for="solicitud in paginated" :key="solicitud.id">
-            <div class="tracking-card p-5" :class="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0' ? 'tracking-card-inactiva' : ''">
-              <!-- Encabezado -->
-              <div class="flex items-start justify-between mb-1 gap-2">
-                <div>
-                  <h3 class="font-display font-semibold text-[var(--ink-900)]" x-text="solicitud.nombre_emContratista || solicitud.contratista || '—'"></h3>
+            <div class="tracking-card p-5 flex flex-col justify-between h-full" :class="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0' ? 'tracking-card-inactiva' : ''">
+              <div>
+                <!-- Encabezado con altura fija uniforme -->
+                <div class="flex items-center justify-between mb-2 gap-3 min-h-[32px]">
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-display font-semibold text-[var(--ink-900)] text-base truncate" :data-tooltip="solicitud.nombre_emContratista || solicitud.contratista" x-text="solicitud.nombre_emContratista || solicitud.contratista || '—'"></h3>
+                  </div>
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <span x-show="solicitud.pre_aprobado"
+                      class="status-pill bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 font-bold text-[10px] select-none"
+                      data-tooltip="Pre-aprobada por SCR">
+                      <i class="fa-solid fa-bolt text-amber-600 text-[9px]"></i> Pre-aprobada
+                    </span>
+                    <span x-show="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0'"
+                      class="status-pill tracking-card-inactive-badge">Inactivo</span>
+                    <span class="status-pill" :class="estadoEstilos(solicitud.estado)" x-text="solicitud.estado"></span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <span x-show="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0'"
-                    class="status-pill tracking-card-inactive-badge">Inactivo</span>
-                  <span class="status-pill" :class="estadoEstilos(solicitud.estado)" x-text="solicitud.estado"></span>
+
+                <!-- Meta: distribución uniforme de 2 filas fijas en todas las tarjetas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-[var(--text-muted)] mt-2.5 mb-5 min-h-[42px]">
+                  <div class="truncate flex items-center gap-1.5 min-w-0" :data-tooltip="Array.isArray(solicitud.planta) ? solicitud.planta.join(', ') : (solicitud.planta || '—')">
+                    <i class="fa-solid fa-industry flex-shrink-0 text-slate-400"></i>
+                    <span class="truncate" x-text="Array.isArray(solicitud.planta) ? solicitud.planta.join(', ') : (solicitud.planta || '—')"></span>
+                  </div>
+                  <div class="truncate flex items-center gap-1.5 min-w-0 whitespace-nowrap">
+                    <i class="fa-regular fa-calendar flex-shrink-0 text-slate-400"></i>
+                    <span class="truncate"><span x-text="solicitud.fecha_ingreso"></span> → <span x-text="solicitud.fecha_salida"></span></span>
+                  </div>
+                  <div class="truncate flex items-center gap-1.5 col-span-1 sm:col-span-2 min-w-0" :data-tooltip="solicitud.diligenciador">
+                    <i class="fa-regular fa-user flex-shrink-0 text-slate-400"></i>
+                    <span class="truncate" x-text="solicitud.diligenciador"></span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Meta -->
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-muted)] mt-3 mb-5">
-                <span><i class="fa-solid fa-industry mr-1"></i><span
-                    x-text="Array.isArray(solicitud.planta) ? solicitud.planta.join(', ') : (solicitud.planta || '—')"></span></span>
-                <span><i class="fa-regular fa-calendar mr-1"></i><span x-text="solicitud.fecha_ingreso"></span> → <span
-                    x-text="solicitud.fecha_salida"></span></span>
-                <span><i class="fa-regular fa-user mr-1"></i><span x-text="solicitud.diligenciador"></span></span>
-              </div>
-
-              <!-- Timeline de progreso -->
-              <div class="flex items-start px-1">
+              <!-- Timeline de progreso (bloque centralizado) -->
+              <div class="flex items-start px-1 my-auto py-1">
                 <template x-for="(etapa, idx) in getEtapas(solicitud)" :key="idx">
                   <div class="flex items-start" :class="idx < 3 ? 'flex-1' : ''">
                     <!-- Nodo (círculo + etiqueta) -->
@@ -191,13 +205,28 @@
                 </template>
               </div>
 
-              <!-- Botón de acción: Revisar Expediente -->
+              <!-- Botón de acción: Revisar Expediente con cambio de estilo según Visto Bueno -->
               <div class="mt-5 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
-                <span class="text-[11px] text-[var(--text-muted)] font-mono font-bold" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-[11px] text-[var(--text-muted)] font-mono font-bold" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
+                  <span x-show="getEstadoRevisionUsuario(solicitud) === 'aprobado'"
+                    class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-md"
+                    data-tooltip="Ya diste tu visto bueno a esta solicitud">
+                    <i class="fa-solid fa-check text-[9px]"></i> Visto Bueno
+                  </span>
+                  <span x-show="getEstadoRevisionUsuario(solicitud) === 'rechazado'"
+                    class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-md"
+                    data-tooltip="Dictamen de rechazo emitido">
+                    <i class="fa-solid fa-xmark text-[9px]"></i> Rechazado
+                  </span>
+                </div>
+
                 <a :href="'/solicitudes/revision/' + (solicitud.codigo || solicitud.id)" 
-                  class="btn-signal text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all">
-                  <i class="fa-solid fa-clipboard-check text-[11px]"></i>
-                  <span>Revisar Expediente</span>
+                  class="text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none flex-shrink-0"
+                  :class="getBotonRevisionClase(solicitud)"
+                  :data-tooltip="getEstadoRevisionUsuario(solicitud) === 'aprobado' ? 'Ya has revisado y otorgado visto bueno. Clic para ver expediente.' : 'Clic para revisar expediente y emitir dictamen'">
+                  <i :class="getBotonRevisionIcono(solicitud) + ' text-[11px]'"></i>
+                  <span x-text="getBotonRevisionTexto(solicitud)"></span>
                 </a>
               </div>
             </div>

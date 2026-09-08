@@ -23,6 +23,7 @@
       const current = window.location.pathname;
       if (path === '/dashboard') return current === '/dashboard' || current === '/';
       if (path === '/solicitudes') return current === '/solicitudes' || current === '/solicitudes/';
+      if (path === '/superadmin') return current === '/superadmin' || current.startsWith('/superadmin');
       return current.startsWith(path);
     }
   }"
@@ -45,14 +46,17 @@
       </div>
 
       <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <a href="/dashboard" class="sidebar-link flex items-center gap-3 px-3 py-2.5"
+        <a href="/dashboard" x-show="puedeModulo('dashboard')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/dashboard') ? 'is-active' : ''">
-          <i class="fa-solid fa-gauge-high w-4 text-center"></i>
-          <span class="sidebar-label">Dashboard</span>
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-gauge-high w-4 text-center"></i>
+            <span class="sidebar-label">Dashboard</span>
+          </span>
+          <span x-show="isModuloMantenimiento('dashboard')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
 
         <!-- Módulo desplegable: Formularios -->
-        <div>
+        <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario')">
           <button type="button" @click="toggleModule('formularios')"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
             :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') }">
@@ -65,10 +69,16 @@
           </button>
           <div x-show="openModules.formularios" x-collapse
             class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
-            <a href="/solicitudes/nueva" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') ? 'is-active' : ''">Nueva solicitud</a>
-            <a href="/usuarios/nuevo" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') ? 'is-active' : ''">Nuevo usuario</a>
+            <a href="/solicitudes/nueva" x-show="puedeModulo('nueva_solicitud')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') ? 'is-active' : ''">
+              <span>Nueva solicitud</span>
+              <span x-show="isModuloMantenimiento('nueva_solicitud')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
+            <a href="/usuarios/nuevo" x-show="puedeModulo('nuevo_usuario')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') ? 'is-active' : ''">
+              <span>Nuevo usuario</span>
+              <span x-show="isModuloMantenimiento('nuevo_usuario')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
           </div>
         </div>
 
@@ -86,28 +96,70 @@
           </button>
           <div x-show="openModules.tablas" x-collapse
             class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
-            <a href="/solicitudes" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar') ? 'is-active' : ''">Solicitudes</a>
-            <a href="/usuarios" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/usuarios') ? 'is-active' : ''">Usuarios</a>
-            <a href="#" @click.prevent="sidebarOpenMobile = false; $dispatch('open-plantas-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Plantas y zonas</a>
-            <a href="#" @click.prevent="sidebarOpenMobile = false; $dispatch('open-contratistas-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Contratistas</a>
-            <a href="#" @click.prevent="sidebarOpenMobile = false; $dispatch('open-vehiculos-modal')" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px] cursor-pointer">Vehículos</a>
-            <a href="/personas" class="sidebar-sublink block py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/personas') ? 'is-active' : ''">Personas</a>
+            <a href="/solicitudes" x-show="puedeModulo('solicitudes')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar') ? 'is-active' : ''">
+              <span>Solicitudes</span>
+              <span x-show="isModuloMantenimiento('solicitudes')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
+            <a href="/usuarios" x-show="puedeModulo('usuarios')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/usuarios') ? 'is-active' : ''">
+              <span>Usuarios</span>
+              <span x-show="isModuloMantenimiento('usuarios')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
+            <a href="#" x-show="puedeModulo('plantas')" 
+              @click.prevent="sidebarOpenMobile = false; $dispatch('open-plantas-modal')" 
+              class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px] cursor-pointer">
+              <span>Plantas y zonas</span>
+              <span x-show="isModuloMantenimiento('plantas')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">503</span>
+            </a>
+            <a href="#" x-show="puedeModulo('contratistas')" 
+              @click.prevent="sidebarOpenMobile = false; $dispatch('open-contratistas-modal')" 
+              class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px] cursor-pointer">
+              <span>Contratistas</span>
+              <span x-show="isModuloMantenimiento('contratistas')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">503</span>
+            </a>
+            <a href="#" x-show="puedeModulo('vehiculos')" 
+              @click.prevent="sidebarOpenMobile = false; $dispatch('open-vehiculos-modal')" 
+              class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px] cursor-pointer">
+              <span>Vehículos</span>
+              <span x-show="isModuloMantenimiento('vehiculos')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">503</span>
+            </a>
+            <a href="/personas" x-show="puedeModulo('personas')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/personas') ? 'is-active' : ''">
+              <span>Personas</span>
+              <span x-show="isModuloMantenimiento('personas')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
           </div>
         </div>
 
-        <a href="/procesamiento" class="sidebar-link flex items-center gap-3 px-3 py-2.5"
+        <a href="/procesamiento" x-show="puedeModulo('procesamiento')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/procesamiento') ? 'is-active' : ''">
-          <i class="fa-solid fa-diagram-project w-4 text-center"></i>
-          <span class="sidebar-label">Procesamiento</span>
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-diagram-project w-4 text-center"></i>
+            <span class="sidebar-label">Procesamiento</span>
+          </span>
+          <span x-show="isModuloMantenimiento('procesamiento')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
-        <a href="/antecedentes" class="sidebar-link flex items-center gap-3 px-3 py-2.5"
+        <a href="/antecedentes" x-show="puedeModulo('antecedentes')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/antecedentes') ? 'is-active' : ''">
-          <i class="fa-solid fa-magnifying-glass-chart"></i>
-          <span class="sidebar-label">Antecedentes</span>
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-magnifying-glass-chart w-4 text-center"></i>
+            <span class="sidebar-label">Antecedentes</span>
+          </span>
+          <span x-show="isModuloMantenimiento('antecedentes')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
+
+        <!-- Módulo Exclusivo SuperAdmin -->
+        <div x-show="tieneRol('SUPERADMIN')" class="pt-3 border-t border-white/10 mt-3">
+          <div class="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-amber-400/90 sidebar-label flex items-center gap-1.5">
+            <i class="fa-solid fa-crown text-[9px]"></i> Control Maestro
+          </div>
+          <a href="/superadmin" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-amber-300 hover:text-amber-200"
+            :class="isActive('/superadmin') ? 'is-active' : ''">
+            <i class="fa-solid fa-shield-halved w-4 text-center text-amber-400"></i>
+            <span class="sidebar-label font-semibold">Panel SuperAdmin</span>
+          </a>
+        </div>
       </nav>
 
       <!-- Footer del sidebar: Control interactivo Modo Compacto -->
@@ -154,6 +206,60 @@
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
 
+        <!-- ============================================================
+             VISTA 503 CUANDO EL MÓDULO ESTÁ EN MANTENIMIENTO
+        ============================================================= -->
+        <div x-show="isModuloMantenimiento('plantas')" class="py-6 px-4 text-center space-y-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 text-2xl shadow-lg shadow-amber-500/10 mb-1">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+
+          <div>
+            <p class="text-3xl font-black font-mono tracking-wider text-amber-500 mb-1">503</p>
+            <span class="status-pill status-revision font-bold text-xs px-3 py-1 inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Módulo en Mantenimiento Programado
+            </span>
+            <h3 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] mt-2">
+              Gestión de Plantas y Zonas
+            </h3>
+            <p class="text-xs sm:text-sm text-[var(--paper-muted)] max-w-md mx-auto mt-2 leading-relaxed"
+              x-text="estadoMantenimiento?.mensaje || 'Estamos realizando labores de optimización y mantenimiento programado en este módulo. El resto de la plataforma sigue operando con normalidad.'">
+            </p>
+          </div>
+
+          <!-- CRONÓMETRO VISUAL DENTRO DEL MODAL -->
+          <div class="p-3.5 rounded-xl bg-black/40 border border-amber-500/30 max-w-xs mx-auto shadow-inner" x-data="modalTimerCountdown()">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+            </p>
+            <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="hours">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Horas</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="minutes">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Minutos</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="seconds">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Segundos</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-300 mt-2 font-medium" x-text="estadoMantenimiento?.tiempo || 'Disponible en breve'"></p>
+          </div>
+
+          <div class="pt-3 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             CONTENIDO HABITUAL (Cuando el módulo NO está en mantenimiento)
+        ============================================================= -->
+        <div x-show="!isModuloMantenimiento('plantas')">
         <!-- Cabecera estilo Ticket -->
         <div class="text-center mb-3">
           <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
@@ -209,6 +315,7 @@
 
           <!-- Formulario registrar / editar planta -->
           <div class="p-3.5 rounded-xl border border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/20"
+            x-show="puedeAccion('plantas', 'crear') || editandoId"
             :class="editandoId ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''">
             <div class="flex items-center justify-between mb-2">
               <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase flex items-center gap-1.5">
@@ -276,7 +383,7 @@
                 Plantas registradas
               </span>
               <div class="flex items-center gap-2 w-full sm:w-auto">
-                <input type="text" x-model="busqueda" @input="resetPage()" placeholder="Buscar planta..."
+                <input type="text" x-model.debounce.250ms="busqueda" @input.debounce.250ms="resetPage()" placeholder="Buscar planta..."
                   class="input-field rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)] w-full sm:w-44">
                 <!-- Custom Dropdown para filtroEmpresa en modal plantas -->
                 <div class="relative w-full sm:w-44 text-left" x-data="{ openEmp: false }" @click.outside="openEmp = false">
@@ -342,12 +449,16 @@
                       <td class="px-3 py-2 font-semibold text-[var(--paper-ink)]" x-text="p.nombre"></td>
                       <td class="px-3 py-2 text-center">
                         <div class="inline-flex items-center gap-1">
-                          <button type="button" @click="iniciarEdicion(p)"
+                          <button type="button" 
+                            x-show="puedeAccion('plantas', 'editar')"
+                            @click="iniciarEdicion(p)"
                             class="action-icon-btn w-7 h-7 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:text-yellow-600 transition-colors"
                             title="Editar planta">
                             <i class="fa-solid fa-pen text-[11px]"></i>
                           </button>
-                          <button type="button" @click="eliminarPlanta(p.id, p.nombre)"
+                          <button type="button" 
+                            x-show="puedeAccion('plantas', 'eliminar')"
+                            @click="eliminarPlanta(p.id, p.nombre)"
                             class="action-icon-btn danger w-7 h-7 rounded-lg inline-flex items-center justify-center text-red-500 hover:text-red-700 transition-colors"
                             title="Eliminar planta">
                             <i class="fa-solid fa-trash-can text-[11px]"></i>
@@ -391,6 +502,7 @@
             Cerrar
           </button>
         </div>
+        </div>
 
         <!-- Borde dentado fijo al pie de la tarjeta -->
         <div class="modal-serrated"></div>
@@ -431,6 +543,60 @@
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
 
+        <!-- ============================================================
+             VISTA 503 CUANDO EL MÓDULO ESTÁ EN MANTENIMIENTO
+        ============================================================= -->
+        <div x-show="isModuloMantenimiento('contratistas')" class="py-6 px-4 text-center space-y-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 text-2xl shadow-lg shadow-amber-500/10 mb-1">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+
+          <div>
+            <p class="text-3xl font-black font-mono tracking-wider text-amber-500 mb-1">503</p>
+            <span class="status-pill status-revision font-bold text-xs px-3 py-1 inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Módulo en Mantenimiento Programado
+            </span>
+            <h3 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] mt-2">
+              Empresas Contratistas
+            </h3>
+            <p class="text-xs sm:text-sm text-[var(--paper-muted)] max-w-md mx-auto mt-2 leading-relaxed"
+              x-text="estadoMantenimiento?.mensaje || 'Estamos realizando labores de optimización y mantenimiento programado en este módulo. El resto de la plataforma sigue operando con normalidad.'">
+            </p>
+          </div>
+
+          <!-- CRONÓMETRO VISUAL DENTRO DEL MODAL -->
+          <div class="p-3.5 rounded-xl bg-black/40 border border-amber-500/30 max-w-xs mx-auto shadow-inner" x-data="modalTimerCountdown()">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+            </p>
+            <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="hours">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Horas</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="minutes">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Minutos</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="seconds">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Segundos</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-300 mt-2 font-medium" x-text="estadoMantenimiento?.tiempo || 'Disponible en breve'"></p>
+          </div>
+
+          <div class="pt-3 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             CONTENIDO HABITUAL (Cuando el módulo NO está en mantenimiento)
+        ============================================================= -->
+        <div x-show="!isModuloMantenimiento('contratistas')">
         <!-- Cabecera estilo Ticket -->
         <div class="text-center mb-3">
           <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
@@ -460,6 +626,7 @@
 
           <!-- Formulario registrar / editar contratista -->
           <div class="p-3.5 rounded-xl border border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/20"
+            x-show="puedeAccion('contratistas', 'crear') || editandoId"
             :class="editandoId ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''">
             <div class="flex items-center justify-between mb-2">
               <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase flex items-center gap-1.5">
@@ -501,7 +668,7 @@
                 Empresas registradas
               </span>
               <div class="w-48 sm:w-56">
-                <input type="text" x-model="search" placeholder="Buscar contratista..."
+                <input type="text" x-model.debounce.250ms="search" placeholder="Buscar contratista..."
                   class="input-field w-full rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)]">
               </div>
             </div>
@@ -524,12 +691,16 @@
                       <td class="px-3 py-2 text-[var(--paper-muted)] text-[11px]" x-text="c.observacion || '—'"></td>
                       <td class="px-3 py-2 text-center">
                         <div class="inline-flex items-center gap-1">
-                          <button type="button" @click="iniciarEdicion(c)"
+                          <button type="button" 
+                            x-show="puedeAccion('contratistas', 'editar')"
+                            @click="iniciarEdicion(c)"
                             class="action-icon-btn w-7 h-7 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:text-yellow-600 transition-colors"
                             data-tooltip="Editar contratista">
                             <i class="fa-solid fa-pen text-[11px]"></i>
                           </button>
-                          <button type="button" @click="eliminarContratista(c.id, c.nombre)"
+                          <button type="button" 
+                            x-show="puedeAccion('contratistas', 'eliminar')"
+                            @click="eliminarContratista(c.id, c.nombre)"
                             class="action-icon-btn danger w-7 h-7 rounded-lg inline-flex items-center justify-center text-red-500 hover:text-red-700 transition-colors"
                             data-tooltip="Eliminar contratista">
                             <i class="fa-solid fa-trash-can text-[11px]"></i>
@@ -573,6 +744,7 @@
             Cerrar
           </button>
         </div>
+        </div>
 
         <!-- Borde dentado fijo al pie de la tarjeta -->
         <div class="modal-serrated"></div>
@@ -612,6 +784,60 @@
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
 
+        <!-- ============================================================
+             VISTA 503 CUANDO EL MÓDULO ESTÁ EN MANTENIMIENTO
+        ============================================================= -->
+        <div x-show="isModuloMantenimiento('vehiculos')" class="py-6 px-4 text-center space-y-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 text-2xl shadow-lg shadow-amber-500/10 mb-1">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+
+          <div>
+            <p class="text-3xl font-black font-mono tracking-wider text-amber-500 mb-1">503</p>
+            <span class="status-pill status-revision font-bold text-xs px-3 py-1 inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Módulo en Mantenimiento Programado
+            </span>
+            <h3 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] mt-2">
+              Vehículos y Maquinaria
+            </h3>
+            <p class="text-xs sm:text-sm text-[var(--paper-muted)] max-w-md mx-auto mt-2 leading-relaxed"
+              x-text="estadoMantenimiento?.mensaje || 'Estamos realizando labores de optimización y mantenimiento programado en este módulo. El resto de la plataforma sigue operando con normalidad.'">
+            </p>
+          </div>
+
+          <!-- CRONÓMETRO VISUAL DENTRO DEL MODAL -->
+          <div class="p-3.5 rounded-xl bg-black/40 border border-amber-500/30 max-w-xs mx-auto shadow-inner" x-data="modalTimerCountdown()">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+            </p>
+            <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="hours">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Horas</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="minutes">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Minutos</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="seconds">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Segundos</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-300 mt-2 font-medium" x-text="estadoMantenimiento?.tiempo || 'Disponible en breve'"></p>
+          </div>
+
+          <div class="pt-3 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             CONTENIDO HABITUAL (Cuando el módulo NO está en mantenimiento)
+        ============================================================= -->
+        <div x-show="!isModuloMantenimiento('vehiculos')">
         <!-- Cabecera estilo Ticket -->
         <div class="text-center mb-3">
           <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
@@ -641,6 +867,7 @@
 
           <!-- Formulario registrar / editar vehículo -->
           <div class="p-3.5 rounded-xl border border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/20"
+            x-show="puedeAccion('vehiculos', 'crear') || editandoId"
             :class="editandoId ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''">
             <div class="flex items-center justify-between mb-2">
               <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase flex items-center gap-1.5">
@@ -785,7 +1012,7 @@
                 Vehículos registrados
               </span>
               <div class="w-48 sm:w-56">
-                <input type="text" x-model="search" placeholder="Buscar placa, tipo..."
+                <input type="text" x-model.debounce.250ms="search" placeholder="Buscar placa, tipo..."
                   class="input-field w-full rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)]">
               </div>
             </div>
@@ -847,12 +1074,16 @@
                       <!-- Acciones -->
                       <td class="px-3 py-2 text-center">
                         <div class="inline-flex items-center gap-1">
-                          <button type="button" @click="iniciarEdicion(v)"
+                          <button type="button" 
+                            x-show="puedeAccion('vehiculos', 'editar')"
+                            @click="iniciarEdicion(v)"
                             class="action-icon-btn w-7 h-7 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:text-yellow-600 transition-colors"
                             data-tooltip="Editar vehículo">
                             <i class="fa-solid fa-pen text-[11px]"></i>
                           </button>
-                          <button type="button" @click="eliminarVehiculo(v.id, v.placa)"
+                          <button type="button" 
+                            x-show="puedeAccion('vehiculos', 'eliminar')"
+                            @click="eliminarVehiculo(v.id, v.placa)"
                             class="action-icon-btn danger w-7 h-7 rounded-lg inline-flex items-center justify-center text-red-500 hover:text-red-700 transition-colors"
                             data-tooltip="Eliminar vehículo">
                             <i class="fa-solid fa-trash-can text-[11px]"></i>
@@ -894,6 +1125,277 @@
         <!-- Botones de Acción SweetAlert Style (Fijos en la parte inferior) -->
         <div class="flex items-center justify-center gap-3 pt-3.5 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
           <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+            Cerrar
+          </button>
+        </div>
+        </div>
+
+        <!-- Borde dentado fijo al pie de la tarjeta -->
+        <div class="modal-serrated"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+      MODAL: CENTRO DE NOTIFICACIONES (Historial Completo)
+  =============================================================-->
+  <div x-cloak>
+    <!-- Backdrop oscuro -->
+    <div x-show="modalTodasNotificacionesOpen" x-cloak
+      class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 modal-backdrop overflow-y-auto"
+      @keydown.escape.window="cerrarModalTodasNotificaciones()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <!-- Panel del Modal Ticket -->
+      <div x-show="modalTodasNotificacionesOpen"
+        @click.outside="cerrarModalTodasNotificaciones()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="modal-panel w-full max-w-3xl pt-6 sm:pt-7 px-3.5 sm:px-8 pb-8 sm:pb-9 relative text-center" x-cloak>
+
+        <!-- Botón cerrar superior derecho -->
+        <button type="button" @click="cerrarModalTodasNotificaciones()"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          title="Cerrar modal">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <!-- Cabecera estilo Ticket -->
+        <div class="text-center mb-3">
+          <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+            Centro de Notificaciones
+          </h2>
+          <div class="flex items-center justify-center gap-2 mt-1 flex-wrap">
+            <span class="status-pill inline-flex select-none shadow-xs font-semibold status-revision text-xs">
+              <i class="fa-regular fa-bell mr-1.5"></i> Historial Completo
+            </span>
+            <span class="text-xs text-[var(--paper-muted)] font-mono font-bold bg-[#efe9dc] px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+              x-text="(notifications ? notifications.length : 0) + ' notificaciones'"></span>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md"
+              :class="unreadNotificationsCount > 0 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'"
+              x-text="unreadNotificationsCount > 0 ? (unreadNotificationsCount + ' no leídas') : 'Todo leído'"></span>
+          </div>
+        </div>
+
+        <!-- Filtros y Búsqueda -->
+        <div class="space-y-3 mb-3 text-left">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-dashed border-[var(--paper-shadow)]">
+            <!-- Pestañas / Categorías -->
+            <div class="flex items-center gap-1 bg-[#efe9dc]/60 dark:bg-black/20 p-1 rounded-xl border border-[var(--paper-shadow)] overflow-x-auto">
+              <button type="button" @click="filtroNotifTab = 'todas'; notifPage = 1"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                :class="filtroNotifTab === 'todas' ? 'bg-white dark:bg-[#1f2430] text-[var(--signal-500)] shadow-xs' : 'text-[var(--paper-muted)] hover:text-[var(--paper-ink)]'">
+                <i class="fa-solid fa-list-ul text-[10px]"></i>
+                <span>Todas</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/5 dark:bg-white/10" x-text="notifications.length"></span>
+              </button>
+
+              <button type="button" @click="filtroNotifTab = 'no_leidas'; notifPage = 1"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                :class="filtroNotifTab === 'no_leidas' ? 'bg-white dark:bg-[#1f2430] text-[var(--signal-500)] shadow-xs' : 'text-[var(--paper-muted)] hover:text-[var(--paper-ink)]'">
+                <i class="fa-regular fa-envelope text-[10px]"></i>
+                <span>No leídas</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold" x-text="unreadNotificationsCount"></span>
+              </button>
+
+              <button type="button" @click="filtroNotifTab = 'info'; notifPage = 1"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                :class="filtroNotifTab === 'info' ? 'bg-white dark:bg-[#1f2430] text-cyan-600 dark:text-cyan-400 shadow-xs' : 'text-[var(--paper-muted)] hover:text-[var(--paper-ink)]'">
+                <i class="fa-solid fa-circle-info text-[10px]"></i>
+                <span>Informativas</span>
+              </button>
+
+              <button type="button" @click="filtroNotifTab = 'alertas'; notifPage = 1"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                :class="filtroNotifTab === 'alertas' ? 'bg-white dark:bg-[#1f2430] text-amber-600 dark:text-amber-400 shadow-xs' : 'text-[var(--paper-muted)] hover:text-[var(--paper-ink)]'">
+                <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                <span>Alertas</span>
+              </button>
+            </div>
+
+            <!-- Botón Marcar Todas Leídas -->
+            <button type="button" @click="marcarTodasNotificacionesLeidas()"
+              x-show="unreadNotificationsCount > 0"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0">
+              <i class="fa-solid fa-check-double text-[11px]"></i>
+              <span>Marcar todas leídas</span>
+            </button>
+          </div>
+
+          <!-- Buscador -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)]"></i>
+            <input type="text" x-model="busquedaNotif" @input="notifPage = 1"
+              placeholder="Buscar en el título o contenido de las notificaciones..."
+              class="input-field w-full rounded-lg pl-9 pr-8 py-2 text-xs border border-[var(--paper-shadow)]">
+            <button type="button" x-show="busquedaNotif" @click="busquedaNotif = ''; notifPage = 1"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)] hover:text-[var(--paper-ink)] cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenedor scrollable de notificaciones -->
+        <div class="max-h-[46vh] sm:max-h-[50vh] overflow-y-auto custom-scroll pr-1 space-y-2.5 text-left">
+          <template x-for="n in notificacionesModalPagina" :key="n.id">
+            <div class="p-3.5 rounded-xl border transition-all relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
+              :class="!n.leido 
+                ? (n.tipo === 'success' ? 'bg-emerald-50/80 dark:bg-emerald-950/25 border-emerald-300 dark:border-emerald-800/60 shadow-xs' :
+                   (n.tipo === 'warning' ? 'bg-amber-50/80 dark:bg-amber-950/25 border-amber-300 dark:border-amber-800/60 shadow-xs' :
+                   ((n.tipo === 'error' || n.tipo === 'danger') ? 'bg-rose-50/80 dark:bg-rose-950/25 border-rose-300 dark:border-rose-800/60 shadow-xs' :
+                   'bg-cyan-50/80 dark:bg-cyan-950/25 border-cyan-300 dark:border-cyan-800/60 shadow-xs')))
+                : 'bg-white/80 dark:bg-[#18181b]/50 border-[var(--paper-shadow)] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'">
+              
+              <div class="flex items-start gap-3 min-w-0 flex-1">
+                <!-- Icono de Tipo -->
+                <div class="mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm shadow-xs"
+                  :class="{
+                    'notif-icon-success': n.tipo === 'success',
+                    'notif-icon-error': n.tipo === 'error' || n.tipo === 'danger',
+                    'notif-icon-warning': n.tipo === 'warning',
+                    'notif-icon-info': !n.tipo || n.tipo === 'info'
+                  }">
+                  <i class="fa-solid" :class="{
+                    'fa-circle-check': n.tipo === 'success',
+                    'fa-triangle-exclamation': n.tipo === 'error' || n.tipo === 'danger',
+                    'fa-bell': n.tipo === 'warning',
+                    'fa-info': !n.tipo || n.tipo === 'info'
+                  }"></i>
+                </div>
+
+                <!-- Detalle -->
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                    <h4 class="text-xs sm:text-[13px] font-bold text-[var(--paper-ink)]" x-text="n.titulo"></h4>
+                    <span x-show="!n.leido" class="px-2 py-0.5 rounded-full text-[9.5px] font-bold text-white shadow-xs"
+                          :class="{
+                            'bg-emerald-600': n.tipo === 'success',
+                            'bg-amber-500': n.tipo === 'warning',
+                            'bg-rose-600': n.tipo === 'error' || n.tipo === 'danger',
+                            'bg-[#0C767D] dark:bg-[#03bfbf] dark:text-slate-900': !n.tipo || n.tipo === 'info'
+                          }">NUEVA</span>
+                    <span class="text-[10px] text-[var(--paper-muted)] font-mono ml-auto" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
+                  </div>
+                  <p class="text-xs text-[var(--text-muted)] dark:text-zinc-300 leading-relaxed break-words" x-text="n.mensaje"></p>
+
+                  <!-- Enlace adjunto -->
+                  <div x-show="n.enlace" class="mt-2 max-w-full">
+                    <a :href="n.enlace" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all shadow-2xs group"
+                      :title="n.enlace">
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[9px] flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                      <span class="truncate min-w-0" x-text="formatearTextoEnlace(n.enlace) || 'Abrir enlace'"></span>
+                    </a>
+                  </div>
+
+                  <!-- Documento adjunto descargable -->
+                  <div x-show="n.archivo_url" class="mt-2 max-w-full">
+                    <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" rel="noopener noreferrer" @click.stop="marcarNotificacionLeida(n)"
+                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 transition-all shadow-2xs group"
+                      :title="'Descargar ' + (n.archivo_nombre || 'documento')">
+                      <i class="fa-solid fa-file-arrow-down text-[10px] text-emerald-600 dark:text-emerald-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform"></i>
+                      <span class="truncate min-w-0" x-text="n.archivo_nombre || 'Descargar documento adjunto'"></span>
+                    </a>
+                  </div>
+
+                  <p x-show="n.fecha_creacion" class="text-[10px] text-[var(--paper-muted)] mt-1 font-mono flex items-center gap-1">
+                    <i class="fa-regular fa-clock text-[9px]"></i>
+                    <span x-text="n.fecha_creacion"></span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Acciones de la Notificación -->
+              <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--paper-shadow)] w-full sm:w-auto justify-end">
+                <!-- Caso Solicitud Pre-aprobada: 2 botones (Revisar y Confirmar) -->
+                <template x-if="esNotifPreaprobada(n)">
+                  <div class="flex items-center gap-2">
+                    <div x-show="n.aprobadoExitoso" class="py-1 px-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
+                      <i class="fa-solid fa-circle-check"></i>
+                      <span>Aprobación confirmada</span>
+                    </div>
+                    <div x-show="!n.aprobadoExitoso" class="flex items-center gap-1.5">
+                      <button type="button" @click.stop="revisarSolicitudNotif(n); cerrarModalTodasNotificaciones()"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1 shadow-xs cursor-pointer">
+                        <i class="fa-solid fa-eye text-[11px]"></i>
+                        <span>Revisar</span>
+                      </button>
+                      <button type="button" @click.stop="confirmarAprobacionDirectaNotif(n)" :disabled="n.aprobando"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1 shadow-xs cursor-pointer"
+                        :class="n.aprobando ? 'opacity-60 cursor-not-allowed' : ''">
+                        <i class="fa-solid" :class="n.aprobando ? 'fa-circle-notch fa-spin text-[11px]' : 'fa-check-double text-[11px]'"></i>
+                        <span x-text="n.aprobando ? 'Aprobando...' : 'Confirmar'"></span>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Caso Notificación Normal con enlace -->
+                <template x-if="!esNotifPreaprobada(n) && n.enlace">
+                  <a :href="n.enlace" @click="marcarNotificacionLeida(n); cerrarModalTodasNotificaciones()"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--signal-500)] text-white hover:bg-[var(--signal-600)] transition-all flex items-center gap-1 shadow-xs">
+                    <span>Ver detalle</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                  </a>
+                </template>
+
+                <!-- Caso Notificación con archivo adjunto descargable -->
+                <template x-if="n.archivo_url">
+                  <a :href="n.archivo_url" :download="n.archivo_nombre || true" target="_blank" @click="marcarNotificacionLeida(n)"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1.5 shadow-xs"
+                    :title="'Descargar ' + (n.archivo_nombre || 'archivo')">
+                    <i class="fa-solid fa-file-arrow-down text-[11px]"></i>
+                    <span>Descargar</span>
+                  </a>
+                </template>
+
+                <button type="button" @click="marcarNotificacionLeida(n)"
+                  x-show="!n.leido"
+                  class="action-icon-btn w-8 h-8 rounded-lg inline-flex items-center justify-center text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                  title="Marcar como leída">
+                  <i class="fa-solid fa-check text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- Vacío -->
+          <div x-show="notificacionesFiltradas.length === 0" class="py-12 text-center text-xs text-[var(--paper-muted)]">
+            <i class="fa-regular fa-bell-slash text-3xl mb-2 opacity-50 block text-[var(--signal-500)]"></i>
+            <p class="font-semibold text-sm text-[var(--paper-ink)] mb-1">No hay notificaciones</p>
+            <p x-text="busquedaNotif ? 'No se encontraron resultados con ese criterio de búsqueda.' : 'No tienes notificaciones en esta categoría.'"></p>
+          </div>
+        </div>
+
+        <!-- Paginación -->
+        <div x-show="notificacionesFiltradas.length > notifPageSize" class="flex items-center justify-between text-[11px] text-[var(--paper-muted)] pt-3 border-t border-dashed border-[var(--paper-shadow)] mt-3">
+          <span>Página <strong x-text="notifPage" class="text-[var(--paper-ink)]"></strong> de <span x-text="notifTotalPaginas"></span> (<span x-text="notificacionesFiltradas.length + ' en total'"></span>)</span>
+          <div class="flex items-center gap-1.5">
+            <button @click="notifPage = Math.max(1, notifPage - 1)" :disabled="notifPage === 1"
+              class="action-icon-btn px-2.5 py-1 rounded border border-[var(--paper-shadow)] cursor-pointer"
+              :class="notifPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+              <i class="fa-solid fa-chevron-left text-[9px] mr-1"></i> Anterior
+            </button>
+            <button @click="notifPage = Math.min(notifTotalPaginas, notifPage + 1)" :disabled="notifPage >= notifTotalPaginas"
+              class="action-icon-btn px-2.5 py-1 rounded border border-[var(--paper-shadow)] cursor-pointer"
+              :class="notifPage >= notifTotalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+              Siguiente <i class="fa-solid fa-chevron-right text-[9px] ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Botones de Acción SweetAlert Style (Fijos en la parte inferior) -->
+        <div class="flex items-center justify-center gap-3 pt-3.5 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
+          <button type="button" @click="cerrarModalTodasNotificaciones()" class="modal-btn-cancel px-8 py-2.5 cursor-pointer">
             Cerrar
           </button>
         </div>

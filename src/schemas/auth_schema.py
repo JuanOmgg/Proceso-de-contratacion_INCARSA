@@ -15,3 +15,8 @@ class RestablecerPasswordInput(BaseModel):
     correo: EmailStr
     codigo: str = Field(..., min_length=6, max_length=8, description="Código de restauración")
     nueva_contrasena: str = Field(..., min_length=6, description="Nueva contraseña")
+
+class PerfilUpdateInput(BaseModel):
+    num_telefono: str | None = None
+    contrasena: str | None = None
+    confirmar_contrasena: str | None = None

@@ -7,7 +7,7 @@
   <title>{% block title %}INCARSA{% endblock %}</title>
 
   <!-- Favicon / Ícono de la pestaña del navegador -->
-  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
 
@@ -24,17 +24,9 @@
     })();
   </script>
 
-  <!-- Guardián de Navegación (Auth Guard): Redirige a login si no hay token -->
-  <script>
-    (function () {
-      try {
-        var token = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
-        if (!token) {
-          window.location.replace('/login');
-        }
-      } catch (e) {}
-    })();
-  </script>
+  <!-- Núcleo de Configuración y Guardián de Rutas RBAC Temprano (previene acceso indebido y FOUC) -->
+  <script src="{{ url_for('static', path='js/config.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/permisos.js') }}?v=3.6"></script>
 
   <!-- Ocultar de inmediato modales y elementos condicionales antes de que Alpine inicialice (FOUC) -->
   <style>
@@ -43,13 +35,8 @@
     }
   </style>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class'
-    }
-  </script>
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
 
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -66,18 +53,22 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Estilos globales compartidos -->
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3.9">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.7">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=3.8">
 
   <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
   {% block extra_head %}{% endblock %}
 
-  <!-- Configuración compartida -->
-  <script src="{{ url_for('static', path='js/config.js') }}?v=2.2"></script>
-  <script src="{{ url_for('static', path='js/plantas.js') }}"></script>
-  <script src="{{ url_for('static', path='js/contratistas.js') }}"></script>
-  <script src="{{ url_for('static', path='js/vehiculos.js') }}"></script>
+  <!-- Módulos utilitarios compartidos -->
+  <script src="{{ url_for('static', path='js/alertas.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/tooltips.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/mantenimiento.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/app-shell.js') }}?v=3.6"></script>
+  <script src="{{ url_for('static', path='js/notificaciones.js') }}?v=3.6"></script>
+  <script src="{{ url_for('static', path='js/plantas.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/contratistas.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/vehiculos.js') }}?v=3.5"></script>
 
   <!-- Scripts que deben ejecutarse antes de inicializar Alpine -->
   {% block extra_js %}{% endblock %}
@@ -94,6 +85,9 @@
 
   <!-- Contenido principal inyectado por cada plantilla -->
   {% block content %}{% endblock %}
+
+  <!-- Modal Global de Perfil de Usuario -->
+  {% include 'components/modal-perfil.html' %}
 
   <!-- Bloque opcional para scripts al final del body -->
   {% block body_scripts %}{% endblock %}

@@ -1,0 +1,20 @@
+{
+  "name": "back---proceso-de-contratos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/tailwind-input.css -o ./static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./static/css/tailwind-input.css -o ./static/css/tailwind.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

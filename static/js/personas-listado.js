@@ -174,7 +174,8 @@ function personasTable() {
     formatearFecha(fechaStr) {
       if (!fechaStr) return "No registrada";
       try {
-        const fecha = new Date(fechaStr);
+        const strLimpio = typeof fechaStr === "string" ? fechaStr.replace(" ", "T") : fechaStr;
+        const fecha = new Date(strLimpio);
         if (isNaN(fecha.getTime())) return fechaStr;
         return fecha.toLocaleDateString("es-CO", {
           year: "numeric",
@@ -429,7 +430,8 @@ function personasTable() {
         identificacion: p.identificacion,
         cargo: p.cargo,
         observacion: p.observacion || "",
-        documentos: docs
+        documentos: docs,
+        fecha_creacion: p.fecha_creacion || null
       };
       this.mensajeExito = "";
       this.mensajeError = "";

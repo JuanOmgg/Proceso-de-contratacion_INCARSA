@@ -71,13 +71,17 @@ def limpiar_equipos(raw_equipos: Any) -> List[Dict[str, str]]:
     equipos_limpios = []
     for eq in raw_equipos:
         if isinstance(eq, dict):
-            equipos_limpios.append(
-                {
-                    "marca": str(eq.get("marca") or "").strip().upper(),
-                    "modelo": str(eq.get("modelo") or "").strip().upper(),
-                    "serie": str(eq.get("serie") or "").strip().upper(),
-                }
-            )
+            marca = str(eq.get("marca") or "").strip()
+            modelo = str(eq.get("modelo") or "").strip()
+            serie = str(eq.get("serie") or "").strip()
+            if marca or modelo or serie:
+                equipos_limpios.append(
+                    {
+                        "marca": marca.upper(),
+                        "modelo": modelo.upper(),
+                        "serie": serie.upper(),
+                    }
+                )
     return equipos_limpios
 
 
@@ -212,9 +216,10 @@ def transformar_solicitud(datos_raw: dict) -> dict:
     raw_v = datos_raw.get("vehiculo") or datos_raw.get("vehiculos")
     raw_v_ids = datos_raw.get("vehiculos_ids")
     solicitud_limpia["vehiculos"] = limpiar_vehiculos_solicitud(raw_v, raw_v_ids)
-    solicitud_limpia["eq_computo"] = limpiar_equipos(
-        datos_raw.get("eq_computo")
-    )
+    raw_eq = datos_raw.get("eq_computo")
+    if raw_eq is None:
+        raw_eq = datos_raw.get("equipos") or datos_raw.get("computos")
+    solicitud_limpia["eq_computo"] = limpiar_equipos(raw_eq)
 
     return solicitud_limpia
 
@@ -225,6 +230,8 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
 
     if "codigo" in datos_raw and datos_raw["codigo"] is not None:
         solicitud_limpia["codigo"] = str(datos_raw["codigo"]).strip().upper()
+    elif "codigo_radicado" in datos_raw and datos_raw["codigo_radicado"] is not None:
+        solicitud_limpia["codigo"] = str(datos_raw["codigo_radicado"]).strip().upper()
 
     if "observaciones" in datos_raw or "observacion" in datos_raw:
         solicitud_limpia["observaciones"] = str(datos_raw.get("observaciones") or datos_raw.get("observacion") or "").strip()
@@ -233,9 +240,7 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
         solicitud_limpia["personas"] = datos_raw.get("personas") or datos_raw.get("ingresantes")
 
     mapeo_strings_upper = [
-        "empresa_origen",
         "nivel_de_riesgo",
-        "empresa_contratista",
         "estado",
     ]
     mapeo_strings_normales = ["tipo_personal", "planta_a_visitar", "actividad"]
@@ -247,6 +252,14 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
     for k in mapeo_strings_normales:
         if k in datos_raw and datos_raw[k] is not None:
             solicitud_limpia[k] = str(datos_raw[k]).strip()
+
+    if "empresa_origen" in datos_raw and datos_raw["empresa_origen"] is not None:
+        val_eo = str(datos_raw["empresa_origen"]).strip()
+        solicitud_limpia["empresa_origen"] = int(val_eo) if val_eo.isdigit() else val_eo
+
+    if "empresa_contratista" in datos_raw and datos_raw["empresa_contratista"] is not None:
+        val_ec = str(datos_raw["empresa_contratista"]).strip()
+        solicitud_limpia["empresa_contratista"] = int(val_ec) if val_ec.isdigit() else val_ec
 
     if "diligenciado_por" in datos_raw and datos_raw["diligenciado_por"] is not None:
         solicitud_limpia["diligenciado_por"] = int(
@@ -274,8 +287,11 @@ def transformar_solicitud_patch(datos_raw: dict) -> dict:
             raw_v, raw_v_ids
         )
 
-    if "eq_computo" in datos_raw:
-        solicitud_limpia["eq_computo"] = limpiar_equipos(datos_raw["eq_computo"])
+    if "eq_computo" in datos_raw or "equipos" in datos_raw or "computos" in datos_raw:
+        raw_eq = datos_raw.get("eq_computo")
+        if raw_eq is None:
+            raw_eq = datos_raw.get("equipos") or datos_raw.get("computos")
+        solicitud_limpia["eq_computo"] = limpiar_equipos(raw_eq)
 
     if "personas_ids" in datos_raw and datos_raw["personas_ids"] is not None:
         solicitud_limpia["personas_ids"] = [
