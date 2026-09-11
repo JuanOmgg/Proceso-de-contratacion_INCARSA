@@ -1,6 +1,6 @@
 {% extends "pages/base.html" %}
 
-{% block title %}Nueva solicitud · INCARSA{% endblock%}
+{% block title %}Nueva solicitud · PSI{% endblock%}
 
   <!-- Datos + lógica (deben ir antes de Alpine) -->
    {% block extra_js %}
@@ -548,6 +548,11 @@
                         </div>
                       </div>
                       <div class="wizard-option-action flex items-center gap-2 flex-shrink-0 text-xs font-semibold">
+                        <button type="button" @click.stop="openEditPersonaModal(persona)"
+                          class="action-icon-btn text-slate-400 hover:text-[var(--signal-500)] p-1.5 rounded-lg transition-colors"
+                          title="Editar datos de la persona">
+                          <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
                         <span x-show="!personaYaAgregada(persona.numDoc)" class="wizard-select-text opacity-0 group-hover:opacity-100 transition-opacity duration-200">Seleccionar</span>
                         <i x-show="!personaYaAgregada(persona.numDoc)" class="fa-solid fa-arrow-right text-xs transition-transform duration-200 group-hover:translate-x-1"></i>
                         <span x-show="personaYaAgregada(persona.numDoc)" class="flex items-center gap-1.5 text-xs text-emerald-500">
@@ -592,10 +597,17 @@
                           </button>
                         </div>
                       </div>
-                      <button type="button" @click="removePersona(idx)" class="action-icon-btn danger flex-shrink-0"
-                        title="Quitar">
-                        <i class="fa-regular fa-trash-can text-sm"></i>
-                      </button>
+                      <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button type="button" @click="openEditPersonaModal(persona, idx)"
+                          class="action-icon-btn flex-shrink-0 text-slate-500 hover:text-[var(--signal-500)] dark:text-slate-400"
+                          title="Editar persona">
+                          <i class="fa-solid fa-pen-to-square text-sm"></i>
+                        </button>
+                        <button type="button" @click="removePersona(idx)" class="action-icon-btn danger flex-shrink-0"
+                          title="Quitar">
+                          <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -718,7 +730,6 @@
                                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
                                       </template>
-                                      <option value="Otro conductor externo">Otro conductor externo</option>
                                     </select>
                                   </template>
                                   <template x-if="personas.length === 0">
@@ -1015,8 +1026,10 @@
             <div class="modal-panel w-full max-w-xl p-6" @click.outside="closePersonaModal()">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nueva persona</h3>
-                  <p class="text-xs text-[var(--text-muted)]">Información personal y documentos requeridos</p>
+                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]"
+                    x-text="isEditingPersona ? 'Editar persona' : 'Registrar nueva persona'">Registrar nueva persona</h3>
+                  <p class="text-xs text-[var(--text-muted)]"
+                    x-text="isEditingPersona ? 'Actualiza los datos personales y documentos requeridos' : 'Información personal y documentos requeridos'">Información personal y documentos requeridos</p>
                 </div>
                 <button type="button" @click="closePersonaModal()" class="action-icon-btn" title="Cerrar">
                   <i class="fa-solid fa-xmark"></i>
@@ -1127,7 +1140,7 @@
                 <button type="button" @click="guardarNuevaPersona()" :disabled="guardandoPersona"
                   class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
                   <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoPersona"></i>
-                  <span x-text="guardandoPersona ? 'Guardando...' : 'Guardar persona'"></span>
+                  <span x-text="guardandoPersona ? 'Guardando...' : (isEditingPersona ? 'Guardar cambios' : 'Guardar persona')"></span>
                 </button>
               </div>
             </div>
@@ -1223,7 +1236,6 @@
                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
                       </template>
-                      <option value="Otro conductor externo">Otro conductor externo</option>
                     </select>
                   </template>
                   <template x-if="personas.length === 0">

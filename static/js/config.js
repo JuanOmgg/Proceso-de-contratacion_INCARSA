@@ -13,7 +13,8 @@ const API = {
     vehiculos: `${API_BASE_URL}/api/v1/vehiculos`,
     contratistas: `${API_BASE_URL}/emp_contratista`,
     auth: `${API_BASE_URL}/api/v1/auth`,
-    notificaciones: `${API_BASE_URL}/api/v1/notificaciones`
+    notificaciones: `${API_BASE_URL}/api/v1/notificaciones`,
+    correspondencia: `${API_BASE_URL}/api/v1/correspondencia`
 };
 
 // ============================================================================

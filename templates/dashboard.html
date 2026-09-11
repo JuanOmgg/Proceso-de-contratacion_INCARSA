@@ -1,6 +1,6 @@
 {% extends "pages/base.html" %}
 
-{% block title %}Dashboard · INCARSA{% endblock %}
+{% block title %}Panel principal · PSI{% endblock %}
 
 {% block extra_head %}
   <!-- Chart.js para gráficos del dashboard -->
@@ -30,7 +30,7 @@
     <div class="flex-1 min-w-0 flex flex-col">
 
       <!-- ---------- TOPBAR ---------- -->
-      {% set page_title = "Dashboard" %}
+      {% set page_title = "Panel principal" %}
       {% include 'pages/navbar.html' %}
       
 
@@ -225,7 +225,7 @@
               
               <!-- Botón cerrar superior derecho -->
               <button type="button" @click="closeView()"
-                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
                 title="Cerrar modal">
                 <i class="fa-solid fa-xmark text-base"></i>
               </button>
@@ -244,7 +244,7 @@
                   </div>
 
                   <!-- Contenedor scrollable para contenido largo -->
-                  <div class="max-h-[50vh] overflow-y-auto custom-scroll pr-1 space-y-3">
+                  <div class="max-h-[62vh] overflow-y-auto custom-scroll pr-2.5 space-y-3">
                     <!-- 1. Datos generales estilo Ticket con líneas punteadas -->
                     <div class="border-y border-dashed border-[var(--paper-shadow)] py-2 space-y-0">
                       <div class="grid grid-cols-2 md:grid-cols-3 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
@@ -507,13 +507,13 @@
                     </button>
                     <a :href="selected ? ('/solicitudes/revision/' + (selected.codigo || selected.id)) : '#'"
                       x-show="puedeAccion('dashboard', 'aprobar')"
-                      class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm">
+                      class="px-6 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-900/30 transition-all cursor-pointer">
                       <i class="fa-solid fa-clipboard-check text-xs"></i>
                       <span>Revisar expediente</span>
                     </a>
                     <a :href="selected ? ('/solicitudes/editar/' + (selected.codigo || selected.id)) : '#'"
                       x-show="puedeEditarSolicitud(selected)"
-                      class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
+                      class="px-6 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-900/30 transition-all cursor-pointer">
                       <i class="fa-solid fa-pen-to-square text-xs"></i>
                       <span>Editar solicitud</span>
                     </a>

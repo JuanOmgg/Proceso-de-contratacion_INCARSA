@@ -283,8 +283,27 @@ function solicitudesCards() {
         },
 
         actualizarConteo(lista) {
-            this.solActivas = lista.filter(s => s.is_active === 1 || s.is_active === true || s.is_active === "1").length;
-            this.solInactivas = lista.filter(s => s.is_active === 0 || s.is_active === false || s.is_active === "0").length;
+            let filtrada = lista;
+            let sesion = null;
+            try {
+                sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+            } catch (e) {}
+            const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
+            const rolId = Number(sesion ? sesion.id_rol : 0);
+            const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
+            if (esSstGesco) {
+                const misPlantas = (sesion && sesion.plantas_ids ? sesion.plantas_ids : []).map(Number);
+                if (!misPlantas || misPlantas.length === 0) {
+                    filtrada = [];
+                } else {
+                    filtrada = lista.filter(s => {
+                        const pIds = Array.isArray(s.plantas_ids) ? s.plantas_ids.map(Number) : (s.plantas_ids ? String(s.plantas_ids).split(",").map(Number).filter(Boolean) : []);
+                        return pIds.some(pid => misPlantas.includes(pid));
+                    });
+                }
+            }
+            this.solActivas = filtrada.filter(s => s.is_active === 1 || s.is_active === true || s.is_active === "1").length;
+            this.solInactivas = filtrada.filter(s => s.is_active === 0 || s.is_active === false || s.is_active === "0").length;
             this.cargando = false;
         },
 
@@ -297,7 +316,10 @@ function solicitudesCards() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                const rolTextoInicial = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
+                const rolIdInicial = Number(sesion ? sesion.id_rol : 0);
+                const esSstGescoInicial = rolTextoInicial.includes("SST") || rolTextoInicial.includes("GESCO") || rolIdInicial === 6 || rolIdInicial === 7;
+                if (sesion && sesion.id && esSstGescoInicial) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -409,7 +431,10 @@ function solicitudesTable() {
                 } catch (e) {}
 
                 let url = `${API.solicitudes}/getall`;
-                if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
+                const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
+                const rolId = Number(sesion ? sesion.id_rol : 0);
+                const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
+                if (sesion && sesion.id && esSstGesco) {
                     url += `?id_usuario=${sesion.id}`;
                 }
 
@@ -478,13 +503,13 @@ function solicitudesTable() {
                     (this.filtroEstado === "activos" && esActivo) ||
                     (this.filtroEstado === "inactivos" && !esActivo);
 
-                // Filtro adicional de plantas para SST / GESCO (por si se usa modo local o sesión)
+                // Filtro estricto de plantas para SST / GESCO: solo ver solicitudes con plantas relacionadas
                 if (this.esRolConPlantas) {
                     const misPlantas = this.plantasUsuario;
-                    if (misPlantas.length > 0 && Array.isArray(s.plantas_ids) && s.plantas_ids.length > 0) {
-                        const coincide = s.plantas_ids.some(pid => misPlantas.includes(pid));
-                        if (!coincide) return false;
-                    }
+                    if (!misPlantas || misPlantas.length === 0) return false;
+                    if (!Array.isArray(s.plantas_ids) || s.plantas_ids.length === 0) return false;
+                    const coincide = s.plantas_ids.some(pid => misPlantas.includes(Number(pid)));
+                    if (!coincide) return false;
                 }
 
                 return matchTexto && matchEmpresa && matchEstado;
@@ -502,13 +527,11 @@ function solicitudesTable() {
         get esRolConPlantas() {
             const sesion = this.sesionUsuario;
             if (!sesion) return false;
+            const rolTexto = String(sesion.rol || sesion.nombre_rol || "").trim().toUpperCase();
+            if (rolTexto === "SST" || rolTexto === "GESCO") return true;
             const rolId = Number(sesion.id_rol);
-            // ÚNICAMENTE SST (ID 5) y GESCO (ID 6) filtran por plantas
-            if (rolId === 5 || rolId === 6) return true;
-            // Otros roles conocidos (1=ADMIN, 2=SUPERADMIN, 3=VIGILANTE, 4=GESTION DOCUMENTAL, 7=SCR)
-            if (!isNaN(rolId) && rolId > 0 && rolId !== 5 && rolId !== 6) return false;
-            const rolTexto = String(sesion.rol || "").trim().toUpperCase();
-            return rolTexto === "SST" || rolTexto === "GESCO";
+            // ÚNICAMENTE SST (ID 6) y GESCO (ID 7) filtran por plantas
+            return rolId === 6 || rolId === 7;
         },
 
         get plantasUsuario() {

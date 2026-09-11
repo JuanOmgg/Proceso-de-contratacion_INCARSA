@@ -1,3 +1,4 @@
+from fastapi import Response
 from typing import Optional
 import sys
 if sys.platform == "win32":
@@ -30,6 +31,7 @@ from src.routes.antecedentes_route import router as antecedentes_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
 from src.routes.superadmin_router import router as superadmin_router
+from src.routes.correspondencia_route import router as correspondencia_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.utils.security import decode_access_token
 
@@ -338,6 +340,8 @@ app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(notificacion_router, prefix="/api/v1")
 app.include_router(superadmin_router)
+app.include_router(correspondencia_router, prefix="/api/v1")
+app.include_router(correspondencia_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -424,6 +428,17 @@ async def get_editar_solicitud(request: Request, codigo: str):
 @app.get("/revision-solicitud.html")
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
+
+@app.get("/correspondencia-form")
+@app.get("/correspondencia/nueva")
+@app.get("/correspondencia/nuevo")
+@app.get("/formulario-correspondencia")
+async def get_formulario_correspondencia_publico(request: Request):
+    return templates.TemplateResponse(name="correspondencia-form.html", request=request)
+
+@app.get("/correspondencias")
+async def get_correspondencia(request: Request):
+    return templates.TemplateResponse(name="correspondencia-listado.html", request=request)
 
 @app.get("/403")
 @app.get("/error-403")

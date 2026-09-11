@@ -661,6 +661,81 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         decision, motivo_rechazo, observacion
                     ))
 
+                # 2.1 Sincronizar autorizaciones individuales de personas (ingresantes)
+                personas_input = dictamen.get("personas")
+                es_scr_o_superior = rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN")
+
+                if personas_input and isinstance(personas_input, list):
+                    cursor.execute("SELECT id_persona, COALESCE(autorizado, 1) AS autorizado FROM ingresantes WHERE id_solicitud = %s", (real_id,))
+                    ingresantes_db = {int(r["id_persona"]): bool(r["autorizado"]) for r in (cursor.fetchall() or []) if r.get("id_persona") is not None}
+
+                    for p_item in personas_input:
+                        if not isinstance(p_item, dict):
+                            continue
+                        p_id = p_item.get("id") or p_item.get("id_persona")
+                        if not p_id:
+                            continue
+                        try:
+                            p_id = int(p_id)
+                        except (ValueError, TypeError):
+                            continue
+
+                        p_aut = bool(p_item.get("autorizado", True))
+                        p_motivo = p_item.get("motivo") or p_item.get("motivo_rechazo") or None
+
+                        # Regla de negocio: Si ya estaba sin autorización (autorizado=0) en una revisión previa,
+                        # los demás roles NO pueden volver a autorizarla.
+                        # Solo SCR o roles superiores pueden volver a autorizarla.
+                        if p_id in ingresantes_db and not ingresantes_db[p_id]:
+                            if not es_scr_o_superior:
+                                p_aut = False
+
+                        cursor.execute(
+                            """
+                            INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo)
+                            VALUES (%s, %s, %s, %s)
+                            ON DUPLICATE KEY UPDATE
+                                autorizado = VALUES(autorizado),
+                                motivo = VALUES(motivo)
+                            """,
+                            (real_id, p_id, 1 if p_aut else 0, p_motivo)
+                        )
+
+                # 2.2 Sincronizar autorizaciones individuales de vehículos (Veh_ingreso)
+                vehiculos_input = dictamen.get("vehiculos")
+                if vehiculos_input and isinstance(vehiculos_input, list):
+                    cursor.execute("SELECT id_vehiculo, COALESCE(autorizado, 1) AS autorizado FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                    veh_db = {int(r["id_vehiculo"]): bool(r["autorizado"]) for r in (cursor.fetchall() or []) if r.get("id_vehiculo") is not None}
+
+                    for v_item in vehiculos_input:
+                        if not isinstance(v_item, dict):
+                            continue
+                        v_id = v_item.get("id") or v_item.get("id_vehiculo")
+                        if not v_id:
+                            continue
+                        try:
+                            v_id = int(v_id)
+                        except (ValueError, TypeError):
+                            continue
+
+                        v_aut = bool(v_item.get("autorizado", True))
+                        v_motivo = v_item.get("motivo") or v_item.get("motivo_rechazo") or None
+
+                        if v_id in veh_db and not veh_db[v_id]:
+                            if not es_scr_o_superior:
+                                v_aut = False
+
+                        cursor.execute(
+                            """
+                            INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, autorizado, motivo)
+                            VALUES (%s, %s, %s, %s)
+                            ON DUPLICATE KEY UPDATE
+                                autorizado = VALUES(autorizado),
+                                motivo = VALUES(motivo)
+                            """,
+                            (real_id, v_id, 1 if v_aut else 0, v_motivo)
+                        )
+
                 # 3. Obtener todas las plantas de la solicitud (vía visita)
                 cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (real_id,))
                 plantas_sol = [r["id_planta"] for r in cursor.fetchall() or [] if r.get("id_planta")]
@@ -1224,7 +1299,11 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
         return {"exito": False, "mensaje": f"Error interno al consumir token: {e}"}
 
 
-def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optional[int] = None):
+def GET_ALL_solicitudes_bd(
+    only_active: Optional[bool] = None, 
+    id_usuario: Optional[int] = None,
+    diligenciado_por: Optional[int] = None
+):
 
     try:
 
@@ -1244,7 +1323,11 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                 elif only_active is False:
                     condiciones.append(f"{is_active_expr} = 0")
 
-                # Si se provee id_usuario, verificar si tiene rol SST (5) o GESCO (6)
+                # Filtro por usuario que diligenció la solicitud
+                if diligenciado_por:
+                    condiciones.append(f"so.diligenciado_por = {int(diligenciado_por)}")
+
+                # Si se provee id_usuario, verificar si tiene rol SST (6) o GESCO (7)
                 if id_usuario:
                     cursor.execute("SELECT u.id_rol, r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
                     u_row = cursor.fetchone()
@@ -1252,7 +1335,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                     if u_row:
                         r_id = int(u_row.get("id_rol") or 0)
                         r_nom = str(u_row.get("nombre_rol") or "").strip().upper()
-                        es_sst_gesco = (r_id in (5, 6)) or (r_nom in ("SST", "GESCO"))
+                        es_sst_gesco = (r_id in (6, 7)) or (r_nom in ("SST", "GESCO"))
                     if es_sst_gesco:
                         cursor.execute("SELECT id_planta FROM usuario_plantas WHERE id_usuario = %s", (id_usuario,))
                         p_rows = cursor.fetchall() or []
@@ -1264,7 +1347,12 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                         # Filtrar solicitudes que contengan al menos una de las plantas asignadas
                         in_list = ",".join(map(str, p_ids))
                         find_set_exprs = " OR ".join([f"FIND_IN_SET('{pid}', so.plantas_ids)" for pid in p_ids])
-                        condiciones.append(f"(v.id_planta IN ({in_list}) OR ({find_set_exprs}))")
+                        condiciones.append(f"""
+                            (
+                                EXISTS (SELECT 1 FROM visita _v WHERE _v.id_solicitud = so.id AND _v.id_planta IN ({in_list}))
+                                OR ({find_set_exprs})
+                            )
+                        """)
 
                 where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
 
@@ -1276,6 +1364,7 @@ def GET_ALL_solicitudes_bd(only_active: Optional[bool] = None, id_usuario: Optio
                         e.nombre_empresa,
                         ec.nombre AS nombre_emContratista,
                         CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
+                        so.diligenciado_por,
                         so.fecha_inicio   AS fecha_ingreso,
                         so.fecha_fin      AS fecha_salida,
                         so.nivel_de_riesgo AS riesgo,

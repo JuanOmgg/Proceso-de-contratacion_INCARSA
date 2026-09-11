@@ -129,3 +129,5 @@ class DictamenInput(BaseModel):
     observacion: Optional[str] = None
     id_usuario: Optional[int] = None
     nombre_revisor: Optional[str] = None
+    personas: Optional[List[Dict[str, Any]]] = None
+    vehiculos: Optional[List[Dict[str, Any]]] = None

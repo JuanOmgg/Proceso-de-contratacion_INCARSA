@@ -179,6 +179,8 @@ MODULOS_SISTEMA = [
     "nueva_solicitud",
     "usuarios",
     "nuevo_usuario",
+    "correspondencias",
+    "nueva_correspondencia",
     "plantas",
     "contratistas",
     "vehiculos",

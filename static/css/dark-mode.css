@@ -1296,8 +1296,7 @@ html.dark select option:checked {
 /* 7. Pill del código RAD / ID en modo oscuro */
 :root.dark .modal-panel .bg-\[\#efe9dc\],
 :root.dark .modal-panel div.bg-\[\#efe9dc\],
-:root.dark .modal-panel span[x-text*="codigo"],
-:root.dark .modal-panel div:has(> span[x-text*="codigo"]) {
+:root.dark .modal-panel span[x-text*="codigo"] {
   background: rgba(15, 23, 42, 0.85) !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.35) !important;
@@ -1841,6 +1840,16 @@ html.dark select option:checked {
 }
 .neon-card-incarsa .neon-label { color: #0891b2 !important; }
 .neon-card-incarsa .neon-value { color: #0e7490 !important; }
+.neon-card-incarsa .gauge-icon,
+.gauge-card.neon-card-incarsa .gauge-icon {
+  background: #cffafe !important;
+  border: 1px solid #a5f3fc !important;
+  color: #0891b2 !important;
+}
+.neon-card-incarsa .gauge-icon i,
+.gauge-card.neon-card-incarsa .gauge-icon i {
+  color: #0891b2 !important;
+}
 
 .neon-card-uniminas {
   background: #f0fdf4 !important;
@@ -1848,6 +1857,16 @@ html.dark select option:checked {
 }
 .neon-card-uniminas .neon-label { color: #059669 !important; }
 .neon-card-uniminas .neon-value { color: #047857 !important; }
+.neon-card-uniminas .gauge-icon,
+.gauge-card.neon-card-uniminas .gauge-icon {
+  background: #dcfce7 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #059669 !important;
+}
+.neon-card-uniminas .gauge-icon i,
+.gauge-card.neon-card-uniminas .gauge-icon i {
+  color: #059669 !important;
+}
 
 .neon-card-carboinsa {
   background: #fffbeb !important;
@@ -1855,6 +1874,16 @@ html.dark select option:checked {
 }
 .neon-card-carboinsa .neon-label { color: #d97706 !important; }
 .neon-card-carboinsa .neon-value { color: #b45309 !important; }
+.neon-card-carboinsa .gauge-icon,
+.gauge-card.neon-card-carboinsa .gauge-icon {
+  background: #fef3c7 !important;
+  border: 1px solid #fde68a !important;
+  color: #d97706 !important;
+}
+.neon-card-carboinsa .gauge-icon i,
+.gauge-card.neon-card-carboinsa .gauge-icon i {
+  color: #d97706 !important;
+}
 
 .neon-card-milpa {
   background: #faf5ff !important;
@@ -1862,6 +1891,16 @@ html.dark select option:checked {
 }
 .neon-card-milpa .neon-label { color: #9333ea !important; }
 .neon-card-milpa .neon-value { color: #7e22ce !important; }
+.neon-card-milpa .gauge-icon,
+.gauge-card.neon-card-milpa .gauge-icon {
+  background: #f3e8ff !important;
+  border: 1px solid #e9d5ff !important;
+  color: #9333ea !important;
+}
+.neon-card-milpa .gauge-icon i,
+.gauge-card.neon-card-milpa .gauge-icon i {
+  color: #9333ea !important;
+}
 
 .neon-card-total {
   background: #fff1f2 !important;
@@ -1869,6 +1908,16 @@ html.dark select option:checked {
 }
 .neon-card-total .neon-label { color: #e11d48 !important; }
 .neon-card-total .neon-value { color: #be123c !important; }
+.neon-card-total .gauge-icon,
+.gauge-card.neon-card-total .gauge-icon {
+  background: #ffe4e6 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #e11d48 !important;
+}
+.neon-card-total .gauge-icon i,
+.gauge-card.neon-card-total .gauge-icon i {
+  color: #e11d48 !important;
+}
 
 /* MODO OSCURO: FOSFORESCENTES Y NEÓN INTENSO */
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar sesión · INCARSA</title>
+  <title>Iniciar sesión · PSI</title>
 
   <!-- Favicon / Ícono de la pestaña del navegador -->
   <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
@@ -44,8 +44,8 @@
     })();
   </script>
 
-  <!-- Alpine.js Core -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <!-- Alpine.js Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
 </head>
 <body class="antialiased">
 <div class="login-page" x-data="loginForm()">

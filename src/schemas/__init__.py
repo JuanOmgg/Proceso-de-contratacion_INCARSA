@@ -36,6 +36,12 @@ from .personas_schema import (
     PersonInputUpdate
 )
 
+from .correspondencia_schema import (
+
+    CorrespondenciaInput,
+    UPDATE_correspondenciaInput
+)
+
 __all__ = [
 
     "SolicitudInput",
@@ -55,5 +61,8 @@ __all__ = [
     "UpdatePlantaInput"
 
     "PersonInput",
-    "PersonInputUpdate"
+    "PersonInputUpdate",
+
+    "CorrespondenciaInput",
+    "UPDATE_correspondenciaInput"
 ]

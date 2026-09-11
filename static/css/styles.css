@@ -3198,6 +3198,22 @@ table td .inline-flex {
   font-weight: 700 !important;
 }
 
+.modal-ticket-header {
+  border-top-left-radius: 15px !important;
+  border-top-right-radius: 15px !important;
+}
+
+.modal-ticket-footer {
+  border-bottom-left-radius: 15px !important;
+  border-bottom-right-radius: 15px !important;
+}
+
+.modal-profile-avatar {
+  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(12, 118, 125, 0.35) !important;
+}
+
 .modal-ticket .doc-ticket-row {
   background: rgba(239, 233, 220, 0.5) !important;
   border: 1px solid var(--paper-shadow) !important;

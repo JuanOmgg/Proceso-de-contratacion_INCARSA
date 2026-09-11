@@ -45,20 +45,13 @@ function usuarioForm() {
     },
 
     // ---------------------------------------------------
-    // Roles que requieren asignación de plantas (ÚNICAMENTE SST=5 y GESCO=6)
+    // Roles que requieren asignación de plantas (ÚNICAMENTE SST=6 y GESCO=7)
     // ---------------------------------------------------
     esRolConPlantas() {
       const rolVal = this.form.rol;
       if (!rolVal && rolVal !== 0) return false;
 
       const rolId = Number(rolVal);
-      // SST = 5, GESCO = 6
-      if (rolId === 5 || rolId === 6) return true;
-
-      // Si es un ID numérico de otro rol (1=ADMINISTRADOR, 2=SUPERADMIN, 3=VIGILANTE, 4=GESTION DOCUMENTAL, 7=SCR)
-      if (!isNaN(rolId) && rolId > 0 && rolId !== 5 && rolId !== 6) {
-        return false;
-      }
 
       // Si viene por nombre de rol en string
       const strVal = String(rolVal).trim().toUpperCase();
@@ -72,11 +65,11 @@ function usuarioForm() {
 
       if (rolObj) {
         const nom = String(rolObj.nombre_rol || "").trim().toUpperCase();
-        const objId = Number(rolObj.id);
-        return objId === 5 || objId === 6 || nom === "SST" || nom === "GESCO";
+        return nom === "SST" || nom === "GESCO";
       }
 
-      return false;
+      // Fallback por ID de BD si aún no se carga el catálogo (SST=6, GESCO=7)
+      return rolId === 6 || rolId === 7;
     },
 
     onRolChange() {

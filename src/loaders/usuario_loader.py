@@ -30,9 +30,13 @@ def CREATE_user_db(usuario: dict) -> dict:
                 cursor.execute(sql_user, valores_user)
                 user_id = cursor.lastrowid
 
-                # Guardar plantas asignadas si es rol SST (5) o GESCO (6)
+                # Guardar plantas asignadas si es rol SST (6) o GESCO (7)
                 plantas_ids = usuario.get("plantas_ids") or []
-                if int(usuario.get("id_rol", 0)) in (5, 6) and plantas_ids:
+                id_rol_val = int(usuario.get("id_rol", 0))
+                cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (id_rol_val,))
+                r_row = cursor.fetchone()
+                nom_rol = str(r_row.get("nombre_rol") or "").strip().upper() if r_row else ""
+                if (id_rol_val in (6, 7) or nom_rol in ("SST", "GESCO")) and plantas_ids:
                     for p_id in plantas_ids:
                         if str(p_id).isdigit():
                             cursor.execute(
@@ -300,7 +304,12 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                             u_r = cursor.fetchone()
                             rol_actual = u_r["id_rol"] if u_r else 0
 
-                        if int(rol_actual) in (5, 6):
+                        id_rol_act = int(rol_actual or 0)
+                        cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (id_rol_act,))
+                        r_row = cursor.fetchone()
+                        nom_rol = str(r_row.get("nombre_rol") or "").strip().upper() if r_row else ""
+
+                        if id_rol_act in (6, 7) or nom_rol in ("SST", "GESCO"):
                             for p_id in raw_plantas:
                                 if str(p_id).isdigit():
                                     cursor.execute(

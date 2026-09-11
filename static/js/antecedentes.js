@@ -1,5 +1,5 @@
 /**
- * Lógica de Antecedentes y Seguimiento por Persona · INCARSA
+ * Lógica de Antecedentes y Seguimiento por Persona · INCARS
  */
 
 function antecedentesModule() {
@@ -180,6 +180,7 @@ function antecedentesModule() {
       persona_identificacion: "",
       persona_cargo: "",
       responsable: "",
+      ultimo_usuario_solicitud: "",
       anotaciones: "",
       ultima_empresa_solicitante: "",
       ultima_revision: null,
@@ -351,7 +352,8 @@ function antecedentesModule() {
         persona_tipo_doc: a.persona_tipo_doc || a.tipo_doc || a.tipoDoc || "CC",
         persona_identificacion: String(a.persona_identificacion || a.identificacion || a.numDoc || ""),
         persona_cargo: a.persona_cargo || a.cargo || "General",
-        responsable: a.responsable || "",
+        responsable: a.ultimo_usuario_solicitud || a.responsable || "Sin registro",
+        ultimo_usuario_solicitud: a.ultimo_usuario_solicitud || a.responsable || "Sin registro",
         anotaciones: a.anotaciones || "",
         id_empresa: a.id_empresa || null,
         ultima_empresa_contratista: a.ultima_empresa_contratista || a.nombre_contratista || a.ultima_empresa_solicitante || "Sin registro",
@@ -772,7 +774,7 @@ function antecedentesModule() {
         persona_tipo_doc: item.persona_tipo_doc || "CC",
         persona_identificacion: String(item.persona_identificacion || ""),
         persona_cargo: item.persona_cargo || "General",
-        responsable: item.responsable || "",
+        responsable: item.ultimo_usuario_solicitud || item.responsable || "",
         anotaciones: item.anotaciones || "",
         id_empresa: item.id_empresa || null,
         ultima_empresa_solicitante: item.ultima_empresa_solicitante || "Sin registro previo",
@@ -866,7 +868,8 @@ function antecedentesModule() {
         persona_tipo_doc: item.persona_tipo_doc || "CC",
         persona_identificacion: String(item.persona_identificacion || ""),
         persona_cargo: item.persona_cargo || "General",
-        responsable: item.responsable || "",
+        responsable: item.ultimo_usuario_solicitud || item.responsable || "",
+        ultimo_usuario_solicitud: item.ultimo_usuario_solicitud || item.responsable || "",
         anotaciones: item.anotaciones || "",
         id_empresa: item.id_empresa || null,
         ultima_empresa_solicitante: item.ultima_empresa_solicitante || "Sin registro",
@@ -891,7 +894,8 @@ function antecedentesModule() {
               persona_tipo_doc: data.persona_tipo_doc || this.detalleHistorial.persona_tipo_doc,
               persona_identificacion: String(data.persona_identificacion || this.detalleHistorial.persona_identificacion),
               persona_cargo: data.persona_cargo || this.detalleHistorial.persona_cargo,
-              responsable: data.responsable || this.detalleHistorial.responsable,
+              responsable: (Array.isArray(data.historial) && data.historial.length > 0 ? (data.historial[0].usuario_registro || data.historial[0].diligenciador) : null) || data.ultimo_usuario_solicitud || data.responsable || this.detalleHistorial.responsable,
+              ultimo_usuario_solicitud: (Array.isArray(data.historial) && data.historial.length > 0 ? (data.historial[0].usuario_registro || data.historial[0].diligenciador) : null) || data.ultimo_usuario_solicitud || data.responsable || this.detalleHistorial.ultimo_usuario_solicitud,
               anotaciones: data.anotaciones || this.detalleHistorial.anotaciones,
               id_empresa: data.id_empresa || this.detalleHistorial.id_empresa,
               ultima_empresa_contratista: data.ultima_empresa_contratista || data.nombre_contratista || data.ultima_empresa_solicitante || this.detalleHistorial.ultima_empresa_contratista,

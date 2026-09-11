@@ -97,6 +97,58 @@ function revisionSolicitudApp() {
       return rol === "SUPERADMIN" || idRol === 2;
     },
 
+    /**
+     * Determina si el usuario actual tiene permisos para ver y auditar antecedentes en revisión.
+     * Habilitado exclusivamente para SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
+     */
+    get puedeVerAntecedentes() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      // Si el rol activo (simulado o real) es un rol operativo sin atribución de antecedentes
+      const rolesExcluidos = ["SST", "GESCO", "GESTION DOCUMENTAL", "GESTIÓN DOCUMENTAL", "VIGILANTE", "COORDINADOR"];
+      if (rolesExcluidos.includes(rolActualNorm)) {
+        return false;
+      }
+
+      // SuperAdmin siempre tiene acceso
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN") {
+        return true;
+      }
+
+      // SCR y roles superiores (ADMINISTRADOR y SUPERADMIN)
+      const rolesPermitidos = ["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"];
+      if (rolesPermitidos.includes(rolActualNorm) || rolesPermitidos.includes(rolSesionNorm)) {
+        return true;
+      }
+
+      if ([1, 2, 8].includes(idRol)) {
+        return true;
+      }
+
+      if (typeof window.puedeModulo === "function" && window.puedeModulo("antecedentes")) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
+     * Determina si el rol del usuario es SCR o un rol superior (ADMINISTRADOR, SUPERADMIN).
+     */
+    get esScrOSuperior() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN") return true;
+      if (["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"].includes(rolActualNorm)) return true;
+      if (["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"].includes(rolSesionNorm)) return true;
+      if ([1, 2, 8].includes(idRol)) return true;
+      return false;
+    },
+
     get userDisplayName() {
       if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
         return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
@@ -115,6 +167,7 @@ function revisionSolicitudApp() {
     // Estado de revisiones por roles (se almacena localmente y se sincroniza)
     revisionesHistorial: [],
     plantaSeleccionadaDictamen: null,
+    editandoRevision: null, // Guarda { rol, id_planta, plantaNombre } si se está editando una revisión específica
     revisiones: {
       sst: {
         aprobado: false,
@@ -238,6 +291,7 @@ function revisionSolicitudApp() {
       persona_identificacion: "",
       persona_cargo: "",
       responsable: "",
+      ultimo_usuario_solicitud: "",
       anotaciones: "",
       id_empresa: null,
       ultima_empresa_solicitante: "",
@@ -364,7 +418,7 @@ function revisionSolicitudApp() {
         );
         if (sesion) {
           this.usuarioSesion = sesion;
-          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Gestion documental", 5: "SST", 6: "GESCO", 7: "SCR" };
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
           const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Gestion documental";
           this.rolActual = rol;
           this.rolNombre = rol;
@@ -471,8 +525,10 @@ function revisionSolicitudApp() {
           this.dictamenForm.decision = "aprobar";
         }
 
-        // Cargar vigencias de antecedentes de cada ingresante
-        await this.cargarVigenciasPersonas();
+        // Cargar vigencias de antecedentes de cada ingresante (exclusivo para SCR y roles superiores)
+        if (this.puedeVerAntecedentes) {
+          await this.cargarVigenciasPersonas();
+        }
 
         // Si la solicitud está en 'ENVIADO' y entra un rol auditor/revisor, actualizar visualmente a 'EN REVISIÓN'
         const estadoActual = (this.solicitud.estado || "").toUpperCase();
@@ -528,10 +584,12 @@ function revisionSolicitudApp() {
       if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
         listaVehiculos = s.vehiculos.split('###').map(v => {
           const [id, tipo, placa, licencia, autorizado, motivo_rechazo] = v.split('|||');
+          const isAut = autorizado !== '0' && autorizado !== false && autorizado !== 'false';
           return {
             id, tipo: tipo || "Vehículo", placa, licencia,
             licencia_doc: licencia || "—",
-            autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+            autorizado: isAut,
+            denegadoEnBd: !isAut,
             motivo_rechazo: motivo_rechazo || "",
             documentos: [
               { tipo_doc: "soat", nombre_archivo: `SOAT_${placa || 'DOC'}.pdf` },
@@ -542,24 +600,28 @@ function revisionSolicitudApp() {
         });
       } else if (Array.isArray(s.vehiculos) || Array.isArray(s.vehiculo)) {
         const rawV = Array.isArray(s.vehiculos) ? s.vehiculos : s.vehiculo;
-        listaVehiculos = rawV.map((v, vIdx) => ({
-          id: v.id || v.id_vehiculo || vIdx,
-          tipo: v.tipo || "Vehículo",
-          placa: v.placa || "—",
-          licencia: v.licencia_doc || v.licencia || "—",
-          licencia_doc: v.licencia_doc || v.licencia || "—",
-          autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
-          motivo_rechazo: v.motivo_rechazo || v.motivo || "",
-          documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
-            id: d.id || dIdx,
-            tipo_doc: d.tipo_doc || "documento",
-            nombre_archivo: d.nom_documento || d.nombre_archivo || `doc_${v.placa || 'veh'}_${dIdx}.pdf`,
-            url_acceso: d.url_acceso || (d.nom_documento ? `/uploads/documentos/vehiculos/${d.nom_documento}` : null)
-          })) : [
-            { tipo_doc: "soat", nombre_archivo: `SOAT_${v.placa || 'DOC'}.pdf` },
-            { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${v.placa || 'DOC'}.pdf` }
-          ]
-        }));
+        listaVehiculos = rawV.map((v, vIdx) => {
+          const isAut = v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false';
+          return {
+            id: v.id || v.id_vehiculo || vIdx,
+            tipo: v.tipo || "Vehículo",
+            placa: v.placa || "—",
+            licencia: v.licencia_doc || v.licencia || "—",
+            licencia_doc: v.licencia_doc || v.licencia || "—",
+            autorizado: isAut,
+            denegadoEnBd: !isAut,
+            motivo_rechazo: v.motivo_rechazo || v.motivo || "",
+            documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
+              id: d.id || dIdx,
+              tipo_doc: d.tipo_doc || "documento",
+              nombre_archivo: d.nom_documento || d.nombre_archivo || `doc_${v.placa || 'veh'}_${dIdx}.pdf`,
+              url_acceso: d.url_acceso || (d.nom_documento ? `/uploads/documentos/vehiculos/${d.nom_documento}` : null)
+            })) : [
+              { tipo_doc: "soat", nombre_archivo: `SOAT_${v.placa || 'DOC'}.pdf` },
+              { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${v.placa || 'DOC'}.pdf` }
+            ]
+          };
+        });
       }
 
       // Cargar autorizaciones individuales de vehículos persistidas en localStorage
@@ -570,10 +632,11 @@ function revisionSolicitudApp() {
           listaVehiculos = listaVehiculos.map(v => {
             const match = vehiculosGuardados.find(vg => String(vg.id) === String(v.id) || (vg.placa && vg.placa === v.placa));
             if (match) {
+              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
               return {
                 ...v,
-                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
-                motivo_rechazo: match.motivo_rechazo || ""
+                autorizado: autGuardado,
+                motivo_rechazo: match.motivo_rechazo || v.motivo_rechazo || ""
               };
             }
             return v;
@@ -586,13 +649,15 @@ function revisionSolicitudApp() {
         if (s.personas.includes('|||') || s.personas.includes('###')) {
           listaPersonas = s.personas.split('###').map(p => {
             const [id, ap_nombre, tipo_doc, identificacion, cargo, autorizado, motivo_rechazo] = p.split('|||');
+            const isAut = autorizado !== '0' && autorizado !== false && autorizado !== 'false';
             return {
               id,
               nombre: ap_nombre || "Contratista",
               tipo_doc: tipo_doc || "CC",
               identificacion: identificacion || "—",
               cargo: cargo || "Operario",
-              autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+              autorizado: isAut,
+              denegadaEnBd: !isAut,
               motivo_rechazo: motivo_rechazo || "",
               documentos: [
                 { tipo_doc: "cedula", nombre_archivo: `Cedula_${identificacion || 'doc'}.pdf` },
@@ -605,26 +670,30 @@ function revisionSolicitudApp() {
         }
       } else if (Array.isArray(s.personas) || Array.isArray(s.ingresantes)) {
         const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
-        listaPersonas = rawP.map(p => ({
-          id: p.id,
-          id_persona: p.id_persona || p.id,
-          nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
-          tipo_doc: p.tipo_doc || "CC",
-          identificacion: p.identificacion || "—",
-          cargo: p.cargo || "Operario",
-          autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-          motivo_rechazo: p.motivo_rechazo || "",
-          fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
-          ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
-          responsable: p.responsable || null,
-          anotaciones: p.anotaciones || "",
-          documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
-            { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "examen_medico", nombre_archivo: `Examen_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "induccion", nombre_archivo: `Induccion_${p.identificacion || 'doc'}.pdf` }
-          ]
-        }));
+        listaPersonas = rawP.map(p => {
+          const isAut = p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false';
+          return {
+            id: p.id,
+            id_persona: p.id_persona || p.id,
+            nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
+            tipo_doc: p.tipo_doc || "CC",
+            identificacion: p.identificacion || "—",
+            cargo: p.cargo || "Operario",
+            autorizado: isAut,
+            denegadaEnBd: !isAut,
+            motivo_rechazo: p.motivo_rechazo || "",
+            fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
+            ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
+            responsable: p.responsable || null,
+            anotaciones: p.anotaciones || "",
+            documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
+              { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "examen_medico", nombre_archivo: `Examen_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "induccion", nombre_archivo: `Induccion_${p.identificacion || 'doc'}.pdf` }
+            ]
+          };
+        });
       }
 
       // Cargar autorizaciones individuales previas persistidas en localStorage
@@ -635,10 +704,11 @@ function revisionSolicitudApp() {
           listaPersonas = listaPersonas.map(p => {
             const match = personasGuardadas.find(pg => String(pg.id) === String(p.id) || (pg.identificacion && pg.identificacion === p.identificacion));
             if (match) {
+              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
               return {
                 ...p,
-                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
-                motivo_rechazo: match.motivo_rechazo || ""
+                autorizado: autGuardado,
+                motivo_rechazo: match.motivo_rechazo || p.motivo_rechazo || ""
               };
             }
             return p;
@@ -746,8 +816,13 @@ function revisionSolicitudApp() {
     },
 
     get puedeEditarAutorizacion() {
+      // SCR y roles superiores tienen potestad para editar autorizaciones en todo momento
+      if (this.esScrOSuperior) {
+        return true;
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
-      // Si la solicitud ya está en estado final APROBADO o RECHAZADO
+      // Si la solicitud ya está en estado final APROBADO o RECHAZADO para roles operativos
       if (estado === "APROBADO" || estado === "RECHAZADO") {
         return false;
       }
@@ -761,9 +836,38 @@ function revisionSolicitudApp() {
       return Boolean(this.puedeDictaminar);
     },
 
+    puedeAutorizarPersona(persona) {
+      if (!this.puedeEditarAutorizacion) return false;
+      // SCR y roles superiores (SuperAdmin, Administrador) SIEMPRE pueden autorizar
+      if (this.esScrOSuperior) {
+        return true;
+      }
+      // Regla de negocio: Si la persona fue enviada/guardada sin autorización previamente en BD,
+      // los demás roles NO pueden volver a autorizarla.
+      if (persona && persona.denegadaEnBd) {
+        return false;
+      }
+      return true;
+    },
+
+    puedeAutorizarVehiculo(vehiculo) {
+      if (!this.puedeEditarAutorizacion) return false;
+      if (this.esScrOSuperior) {
+        return true;
+      }
+      if (vehiculo && vehiculo.denegadoEnBd) {
+        return false;
+      }
+      return true;
+    },
+
     setAutorizacionPersona(persona, estaAutorizado, motivo = "") {
       if (!this.puedeEditarAutorizacion) {
         this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
+      if (estaAutorizado && !this.puedeAutorizarPersona(persona)) {
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa. Solo SCR o superiores en modo de edición de revisión pueden reautorizarlo.", "warning");
         return;
       }
       persona.autorizado = estaAutorizado;
@@ -782,6 +886,10 @@ function revisionSolicitudApp() {
 
     toggleAutorizacionPersona(persona) {
       if (!this.puedeEditarAutorizacion) return;
+      if (!persona.autorizado && !this.puedeAutorizarPersona(persona)) {
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa. Solo SCR o superior en edición pueden reautorizarlo.", "warning");
+        return;
+      }
       this.setAutorizacionPersona(persona, !persona.autorizado);
     },
 
@@ -791,12 +899,21 @@ function revisionSolicitudApp() {
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
+      let omitidas = 0;
       this.solicitud.personas.forEach(p => {
-        p.autorizado = true;
-        p.motivo_rechazo = "";
+        if (this.puedeAutorizarPersona(p)) {
+          p.autorizado = true;
+          p.motivo_rechazo = "";
+        } else {
+          omitidas++;
+        }
       });
       this.persistirPersonasEnStorage();
-      this.mostrarToast("Todas las personas de la solicitud han sido autorizadas", "success");
+      if (omitidas > 0) {
+        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados por revisión previa).`, "info");
+      } else {
+        this.mostrarToast("Todas las personas de la solicitud han sido autorizadas", "success");
+      }
     },
 
     denegarTodasPersonas() {
@@ -834,6 +951,10 @@ function revisionSolicitudApp() {
         this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
         return;
       }
+      if (estaAutorizado && !this.puedeAutorizarVehiculo(vehiculo)) {
+        this.mostrarToast("No puedes autorizar este vehículo: fue denegado en una revisión previa. Solo SCR o superiores en modo de edición de revisión pueden reautorizarlo.", "warning");
+        return;
+      }
       vehiculo.autorizado = estaAutorizado;
       if (!estaAutorizado && motivo) {
         vehiculo.motivo_rechazo = motivo;
@@ -850,6 +971,10 @@ function revisionSolicitudApp() {
 
     toggleAutorizacionVehiculo(vehiculo) {
       if (!this.puedeEditarAutorizacion) return;
+      if (!vehiculo.autorizado && !this.puedeAutorizarVehiculo(vehiculo)) {
+        this.mostrarToast("No puedes autorizar este vehículo: fue denegado en una revisión previa. Solo SCR o superior en edición pueden reautorizarlo.", "warning");
+        return;
+      }
       this.setAutorizacionVehiculo(vehiculo, !vehiculo.autorizado);
     },
 
@@ -859,12 +984,21 @@ function revisionSolicitudApp() {
         return;
       }
       if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      let omitidos = 0;
       this.solicitud.vehiculos.forEach(v => {
-        v.autorizado = true;
-        v.motivo_rechazo = "";
+        if (this.puedeAutorizarVehiculo(v)) {
+          v.autorizado = true;
+          v.motivo_rechazo = "";
+        } else {
+          omitidos++;
+        }
       });
       this.persistirVehiculosEnStorage();
-      this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+      if (omitidos > 0) {
+        this.mostrarToast(`Se autorizaron los vehículos disponibles (${omitidos} vehículo(s) se mantuvieron denegados por revisión previa).`, "info");
+      } else {
+        this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+      }
     },
 
     denegarTodosVehiculos() {
@@ -1091,13 +1225,16 @@ function revisionSolicitudApp() {
         }
       }
 
+      // SCR y roles superiores pueden emitir o editar revisiones en cualquier momento
+      if (this.esScrOSuperior) {
+        return true;
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
 
       if (estado === "RECHAZADO" || estado === "APROBADO") {
-        return this.rolActual === "Administrador";
+        return false;
       }
-
-      if (this.rolActual === "Administrador") return true;
 
       // Validación para SST y GESCO:
       if (this.rolActual === "SST" || this.rolActual === "GESCO") {
@@ -1107,17 +1244,90 @@ function revisionSolicitudApp() {
         return true;
       }
 
-      // SCR puede dictaminar (Pre-aprobar o devolver/rechazar) en estados previos, o aprobar en 'POR APROBAR'
-      if (this.rolActual === "SCR") {
-        return estado === "POR APROBAR" || estado === "EN REVISIÓN" || estado === "EN REVISION" || estado === "ENVIADO";
-      }
-
       return false;
     },
 
+    /**
+     * Carga una revisión existente (SST, GESCO o SCR) en el formulario de dictamen para que SCR/Admin puedan editarla
+     */
+    cargarRevisionParaEdicion(rol, id_planta = null, plantaNombre = "") {
+      if (!this.esScrOSuperior) {
+        this.mostrarToast("Solo SCR y roles superiores pueden editar revisiones.", "warning");
+        return;
+      }
+
+      const rolUpper = String(rol).toUpperCase();
+      const revs = this.revisionesHistorial || [];
+      const encontrada = revs.find(r =>
+        String(r.rol).toUpperCase() === rolUpper &&
+        (id_planta === null || Number(r.id_planta) === Number(id_planta))
+      );
+
+      let decision = "aprobar";
+      let motivoRechazo = "";
+      let motivoDevolucion = "";
+      let observaciones = "";
+
+      if (encontrada) {
+        const dec = String(encontrada.decision || "").toUpperCase();
+        if (dec === "RECHAZADO") decision = "rechazar";
+        else if (dec === "DEVUELTO") decision = "devolver";
+        else if (dec === "PREAPROBADO") decision = "preaprobar";
+        else decision = "aprobar";
+
+        motivoRechazo = encontrada.motivo_rechazo || "";
+        motivoDevolucion = encontrada.motivo_devolucion || "";
+        observaciones = encontrada.observacion || "";
+      }
+
+      this.editandoRevision = {
+        rol: rolUpper,
+        id_planta: id_planta ? Number(id_planta) : null,
+        plantaNombre: plantaNombre || (id_planta ? `Planta #${id_planta}` : "General")
+      };
+
+      if (id_planta) {
+        this.plantaSeleccionadaDictamen = Number(id_planta);
+      }
+
+      this.dictamenForm = {
+        decision: decision,
+        motivoRechazo: motivoRechazo,
+        motivoDevolucion: motivoDevolucion,
+        observaciones: observaciones
+      };
+
+      // Desplazamiento suave al formulario de dictamen
+      this.$nextTick(() => {
+        const el = document.getElementById("seccion-dictamen");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+      this.mostrarToast(`Modo edición activado: ${rolUpper} (${this.editandoRevision.plantaNombre})`, "info");
+    },
+
+    async cancelarEdicionRevision() {
+      this.editandoRevision = null;
+      this.dictamenForm = {
+        decision: (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.estado !== "POR APROBAR" ? "preaprobar" : "aprobar",
+        motivoRechazo: "",
+        motivoDevolucion: "",
+        observaciones: ""
+      };
+      await this.cargarSolicitud();
+      this.mostrarToast("Edición cancelada.", "info");
+    },
+
     async emitirDictamen() {
+      const esEdicion = Boolean(this.editandoRevision);
+      const rolDictamen = this.editandoRevision ? this.editandoRevision.rol : this.rolActual;
+      const idPlantaDictamen = this.editandoRevision 
+        ? this.editandoRevision.id_planta 
+        : ((this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null);
+
       // Asegurar selección de planta
-      if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
+      if (!this.editandoRevision && (this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
         if (this.misPlantasDictaminables.length > 0) {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
         } else if (this.plantasSolicitud.length > 0) {
@@ -1125,7 +1335,7 @@ function revisionSolicitudApp() {
         }
       }
 
-      if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.tienePlantaAsignadaParaSolicitud) {
+      if (!this.esScrOSuperior && (this.rolActual === "SST" || this.rolActual === "GESCO") && !this.tienePlantaAsignadaParaSolicitud) {
         this.mostrarToast("No puedes dictaminar: ninguna planta de esta solicitud coincide con tus zonas asignadas.", "error");
         return;
       }
@@ -1162,14 +1372,24 @@ function revisionSolicitudApp() {
         else if (decision === "preaprobar") decisionBackend = "PREAPROBADO";
 
         const payloadDictamen = {
-          id_planta: (this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null,
-          rol: this.rolActual,
+          id_planta: idPlantaDictamen,
+          rol: rolDictamen,
           decision: decisionBackend,
           motivo_rechazo: decision === "rechazar" ? motivo : (decision === "devolver" ? motivoDev : null),
           motivo_devolucion: decision === "devolver" ? motivoDev : null,
           observacion: obs || null,
           id_usuario: this.usuarioSesion?.id || null,
-          nombre_revisor: nombreUsuario
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          })),
+          vehiculos: (this.solicitud?.vehiculos || []).map(v => ({
+            id: v.id || v.id_vehiculo,
+            autorizado: Boolean(v.autorizado),
+            motivo: v.motivo_rechazo || v.motivo || ""
+          }))
         };
 
         await this.persistirPersonasEnStorage();
@@ -1191,22 +1411,28 @@ function revisionSolicitudApp() {
           }
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
-          const mensajeToast = decision === "preaprobar"
-            ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
-            : (decision === "devolver"
-                ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
-                : (decision === "rechazar"
-                    ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
-                    : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
-          this.mostrarToast(mensajeToast, "success");
 
-          // Redirigir a procesamiento tras completar la acción para evitar bloqueos o error 403
-          setTimeout(() => {
-            if (typeof window.showPageLoader === "function") {
-              window.showPageLoader();
-            }
-            window.location.href = "/procesamiento";
-          }, 1200);
+          if (esEdicion) {
+            this.editandoRevision = null;
+            this.mostrarToast(`Revisión de ${rolDictamen} actualizada exitosamente (${dataRes.nuevo_estado}).`, "success");
+            await this.cargarSolicitud();
+          } else {
+            const mensajeToast = decision === "preaprobar"
+              ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
+              : (decision === "devolver"
+                  ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
+                  : (decision === "rechazar"
+                      ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
+                      : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
+            this.mostrarToast(mensajeToast, "success");
+
+            setTimeout(() => {
+              if (typeof window.showPageLoader === "function") {
+                window.showPageLoader();
+              }
+              window.location.href = "/procesamiento";
+            }, 1200);
+          }
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -1216,10 +1442,12 @@ function revisionSolicitudApp() {
 
         this.guardarRevisionesEnStorage();
 
-        // Limpiar formulario
-        this.dictamenForm.motivoRechazo = "";
-        this.dictamenForm.motivoDevolucion = "";
-        this.dictamenForm.observaciones = "";
+        // Limpiar formulario si no es edición
+        if (!esEdicion) {
+          this.dictamenForm.motivoRechazo = "";
+          this.dictamenForm.motivoDevolucion = "";
+          this.dictamenForm.observaciones = "";
+        }
 
       } catch (err) {
         console.error("Error al emitir dictamen:", err);
@@ -1260,7 +1488,17 @@ function revisionSolicitudApp() {
           decision: "APROBADO",
           observacion: "Aprobación definitiva confirmada por SCR tras superar revisiones de SST y GESCO.",
           id_usuario: this.usuarioSesion?.id || null,
-          nombre_revisor: nombreUsuario
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          })),
+          vehiculos: (this.solicitud?.vehiculos || []).map(v => ({
+            id: v.id || v.id_vehiculo,
+            autorizado: Boolean(v.autorizado),
+            motivo: v.motivo_rechazo || v.motivo || ""
+          }))
         };
 
         const targetId = this.solicitud?.id || this.solicitudId;
@@ -1332,8 +1570,16 @@ function revisionSolicitudApp() {
         url = url.startsWith("/") ? `${API.base}${url}` : `${API.base}/${url}`;
       }
 
+      // Nombre de tipo limpio sin incluir el nombre del archivo en la parte superior
+      let tipoTitulo = "DOCUMENTO ADJUNTO";
+      if (tipo && tipo.toLowerCase() !== "adjunto") {
+        tipoTitulo = tipo.toUpperCase().replace(/_/g, ' ');
+      } else if (doc.nom_documento && doc.nom_documento !== nom) {
+        tipoTitulo = doc.nom_documento.toUpperCase().replace(/_/g, ' ');
+      }
+
       this.docActual = {
-        titulo: `${tipo.toUpperCase().replace('_', ' ')} · ${nom}`,
+        titulo: tipoTitulo,
         subtitulo: itemPadre ? `Perteneciente a: ${itemPadre}` : "",
         tipo: tipo,
         url: url,
@@ -1357,6 +1603,9 @@ function revisionSolicitudApp() {
       this.rolActual = nuevoRol;
       this.rolNombre = nuevoRol;
       this.mostrarToast(`Sesión cambiada a rol: ${nuevoRol}`, "info");
+      if (this.puedeVerAntecedentes && this.solicitud?.personas?.length > 0) {
+        this.cargarVigenciasPersonas();
+      }
     },
 
     // Clases y colores de estado
@@ -1600,6 +1849,10 @@ function revisionSolicitudApp() {
     },
 
     async abrirHistorialModal(persona) {
+      if (!this.puedeVerAntecedentes) {
+        this.mostrarToast("No tienes permisos para consultar antecedentes.", "warning");
+        return;
+      }
       this.personaSeleccionadaAntecedente = persona;
       const idPersona = persona.id_persona || persona.id;
       const identificacion = String(persona.identificacion || "").trim();
@@ -1624,7 +1877,8 @@ function revisionSolicitudApp() {
         persona_tipo_doc: tipoDoc,
         persona_identificacion: identificacion,
         persona_cargo: cargo,
-        responsable: persona.responsable || "Sin asignar",
+        responsable: persona.ultimo_usuario_solicitud || persona.responsable || this.solicitud?.diligenciador || "Sin asignar",
+        ultimo_usuario_solicitud: persona.ultimo_usuario_solicitud || this.solicitud?.diligenciador || persona.responsable || null,
         anotaciones: persona.anotaciones || "",
         id_empresa: null,
         ultima_empresa_contratista: contratistaSolicitud,
@@ -1638,6 +1892,8 @@ function revisionSolicitudApp() {
             codigo_radicado: this.solicitud?.codigo || "SOL-ACTUAL",
             nombre_empresa: empresaSolicitud,
             nombre_contratista: contratistaSolicitud,
+            usuario_registro: this.solicitud?.diligenciador || null,
+            diligenciador: this.solicitud?.diligenciador || null,
             fecha_inicio: this.solicitud?.fecha_inicio || this.solicitud?.fecha_registro,
             fecha_fin: this.solicitud?.fecha_fin || this.solicitud?.fecha_estimada,
             fecha_solicitud: this.solicitud?.fecha_registro || new Date().toISOString()
@@ -1684,7 +1940,12 @@ function revisionSolicitudApp() {
           if (data.persona_tipo_doc) this.detalleHistorial.persona_tipo_doc = data.persona_tipo_doc;
           if (data.persona_identificacion) this.detalleHistorial.persona_identificacion = String(data.persona_identificacion);
           if (data.persona_cargo) this.detalleHistorial.persona_cargo = data.persona_cargo;
-          if (data.responsable) this.detalleHistorial.responsable = data.responsable;
+          
+          const responsableBackend = (Array.isArray(data.historial) && data.historial.length > 0 ? (data.historial[0].usuario_registro || data.historial[0].diligenciador) : null) || data.ultimo_usuario_solicitud || data.responsable;
+          if (responsableBackend) {
+            this.detalleHistorial.responsable = responsableBackend;
+            this.detalleHistorial.ultimo_usuario_solicitud = responsableBackend;
+          }
           if (data.anotaciones) this.detalleHistorial.anotaciones = data.anotaciones;
           const contratistaBackend = data.ultima_empresa_contratista || data.nombre_contratista || (Array.isArray(data.historial) && data.historial.length > 0 ? data.historial[0].nombre_contratista : null);
           const contratistaFinal = contratistaBackend || contratistaSolicitud;
@@ -1717,6 +1978,10 @@ function revisionSolicitudApp() {
     },
 
     abrirFormularioAntecedentes(item) {
+      if (!this.puedeVerAntecedentes) {
+        this.mostrarToast("No tienes permisos para modificar antecedentes.", "warning");
+        return;
+      }
       this.showHistorialModal = false;
       this.mensajeExitoAntecedente = "";
       this.mensajeErrorAntecedente = "";

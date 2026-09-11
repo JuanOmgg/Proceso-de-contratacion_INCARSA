@@ -114,16 +114,19 @@ def GET_fechasCount_rt(current_user: dict = Depends(get_current_user)):
 def GET_ALL_solicitudes(
     active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None"),
     id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO"),
+    diligenciado_por: Optional[int] = Query(None, description="Filtrar por usuario que diligenció la solicitud"),
     current_user: dict = Depends(get_current_user)
 ):
-    # Si no se envió id_usuario y el usuario es SST (5) o GESCO (6), filtrar por su id
     rol_user = str(current_user.get("rol", "")).strip().upper()
-    if id_usuario is None and (current_user.get("id_rol") in (5, 6) or rol_user in ("SST", "GESCO")):
+    id_rol_user = current_user.get("id_rol")
+
+    # Si el usuario autenticado es SST (6) o GESCO (7), SIEMPRE filtrar estrictamente por sus plantas asignadas
+    if id_rol_user in (6, 7) or rol_user in ("SST", "GESCO"):
         id_usuario = current_user.get("id")
 
-    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario})...")
+    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por})...")
     
-    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario)
+    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario, diligenciado_por=diligenciado_por)
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")

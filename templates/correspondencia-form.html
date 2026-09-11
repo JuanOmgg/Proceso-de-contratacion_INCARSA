@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Correspondencia · PSI</title>
+
+  <!-- Favicon / Ícono de la pestaña del navegador -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
+
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Google Fonts: Space Grotesk + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Estilos del Formulario con estética oscura y glow -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}?v=3.8">
+
+  <!-- Scripts de la lógica del formulario -->
+  <script src="{{ url_for('static', path='js/correspondencia.js') }}?v=1.1"></script>
+
+  <!-- Alpine.js Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
+</head>
+<body class="antialiased">
+<div class="login-page" x-data="correspondenciaForm()">
+  <div class="login-page-stripes"></div>
+
+  <!-- Marca / Logo superior -->
+  <div class="error-brand-mark">
+    <img src="{{ url_for('static', path='img/logo-sidebar.png') }}" alt="INCARSA" 
+      class="h-10 w-auto object-contain select-none"
+      style="mix-blend-mode: screen;">
+  </div>
+
+  <div class="login-glow-wrap anim-fade-up">
+    <div class="login-glow-border">
+      <div class="login-form-card p-6 sm:p-8">
+
+        <!-- ============ Estado 1: Formulario de Registro ============ -->
+        <div x-show="!submitted"
+             x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-350"
+             x-transition:enter-start="opacity-0 scale-[0.98]"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-[0.98]">
+
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--signal-500)]/15 border border-[var(--signal-500)]/30 text-[var(--signal-500)] mb-3 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+              <i class="fa-solid fa-envelope-open-text text-xl"></i>
+            </div>
+            <h2 class="font-display font-semibold text-2xl text-[var(--ink-900)] tracking-tight">Radicación de Correspondencia</h2>
+            <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">Registra los datos de la correspondencia.</p>
+          </div>
+
+          <form @submit.prevent="submit()" class="space-y-4">
+
+            <!-- Alerta de error -->
+            <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                 x-show="error" x-cloak>
+              <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+              <span x-text="error" class="font-medium leading-snug"></span>
+            </div>
+
+            <!-- 1. Tipo de correspondencia -->
+            <div>
+              <label class="form-label flex items-center justify-between">
+                <span>Tipo de correspondencia <strong class="text-[var(--signal-500)]">*</strong></span>
+              </label>
+              <div class="relative">
+                <select x-model="form.tipo_correspondencia" required
+                        class="input-field w-full rounded-lg px-3 py-2.5 text-sm appearance-none bg-[var(--surface-card)]">
+                  <option value="" disabled selected>Selecciona el tipo...</option>
+                  <option value="INTERNA">INTERNA</option>
+                  <option value="EXTERNA">EXTERNA</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 2. Asunto -->
+            <div>
+              <label class="form-label">
+                <span>Asunto<strong class="text-[var(--signal-500)]">*</strong></span>
+              </label>
+              <div class="relative">
+                <input type="text" x-model="form.asunto" required placeholder="Ej: Informe de novedades..."
+                       class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+              </div>
+            </div>
+
+            <!-- 3. Procedencia / Remitente -->
+            <div>
+              <label class="form-label">
+                <span>Procedencia<strong class="text-[var(--signal-500)]">*</strong></span>
+              </label>
+              <div class="relative">
+                <input type="text" x-model="form.procedencia" required placeholder="Ej: Coordinador..."
+                       class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+              </div>
+            </div>
+
+            <!-- 4. Destino -->
+            <div>
+              <label class="form-label">
+                <span>Destino <strong class="text-[var(--signal-500)]">*</strong></span>
+              </label>
+              <div class="relative">
+                <input type="text" x-model="form.destino" required placeholder="Ej: Planta London..."
+                       class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+              </div>
+            </div>
+
+            
+
+            <!-- Botón de Envío -->
+            <button type="submit" :disabled="submitting"
+                    class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-4"
+                    :class="submitting ? 'is-submitting cursor-wait opacity-80' : ''">
+              <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
+              <i class="fa-solid fa-paper-plane text-xs" x-show="!submitting"></i>
+              <span x-text="submitting ? 'Registrando correspondencia…' : 'Registrar Correspondencia'"></span>
+            </button>
+          </form>
+
+        </div>
+
+        <!-- ============ Estado 2: Pantalla de Éxito / Confirmación ============ -->
+        <div x-show="submitted" x-cloak
+             x-transition:enter="transition ease-[cubic-bezier(.25,.8,.25,1)] duration-400"
+             x-transition:enter-start="opacity-0 translate-y-2 scale-[0.98]"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             class="text-center py-4">
+
+          <div class="success-icon-pop w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
+            <i class="fa-solid fa-check text-3xl"></i>
+          </div>
+
+          <h2 class="font-display font-semibold text-xl text-[var(--ink-900)] mb-1">¡Correspondencia Registrada!</h2>
+          <p class="text-sm text-[var(--text-muted)] mb-5">
+            El documento ha sido radicado exitosamente en el sistema.
+          </p>
+
+          <template x-if="resultado && (resultado.radicado || resultado.id_generado)">
+            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 mb-6 inline-block w-full text-center">
+              <div class="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
+                <span>Código de Radicado</span>
+              </div>
+              <p class="font-mono text-xl font-bold text-white tracking-wider" x-text="resultado.radicado || ('SCR-' + String(resultado.id_generado).padStart(3, '0'))"></p>
+            </div>
+          </template>
+
+          <button type="button" @click="nuevaCorrespondencia()"
+                  class="btn-signal btn-shimmer w-full rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>Radicar otra correspondencia</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -33,13 +33,14 @@ function personasTable() {
     personaDocs: null,
 
     tiposDocPersona: [
-      "ARL (Afiliación / Pago)",
+      "ARL",
       "Cédula de Ciudadanía",
       "Certificado de Alturas",
       "Examen Médico Ocupacional",
       "Certificado de Espacios Confinados",
       "EPS / Seguridad Social",
       "Hoja de Vida / Certificación",
+      "Soporte de GESCO",
       "Otro documento"
     ],
 

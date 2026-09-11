@@ -3,7 +3,7 @@
     openModules: (function() {
       const p = window.location.pathname;
       let defaults = {
-        formularios: p.includes('formulario') || p.includes('nueva') || p.includes('editar'),
+        formularios: p.includes('formulario') || p.includes('nueva') || p.includes('editar') || p.includes('correspondencia-form'),
         tablas: p.includes('solicitudes') || p.includes('usuarios') || p.includes('personas') || p === '/dashboard' || p === '/'
       };
       try {
@@ -23,6 +23,7 @@
       const current = window.location.pathname;
       if (path === '/dashboard') return current === '/dashboard' || current === '/';
       if (path === '/solicitudes') return current === '/solicitudes' || current === '/solicitudes/';
+      if (path === '/correspondencias') return current === '/correspondencias' || current === '/correspondencias/';
       if (path === '/superadmin') return current === '/superadmin' || current.startsWith('/superadmin');
       return current.startsWith(path);
     }
@@ -50,16 +51,16 @@
           :class="isActive('/dashboard') ? 'is-active' : ''">
           <span class="flex items-center gap-3">
             <i class="fa-solid fa-gauge-high w-4 text-center"></i>
-            <span class="sidebar-label">Dashboard</span>
+            <span class="sidebar-label">Panel principal</span>
           </span>
           <span x-show="isModuloMantenimiento('dashboard')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
 
         <!-- Módulo desplegable: Formularios -->
-        <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario')">
+        <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario') || puedeModulo('nueva_correspondencia')">
           <button type="button" @click="toggleModule('formularios')"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
-            :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') }">
+            :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') || isActive('/correspondencia/nueva') || isActive('/formulario-correspondencia') || isActive('/correspondencia-form') }">
             <span class="flex items-center gap-3">
               <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
               <span class="sidebar-label">Formularios</span>
@@ -78,6 +79,11 @@
               :class="isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') ? 'is-active' : ''">
               <span>Nuevo usuario</span>
               <span x-show="isModuloMantenimiento('nuevo_usuario')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
+            <a href="/correspondencia/nueva" x-show="puedeModulo('nueva_correspondencia')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/correspondencia/nueva') || isActive('/formulario-correspondencia') || isActive('/correspondencia-form') ? 'is-active' : ''">
+              <span>Nueva correspondencia</span>
+              <span x-show="isModuloMantenimiento('nueva_correspondencia')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
             </a>
           </div>
         </div>
@@ -131,6 +137,16 @@
             </a>
           </div>
         </div>
+
+        <!-- Módulo independiente: Correspondencia -->
+        <a href="/correspondencias" x-show="puedeModulo('correspondencias')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
+          :class="isActive('/correspondencias') ? 'is-active' : ''">
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-envelope-open-text w-4 text-center"></i>
+            <span class="sidebar-label">Correspondencia</span>
+          </span>
+          <span x-show="isModuloMantenimiento('correspondencias')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
+        </a>
 
         <a href="/procesamiento" x-show="puedeModulo('procesamiento')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/procesamiento') ? 'is-active' : ''">
@@ -267,7 +283,7 @@
           </h2>
           <div class="flex items-center justify-center gap-2 mt-1">
             <span class="status-pill inline-flex select-none shadow-xs font-semibold status-enviado text-xs">
-              <i class="fa-solid fa-industry mr-1.5"></i> Sedes & Plantas
+              <i class="fa-solid fa-industry mr-1.5"></i> Zonas & Plantas
             </span>
             <span class="text-xs text-[var(--paper-muted)] font-mono font-bold bg-[#efe9dc] px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
               x-text="(cargando ? '...' : totalPlantas) + ' plantas'"></span>

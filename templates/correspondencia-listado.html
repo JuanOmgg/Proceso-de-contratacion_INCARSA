@@ -1,0 +1,642 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Correspondencia · PSI{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Pills de Roles en Tabla de Usuarios - Sin punto y con máxima diferenciación */
+  .status-usuario-rol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  .status-usuario-rol::before {
+    content: none !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* Roles Modo Claro - Familias cromáticas bien separadas */
+  .status-rol-admin {
+    background: #f3e8ff;
+    color: #6b21a8;
+    border: 1px solid #d8b4fe;
+  }
+  .status-rol-gesco {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+  .status-rol-sst {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .status-rol-vigilante {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+  }
+  .status-rol-scr {
+    background: #ffe4e6;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+  }
+  .status-rol-documental {
+    background: #fdf2f8;
+    color: #9d174d;
+    border: 1px solid #fbcfe8;
+  }
+  .status-rol-default {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Roles Modo Oscuro - Neón y Alto Contraste */
+  :root.dark .status-rol-admin {
+    background: rgba(168, 85, 247, 0.16) !important;
+    color: #d8b4fe !important;
+    border: 1px solid rgba(192, 132, 252, 0.5) !important;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3) !important;
+  }
+  :root.dark .status-rol-gesco {
+    background: rgba(16, 185, 129, 0.16) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(52, 211, 153, 0.5) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+  }
+  :root.dark .status-rol-sst {
+    background: rgba(245, 158, 11, 0.16) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.5) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+  }
+  :root.dark .status-rol-vigilante {
+    background: rgba(14, 165, 233, 0.16) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.5) !important;
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.3) !important;
+  }
+  :root.dark .status-rol-scr {
+    background: rgba(244, 63, 94, 0.16) !important;
+    color: #fb7185 !important;
+    border: 1px solid rgba(251, 113, 133, 0.5) !important;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.3) !important;
+  }
+  :root.dark .status-rol-documental {
+    background: rgba(236, 72, 153, 0.16) !important;
+    color: #f472b6 !important;
+    border: 1px solid rgba(244, 114, 182, 0.5) !important;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3) !important;
+  }
+  :root.dark .status-rol-default {
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  }
+
+  /* Botón interactivo de Plantas Asignadas */
+  .user-plantas-btn {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    transition: all 0.18s ease;
+  }
+  .user-plantas-btn:hover {
+    background: #fde68a;
+    color: #78350f;
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+  }
+
+  /* Modo Oscuro para Botón de Plantas */
+  :root.dark .user-plantas-btn {
+    background: rgba(245, 158, 11, 0.14) !important;
+    color: #fcd34d !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.12) !important;
+  }
+  :root.dark .user-plantas-btn:hover {
+    background: rgba(245, 158, 11, 0.25) !important;
+    color: #fef08a !important;
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.35) !important;
+  }
+
+  /* Modal stamp Ámbar para Plantas */
+  .modal-stamp.amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+  :root.dark .modal-stamp.amber {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  }
+
+  /* Ajustes estructurales de la Tabla de Usuarios - Todo centrado */
+  .usuarios-tabla th,
+  .usuarios-tabla td {
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/correspondencia-listado.js') }}?v=3.5"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- SIDEBAR -->
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+  ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="correspondenciaTable()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      {% set page_title = "Correspondencia" %}
+      {% include 'pages/navbar.html'%}
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+          <!-- ===== Contadores ===== -->
+          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- Total correspondencias (Cian Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl shadow-sm">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-envelope-open-text text-xl"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total Correspondencias</p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalCorrespondencias"></p>
+              </div>
+            </div>
+
+            <!-- Año actual (Verde Esmeralda Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl shadow-sm">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-check text-xl"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium" x-text="'Año Actual (' + anioActual + ')'"></p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalAnioActual"></p>
+              </div>
+            </div>
+
+            <!-- Año anterior (Ámbar Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 col-span-1 sm:col-span-2 lg:col-span-1 neon-stat-card neon-card-carboinsa rounded-xl shadow-sm">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+              </div>
+              <div>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium" x-text="'Año Anterior (' + anioAnterior + ')'"></p>
+                <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalAnioAnterior"></p>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ===== Filtros / buscador ===== -->
+          <div class="filter-bar p-4 flex flex-wrap items-center gap-3">
+            <div class="search-input-wrapper" style="flex: 1 1 260px; min-width: 220px;">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar correspondencia..."
+                class="input-field w-full rounded-lg py-2.5 text-sm">
+            </div>
+
+            <!-- Custom Dropdown para Filtro de Años -->
+            <div class="relative text-left" style="width: 190px; flex-shrink: 0;" x-data="{ open: false }" @click.outside="open = false">
+              <button type="button" @click="open = !open"
+                class="w-full flex items-center justify-between px-3.5 py-2.5 bg-white dark:bg-[#1f242d] border border-[var(--border-subtle)] rounded-lg text-sm font-medium hover:border-[var(--steel-300)] shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--signal-500)]/20">
+                <span class="truncate flex items-center gap-2 text-[var(--text-primary)]">
+                  <i class="fa-regular fa-calendar text-xs text-[var(--signal-500)]"></i>
+                  <span x-text="filtroAnio ? ('Año ' + filtroAnio) : 'Todos los años'"></span>
+                </span>
+                <i class="fa-solid fa-chevron-down text-xs text-[var(--text-muted)] transition-transform duration-200"
+                  :class="open ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+              </button>
+
+              <!-- Menú Flotante con animación suave -->
+              <div x-show="open" x-cloak
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                class="absolute z-40 mt-1.5 w-full bg-white dark:bg-[#1a1f26] rounded-xl shadow-xl border border-[var(--border-subtle)] py-1.5 overflow-hidden max-h-60 overflow-y-auto">
+                
+                <!-- Opción: Todos los años -->
+                <div @click="filtroAnio = ''; open = false"
+                  class="mx-1.5 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                  :class="!filtroAnio ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] hover:bg-orange-50 dark:hover:bg-slate-800 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                  <span>Todos los años</span>
+                  <i x-show="!filtroAnio" class="fa-solid fa-check text-xs"></i>
+                </div>
+
+                <div class="h-px bg-[var(--border-subtle)] my-1 mx-2"></div>
+
+                <!-- Lista dinámica de años disponibles -->
+                <template x-for="anio in aniosDisponibles" :key="anio">
+                  <div @click="filtroAnio = anio; open = false"
+                    class="mx-1.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 flex items-center justify-between gap-2"
+                    :class="filtroAnio == anio ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] hover:bg-orange-50 dark:hover:bg-slate-800 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                    <span class="text-xs font-semibold" x-text="anio"></span>
+                    <i x-show="filtroAnio == anio" class="fa-solid fa-check text-xs flex-shrink-0"></i>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <button type="button" @click="limpiarFiltros()" class="action-icon-btn flex-shrink-0" data-tooltip="Limpiar filtros">
+              <i class="fa-solid fa-filter-circle-xmark"></i>
+            </button>
+            
+          </div>
+
+          <!-- ===== Tabla ===== -->
+          <div class="wizard-card overflow-hidden">
+            <div class="w-full">
+              <table class="w-full table-fixed text-sm data-table align-middle">
+                <thead>
+                  <tr class="border-b border-[var(--border-subtle)]">
+                    <th class="w-12 px-2 py-3 text-center whitespace-nowrap">#</th>
+                    <th class="px-2 py-3 text-center whitespace-nowrap">Código</th>
+                    <th class="px-2 py-3 text-center whitespace-nowrap">Tipo</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Asunto</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Procedencia</th>
+                    <th class="px-3 py-3 text-center whitespace-nowrap">Destino</th>
+                    <th class="px-2 py-3 text-center whitespace-nowrap">Fecha</th>
+                    <th class="px-2 py-3 text-center whitespace-nowrap">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="(correspondencia, index) in correspondenciasPagina" :key="correspondencia.id">
+                    <tr x-transition:enter="transition ease-out duration-[200ms]" x-transition:enter-start="opacity-0"
+                      x-transition:enter-end="opacity-100">
+                      
+                      <!-- Columna Contador de Fila -->
+                      <td class="px-2 py-3 text-center text-xs font-medium text-[var(--text-muted)] whitespace-nowrap"
+                        x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                      <!-- Código / Radicado -->
+                      <td class="px-2 py-3 text-center text-xs font-semibold text-[var(--text-primary)] whitespace-nowrap"
+                        x-text="correspondencia.radicado || '-' "></td>
+
+                      <!-- Tipo con Pill Semántico -->
+                      <td class="px-2 py-3 text-center whitespace-nowrap">
+                        <span class="status-usuario-rol select-none whitespace-nowrap text-[11px]"
+                          :class="{
+                            'status-rol-admin': (correspondencia.tipo_correspondencia || '').toUpperCase() === 'INTERNA',
+                            'status-rol-gesco': (correspondencia.tipo_correspondencia || '').toUpperCase() === 'EXTERNA',
+                            'status-rol-vigilante': (correspondencia.tipo_correspondencia || '').toUpperCase() === 'ENTRADA',
+                            'status-rol-sst': (correspondencia.tipo_correspondencia || '').toUpperCase() === 'SALIDA',
+                            'status-rol-default': !['INTERNA','EXTERNA','ENTRADA','SALIDA'].includes((correspondencia.tipo_correspondencia || '').toUpperCase())
+                          }"
+                          x-text="correspondencia.tipo_correspondencia || '—'"></span>
+                      </td>
+
+                      <!-- Asunto -->
+                      <td class="px-3 py-3 text-center text-xs font-medium text-[var(--text-primary)]">
+                        <span class="truncate block" :title="correspondencia.asunto" x-text="correspondencia.asunto || '—'"></span>
+                      </td>
+
+                      <!-- Procedencia -->
+                      <td class="px-3 py-3 text-center text-xs text-[var(--text-muted)]">
+                        <span class="truncate block" :title="correspondencia.procedencia" x-text="correspondencia.procedencia || '—'"></span>
+                      </td>
+
+                      <!-- Destino -->
+                      <td class="px-3 py-3 text-center text-xs text-[var(--text-muted)]">
+                        <span class="truncate block" :title="correspondencia.destino" x-text="correspondencia.destino || '—'"></span>
+                      </td>
+
+                      <!-- Fecha -->
+                      <td class="px-2 py-3 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-primary)] select-none">
+                          <i class="fa-regular fa-calendar text-[11px] text-[var(--signal-500)]"></i>
+                          <span x-text="formatearFecha(correspondencia.fecha_envio)"></span>
+                        </span>
+                      </td>
+
+                      <!-- Acciones -->
+                      <td class="px-2 py-3 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1 whitespace-nowrap">
+                          <!-- Ver Detalle -->
+                          <button type="button" 
+                            @click="verCorrespondencia(correspondencia)"
+                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            data-tooltip="Ver detalle">
+                            <i class="fa-solid fa-eye"></i>
+                          </button>
+
+                          <!-- Editar -->
+                          <button type="button" 
+                            @click="abrirModalEditar(correspondencia)"
+                            class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                            data-tooltip="Editar correspondencia">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                          </button>
+                          
+                          <!-- Eliminar -->
+                          <button type="button" 
+                            @click="confirmarEliminar(correspondencia)" 
+                            class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            data-tooltip="Eliminar correspondencia">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="text-sm text-[var(--text-muted)] text-center py-10" x-show="correspondenciasPagina.length === 0">
+              No se encontraron registros de correspondencia con los filtros seleccionados.
+            </p>
+
+            <!-- ===== Paginación ===== -->
+            <div
+              class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm">
+              <div class="flex items-center gap-2 text-[var(--text-muted)]">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()"
+                  class="input-field rounded-md px-2 py-1 text-sm">
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                </select>
+                <span>registros</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span class="text-[var(--text-muted)]">Página <span x-text="currentPage"
+                    class="font-semibold text-[var(--text-primary)]"></span> de <span
+                    x-text="totalPaginas"></span></span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn" :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- Footer compartido -->
+      {% set footer_modulo = 'Módulo de Registro de Correspondencia' %}
+      {% include 'pages/footer.html' %}
+
+      <!-- ============================================================
+         MODAL: Confirmar eliminación (Estilo Alertas Ticket)
+      ============================================================= -->
+      <div x-show="showDeleteModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        @keydown.escape.window="cancelarEliminar()">
+        <div x-show="showDeleteModal" class="modal-panel w-full max-w-sm p-7 text-center" @click.outside="cancelarEliminar()">
+          <div class="modal-stamp warning">
+            <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+          </div>
+          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar correspondencia?</h3>
+          <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+            ¿Seguro que deseas eliminar el radicado <br>
+            <span class="font-bold text-[var(--paper-ink)] font-mono text-base"
+              x-text="itemAEliminar ? (itemAEliminar.radicado || ('#' + itemAEliminar.id)) : ''"></span>?<br>
+            Esta acción es irreversible y eliminará el registro de la base de datos.
+          </p>
+          <div class="flex items-center justify-center gap-3">
+            <button type="button" @click="cancelarEliminar()" class="modal-btn-cancel flex-1" :disabled="eliminando">
+              Cancelar
+            </button>
+            <button type="button" @click="eliminarCorrespondencia()" class="modal-btn-confirm flex-1 bg-red-600 hover:bg-red-700 text-white" :disabled="eliminando">
+              <span x-text="eliminando ? 'Eliminando...' : 'Eliminar'"></span>
+            </button>
+          </div>
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL: Editar Correspondencia
+      ============================================================= -->
+      <div x-show="showEditModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        @keydown.escape.window="cerrarModalEditar()">
+        <div x-show="showEditModal" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="modal-panel w-full max-w-lg p-6 text-left" 
+             @click.outside="cerrarModalEditar()">
+          
+          <div class="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)] mb-5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm border border-amber-500/20">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-base text-[var(--paper-ink)]">Editar Correspondencia</h3>
+                <p class="text-xs text-[var(--paper-muted)] font-mono" x-text="formEdit.radicado ? ('Radicado: ' + formEdit.radicado) : ''"></p>
+              </div>
+            </div>
+            <button type="button" @click="cerrarModalEditar()" class="action-icon-btn text-[var(--paper-muted)] hover:text-[var(--paper-ink)]">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <form @submit.prevent="guardarEdicion()" class="space-y-4">
+            <!-- Tipo de Correspondencia -->
+            <div>
+              <label class="block text-xs font-semibold text-[var(--paper-ink)] mb-1.5">
+                Tipo de Correspondencia <span class="text-red-500">*</span>
+              </label>
+              <select x-model="formEdit.tipo_correspondencia" required
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border-subtle)]">
+                <option value="" disabled>Selecciona el tipo</option>
+                <option value="INTERNA">INTERNA</option>
+                <option value="EXTERNA">EXTERNA</option>
+              </select>
+            </div>
+
+            <!-- Asunto -->
+            <div>
+              <label class="block text-xs font-semibold text-[var(--paper-ink)] mb-1.5">
+                Asunto <span class="text-red-500">*</span>
+              </label>
+              <input type="text" x-model="formEdit.asunto" required
+                     placeholder="Asunto o motivo de correspondencia"
+                     class="input-field w-full rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <!-- Procedencia y Destino -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-[var(--paper-ink)] mb-1.5">
+                  Procedencia / Remitente <span class="text-red-500">*</span>
+                </label>
+                <input type="text" x-model="formEdit.procedencia" required
+                       placeholder="Quién remite"
+                       class="input-field w-full rounded-lg px-3 py-2 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-[var(--paper-ink)] mb-1.5">
+                  Destino <span class="text-red-500">*</span>
+                </label>
+                <input type="text" x-model="formEdit.destino" required
+                       placeholder="A quién va dirigido"
+                       class="input-field w-full rounded-lg px-3 py-2 text-sm">
+              </div>
+            </div>
+
+            <!-- Fecha de Envío (No editable) -->
+            <div>
+              <label class="block text-xs font-semibold text-[var(--paper-ink)] mb-1.5 flex items-center justify-between">
+                <span>Fecha de Envío</span>
+                <span class="text-[11px] text-[var(--paper-muted)] font-normal flex items-center gap-1">
+                  <i class="fa-solid fa-lock text-[10px]"></i> No editable
+                </span>
+              </label>
+              <input type="date" x-model="formEdit.fecha_envio" readonly disabled
+                     class="input-field w-full rounded-lg px-3 py-2 text-sm bg-black/5 dark:bg-white/5 opacity-70 cursor-not-allowed border border-[var(--border-subtle)]"
+                     title="La fecha de radicación no se puede modificar">
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-[var(--border-subtle)] mt-5">
+              <button type="button" @click="cerrarModalEditar()" class="modal-btn-cancel" :disabled="guardandoEdicion">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-signal px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2" :disabled="guardandoEdicion">
+                <i class="fa-solid fa-spinner fa-spin" x-show="guardandoEdicion"></i>
+                <i class="fa-solid fa-floppy-disk" x-show="!guardandoEdicion"></i>
+                <span x-text="guardandoEdicion ? 'Guardando...' : 'Guardar Cambios'"></span>
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL: Ver Detalle de Correspondencia (Estilo Ticket)
+      ============================================================= -->
+      <div x-show="showDetalleModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        @keydown.escape.window="cerrarDetalle()">
+        <div x-show="showDetalleModal"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95"
+          x-transition:enter-end="opacity-100 scale-100"
+          class="modal-panel w-full max-w-md p-6 text-center relative"
+          @click.outside="cerrarDetalle()">
+          
+          <button type="button" @click="cerrarDetalle()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Encabezado estilo Ticket -->
+          <div class="text-center mb-4">
+            <div class="modal-stamp info mb-3">
+              <i class="fa-solid fa-envelope-open-text text-2xl text-[var(--paper-info)]"></i>
+            </div>
+            <h2 class="font-display font-bold text-xl text-[var(--paper-ink)] tracking-tight mb-1"
+              x-text="correspondenciaDetalle?.radicado ? ('Radicado ' + correspondenciaDetalle.radicado) : ('Correspondencia #' + (correspondenciaDetalle?.id || ''))"></h2>
+            
+            <div class="flex items-center justify-center gap-2 mt-1.5">
+              <span class="status-usuario-rol select-none whitespace-nowrap text-xs"
+                :class="{
+                  'status-rol-admin': (correspondenciaDetalle?.tipo_correspondencia || '').toUpperCase() === 'INTERNA',
+                  'status-rol-gesco': (correspondenciaDetalle?.tipo_correspondencia || '').toUpperCase() === 'EXTERNA',
+                  'status-rol-vigilante': (correspondenciaDetalle?.tipo_correspondencia || '').toUpperCase() === 'ENTRADA',
+                  'status-rol-sst': (correspondenciaDetalle?.tipo_correspondencia || '').toUpperCase() === 'SALIDA',
+                  'status-rol-default': !['INTERNA','EXTERNA','ENTRADA','SALIDA'].includes((correspondenciaDetalle?.tipo_correspondencia || '').toUpperCase())
+                }"
+                x-text="correspondenciaDetalle?.tipo_correspondencia || 'Sin tipo'"></span>
+            </div>
+          </div>
+
+          <!-- Información dispuesta en formato Ticket -->
+          <div class="space-y-0 text-left border-y border-dashed border-[var(--paper-shadow)] py-2 my-4">
+            <!-- Fila Código y Fecha de Envío -->
+            <div class="grid grid-cols-2 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <div>
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Radicado</span>
+                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.radicado || '—'"></span>
+              </div>
+              <div>
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Fecha de envío</span>
+                <span class="text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1 mt-0.5">
+                  <i class="fa-regular fa-calendar text-[var(--signal-500)] text-xs"></i>
+                  <span x-text="formatearFecha(correspondenciaDetalle?.fecha_envio)"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Fila Procedencia y Destino -->
+            <div class="grid grid-cols-2 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <div>
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Procedencia / Remitente</span>
+                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.procedencia || '—'"></span>
+              </div>
+              <div>
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Destino / Dirigido a</span>
+                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.destino || '—'"></span>
+              </div>
+            </div>
+
+            <!-- Fila Asunto Completo -->
+            <div class="py-2.5">
+              <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1">Asunto / Descripción</span>
+              <p class="text-sm font-medium text-[var(--paper-ink)] leading-relaxed whitespace-pre-line"
+                x-text="correspondenciaDetalle?.asunto || '—'"></p>
+            </div>
+          </div>
+
+          <!-- Pie del Modal -->
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" @click="cerrarDetalle()" class="modal-btn-cancel w-full">
+              Cerrar
+            </button>
+          </div>
+
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+{% endblock %}
