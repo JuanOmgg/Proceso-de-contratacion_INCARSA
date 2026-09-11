@@ -225,6 +225,10 @@ function solicitudWizard() {
     vehiculoSearchQuery: "", // Texto escrito en el buscador de vehículos
     showVehiculoModal: false, // Visibilidad del modal para registrar nuevo vehículo
     guardandoVehiculo: false, // Spinner durante la llamada POST al backend
+    isEditingVehiculo: false, // Indica si el modal de vehículos está en modo edición
+    editingVehiculoId: null, // ID del vehículo en la BD si existe
+    editingVehiculoOldPlaca: "", // Placa previa del vehículo en edición
+    editingVehiculoIndex: -1, // Índice en this.vehiculos si ya está en la solicitud
     nuevoVehiculo: {
       tipo: "Camioneta",
       placa: "",
@@ -565,7 +569,7 @@ function solicitudWizard() {
       this.form.fechaSalida = found.fecha_salida || found.fecha_fin || found.fechaSalida || "";
       this.form.nivelRiesgo = found.nivel_de_riesgo || found.nivelRiesgo || found.riesgo || "Bajo";
       this.form.actividad = found.actividad || "";
-      this.form.diligenciadoPor = found.diligenciador || found.diligenciado_por || found.diligenciadoPor || "Juan Prieto";
+      this.form.diligenciadoPor = found.diligenciador || (found.diligenciado_por ? `Usuario #${found.diligenciado_por}` : "") || found.diligenciadoPor || "—";
       this.form.estado = (found.estado || "ENVIADO").toUpperCase();
       this.form.codigo = found.codigo || found.codigo_radicado || "";
 
@@ -1676,6 +1680,10 @@ function solicitudWizard() {
     },
 
     openVehiculoModal() {
+      this.isEditingVehiculo = false;
+      this.editingVehiculoId = null;
+      this.editingVehiculoOldPlaca = "";
+      this.editingVehiculoIndex = -1;
       this.nuevoVehiculo = {
         tipo: "Camioneta",
         placa: "",
@@ -1690,8 +1698,45 @@ function solicitudWizard() {
       this.showVehiculoModal = true;
     },
 
+    /**
+     * Abre el modal de vehículo pre-llenando sus datos para edición
+     */
+    openEditVehiculoModal(vehiculo, idx = -1) {
+      this.isEditingVehiculo = true;
+      this.editingVehiculoId = vehiculo.id || null;
+      this.editingVehiculoOldPlaca = String(vehiculo.placa || "").toUpperCase().trim();
+      this.editingVehiculoIndex = idx !== -1 ? idx : this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca);
+
+      let docs = [];
+      if (Array.isArray(vehiculo.documentos) && vehiculo.documentos.length > 0) {
+        docs = vehiculo.documentos.map(d => ({
+          id: d.id || null,
+          tipo_doc: d.tipo_doc || d.tipo || "SOAT",
+          nombre_archivo: d.nombre_archivo || d.nom_documento || "",
+          url_documento: d.url_documento || d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null)
+        }));
+      } else {
+        docs = [{ tipo_doc: "SOAT", nombre_archivo: "" }];
+      }
+
+      this.nuevoVehiculo = {
+        tipo: vehiculo.tipo || "Camioneta",
+        placa: String(vehiculo.placa || "").toUpperCase().trim(),
+        conductor: vehiculo.conductor || "",
+        licencia_doc: vehiculo.licencia_doc || vehiculo.licencia || "",
+        licencia_url: vehiculo.licencia_url || null,
+        documentos: docs
+      };
+      this.vehiculoModalErrors = {};
+      this.showVehiculoModal = true;
+    },
+
     closeVehiculoModal() {
       this.showVehiculoModal = false;
+      this.isEditingVehiculo = false;
+      this.editingVehiculoId = null;
+      this.editingVehiculoOldPlaca = "";
+      this.editingVehiculoIndex = -1;
       this.nuevoVehiculo = {
         tipo: "Camioneta",
         placa: "",
@@ -1790,7 +1835,19 @@ function solicitudWizard() {
       if (!tipo) {
         this.vehiculoModalErrors.tipo = "Selecciona el tipo de vehículo.";
       }
-      if (placa && this.vehiculoYaAgregado(placa)) {
+
+      const esDuplicado = this.vehiculos.some((v, idx) => {
+        const pPlaca = String(v.placa || "").toUpperCase().trim();
+        if (pPlaca !== placa) return false;
+        if (this.isEditingVehiculo) {
+          if (this.editingVehiculoIndex !== -1 && idx === this.editingVehiculoIndex) return false;
+          if (this.editingVehiculoId && v.id && String(v.id) === String(this.editingVehiculoId)) return false;
+          if (this.editingVehiculoOldPlaca && pPlaca === this.editingVehiculoOldPlaca) return false;
+        }
+        return true;
+      });
+
+      if (placa && esDuplicado) {
         this.vehiculoModalErrors.placa = "Ya agregaste un vehículo con esta placa a la solicitud.";
       }
       return Object.keys(this.vehiculoModalErrors).length === 0;
@@ -1813,6 +1870,73 @@ function solicitudWizard() {
         }));
 
       this.guardandoVehiculo = true;
+
+      if (this.isEditingVehiculo) {
+        // ==================== MODO EDICIÓN ====================
+        const vehiculoActualizado = {
+          id: this.editingVehiculoId,
+          tipo: tipo,
+          placa: placa,
+          conductor: conductor,
+          licencia_doc: licencia_doc,
+          licencia_url: this.nuevoVehiculo.licencia_url || null,
+          documentos: docsValidos
+        };
+
+        try {
+          if (this.editingVehiculoId && !isNaN(parseInt(this.editingVehiculoId))) {
+            const response = await fetch(`${API.vehiculos}/${this.editingVehiculoId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tipo: tipo,
+                placa: placa,
+                conductor: conductor,
+                licencia_doc: licencia_doc,
+                licencia_url: this.nuevoVehiculo.licencia_url || null,
+                documentos: docsValidos
+              })
+            });
+
+            if (!response.ok) {
+              const errData = await response.json().catch(() => ({}));
+              throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+            }
+            console.log("✅ Vehículo actualizado exitosamente en BD");
+          }
+        } catch (error) {
+          console.warn("⚠️ No se pudo actualizar vehículo en el backend:", error.message);
+        }
+
+        // 1. Actualizar en this.vehiculos (lista de la solicitud activa)
+        if (this.editingVehiculoIndex !== -1 && this.vehiculos[this.editingVehiculoIndex]) {
+          this.vehiculos[this.editingVehiculoIndex] = {
+            ...this.vehiculos[this.editingVehiculoIndex],
+            ...vehiculoActualizado
+          };
+        } else {
+          const idxEncontrado = this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+          if (idxEncontrado !== -1) {
+            this.vehiculos[idxEncontrado] = {
+              ...this.vehiculos[idxEncontrado],
+              ...vehiculoActualizado
+            };
+          }
+        }
+
+        // 2. Actualizar en el catálogo de búsqueda
+        const regIdx = this.vehiculosRegistrados.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+        if (regIdx !== -1) {
+          this.vehiculosRegistrados[regIdx] = {
+            ...this.vehiculosRegistrados[regIdx],
+            ...vehiculoActualizado
+          };
+        }
+
+        this.guardandoVehiculo = false;
+        this.closeVehiculoModal();
+        return;
+      }
 
       const vehiculoNuevo = {
         tipo: tipo,
@@ -2032,18 +2156,21 @@ function solicitudWizard() {
         motivo: null
       }));
 
-      // Usuario autenticado (Diligenciador)
+      // Usuario autenticado (Diligenciador únicamente para nueva solicitud)
       const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || "null");
       const diligenciadorId = (sesion && sesion.id && !isNaN(parseInt(sesion.id))) ? parseInt(sesion.id) : 1;
 
       // Vehículos estructurados con licencia y documentos
       const vehiculosPayload = this.vehiculos.map(v => ({
+        id: v.id || undefined,
         tipo: v.tipo || "Camioneta",
         placa: (v.placa || "").toUpperCase().trim(),
+        conductor: v.conductor || "",
         licencia_doc: v.licencia_doc || "",
         documentos: (v.documentos || [])
           .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
           .map(d => ({
+            id: d.id || undefined,
             tipo_doc: d.tipo_doc || "soat",
             nom_documento: d.nombre_archivo.trim(),
             nombre_archivo: d.nombre_archivo.trim()
@@ -2065,7 +2192,7 @@ function solicitudWizard() {
         observaciones: this.form.observaciones || undefined,
         estado: (this.isEdit && this.esSuperAdmin) ? (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO") : undefined,
         empresa_origen: empresaOrigenId,
-        diligenciado_por: diligenciadorId,
+        diligenciado_por: this.isEdit ? undefined : diligenciadorId,
         nivel_de_riesgo: this.form.nivelRiesgo || "Bajo",
         tipo_personal: "Contratista",
         empresa_contratista: contratistaId,
@@ -2116,6 +2243,7 @@ function solicitudWizard() {
               nivelRiesgo: this.form.nivelRiesgo,
               actividad: this.form.actividad,
               diligenciadoPor: this.form.diligenciadoPor,
+              diligenciado_por: this.solicitudOriginal?.diligenciado_por || this.solicitudOriginal?.id_diligenciador,
               personas: this.personas,
               vehiculos: this.vehiculos,
               equipos: this.equipos

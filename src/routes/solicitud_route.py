@@ -119,10 +119,18 @@ def GET_ALL_solicitudes(
 ):
     rol_user = str(current_user.get("rol", "")).strip().upper()
     id_rol_user = current_user.get("id_rol")
+    try:
+        id_rol_user = int(id_rol_user) if id_rol_user is not None else None
+    except (ValueError, TypeError):
+        pass
 
     # Si el usuario autenticado es SST (6) o GESCO (7), SIEMPRE filtrar estrictamente por sus plantas asignadas
     if id_rol_user in (6, 7) or rol_user in ("SST", "GESCO"):
         id_usuario = current_user.get("id")
+
+    # Si el usuario autenticado es Gestión Documental (5), SIEMPRE filtrar estrictamente por las que él haya diligenciado
+    if id_rol_user == 5 or "GESTION DOCUMENTAL" in rol_user or "GESTIÓN DOCUMENTAL" in rol_user:
+        diligenciado_por = current_user.get("id")
 
     print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por})...")
     
@@ -211,6 +219,9 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
     # Restricciones de edición según rol y estado:
     user_rol = str(current_user.get("rol", "")).strip().lower()
     es_super = user_rol in ("superadmin", "super admin", "super_admin")
+
+    # Proteger el solicitante original: al editar una solicitud (o cambiar su estado) NUNCA se debe alterar la persona que la diligenció
+    new_updates.pop("diligenciado_por", None)
 
     token_edicion = new_updates.pop("token_edicion", None)
     consumir_token = False

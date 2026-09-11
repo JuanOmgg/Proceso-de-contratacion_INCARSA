@@ -214,6 +214,9 @@ function normalizarSolicitud(s) {
   const nombreEmpresaOrigen = s.nombre_empresa || s.empresa_origen || s.empresaOrigen || "INCARSA";
   const nombreContratista = s.nombre_emContratista || s.empresa_contratista || s.contratista || "—";
   const diligenciadorNombre = s.diligenciador || (typeof s.diligenciado_por === "string" ? s.diligenciado_por : null) || s.diligenciadoPor || "Administrador";
+  const diligenciadoPorId = (s.diligenciado_por !== undefined && s.diligenciado_por !== null && !isNaN(Number(s.diligenciado_por)))
+    ? Number(s.diligenciado_por)
+    : (s.id_diligenciador ? Number(s.id_diligenciador) : null);
   const codigoVal = s.codigo || s.codigo_radicado || `RAD-${s.id}`;
 
   return {
@@ -231,6 +234,7 @@ function normalizarSolicitud(s) {
     fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion),
     estado: (s.estado || "ENVIADO").toUpperCase(),
     diligenciador: diligenciadorNombre,
+    diligenciado_por: diligenciadoPorId,
     observaciones: s.observaciones || s.observacion || "",
     // campos del modal detalle
     empresaOrigen: nombreEmpresaOrigen,
@@ -258,6 +262,35 @@ function esSolicitudActiva(s) {
   return false;
 }
 
+function esSolicitudParaGestionDoc(s, sesion) {
+  if (!sesion && typeof getAuthSession === 'function') {
+    sesion = getAuthSession();
+  }
+  if (!sesion) return true;
+
+  const rolTexto = String(sesion.rol || sesion.nombre_rol || "").toUpperCase();
+  const rolId = Number(sesion.id_rol || 0);
+  const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolId === 5;
+
+  if (!esGestionDoc) return true;
+
+  const myId = Number(sesion.id || 0);
+  const solDiligenciadoPor = Number(s.diligenciado_por || s.id_diligenciador || 0);
+
+  if (myId && solDiligenciadoPor && myId === solDiligenciadoPor) {
+    return true;
+  }
+
+  // Coincidencia secundaria por nombre del diligenciador por si el id no viniese enlazado
+  const nombreUsuario = String(sesion.nombre || sesion.nombre_completo || `${sesion.nombres || ''} ${sesion.apellidos || ''}`).trim().toLowerCase();
+  const diligenciadorSol = String(s.diligenciador || "").trim().toLowerCase();
+  if (nombreUsuario && diligenciadorSol && (nombreUsuario.includes(diligenciadorSol) || diligenciadorSol.includes(nombreUsuario))) {
+    return true;
+  }
+
+  return false;
+}
+
 // ---------------------------------------------------------
 // Tarjetas contadoras del dashboard
 // ---------------------------------------------------------
@@ -268,13 +301,14 @@ function dashboardCards() {
     cargando: true,
 
     async init() {
+      const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
       // 1. Usar datos precargados desde el splash inmediatamente para cero parpadeo
       try {
         const pre = sessionStorage.getItem("incarsa_preloaded_solicitudes");
         if (pre) {
           const raw = JSON.parse(pre);
           if (Array.isArray(raw) && raw.length > 0) {
-            this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
+            this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean).filter(s => esSolicitudParaGestionDoc(s, sesion));
             this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
             this.cargando = false;
           }
@@ -287,7 +321,7 @@ function dashboardCards() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const raw = Array.isArray(data) ? data : (data.datos || []);
-        this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
+        this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean).filter(s => esSolicitudParaGestionDoc(s, sesion));
         this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
       } catch (error) {
         console.warn("Aviso al consultar solicitudes para contadores:", error.message);
@@ -304,11 +338,12 @@ function dashboardCards() {
 
     async recargar() {
       try {
+        const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
         const res = await fetch(`${API.solicitudes}/getall`);
         if (res.ok) {
           const data = await res.json();
           const raw = Array.isArray(data) ? data : (data.datos || []);
-          this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean);
+          this.solicitudesTodas = raw.map(normalizarSolicitud).filter(Boolean).filter(s => esSolicitudParaGestionDoc(s, sesion));
           this.solicitudesActivas = this.solicitudesTodas.filter(s => esSolicitudActiva(s));
         }
       } catch (e) {}
@@ -383,6 +418,7 @@ function solicitudesTable() {
         });
       }
 
+      const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
       // 1. Usar datos precargados desde el splash inmediatamente
       try {
         const pre = sessionStorage.getItem("incarsa_preloaded_solicitudes");
@@ -390,7 +426,7 @@ function solicitudesTable() {
           const raw = JSON.parse(pre);
           if (Array.isArray(raw) && raw.length > 0) {
             const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
-            this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
+            this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s) && esSolicitudParaGestionDoc(s, sesion));
             this.cargando = false;
           }
         }
@@ -403,7 +439,7 @@ function solicitudesTable() {
         const data = await res.json();
         const raw = Array.isArray(data) ? data : (data.datos || []);
         const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
-        this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
+        this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s) && esSolicitudParaGestionDoc(s, sesion));
       } catch (error) {
         console.warn("Aviso al consultar solicitudes activas de la tabla:", error.message);
         if (!this.solicitudes) this.solicitudes = [];
@@ -418,12 +454,13 @@ function solicitudesTable() {
 
     async recargar() {
       try {
+        const sesion = (typeof getAuthSession === 'function') ? getAuthSession() : null;
         const res = await fetch(`${API.solicitudes}/getall`);
         if (res.ok) {
           const data = await res.json();
           const raw = Array.isArray(data) ? data : (data.datos || []);
           const normalizadas = raw.map(normalizarSolicitud).filter(Boolean);
-          this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s));
+          this.solicitudes = normalizadas.filter(s => esSolicitudActiva(s) && esSolicitudParaGestionDoc(s, sesion));
         }
       } catch (e) {}
     },

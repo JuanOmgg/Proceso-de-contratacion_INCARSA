@@ -259,6 +259,7 @@ function normalizarSolicitud(s) {
         riesgo: s.nivel_de_riesgo || s.nivelRiesgo || s.riesgo || "—",
         actividad: s.actividad || "—",
         diligenciador: diligenciadorNombre,
+        diligenciado_por: (s.diligenciado_por !== undefined && s.diligenciado_por !== null && !isNaN(Number(s.diligenciado_por))) ? Number(s.diligenciado_por) : (s.id_diligenciador ? Number(s.id_diligenciador) : null),
         is_active: s.is_active,
         vehiculos: listaVehiculos,
         computos: listaComputos,
@@ -436,6 +437,10 @@ function solicitudesTable() {
                 const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
                 if (sesion && sesion.id && esSstGesco) {
                     url += `?id_usuario=${sesion.id}`;
+                }
+                const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolId === 5;
+                if (sesion && sesion.id && esGestionDoc) {
+                    url += `${url.includes('?') ? '&' : '?'}diligenciado_por=${sesion.id}`;
                 }
 
                 const response = await fetch(url);

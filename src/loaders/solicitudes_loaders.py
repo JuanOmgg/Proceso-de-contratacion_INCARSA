@@ -1845,18 +1845,15 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                         campos["empresa_contratista"] = int(raw_ec)
                     elif raw_ec:
                         cursor.execute("SELECT id FROM emp_contratista WHERE nombre = %s LIMIT 1", (str(raw_ec),))
-                        row_c = cursor.fetchone()
                         if row_c:
                             campos["empresa_contratista"] = int(row_c["id"])
 
-                if "diligenciado_por" in campos:
-                    raw_dp = campos["diligenciado_por"]
-                    if str(raw_dp).isdigit():
-                        campos["diligenciado_por"] = int(raw_dp)
+                # 5. Proteger el solicitante original: nunca alterar diligenciado_por en una actualización
+                campos.pop("diligenciado_por", None)
 
                 # 6. Filtrar solo columnas válidas escalares para la tabla solicitudes
                 valid_cols = {
-                    "codigo", "empresa_origen", "diligenciado_por", "nivel_de_riesgo",
+                    "codigo", "empresa_origen", "nivel_de_riesgo",
                     "tipo_personal", "empresa_contratista", "plantas_ids", "personas_ids",
                     "vehiculos_ids", "fecha_inicio", "fecha_fin", "actividad",
                     "observaciones", "estado", "is_active",

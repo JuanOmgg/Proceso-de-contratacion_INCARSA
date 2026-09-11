@@ -176,7 +176,7 @@
                   x-text="userInitials"><b>LG</b></div>
                 <span class="navbar-user-status-dot"></span>
               </div>
-              <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName">Laura Gómez</span>
+              <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName"></span>
               <i class="fa-solid fa-chevron-down text-[9px] text-white/70 transition-transform duration-200 group-hover:text-white"
                  :class="open ? 'rotate-180 text-[#03bfbf]' : ''"></i>
             </button>
@@ -449,10 +449,10 @@
                 </div>
 
                 <div>
-                  <label class="form-label">Fecha de ingreso</label>
+                  <label class="form-label">Fecha de inicio</label>
                   <div class="relative">
                     <input type="text" x-ref="fechaIngresoInput" x-init="initFlatpickr($el, 'fechaIngreso')"
-                      placeholder="Seleccionar fecha de ingreso"
+                      placeholder="Seleccionar fecha de inicio"
                       class="input-field w-full rounded-lg pl-3.5 pr-10 py-2.5 text-sm cursor-pointer bg-white"
                       :class="errors.fechaIngreso ? 'has-error' : ''">
                     <i
@@ -461,10 +461,10 @@
                   <p class="form-error" x-show="errors.fechaIngreso" x-text="errors.fechaIngreso"></p>
                 </div>
                 <div>
-                  <label class="form-label">Fecha de salida</label>
+                  <label class="form-label">Fecha de finalización</label>
                   <div class="relative">
                     <input type="text" x-ref="fechaSalidaInput" x-init="initFlatpickr($el, 'fechaSalida')"
-                      placeholder="Seleccionar fecha de salida"
+                      placeholder="Seleccionar fecha de finalización"
                       class="input-field w-full rounded-lg pl-3.5 pr-10 py-2.5 text-sm cursor-pointer bg-white"
                       :class="errors.fechaSalida ? 'has-error' : ''">
                     <i
@@ -669,6 +669,11 @@
                             </div>
                           </div>
                           <div class="wizard-option-action flex items-center gap-2 flex-shrink-0 text-xs font-semibold">
+                            <button type="button" @click.stop="openEditVehiculoModal(v)"
+                              class="p-1.5 rounded-lg text-slate-400 hover:text-[var(--signal-500)] hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                              title="Editar vehículo">
+                              <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
                             <span x-show="!vehiculoYaAgregado(v.placa)" class="wizard-select-text opacity-0 group-hover:opacity-100 transition-opacity duration-200">Seleccionar</span>
                             <i x-show="!vehiculoYaAgregado(v.placa)" class="fa-solid fa-arrow-right text-xs transition-transform duration-200 group-hover:translate-x-1"></i>
                             <span x-show="vehiculoYaAgregado(v.placa)" class="flex items-center gap-1.5 text-xs text-emerald-500">
@@ -766,10 +771,17 @@
                             </div>
 
                           </div>
-                          <button type="button" @click="removeVehiculo(idx)" class="action-icon-btn danger flex-shrink-0"
-                            title="Quitar vehículo">
-                            <i class="fa-regular fa-trash-can text-sm"></i>
-                          </button>
+                          <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <button type="button" @click="openEditVehiculoModal(v, idx)"
+                              class="action-icon-btn flex-shrink-0 text-slate-500 hover:text-[var(--signal-500)] dark:text-slate-400"
+                              title="Editar vehículo">
+                              <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </button>
+                            <button type="button" @click="removeVehiculo(idx)" class="action-icon-btn danger flex-shrink-0"
+                              title="Quitar vehículo">
+                              <i class="fa-regular fa-trash-can text-sm"></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </template>
@@ -950,18 +962,25 @@
                               </div>
                             </td>
                             <td class="px-3 py-2 text-center">
-                              <template x-if="v.licencia_doc || (v.documentos && v.documentos.some(d => d.nombre_archivo || d.nom_documento))">
-                                <button type="button" @click="abrirModalDocsVehiculo(v)"
-                                  class="btn-ver-documentos-blue inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer dark:bg-blue-950/40 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/60">
-                                  <i class="fa-solid fa-folder-open text-xs"></i>
-                                  <span>Ver documentos</span>
-                                  <span class="badge-count-doc px-1.5 py-0.5 rounded-full text-[10px] font-bold dark:bg-blue-900/80"
-                                    x-text="(v.documentos ? v.documentos.filter(d => d.nombre_archivo || d.nom_documento).length : 0) + (v.licencia_doc ? 1 : 0)"></span>
+                              <div class="flex items-center justify-center gap-1.5">
+                                <template x-if="v.licencia_doc || (v.documentos && v.documentos.some(d => d.nombre_archivo || d.nom_documento))">
+                                  <button type="button" @click="abrirModalDocsVehiculo(v)"
+                                    class="btn-ver-documentos-blue inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer dark:bg-blue-950/40 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/60">
+                                    <i class="fa-solid fa-folder-open text-xs"></i>
+                                    <span>Ver documentos</span>
+                                    <span class="badge-count-doc px-1.5 py-0.5 rounded-full text-[10px] font-bold dark:bg-blue-900/80"
+                                      x-text="(v.documentos ? v.documentos.filter(d => d.nombre_archivo || d.nom_documento).length : 0) + (v.licencia_doc ? 1 : 0)"></span>
+                                  </button>
+                                </template>
+                                <template x-if="!v.licencia_doc && (!v.documentos || !v.documentos.some(d => d.nombre_archivo || d.nom_documento))">
+                                  <span class="text-xs text-[var(--text-muted)]">Sin documentos</span>
+                                </template>
+                                <button type="button" @click="openEditVehiculoModal(v, idx)"
+                                  class="action-icon-btn text-slate-500 hover:text-[var(--signal-500)] dark:text-slate-400"
+                                  title="Editar vehículo">
+                                  <i class="fa-solid fa-pen-to-square text-xs"></i>
                                 </button>
-                              </template>
-                              <template x-if="!v.licencia_doc && (!v.documentos || !v.documentos.some(d => d.nombre_archivo || d.nom_documento))">
-                                <span class="text-xs text-[var(--text-muted)]">Sin documentos</span>
-                              </template>
+                              </div>
                             </td>
                           </tr>
                         </template>
@@ -1022,74 +1041,96 @@
           <!-- ===== Modal: Registrar nueva persona ===== -->
           <div x-show="showPersonaModal" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-            @keydown.escape.window="closePersonaModal()">
-            <div class="modal-panel w-full max-w-xl p-6" @click.outside="closePersonaModal()">
-              <div class="flex items-center justify-between mb-4">
-                <div>
-                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]"
+            @keydown.escape.window="closePersonaModal()"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div x-show="showPersonaModal"
+              @click.outside="closePersonaModal()"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+              x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+              class="modal-panel modal-ticket w-full max-w-xl pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+              <!-- Botón cerrar superior derecho -->
+              <button type="button" @click="closePersonaModal()"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                title="Cerrar modal">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+
+              <!-- Header estilo Ticket -->
+              <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
+                  <i class="fa-solid" :class="isEditingPersona ? 'fa-user-pen' : 'fa-user-plus'"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate"
                     x-text="isEditingPersona ? 'Editar persona' : 'Registrar nueva persona'">Registrar nueva persona</h3>
-                  <p class="text-xs text-[var(--text-muted)]"
+                  <p class="text-xs text-[var(--paper-muted)] truncate"
                     x-text="isEditingPersona ? 'Actualiza los datos personales y documentos requeridos' : 'Información personal y documentos requeridos'">Información personal y documentos requeridos</p>
                 </div>
-                <button type="button" @click="closePersonaModal()" class="action-icon-btn" title="Cerrar">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
-                  <label class="form-label">Apellidos</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Apellidos</label>
                   <input type="text" x-model="nuevaPersona.apellidos" placeholder="Ej: Gómez Pérez"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="personaModalErrors.apellidos ? 'has-error' : ''">
                   <p class="form-error" x-show="personaModalErrors.apellidos" x-text="personaModalErrors.apellidos"></p>
                 </div>
                 <div>
-                  <label class="form-label">Nombres</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Nombres</label>
                   <input type="text" x-model="nuevaPersona.nombres" placeholder="Ej: Carlos Andrés"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="personaModalErrors.nombres ? 'has-error' : ''">
                   <p class="form-error" x-show="personaModalErrors.nombres" x-text="personaModalErrors.nombres"></p>
                 </div>
                 <div>
-                  <label class="form-label">Tipo doc.</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Tipo doc.</label>
                   <select x-model="nuevaPersona.tipoDoc"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white">
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
                     <template x-for="tipo in tiposDocPersona" :key="tipo">
                       <option :value="tipo" x-text="tipo"></option>
                     </template>
                   </select>
                 </div>
                 <div>
-                  <label class="form-label">N° documento</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">N° documento</label>
                   <input type="text" x-model="nuevaPersona.numDoc" placeholder="Ej: 1032456789"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="personaModalErrors.numDoc ? 'has-error' : ''">
                   <p class="form-error" x-show="personaModalErrors.numDoc" x-text="personaModalErrors.numDoc"></p>
                 </div>
                 <div>
-                  <label class="form-label">Cargo / Función</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Cargo / Función</label>
                   <input type="text" x-model="nuevaPersona.cargo" placeholder="Ej: Técnico eléctrico"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="personaModalErrors.cargo ? 'has-error' : ''">
                   <p class="form-error" x-show="personaModalErrors.cargo" x-text="personaModalErrors.cargo"></p>
                 </div>
                 <div>
-                  <label class="form-label">Observación (Opcional)</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Observación (Opcional)</label>
                   <input type="text" x-model="nuevaPersona.observacion" placeholder="Detalle o nota adicional"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm">
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
                 </div>
 
                 <!-- Sección: Documentos adjuntos (Relación 1 a N) -->
-                <div class="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border-subtle)]">
+                <div class="sm:col-span-2 mt-2 pt-3 border-t border-dashed border-[var(--paper-shadow)]">
                   <div class="flex items-center justify-between mb-2">
                     <div>
-                      <label class="form-label mb-0 font-semibold text-[var(--ink-800)]">Documentos adjuntos</label>
-                      <p class="text-[11px] text-[var(--text-muted)]">Adjunta los certificados y documentos necesarios
-                        (PDF/Imágenes)</p>
+                      <label class="form-label mb-0 font-semibold text-xs text-[var(--paper-ink)]">Documentos adjuntos</label>
+                      <p class="text-[11px] text-[var(--paper-muted)]">Adjunta los certificados y documentos necesarios (PDF/Imágenes)</p>
                     </div>
                     <button type="button" @click="addDocumentoPersona()"
-                      class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                      class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#1c2033] text-white hover:bg-black transition shadow-sm">
                       <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
                     </button>
                   </div>
@@ -1097,11 +1138,11 @@
                   <div class="space-y-2.5 mt-2">
                     <template x-for="(doc, dIdx) in nuevaPersona.documentos" :key="dIdx">
                       <div
-                        class="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--steel-100)] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        class="p-3 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <!-- Tipo de documento -->
                         <div class="w-full sm:w-1/2">
                           <select x-model="doc.tipo_doc"
-                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)]">
                             <template x-for="t in tiposDocAdjuntoPersona" :key="t">
                               <option :value="t" x-text="t"></option>
                             </template>
@@ -1111,11 +1152,11 @@
                         <!-- Subir Archivo -->
                         <div class="flex-1 relative flex items-center min-w-0">
                           <label
-                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition">
-                            <span class="truncate text-[var(--ink-800)]"
+                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                            <span class="truncate text-[var(--paper-ink)]"
                               x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
                             <i
-                              class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                              class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
                             <input type="file" accept="application/pdf,.pdf,image/*"
                               @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
                           </label>
@@ -1132,83 +1173,139 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+              <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-dashed border-[var(--paper-shadow)]">
                 <button type="button" @click="closePersonaModal()" :disabled="guardandoPersona"
-                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  class="modal-btn-cancel px-5 py-2.5 text-sm font-semibold">
                   Cancelar
                 </button>
                 <button type="button" @click="guardarNuevaPersona()" :disabled="guardandoPersona"
-                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  class="modal-btn-confirm px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
                   <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoPersona"></i>
                   <span x-text="guardandoPersona ? 'Guardando...' : (isEditingPersona ? 'Guardar cambios' : 'Guardar persona')"></span>
                 </button>
               </div>
+
+              <!-- Borde dentado ticket visible al pie -->
+              <div class="modal-serrated"></div>
             </div>
           </div>
 
           <!-- ===== Modal: Registrar nueva empresa ===== -->
           <div x-show="showContratistaModal" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-            @keydown.escape.window="closeContratistaModal()">
-            <div class="modal-panel w-full max-w-lg p-6" @click.outside="closeContratistaModal()">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nueva empresa contratista
-                </h3>
-                <button type="button" @click="closeContratistaModal()" class="action-icon-btn" title="Cerrar">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
+            @keydown.escape.window="closeContratistaModal()"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div x-show="showContratistaModal"
+              @click.outside="closeContratistaModal()"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+              x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+              class="modal-panel modal-ticket w-full max-w-lg pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+              <!-- Botón cerrar superior derecho -->
+              <button type="button" @click="closeContratistaModal()"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                title="Cerrar modal">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+
+              <!-- Header estilo Ticket -->
+              <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate">Registrar nueva empresa contratista</h3>
+                  <p class="text-xs text-[var(--paper-muted)] truncate">Ingresa los datos para registrar la empresa contratista</p>
+                </div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-3">
                 <div class="sm:col-span-2">
-                  <label class="form-label">Nombre de la empresa</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Nombre de la empresa</label>
                   <input type="text" x-model="nuevaEmpresa.nombre"
-                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="nuevaEmpresaErrors.nombre ? 'has-error' : ''"
                     placeholder="Ingrese el nombre de la empresa...">
                   <p class="form-error" x-show="nuevaEmpresaErrors.nombre" x-text="nuevaEmpresaErrors.nombre"></p>
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="form-label">Observación (Opcional)</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Observación (Opcional)</label>
                   <input type="text" x-model="nuevaEmpresa.observacion" placeholder="Ingrese una observación..."
-                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm">
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
                 </div>
               </div>
 
-              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+              <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-dashed border-[var(--paper-shadow)]">
                 <button type="button" @click="closeContratistaModal()" :disabled="guardandoEmpresa"
-                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  class="modal-btn-cancel px-5 py-2.5 text-sm font-semibold">
                   Cancelar
                 </button>
                 <button type="button" @click="guardarNuevaEmpresa()" :disabled="guardandoEmpresa"
-                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  class="modal-btn-confirm px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
                   <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoEmpresa"></i>
                   <span x-text="guardandoEmpresa ? 'Guardando...' : 'Guardar empresa'"></span>
                 </button>
               </div>
+
+              <!-- Borde dentado ticket visible al pie -->
+              <div class="modal-serrated"></div>
             </div>
           </div>
 
           <!-- ===== Modal: Registrar nuevo vehículo ===== -->
           <div x-show="showVehiculoModal" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-            @keydown.escape.window="closeVehiculoModal()">
-            <div class="modal-panel w-full max-w-lg p-6" @click.outside="closeVehiculoModal()">
-              <div class="flex items-center justify-between mb-4">
-                <div>
-                  <h3 class="font-display font-semibold text-lg text-[var(--ink-900)]">Registrar nuevo vehículo</h3>
-                  <p class="text-xs text-[var(--text-muted)]">Datos del automotor, conductor y documentación</p>
+            @keydown.escape.window="closeVehiculoModal()"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div x-show="showVehiculoModal"
+              @click.outside="closeVehiculoModal()"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+              x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+              class="modal-panel modal-ticket w-full max-w-lg pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+              <!-- Botón cerrar superior derecho -->
+              <button type="button" @click="closeVehiculoModal()"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                title="Cerrar modal">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+
+              <!-- Header estilo Ticket -->
+              <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
+                  <i class="fa-solid" :class="isEditingVehiculo ? 'fa-pen-to-square' : 'fa-truck-pickup'"></i>
                 </div>
-                <button type="button" @click="closeVehiculoModal()" class="action-icon-btn" title="Cerrar">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
+                <div class="min-w-0">
+                  <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate"
+                    x-text="isEditingVehiculo ? 'Editar vehículo' : 'Registrar nuevo vehículo'"></h3>
+                  <p class="text-xs text-[var(--paper-muted)] truncate"
+                    x-text="isEditingVehiculo ? 'Actualiza los datos del automotor, conductor y documentación' : 'Datos del automotor, conductor y documentación'"></p>
+                </div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
-                  <label class="form-label">Tipo de vehículo</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Tipo de vehículo</label>
                   <select x-model="nuevoVehiculo.tipo"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="vehiculoModalErrors.tipo ? 'has-error' : ''">
                     <template x-for="tipo in tiposVehiculo" :key="tipo">
                       <option :value="tipo" x-text="tipo"></option>
@@ -1218,20 +1315,20 @@
                 </div>
 
                 <div>
-                  <label class="form-label">Placa</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Placa</label>
                   <input type="text" x-model="nuevoVehiculo.placa"
                     @input="nuevoVehiculo.placa = nuevoVehiculo.placa.toUpperCase()"
                     placeholder="Ej: ABC-123"
-                    class="input-field w-full rounded-lg px-3 py-2 text-sm font-mono font-semibold uppercase"
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm font-mono font-semibold uppercase bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
                     :class="vehiculoModalErrors.placa ? 'has-error' : ''">
                   <p class="form-error" x-show="vehiculoModalErrors.placa" x-text="vehiculoModalErrors.placa"></p>
                 </div>
 
                 <div class="sm:col-span-2">
-                  <label class="form-label">Conductor asignado (Opcional)</label>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Conductor asignado (Opcional)</label>
                   <template x-if="personas.length > 0">
                     <select x-model="nuevoVehiculo.conductor"
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
                       <option value="">-- Seleccionar de personas de la solicitud --</option>
                       <template x-for="p in personas" :key="p.numDoc || p.identificacion">
                         <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -1240,34 +1337,34 @@
                   </template>
                   <template x-if="personas.length === 0">
                     <input type="text" x-model="nuevoVehiculo.conductor" placeholder="Nombre completo del conductor..."
-                      class="input-field w-full rounded-lg px-3 py-2 text-sm">
+                      class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
                   </template>
                 </div>
 
                 <!-- Licencia de conducción del conductor -->
-                <div class="sm:col-span-2 p-3 rounded-lg bg-[var(--steel-100)] border border-[var(--border-subtle)] space-y-1.5">
+                <div class="sm:col-span-2 p-3 rounded-xl bg-[#efe9dc]/50 dark:bg-white/[0.04] border border-[var(--paper-shadow)] space-y-1.5">
                   <div class="flex items-center justify-between">
-                    <label class="form-label mb-0 text-xs font-semibold text-[var(--ink-800)] flex items-center gap-1.5">
-                      <i class="fa-solid fa-id-card text-[var(--signal-500)] text-xs"></i>
+                    <label class="form-label mb-0 text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1.5">
+                      <i class="fa-solid fa-id-card text-red-600 text-xs"></i>
                       Licencia de conducción del conductor
                     </label>
-                    <span class="text-[10px] text-[var(--text-muted)]">Opcional</span>
+                    <span class="text-[10px] text-[var(--paper-muted)]">Opcional</span>
                   </div>
 
                   <template x-if="!nuevoVehiculo.licencia_doc">
                     <label
-                      class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-2 text-xs bg-white transition group">
-                      <span class="truncate text-[var(--text-muted)] group-hover:text-[var(--ink-800)]">Adjuntar licencia (PDF/Foto)...</span>
-                      <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                      class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-2 text-xs bg-white transition group">
+                      <span class="truncate text-[var(--paper-muted)] group-hover:text-[var(--paper-ink)]">Adjuntar licencia (PDF/Foto)...</span>
+                      <i class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
                       <input type="file" accept="application/pdf,.pdf,image/*"
                         @change="handleLicenciaNuevoVehiculoFile($event)" class="hidden">
                     </label>
                   </template>
 
                   <template x-if="nuevoVehiculo.licencia_doc">
-                    <div class="w-full flex items-center justify-between bg-white border border-green-200 rounded-lg px-3 py-2 text-xs">
-                      <span class="truncate text-green-800 font-medium flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-circle-check text-green-600 text-xs"></i>
+                    <div class="w-full flex items-center justify-between bg-white border border-emerald-300 rounded-lg px-3 py-2 text-xs">
+                      <span class="truncate text-emerald-800 font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-circle-check text-emerald-600 text-xs"></i>
                         <span class="truncate" x-text="nuevoVehiculo.licencia_doc"></span>
                       </span>
                       <button type="button" @click="removeLicenciaNuevoVehiculo()"
@@ -1279,25 +1376,25 @@
                 </div>
 
                 <!-- Documentos del vehículo (SOAT, Tecnomecánica, etc.) -->
-                <div class="sm:col-span-2 pt-2 border-t border-[var(--border-subtle)]">
+                <div class="sm:col-span-2 pt-2 border-t border-dashed border-[var(--paper-shadow)]">
                   <div class="flex items-center justify-between mb-2">
                     <div>
-                      <label class="form-label mb-0 font-semibold text-[var(--ink-800)]">Documentos del vehículo</label>
-                      <p class="text-[11px] text-[var(--text-muted)]">SOAT, Tecnomecánica, Tarjeta de Propiedad, etc.</p>
+                      <label class="form-label mb-0 font-semibold text-xs text-[var(--paper-ink)]">Documentos del vehículo</label>
+                      <p class="text-[11px] text-[var(--paper-muted)]">SOAT, Tecnomecánica, Tarjeta de Propiedad, etc.</p>
                     </div>
                     <button type="button" @click="addDocumentoNuevoVehiculo()"
-                      class="btn-primary rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5">
+                      class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#1c2033] text-white hover:bg-black transition shadow-sm">
                       <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
                     </button>
                   </div>
 
                   <div class="space-y-2.5 mt-2">
                     <template x-for="(doc, dIdx) in nuevoVehiculo.documentos" :key="dIdx">
-                      <div class="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--steel-100)] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div class="p-3 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <!-- Tipo de documento -->
                         <div class="w-full sm:w-1/2">
                           <select x-model="doc.tipo_doc"
-                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white">
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)]">
                             <template x-for="t in tiposDocAdjuntoVehiculo" :key="t">
                               <option :value="t" x-text="t"></option>
                             </template>
@@ -1307,10 +1404,10 @@
                         <!-- Subir Archivo -->
                         <div class="flex-1 relative flex items-center min-w-0">
                           <label
-                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--border-subtle)] hover:border-[var(--signal-500)] rounded-lg px-3 py-1.5 text-xs bg-white transition">
-                            <span class="truncate text-[var(--ink-800)]"
+                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                            <span class="truncate text-[var(--paper-ink)]"
                               x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
-                            <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] ml-2 text-xs flex-shrink-0"></i>
+                            <i class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
                             <input type="file" accept="application/pdf,.pdf,image/*"
                               @change="handleDocumentoNuevoVehiculoFile($event, dIdx)" class="hidden">
                           </label>
@@ -1327,17 +1424,20 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+              <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-dashed border-[var(--paper-shadow)]">
                 <button type="button" @click="closeVehiculoModal()" :disabled="guardandoVehiculo"
-                  class="px-4 py-2.5 rounded-lg border border-[var(--border-subtle)] text-sm font-medium hover:bg-[var(--steel-100)] disabled:opacity-50">
+                  class="modal-btn-cancel px-5 py-2.5 text-sm font-semibold">
                   Cancelar
                 </button>
                 <button type="button" @click="guardarNuevoVehiculo()" :disabled="guardandoVehiculo"
-                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                  class="modal-btn-confirm px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
                   <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoVehiculo"></i>
-                  <span x-text="guardandoVehiculo ? 'Guardando...' : 'Guardar vehículo'"></span>
+                  <span x-text="guardandoVehiculo ? 'Guardando...' : (isEditingVehiculo ? 'Actualizar vehículo' : 'Guardar vehículo')"></span>
                 </button>
               </div>
+
+              <!-- Borde dentado ticket visible al pie -->
+              <div class="modal-serrated"></div>
             </div>
           </div>
         </div>
