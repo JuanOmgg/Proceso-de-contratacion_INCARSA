@@ -309,8 +309,9 @@
   color: var(--ink-900) !important;
 }
 
-:root:not(.dark) .topbar button,
-:root:not(.dark) .topbar .fa-bell,
+:root:not(.dark) .topbar button:not([class*="notif-"]),
+:root:not(.dark) .topbar button > .fa-bell,
+:root:not(.dark) .topbar .fa-regular.fa-bell,
 :root:not(.dark) .topbar .fa-moon,
 :root:not(.dark) .topbar .fa-sun,
 :root:not(.dark) .topbar .action-icon-btn,
@@ -784,56 +785,108 @@
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
+/* INFO */
 .notif-icon-info {
   background: #e0f7fa;
   border: 1px solid #b2ebf2;
-  color: #00838f;
+}
+.notif-icon-info i,
+.notif-icon-info svg {
+  color: #00838f !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 :root.dark .notif-icon-info {
   background: rgba(12, 118, 125, 0.4) !important;
   border: 1px solid rgba(3, 191, 191, 0.65) !important;
-  color: #03bfbf !important;
   box-shadow: 0 0 12px rgba(3, 191, 191, 0.3) !important;
 }
+:root.dark .notif-icon-info i,
+:root.dark .notif-icon-info svg {
+  color: #03bfbf !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
+/* SUCCESS */
 .notif-icon-success {
   background: #e8f5e9;
   border: 1px solid #c8e6c9;
-  color: #2e7d32;
+}
+.notif-icon-success i,
+.notif-icon-success svg {
+  color: #2e7d32 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 :root.dark .notif-icon-success {
   background: rgba(5, 174, 5, 0.35) !important;
   border: 1px solid rgba(52, 211, 153, 0.65) !important;
-  color: #34d399 !important;
   box-shadow: 0 0 12px rgba(52, 211, 153, 0.3) !important;
 }
+:root.dark .notif-icon-success i,
+:root.dark .notif-icon-success svg {
+  color: #34d399 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
+/* ERROR */
 .notif-icon-error {
   background: #ffebee;
   border: 1px solid #ffcdd2;
-  color: #c62828;
+}
+.notif-icon-error i,
+.notif-icon-error svg {
+  color: #c62828 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 :root.dark .notif-icon-error {
   background: rgba(250, 5, 26, 0.35) !important;
   border: 1px solid rgba(250, 5, 26, 0.65) !important;
-  color: #ff5260 !important;
   box-shadow: 0 0 12px rgba(250, 5, 26, 0.35) !important;
 }
+:root.dark .notif-icon-error i,
+:root.dark .notif-icon-error svg {
+  color: #ff5260 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
+/* WARNING */
 .notif-icon-warning {
   background: #fff8e1;
   border: 1px solid #ffecb3;
-  color: #f57f17;
+}
+.notif-icon-warning i,
+.notif-icon-warning svg {
+  color: #d97706 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 :root.dark .notif-icon-warning {
   background: rgba(245, 158, 11, 0.35) !important;
   border: 1px solid rgba(251, 191, 36, 0.65) !important;
-  color: #fcd34d !important;
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.3) !important;
+}
+:root.dark .notif-icon-warning i,
+:root.dark .notif-icon-warning svg {
+  color: #fcd34d !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .unread-dot {

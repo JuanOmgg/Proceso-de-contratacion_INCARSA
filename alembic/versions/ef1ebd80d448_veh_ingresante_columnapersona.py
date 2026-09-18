@@ -20,15 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Agregar columna persona_id a vehiculos_ingresantes
-    op.add_column('vehiculos_ingresantes', sa.Column('persona_id', sa.String(20), nullable=False))
+    # 1. Agregar columna id_persona a Veh_ingreso (Integer y Nullable)
+    op.add_column('Veh_ingreso', sa.Column('id_persona', sa.Integer(), nullable=True))
 
-    # Crear constraint de clave foránea
+    # 2. Crear constraint de clave foránea hacia personas(id)
     op.create_foreign_key(
-        'fk_vehiculos_ingresantes_persona',
-        'vehiculos_ingresantes',
+        'fk_veh_ingreso_persona',
+        'Veh_ingreso',
         'personas',
-        ['persona_id'],
+        ['id_persona'],
         ['id'],
         ondelete='SET NULL'
     )
@@ -37,7 +37,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # Eliminar constraint de clave foránea
-    op.drop_constraint('fk_vehiculos_ingresantes_persona', 'vehiculos_ingresantes', type_='foreignkey')
+    op.drop_constraint('fk_veh_ingreso_persona', 'Veh_ingreso', type_='foreignkey')
 
-    # Eliminar columna persona_id
-    op.drop_column('vehiculos_ingresantes', 'persona_id')
+    # Eliminar columna id_persona
+    op.drop_column('Veh_ingreso', 'id_persona')

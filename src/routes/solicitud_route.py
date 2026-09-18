@@ -11,6 +11,7 @@ from src.loaders.solicitudes_loaders import (
     GET_ALL_solicitudes_bd,
     GET_date_count_db,
     REGISTRAR_dictamen_db,
+    ACTUALIZAR_autorizacion_personas_db,
     VALIDAR_token_edicion_db,
     CONSUMIR_token_edicion_db
 )
@@ -184,6 +185,42 @@ def REGISTRAR_dictamen_rt(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje", "Error al registrar dictamen.")
+        )
+    return resultado
+ 
+@router.post("/{solicitud_id}/personas-autorizacion", status_code=status.HTTP_200_OK)
+@router.put("/{solicitud_id}/personas-autorizacion", status_code=status.HTTP_200_OK)
+def ACTUALIZAR_personas_autorizacion_rt(
+    solicitud_id: str,
+    payload: Dict[str, Any],
+    current_user: dict = Depends(get_current_user)
+):
+    rol_user = str(current_user.get("rol", "")).strip().upper()
+    id_rol_user = current_user.get("id_rol")
+    try:
+        id_rol_user = int(id_rol_user) if id_rol_user is not None else None
+    except (ValueError, TypeError):
+        pass
+
+    roles_validos = ("SST", "GESCO", "SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN", "EQUIPO SCR - RADICADOS")
+    if id_rol_user not in (1, 2, 4, 6, 7, 8) and rol_user not in roles_validos:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para modificar autorizaciones de personal en esta solicitud."
+        )
+
+    if not payload.get("id_usuario"):
+        payload["id_usuario"] = current_user.get("id")
+    if not payload.get("rol"):
+        payload["rol"] = current_user.get("rol") or current_user.get("nombre_rol") or rol_user
+    if not payload.get("nombre_revisor"):
+        payload["nombre_revisor"] = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
+
+    resultado = ACTUALIZAR_autorizacion_personas_db(solicitud_id, payload)
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al actualizar autorizaciones de personas.")
         )
     return resultado
 

@@ -647,6 +647,7 @@ function superAdminPanel() {
         procesamiento: 'Procesamiento de Solicitudes',
         antecedentes: 'Verificación de Antecedentes',
         revision_solicitud: 'Revisión y Aprobación Detallada',
+        dispositivos: 'Consulta de Dispositivos',
         superadmin: 'Panel Maestro SuperAdmin'
       };
       return mapa[mod] || mod.replace('_', ' ').toUpperCase();
@@ -668,6 +669,7 @@ function superAdminPanel() {
         procesamiento: 'fa-diagram-project text-yellow-400',
         antecedentes: 'fa-magnifying-glass-chart text-sky-400',
         revision_solicitud: 'fa-clipboard-check text-emerald-400',
+        dispositivos: 'fa-laptop-code text-purple-400',
         superadmin: 'fa-shield-halved text-rose-400'
       };
       return iconos[mod] || 'fa-folder text-slate-400';
@@ -689,6 +691,7 @@ function superAdminPanel() {
         procesamiento: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400 shadow-yellow-500/10',
         antecedentes: 'bg-sky-500/15 border-sky-500/30 text-sky-400 shadow-sky-500/10',
         revision_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
+        dispositivos: 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-purple-500/10',
         superadmin: 'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/10'
       };
       return bgs[mod] || 'bg-slate-800 border-slate-700 text-slate-400';

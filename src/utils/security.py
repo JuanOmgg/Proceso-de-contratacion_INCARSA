@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 import jwt
 from dotenv import load_dotenv
@@ -11,7 +12,16 @@ load_dotenv()
 
 security_scheme = HTTPBearer()
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "02psi0926_incarsa_jwt_secure_super_secret_key_2026_prod")
+# Carga de clave JWT: sin claves de respaldo quemadas en el código fuente
+_raw_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+if not _raw_secret:
+    if os.getenv("ENVIRONMENT", "").lower() == "production":
+        raise RuntimeError("FATAL: La variable de entorno 'JWT_SECRET_KEY' no está configurada en producción. Por seguridad, configúrela en el archivo .env.")
+    # Genera una clave efímera criptográficamente segura para la sesión actual si no se definió en .env
+    _raw_secret = secrets.token_urlsafe(64)
+    print("⚠️ [SEGURIDAD] 'JWT_SECRET_KEY' no está definida en .env. Se generó una clave efímera segura en memoria para esta sesión.")
+
+SECRET_KEY = _raw_secret
 
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 

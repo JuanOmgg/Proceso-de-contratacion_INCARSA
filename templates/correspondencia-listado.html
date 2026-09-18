@@ -3,161 +3,12 @@
 {% block title %}Correspondencia · PSI{% endblock %}
 
 {% block extra_head %}
-<style>
-  /* Pills de Roles en Tabla de Usuarios - Sin punto y con máxima diferenciación */
-  .status-usuario-rol {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3px 12px;
-    border-radius: 9999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    transition: all 0.2s ease;
-  }
-  .status-usuario-rol::before {
-    content: none !important;
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-
-  /* Roles Modo Claro - Familias cromáticas bien separadas */
-  .status-rol-admin {
-    background: #f3e8ff;
-    color: #6b21a8;
-    border: 1px solid #d8b4fe;
-  }
-  .status-rol-gesco {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
-  }
-  .status-rol-sst {
-    background: #fef3c7;
-    color: #b45309;
-    border: 1px solid #fde68a;
-  }
-  .status-rol-vigilante {
-    background: #e0f2fe;
-    color: #0369a1;
-    border: 1px solid #7dd3fc;
-  }
-  .status-rol-scr {
-    background: #ffe4e6;
-    color: #be123c;
-    border: 1px solid #fecdd3;
-  }
-  .status-rol-documental {
-    background: #fdf2f8;
-    color: #9d174d;
-    border: 1px solid #fbcfe8;
-  }
-  .status-rol-default {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-  }
-
-  /* Roles Modo Oscuro - Neón y Alto Contraste */
-  :root.dark .status-rol-admin {
-    background: rgba(168, 85, 247, 0.16) !important;
-    color: #d8b4fe !important;
-    border: 1px solid rgba(192, 132, 252, 0.5) !important;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3) !important;
-  }
-  :root.dark .status-rol-gesco {
-    background: rgba(16, 185, 129, 0.16) !important;
-    color: #34d399 !important;
-    border: 1px solid rgba(52, 211, 153, 0.5) !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
-  }
-  :root.dark .status-rol-sst {
-    background: rgba(245, 158, 11, 0.16) !important;
-    color: #fbbf24 !important;
-    border: 1px solid rgba(251, 191, 36, 0.5) !important;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
-  }
-  :root.dark .status-rol-vigilante {
-    background: rgba(14, 165, 233, 0.16) !important;
-    color: #38bdf8 !important;
-    border: 1px solid rgba(56, 189, 248, 0.5) !important;
-    box-shadow: 0 0 10px rgba(14, 165, 233, 0.3) !important;
-  }
-  :root.dark .status-rol-scr {
-    background: rgba(244, 63, 94, 0.16) !important;
-    color: #fb7185 !important;
-    border: 1px solid rgba(251, 113, 133, 0.5) !important;
-    box-shadow: 0 0 10px rgba(244, 63, 94, 0.3) !important;
-  }
-  :root.dark .status-rol-documental {
-    background: rgba(236, 72, 153, 0.16) !important;
-    color: #f472b6 !important;
-    border: 1px solid rgba(244, 114, 182, 0.5) !important;
-    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3) !important;
-  }
-  :root.dark .status-rol-default {
-    background: rgba(148, 163, 184, 0.14) !important;
-    color: #cbd5e1 !important;
-    border: 1px solid rgba(148, 163, 184, 0.35) !important;
-  }
-
-  /* Botón interactivo de Plantas Asignadas */
-  .user-plantas-btn {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-    transition: all 0.18s ease;
-  }
-  .user-plantas-btn:hover {
-    background: #fde68a;
-    color: #78350f;
-    border-color: #f59e0b;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
-  }
-
-  /* Modo Oscuro para Botón de Plantas */
-  :root.dark .user-plantas-btn {
-    background: rgba(245, 158, 11, 0.14) !important;
-    color: #fcd34d !important;
-    border: 1px solid rgba(245, 158, 11, 0.35) !important;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.12) !important;
-  }
-  :root.dark .user-plantas-btn:hover {
-    background: rgba(245, 158, 11, 0.25) !important;
-    color: #fef08a !important;
-    border-color: rgba(245, 158, 11, 0.6) !important;
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.35) !important;
-  }
-
-  /* Modal stamp Ámbar para Plantas */
-  .modal-stamp.amber {
-    background: rgba(245, 158, 11, 0.12);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-  :root.dark .modal-stamp.amber {
-    background: rgba(245, 158, 11, 0.18) !important;
-    color: #fbbf24 !important;
-    border: 1px solid rgba(245, 158, 11, 0.4) !important;
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
-  }
-
-  /* Ajustes estructurales de la Tabla de Usuarios - Todo centrado */
-  .usuarios-tabla th,
-  .usuarios-tabla td {
-    white-space: nowrap !important;
-    vertical-align: middle !important;
-    text-align: center !important;
-  }
-</style>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/usuarios-listado.css') }}?v=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/correspondencia-listado.css') }}?v=1.0">
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/correspondencia-listado.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/correspondencia-listado.js') }}?v=3.6"></script>
 {% endblock %}
 
 {% block content %}
@@ -280,16 +131,26 @@
 
           <!-- ===== Tabla ===== -->
           <div class="wizard-card overflow-hidden">
-            <div class="w-full">
-              <table class="w-full table-fixed text-sm data-table align-middle">
+            <div class="w-full custom-table-scroll">
+              <table class="w-full table-fixed text-sm data-table align-middle correspondencia-tabla">
+                <colgroup>
+                  <col style="width: 48px;">   <!-- # -->
+                  <col style="width: 105px;">  <!-- Código -->
+                  <col style="width: 110px;">  <!-- Tipo -->
+                  <col style="width: auto;">   <!-- Asunto (mayor proporción, flexible) -->
+                  <col style="width: 175px;">  <!-- Procedencia -->
+                  <col style="width: 175px;">  <!-- Destino -->
+                  <col style="width: 130px;">  <!-- Fecha -->
+                  <col style="width: 110px;">  <!-- Acciones -->
+                </colgroup>
                 <thead>
                   <tr class="border-b border-[var(--border-subtle)]">
-                    <th class="w-12 px-2 py-3 text-center whitespace-nowrap">#</th>
+                    <th class="px-2 py-3 text-center whitespace-nowrap">#</th>
                     <th class="px-2 py-3 text-center whitespace-nowrap">Código</th>
                     <th class="px-2 py-3 text-center whitespace-nowrap">Tipo</th>
-                    <th class="px-3 py-3 text-center whitespace-nowrap">Asunto</th>
-                    <th class="px-3 py-3 text-center whitespace-nowrap">Procedencia</th>
-                    <th class="px-3 py-3 text-center whitespace-nowrap">Destino</th>
+                    <th class="text-center px-3.5 py-3 whitespace-nowrap">Asunto</th>
+                    <th class="text-center px-3.5 py-3 whitespace-nowrap">Procedencia</th>
+                    <th class="text-center px-3.5 py-3 whitespace-nowrap">Destino</th>
                     <th class="px-2 py-3 text-center whitespace-nowrap">Fecha</th>
                     <th class="px-2 py-3 text-center whitespace-nowrap">Acciones</th>
                   </tr>
@@ -304,7 +165,7 @@
                         x-text="(currentPage - 1) * pageSize + index + 1"></td>
 
                       <!-- Código / Radicado -->
-                      <td class="px-2 py-3 text-center text-xs font-semibold text-[var(--text-primary)] whitespace-nowrap"
+                      <td class="px-2 py-3 text-center text-xs font-bold text-[var(--text-primary)] font-mono whitespace-nowrap"
                         x-text="correspondencia.radicado || '-' "></td>
 
                       <!-- Tipo con Pill Semántico -->
@@ -321,18 +182,20 @@
                       </td>
 
                       <!-- Asunto -->
-                      <td class="px-3 py-3 text-center text-xs font-medium text-[var(--text-primary)]">
-                        <span class="truncate block" :title="correspondencia.asunto" x-text="correspondencia.asunto || '—'"></span>
+                      <td class="px-3.5 py-3 text-center">
+                        <div class="text-xs font-medium text-[var(--text-primary)] line-clamp-2 leading-snug break-words text-center"
+                          :title="correspondencia.asunto"
+                          x-text="correspondencia.asunto || '—'"></div>
                       </td>
 
                       <!-- Procedencia -->
-                      <td class="px-3 py-3 text-center text-xs text-[var(--text-muted)]">
-                        <span class="truncate block" :title="correspondencia.procedencia" x-text="correspondencia.procedencia || '—'"></span>
+                      <td class="px-3.5 py-3 text-center text-xs text-[var(--text-muted)]">
+                        <span class="truncate block font-medium text-center" :title="correspondencia.procedencia" x-text="correspondencia.procedencia || '—'"></span>
                       </td>
 
                       <!-- Destino -->
-                      <td class="px-3 py-3 text-center text-xs text-[var(--text-muted)]">
-                        <span class="truncate block" :title="correspondencia.destino" x-text="correspondencia.destino || '—'"></span>
+                      <td class="px-3.5 py-3 text-center text-xs text-[var(--text-muted)]">
+                        <span class="truncate block font-medium text-center" :title="correspondencia.destino" x-text="correspondencia.destino || '—'"></span>
                       </td>
 
                       <!-- Fecha -->
@@ -349,7 +212,7 @@
                           <!-- Ver Detalle -->
                           <button type="button" 
                             @click="verCorrespondencia(correspondencia)"
-                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                             data-tooltip="Ver detalle">
                             <i class="fa-solid fa-eye"></i>
                           </button>
@@ -357,7 +220,7 @@
                           <!-- Editar -->
                           <button type="button" 
                             @click="abrirModalEditar(correspondencia)"
-                            class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                            class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
                             data-tooltip="Editar correspondencia">
                             <i class="fa-solid fa-pen-to-square"></i>
                           </button>
@@ -365,7 +228,7 @@
                           <!-- Eliminar -->
                           <button type="button" 
                             @click="confirmarEliminar(correspondencia)" 
-                            class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             data-tooltip="Eliminar correspondencia">
                             <i class="fa-solid fa-trash-can"></i>
                           </button>
@@ -558,7 +421,7 @@
           x-transition:enter="transition ease-out duration-200"
           x-transition:enter-start="opacity-0 scale-95"
           x-transition:enter-end="opacity-100 scale-100"
-          class="modal-panel w-full max-w-md p-6 text-center relative"
+          class="modal-panel w-full max-w-lg p-6 sm:p-7 text-center relative"
           @click.outside="cerrarDetalle()">
           
           <button type="button" @click="cerrarDetalle()"
@@ -591,37 +454,45 @@
           <!-- Información dispuesta en formato Ticket -->
           <div class="space-y-0 text-left border-y border-dashed border-[var(--paper-shadow)] py-2 my-4">
             <!-- Fila Código y Fecha de Envío -->
-            <div class="grid grid-cols-2 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
-              <div>
-                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Radicado</span>
-                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.radicado || '—'"></span>
+            <div class="grid grid-cols-2 gap-4 py-2.5 border-b border-dashed border-[var(--paper-shadow)]">
+              <div class="min-w-0">
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1">Radicado</span>
+                <span class="text-sm font-bold text-[var(--paper-ink)] font-mono truncate block" x-text="correspondenciaDetalle?.radicado || '—'"></span>
               </div>
-              <div>
-                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Fecha de envío</span>
-                <span class="text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1 mt-0.5">
-                  <i class="fa-regular fa-calendar text-[var(--signal-500)] text-xs"></i>
-                  <span x-text="formatearFecha(correspondenciaDetalle?.fecha_envio)"></span>
+              <div class="min-w-0">
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1">Fecha de envío</span>
+                <span class="text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1.5 mt-0.5">
+                  <i class="fa-regular fa-calendar text-[var(--signal-500)] text-xs flex-shrink-0"></i>
+                  <span class="truncate" x-text="formatearFecha(correspondenciaDetalle?.fecha_envio)"></span>
                 </span>
               </div>
             </div>
 
             <!-- Fila Procedencia y Destino -->
-            <div class="grid grid-cols-2 gap-3 py-2 border-b border-dashed border-[var(--paper-shadow)]">
-              <div>
-                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Procedencia / Remitente</span>
-                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.procedencia || '—'"></span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3 border-b border-dashed border-[var(--paper-shadow)]">
+              <div class="min-w-0">
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase flex items-center gap-1.5 mb-1">
+                  <i class="fa-solid fa-paper-plane text-[10px] text-[var(--signal-500)] flex-shrink-0"></i>
+                  <span>Procedencia / Remitente</span>
+                </span>
+                <p class="text-sm font-semibold text-[var(--paper-ink)] leading-snug break-words [overflow-wrap:anywhere]"
+                  x-text="correspondenciaDetalle?.procedencia || '—'"></p>
               </div>
-              <div>
-                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block">Destino / Dirigido a</span>
-                <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="correspondenciaDetalle?.destino || '—'"></span>
+              <div class="min-w-0">
+                <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase flex items-center gap-1.5 mb-1">
+                  <i class="fa-solid fa-location-dot text-[10px] text-[var(--signal-500)] flex-shrink-0"></i>
+                  <span>Destino / Dirigido a</span>
+                </span>
+                <p class="text-sm font-semibold text-[var(--paper-ink)] leading-snug break-words [overflow-wrap:anywhere]"
+                  x-text="correspondenciaDetalle?.destino || '—'"></p>
               </div>
             </div>
 
             <!-- Fila Asunto Completo -->
-            <div class="py-2.5">
-              <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1">Asunto / Descripción</span>
-              <p class="text-sm font-medium text-[var(--paper-ink)] leading-relaxed whitespace-pre-line"
-                x-text="correspondenciaDetalle?.asunto || '—'"></p>
+            <div class="py-3">
+              <span class="text-[10.5px] font-bold tracking-wider text-[var(--paper-muted)] uppercase block mb-1.5">Asunto / Descripción</span>
+              <div class="p-3 rounded-lg bg-black/5 dark:bg-white/5 border border-[var(--paper-shadow)] text-sm font-medium text-[var(--paper-ink)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] max-h-48 overflow-y-auto"
+                x-text="correspondenciaDetalle?.asunto || '—'"></div>
             </div>
           </div>
 

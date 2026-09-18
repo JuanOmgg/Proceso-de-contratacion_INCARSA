@@ -187,7 +187,8 @@ MODULOS_SISTEMA = [
     "personas",
     "procesamiento",
     "antecedentes",
-    "revision_solicitud"
+    "revision_solicitud",
+    "dispositivos"
 ]
 
 ACCIONES_SISTEMA = ["ver", "crear", "editar", "eliminar", "aprobar"]

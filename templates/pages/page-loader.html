@@ -1,7 +1,7 @@
 <!-- ============================================================
      OVERLAY AUTÓNOMO DE TRANSICIÓN ENTRE PÁGINAS · PSI
      ============================================================ -->
-<div id="pageTransitionOverlay" class="page-loader-overlay" aria-hidden="true">
+<div id="pageTransitionOverlay" class="page-loader-overlay" aria-hidden="true" style="display: none;">
   <div class="page-loader-content">
     
     <!-- Spinner orbital grande -->
@@ -18,7 +18,7 @@
 </div>
 
 <style>
-  /* Contenedor a pantalla completa 100% aislado */
+  /* Contenedor a pantalla completa 100% aislado y autónomo */
   .page-loader-overlay {
     position: fixed !important;
     top: 0 !important;
@@ -153,43 +153,133 @@
     const overlay = document.getElementById("pageTransitionOverlay");
     if (!overlay) return;
 
+    let hideTimer = null;
+
     function showLoader() {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      overlay.style.display = "flex";
+      void overlay.offsetHeight; // Forzar reflow para animación suave de opacidad
       overlay.classList.add("is-active");
     }
 
     function hideLoader() {
       overlay.classList.remove("is-active");
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {
+        if (!overlay.classList.contains("is-active")) {
+          overlay.style.display = "none";
+        }
+      }, 260);
     }
 
-    // Funciones globales por si se quieren invocar manualmente
+    // Funciones globales por si se quieren invocar manualmente desde JS
     window.showPageLoader = showLoader;
     window.hidePageLoader = hideLoader;
 
-    // Asegurar que esté oculto al cargar o interactuar
-    hideLoader();
+    // 1. ¿Venimos de una transición de módulo iniciada en otra página?
+    try {
+      if (sessionStorage.getItem("incarsa_page_transition") === "1") {
+        sessionStorage.removeItem("incarsa_page_transition");
+        showLoader();
+        setTimeout(function () {
+          hideLoader();
+        }, 340);
+      } else {
+        hideLoader();
+      }
+    } catch (e) {
+      hideLoader();
+    }
 
-    // Ocultar si la página se restaura desde la caché de historial del navegador (bfcache)
+    // 2. Interceptar clics en enlaces de navegación entre módulos (sidebar, navbar, enlaces internos)
+    document.addEventListener("click", function (e) {
+      // Ignorar clics con teclas modificadoras (Ctrl/Cmd/Shift/Alt o botón central/secundario)
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const a = e.target.closest("a[href]");
+      if (!a) return;
+
+      const rawHref = a.getAttribute("href");
+      if (!rawHref) return;
+
+      // Ignorar anclas internas, javascript, correo o teléfono
+      if (rawHref === "#" || rawHref.startsWith("#") || rawHref.startsWith("javascript:") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) {
+        return;
+      }
+
+      // Ignorar enlaces marcados para abrir en pestaña nueva o con descarga
+      if (a.hasAttribute("download") || (a.target && a.target !== "_self" && a.target !== "")) {
+        return;
+      }
+
+      // Ignorar descargas de documentos o blobs
+      if (rawHref.startsWith("/uploads/") || rawHref.startsWith("blob:") || rawHref.startsWith("data:")) {
+        return;
+      }
+
+      // Ignorar elementos marcados explícitamente para no activar loader
+      if (a.hasAttribute("data-no-loader") || a.closest("[data-no-loader]")) {
+        return;
+      }
+
+      try {
+        const dest = new URL(a.href, window.location.href);
+        // Solo enlaces dentro del mismo origen (sitio interno)
+        if (dest.origin !== window.location.origin) return;
+
+        // Si ya estamos exactamente en esta página y ruta, no recargar
+        const currentPath = window.location.pathname + window.location.search;
+        const destPath = dest.pathname + dest.search;
+        if (currentPath === destPath) {
+          return;
+        }
+
+        // Marcar bandera de transición para que la página destino continúe con el loader
+        try {
+          sessionStorage.setItem("incarsa_page_transition", "1");
+        } catch (err) {}
+
+        // Mostrar preloader en la página actual con animación suave
+        e.preventDefault();
+        showLoader();
+
+        // Navegar tras un breve instante (130ms) para apreciar la transición fluida
+        setTimeout(function () {
+          window.location.href = a.href;
+        }, 130);
+      } catch (err) {}
+    });
+
+    // 3. Controladores para ocultar el preloader cuando la página esté lista
     window.addEventListener("pageshow", function () {
       hideLoader();
     });
 
-    if (document.readyState === "complete" || document.readyState === "interactive") {
-      hideLoader();
-    }
-
     document.addEventListener("DOMContentLoaded", function () {
-      hideLoader();
-    });
-    window.addEventListener("load", function () {
-      hideLoader();
-    });
-    document.addEventListener("alpine:initialized", function () {
-      hideLoader();
+      if (!sessionStorage.getItem("incarsa_page_transition")) {
+        hideLoader();
+      }
     });
 
-    // Timeout de seguridad máximo (1.2s) para garantizar que el loader nunca se quede bloqueando la pantalla
+    window.addEventListener("load", function () {
+      if (!sessionStorage.getItem("incarsa_page_transition")) {
+        hideLoader();
+      }
+    });
+
+    document.addEventListener("alpine:initialized", function () {
+      setTimeout(function () {
+        hideLoader();
+      }, 160);
+    });
+
+    // Timeout de seguridad máximo (2.2s) para garantizar que nunca bloquee la pantalla
     setTimeout(function () {
       hideLoader();
-    }, 1200);
+    }, 2200);
   })();
 </script>

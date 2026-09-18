@@ -8,6 +8,7 @@ from .solicitudes_loaders import (
     GET_ALL_solicitudes_bd,
     GET_date_count_db,
     REGISTRAR_dictamen_db,
+    ACTUALIZAR_autorizacion_personas_db,
     VALIDAR_token_edicion_db,
     CONSUMIR_token_edicion_db
 )

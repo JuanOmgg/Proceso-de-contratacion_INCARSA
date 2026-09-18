@@ -135,6 +135,31 @@ function revisionSolicitudApp() {
     },
 
     /**
+     * Determina si el usuario actual tiene permisos para ver y auditar la vigencia de inducciones.
+     * Habilitado para GESCO, SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
+     */
+    get puedeVerInduccion() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN" || rolActualNorm === "SUPERADMIN") {
+        return true;
+      }
+
+      const rolesPermitidos = ["GESCO", "SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"];
+      if (rolesPermitidos.includes(rolActualNorm) || rolesPermitidos.includes(rolSesionNorm)) {
+        return true;
+      }
+
+      if ([1, 2, 4, 8].includes(idRol)) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
      * Determina si el rol del usuario es SCR o un rol superior (ADMINISTRADOR, SUPERADMIN).
      */
     get esScrOSuperior() {
@@ -147,6 +172,13 @@ function revisionSolicitudApp() {
       if (["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"].includes(rolSesionNorm)) return true;
       if ([1, 2, 8].includes(idRol)) return true;
       return false;
+    },
+
+    get esSstOGesco() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+      return ["SST", "GESCO"].includes(rolActualNorm) || ["SST", "GESCO"].includes(rolSesionNorm) || [6, 7].includes(idRol);
     },
 
     get userDisplayName() {
@@ -163,6 +195,10 @@ function revisionSolicitudApp() {
       }
       return (name.slice(0, 2) || "UA").toUpperCase();
     },
+
+    // Control de cambios en personas
+    hayCambiosPersonas: false,
+    guardandoPersonas: false,
 
     // Estado de revisiones por roles (se almacena localmente y se sincroniza)
     revisionesHistorial: [],
@@ -206,6 +242,11 @@ function revisionSolicitudApp() {
     // Modal de confirmación rápida para solicitudes pre-aprobadas
     showModalConfirmacionPreaprobada: false,
 
+    // Modal de Dispositivos y Equipos de Cómputo (Solo Lectura)
+    showModalDispositivos: false,
+    filtroDispositivos: "",
+    dispositivoCopiado: null,
+
     // Verificación individual de ítems (Checklist de auditoría)
     verificaciones: {
       personas: {},
@@ -221,6 +262,28 @@ function revisionSolicitudApp() {
     copiadoFeedback: null,
     mensajeExitoAntecedente: "",
     mensajeErrorAntecedente: "",
+
+    // Modales de inducciones y vigencia (GESCO)
+    showInduccionModal: false,
+    showFormInduccionModal: false,
+    cargandoInduccion: false,
+    guardandoInduccion: false,
+    mensajeExitoInduccion: "",
+    mensajeErrorInduccion: "",
+    personaSeleccionadaInduccion: null,
+    detalleInduccion: {},
+    formInduccion: {
+      id_persona: null,
+      persona_nombre: "",
+      persona_apellido: "",
+      persona_identificacion: "",
+      persona_tipo_doc: "CC",
+      persona_cargo: "",
+      responsable: "",
+      anotaciones: "",
+      fecha_induccion: "",
+      fecha_vigencia: ""
+    },
 
     // Filtros del historial
     searchHistorial: "",
@@ -525,8 +588,8 @@ function revisionSolicitudApp() {
           this.dictamenForm.decision = "aprobar";
         }
 
-        // Cargar vigencias de antecedentes de cada ingresante (exclusivo para SCR y roles superiores)
-        if (this.puedeVerAntecedentes) {
+        // Cargar vigencias de antecedentes e inducciones de cada ingresante
+        if (this.puedeVerAntecedentes || this.puedeVerInduccion) {
           await this.cargarVigenciasPersonas();
         }
 
@@ -686,6 +749,11 @@ function revisionSolicitudApp() {
             ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
             responsable: p.responsable || null,
             anotaciones: p.anotaciones || "",
+            fecha_induccion: (p.fecha_induccion && p.fecha_induccion !== "None" && p.fecha_induccion !== "null") ? p.fecha_induccion : null,
+            fecha_vigencia_induccion: (p.fecha_vigencia_induccion && p.fecha_vigencia_induccion !== "None" && p.fecha_vigencia_induccion !== "null") ? p.fecha_vigencia_induccion : null,
+            responsable_induccion: p.responsable_induccion || null,
+            anotaciones_induccion: p.anotaciones_induccion || "",
+            estadoVigenciaInduccion: this.getEstadoVigenciaInduccion(p.fecha_vigencia_induccion || (p.fecha_induccion ? this.obtenerFechaMasUnAnio(p.fecha_induccion) : null)),
             documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
               { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
               { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
@@ -822,8 +890,19 @@ function revisionSolicitudApp() {
       }
 
       const estado = String(this.solicitud?.estado || "").toUpperCase();
-      // Si la solicitud ya está en estado final APROBADO o RECHAZADO para roles operativos
-      if (estado === "APROBADO" || estado === "RECHAZADO") {
+      // Si la solicitud ya está en estado final RECHAZADO para roles operativos
+      if (estado === "RECHAZADO") {
+        return false;
+      }
+
+      // SST y GESCO pueden autorizar personas de una solicitud aunque ya hayan enviado su visto bueno
+      if (this.esSstOGesco) {
+        if (!this.tienePlantaAsignadaParaSolicitud) return false;
+        return true;
+      }
+
+      // Si la solicitud ya fue APROBADA de forma definitiva para otros roles operativos
+      if (estado === "APROBADO") {
         return false;
       }
 
@@ -838,12 +917,11 @@ function revisionSolicitudApp() {
 
     puedeAutorizarPersona(persona) {
       if (!this.puedeEditarAutorizacion) return false;
-      // SCR y roles superiores (SuperAdmin, Administrador) SIEMPRE pueden autorizar
-      if (this.esScrOSuperior) {
+      // SCR, roles superiores, SST y GESCO siempre pueden autorizar personas
+      if (this.esScrOSuperior || this.esSstOGesco) {
         return true;
       }
-      // Regla de negocio: Si la persona fue enviada/guardada sin autorización previamente en BD,
-      // los demás roles NO pueden volver a autorizarla.
+      // Regla de negocio para otros roles: Si ya estaba denegada en BD
       if (persona && persona.denegadaEnBd) {
         return false;
       }
@@ -852,7 +930,7 @@ function revisionSolicitudApp() {
 
     puedeAutorizarVehiculo(vehiculo) {
       if (!this.puedeEditarAutorizacion) return false;
-      if (this.esScrOSuperior) {
+      if (this.esScrOSuperior || this.esSstOGesco) {
         return true;
       }
       if (vehiculo && vehiculo.denegadoEnBd) {
@@ -863,11 +941,11 @@ function revisionSolicitudApp() {
 
     setAutorizacionPersona(persona, estaAutorizado, motivo = "") {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        this.mostrarToast("No puedes modificar la autorización: la solicitud está bloqueada para tu rol.", "info");
         return;
       }
       if (estaAutorizado && !this.puedeAutorizarPersona(persona)) {
-        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa. Solo SCR o superiores en modo de edición de revisión pueden reautorizarlo.", "warning");
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
         return;
       }
       persona.autorizado = estaAutorizado;
@@ -876,10 +954,11 @@ function revisionSolicitudApp() {
       } else if (estaAutorizado) {
         persona.motivo_rechazo = "";
       }
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
       const nombre = persona.nombre || "Ingresante";
       this.mostrarToast(
-        estaAutorizado ? `✅ ${nombre} ha sido autorizado` : `⛔ Acceso denegado a ${nombre}`,
+        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (guarda los cambios para notificar)` : `⛔ Acceso denegado a ${nombre} (guarda los cambios para notificar)`,
         estaAutorizado ? "success" : "info"
       );
     },
@@ -887,7 +966,7 @@ function revisionSolicitudApp() {
     toggleAutorizacionPersona(persona) {
       if (!this.puedeEditarAutorizacion) return;
       if (!persona.autorizado && !this.puedeAutorizarPersona(persona)) {
-        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa. Solo SCR o superior en edición pueden reautorizarlo.", "warning");
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
         return;
       }
       this.setAutorizacionPersona(persona, !persona.autorizado);
@@ -895,7 +974,7 @@ function revisionSolicitudApp() {
 
     autorizarTodasPersonas() {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        this.mostrarToast("No puedes modificar autorizaciones: la solicitud está bloqueada.", "info");
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
@@ -908,25 +987,27 @@ function revisionSolicitudApp() {
           omitidas++;
         }
       });
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
       if (omitidas > 0) {
-        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados por revisión previa).`, "info");
+        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados).`, "info");
       } else {
-        this.mostrarToast("Todas las personas de la solicitud han sido autorizadas", "success");
+        this.mostrarToast("Todas las personas marcadas como autorizadas (recuerda guardar cambios)", "success");
       }
     },
 
     denegarTodasPersonas() {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        this.mostrarToast("No puedes modificar autorizaciones: la solicitud está bloqueada.", "info");
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = false;
       });
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
-      this.mostrarToast("Todas las personas han sido marcadas como No Autorizadas", "info");
+      this.mostrarToast("Todas las personas marcadas como No Autorizadas (recuerda guardar cambios)", "info");
     },
 
     async persistirPersonasEnStorage() {
@@ -944,6 +1025,59 @@ function revisionSolicitudApp() {
       } catch (e) {
         console.warn("No se pudo guardar personas en storage:", e);
       }
+    },
+
+    async guardarCambiosPersonas() {
+      if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
+      this.guardandoPersonas = true;
+      try {
+        const nombreUsuario = this.usuarioSesion?.nombres 
+          ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
+          : `Auditor (${this.rolActual})`;
+
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const targetId = this.solicitud?.id || this.solicitudId;
+        const payload = {
+          rol: this.rolActual,
+          id_usuario: this.usuarioSesion?.id || null,
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          }))
+        };
+
+        const res = await fetch(`${API.solicitudes}/${targetId}/personas-autorizacion`, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          this.hayCambiosPersonas = false;
+          this.mostrarToast("✅ Autorizaciones actualizadas y notificación enviada a SCR y roles superiores.", "success");
+          await this.cargarSolicitud();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
+          this.mostrarToast(`Error al guardar autorizaciones: ${errMsg}`, "error");
+        }
+      } catch (err) {
+        console.error("Error al guardar autorizaciones de personas:", err);
+        this.mostrarToast("Error de conexión al guardar autorizaciones: " + err.message, "error");
+      } finally {
+        this.guardandoPersonas = false;
+      }
+    },
+
+    async descartarCambiosPersonas() {
+      this.hayCambiosPersonas = false;
+      await this.cargarSolicitud();
+      this.mostrarToast("Cambios descartados.", "info");
     },
 
     setAutorizacionVehiculo(vehiculo, estaAutorizado, motivo = "") {
@@ -1225,6 +1359,11 @@ function revisionSolicitudApp() {
         }
       }
 
+      // Si está en modo edición de una revisión activa, puede dictaminar / guardar cambios
+      if (this.editandoRevision) {
+        return true;
+      }
+
       // SCR y roles superiores pueden emitir o editar revisiones en cualquier momento
       if (this.esScrOSuperior) {
         return true;
@@ -1248,15 +1387,16 @@ function revisionSolicitudApp() {
     },
 
     /**
-     * Carga una revisión existente (SST, GESCO o SCR) en el formulario de dictamen para que SCR/Admin puedan editarla
+     * Carga una revisión existente (SST, GESCO o SCR) en el formulario de dictamen para que el revisor o SCR/Admin puedan editarla
      */
     cargarRevisionParaEdicion(rol, id_planta = null, plantaNombre = "") {
-      if (!this.esScrOSuperior) {
-        this.mostrarToast("Solo SCR y roles superiores pueden editar revisiones.", "warning");
+      const rolUpper = String(rol).toUpperCase();
+      const esMio = (String(this.rolActual).toUpperCase() === rolUpper);
+      if (!this.esScrOSuperior && !esMio) {
+        this.mostrarToast(`Solo puedes editar revisiones de tu propio rol (${this.rolActual}).`, "warning");
         return;
       }
 
-      const rolUpper = String(rol).toUpperCase();
       const revs = this.revisionesHistorial || [];
       const encontrada = revs.find(r =>
         String(r.rol).toUpperCase() === rolUpper &&
@@ -1371,10 +1511,15 @@ function revisionSolicitudApp() {
         else if (decision === "devolver") decisionBackend = "DEVUELTO";
         else if (decision === "preaprobar") decisionBackend = "PREAPROBADO";
 
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         const payloadDictamen = {
           id_planta: idPlantaDictamen,
           rol: rolDictamen,
           decision: decisionBackend,
+          es_edicion: esEdicion,
           motivo_rechazo: decision === "rechazar" ? motivo : (decision === "devolver" ? motivoDev : null),
           motivo_devolucion: decision === "devolver" ? motivoDev : null,
           observacion: obs || null,
@@ -1399,12 +1544,13 @@ function revisionSolicitudApp() {
         const targetId = this.solicitud?.id || this.solicitudId;
         const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: headers,
           body: JSON.stringify(payloadDictamen)
         });
 
         if (res.ok) {
           const dataRes = await res.json();
+          this.hayCambiosPersonas = false;
           this.solicitud.estado = dataRes.nuevo_estado;
           if (decision === "preaprobar" || decisionBackend === "PREAPROBADO") {
             this.solicitud.pre_aprobado = true;
@@ -1603,7 +1749,7 @@ function revisionSolicitudApp() {
       this.rolActual = nuevoRol;
       this.rolNombre = nuevoRol;
       this.mostrarToast(`Sesión cambiada a rol: ${nuevoRol}`, "info");
-      if (this.puedeVerAntecedentes && this.solicitud?.personas?.length > 0) {
+      if ((this.puedeVerAntecedentes || this.puedeVerInduccion) && this.solicitud?.personas?.length > 0) {
         this.cargarVigenciasPersonas();
       }
     },
@@ -1621,7 +1767,7 @@ function revisionSolicitudApp() {
     },
 
     // =============================================================
-    // GESTIÓN Y AUDITORÍA DE ANTECEDENTES (HISTORIAL Y RENOVACIÓN)
+    // GESTIÓN Y AUDITORÍA DE ANTECEDENTES E INDUCCIONES (HISTORIAL Y RENOVACIÓN)
     // =============================================================
 
     async cargarVigenciasPersonas() {
@@ -1631,45 +1777,80 @@ function revisionSolicitudApp() {
         const idPersona = p.id_persona || p.id;
         const ident = String(p.identificacion || "").trim();
 
-        // 1. Ver si está en localStorage (solo si fue guardado recientemente con fecha válida)
-        const localKey = `incarsa_antecedente_${ident}`;
-        const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
-        if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
-          p.fecha_consulta = localSaved.fecha_consulta;
-          p.ultima_revision = localSaved.ultima_revision;
-          p.responsable = localSaved.responsable;
-          p.anotaciones = localSaved.anotaciones;
-          p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
-          return;
-        }
-
-        // 2. Si ya tiene fecha_consulta válida en el objeto
-        if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
-          p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
-          return;
-        }
-
-        // 3. Consultar backend si existe registro previo
-        try {
-          if (idPersona) {
-            const res = await fetch(`${API.antecedentes}/persona/${idPersona}?actualizar_revision=false`);
-            if (res.ok) {
-              const resData = await res.json().catch(() => ({}));
-              const data = resData.data || resData;
-              if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
-                p.fecha_consulta = data.fecha_consulta;
-                p.ultima_revision = data.ultima_revision;
-                p.responsable = data.responsable;
-                p.anotaciones = data.anotaciones;
-                p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
-                return;
-              }
-            }
+        // 1. CARGA DE ANTECEDENTES (SCR, Administrador, SuperAdmin)
+        if (this.puedeVerAntecedentes) {
+          let antecedenteCargado = false;
+          // Ver si está en localStorage (guardado recientemente con fecha válida)
+          const localKey = `incarsa_antecedente_${ident}`;
+          const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
+          if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
+            p.fecha_consulta = localSaved.fecha_consulta;
+            p.ultima_revision = localSaved.ultima_revision;
+            p.responsable = localSaved.responsable;
+            p.anotaciones = localSaved.anotaciones;
+            p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
+            antecedenteCargado = true;
+          } else if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
+            p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
+            antecedenteCargado = true;
           }
-        } catch (e) {}
 
-        // Fallback por defecto si no tiene registro previo de revisión: Sin revisión
-        p.estadoVigencia = this.getEstadoVigencia(null);
+          if (!antecedenteCargado) {
+            try {
+              if (idPersona) {
+                const res = await fetch(`${API.antecedentes}/persona/${idPersona}?actualizar_revision=false`);
+                if (res.ok) {
+                  const resData = await res.json().catch(() => ({}));
+                  const data = resData.data || resData;
+                  if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
+                    p.fecha_consulta = data.fecha_consulta;
+                    p.ultima_revision = data.ultima_revision;
+                    p.responsable = data.responsable;
+                    p.anotaciones = data.anotaciones;
+                    p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
+                    antecedenteCargado = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!antecedenteCargado) {
+            p.estadoVigencia = this.getEstadoVigencia(null);
+          }
+        }
+
+        // 2. CARGA DE INDUCCIONES (GESCO, SCR, Administrador, SuperAdmin)
+        if (this.puedeVerInduccion) {
+          let induccionCargada = false;
+          if (p.fecha_vigencia_induccion || p.fecha_induccion) {
+            p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(p.fecha_vigencia_induccion || (p.fecha_induccion ? this.obtenerFechaMasUnAnio(p.fecha_induccion) : null));
+            induccionCargada = true;
+          }
+
+          if (!induccionCargada) {
+            try {
+              if (idPersona) {
+                const resInd = await fetch(`${API.inducciones}/persona/${idPersona}?auto_renovar=false`);
+                if (resInd.ok) {
+                  const dataInd = await resInd.json().catch(() => ({}));
+                  if (dataInd && (dataInd.fecha_vigencia || dataInd.fecha_induccion)) {
+                    p.fecha_induccion = dataInd.fecha_induccion;
+                    p.fecha_vigencia_induccion = dataInd.fecha_vigencia;
+                    p.responsable_induccion = dataInd.responsable;
+                    p.anotaciones_induccion = dataInd.anotaciones;
+                    p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(dataInd.fecha_vigencia || this.obtenerFechaMasUnAnio(dataInd.fecha_induccion));
+                    induccionCargada = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!induccionCargada) {
+            p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(null);
+          }
+        }
       });
 
       await Promise.all(tareas);
@@ -1791,6 +1972,83 @@ function revisionSolicitudApp() {
       }
     },
 
+    getEstadoVigenciaInduccion(fechaVigenciaStr) {
+      if (!fechaVigenciaStr) {
+        return {
+          estado: 'sin_induccion',
+          etiqueta: 'Sin inducción',
+          textoDias: 'Sin curso de inducción registrado',
+          icono: 'fa-solid fa-graduation-cap',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaLimite = this.parsearFechaLocal(fechaVigenciaStr);
+      if (!fechaLimite || isNaN(fechaLimite.getTime())) {
+        return {
+          estado: 'sin_induccion',
+          etiqueta: 'Fecha inválida',
+          textoDias: 'Fecha inválida',
+          icono: 'fa-solid fa-circle-question',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+      fechaLimite.setHours(0, 0, 0, 0);
+
+      const diffMs = fechaLimite.getTime() - hoy.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDias < 0) {
+        const diasVencidos = Math.abs(diffDias);
+        return {
+          estado: 'vencido',
+          etiqueta: `Vencida (${diasVencidos}d)`,
+          textoDias: `Inducción vencida hace ${diasVencidos} ${diasVencidos === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-circle-xmark',
+          badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60',
+          dotClass: 'bg-red-500',
+          dias: diffDias
+        };
+      } else if (diffDias === 0) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: 'Vence hoy',
+          textoDias: 'La inducción vence hoy',
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: 0
+        };
+      } else if (diffDias <= 30) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: `Por vencer (${diffDias}d)`,
+          textoDias: `${diffDias} ${diffDias === 1 ? 'día restante de vigencia' : 'días restantes de vigencia'}`,
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: diffDias
+        };
+      } else {
+        return {
+          estado: 'vigente',
+          etiqueta: `Vigente (${diffDias}d)`,
+          textoDias: `${diffDias} días restantes de vigencia`,
+          icono: 'fa-solid fa-circle-check',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
+          dotClass: 'bg-emerald-500',
+          dias: diffDias
+        };
+      }
+    },
+
     calcularFechaConsulta(ultimaRevisionStr, fechaConsultaExistente = null) {
       if (fechaConsultaExistente && fechaConsultaExistente !== "None" && fechaConsultaExistente !== "null" && fechaConsultaExistente !== "Pendiente") {
         const clean = String(fechaConsultaExistente).split("T")[0].split(" ")[0].trim();
@@ -1829,6 +2087,27 @@ function revisionSolicitudApp() {
         const [y, m, d] = str.split("-");
         if (y && m && d) return `${d}/${m}/${y}`;
         return str;
+      } catch {
+        return fechaStr;
+      }
+    },
+
+    formatearFechaLegible(fechaStr) {
+      if (!fechaStr || fechaStr === "—" || fechaStr === "-" || fechaStr === "No registrada" || fechaStr === "Sin fecha" || fechaStr === "Sin vigencia registrada") {
+        return fechaStr || "—";
+      }
+      try {
+        const str = String(fechaStr).trim().split("T")[0].split(" ")[0];
+        const fPartes = str.split("-");
+        if (fPartes.length === 3) {
+          const anio = fPartes[0];
+          const mesIdx = parseInt(fPartes[1], 10) - 1;
+          const dia = parseInt(fPartes[2], 10);
+          const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+          const mesNombre = meses[mesIdx] || fPartes[1];
+          return `${dia} ${mesNombre} ${anio}`;
+        }
+        return this.formatearSoloFecha(fechaStr);
       } catch {
         return fechaStr;
       }
@@ -2105,6 +2384,231 @@ function revisionSolicitudApp() {
       } finally {
         this.guardandoAntecedente = false;
       }
+    },
+
+    // =============================================================
+    // GESTIÓN Y AUDITORÍA DE INDUCCIONES (GESCO)
+    // =============================================================
+
+    async abrirInduccionModal(persona) {
+      if (!this.puedeVerInduccion) {
+        this.mostrarToast("No tienes permisos para auditar inducciones.", "warning");
+        return;
+      }
+      this.personaSeleccionadaInduccion = persona;
+      this.cargandoInduccion = true;
+      this.showInduccionModal = true;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const idPersona = persona.id_persona || persona.id;
+      const contratistaActual = this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || "Sin contratista asignado";
+
+      this.detalleInduccion = {
+        id: null,
+        id_persona: idPersona,
+        persona_nombre: persona.nombre || "Contratista",
+        persona_apellido: persona.apellido || "",
+        persona_identificacion: persona.identificacion || "—",
+        persona_tipo_doc: persona.tipo_doc || "CC",
+        persona_cargo: persona.cargo || "Operario",
+        responsable: persona.responsable_induccion || "Auditor GESCO",
+        anotaciones: persona.anotaciones_induccion || "",
+        fecha_induccion: persona.fecha_induccion || null,
+        fecha_vigencia: persona.fecha_vigencia_induccion || (persona.fecha_induccion ? this.obtenerFechaMasUnAnio(persona.fecha_induccion) : null),
+        ultima_empresa_contratista: contratistaActual,
+        ultima_revision: null
+      };
+
+      try {
+        if (idPersona) {
+          const res = await fetch(`${API.inducciones}/persona/${idPersona}?auto_renovar=false`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data) {
+              this.detalleInduccion.id = data.id;
+              this.detalleInduccion.responsable = data.responsable || this.detalleInduccion.responsable;
+              this.detalleInduccion.anotaciones = data.anotaciones || "";
+              this.detalleInduccion.fecha_induccion = data.fecha_induccion || this.detalleInduccion.fecha_induccion;
+              this.detalleInduccion.fecha_vigencia = data.fecha_vigencia || (data.fecha_induccion ? this.obtenerFechaMasUnAnio(data.fecha_induccion) : this.detalleInduccion.fecha_vigencia);
+              this.detalleInduccion.ultima_revision = data.ultima_revision;
+              if (data.nombre_empresa) {
+                this.detalleInduccion.ultima_empresa_contratista = data.nombre_empresa;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso al consultar inducción:", err);
+      } finally {
+        this.cargandoInduccion = false;
+        persona.fecha_induccion = this.detalleInduccion.fecha_induccion;
+        persona.fecha_vigencia_induccion = this.detalleInduccion.fecha_vigencia;
+        persona.responsable_induccion = this.detalleInduccion.responsable;
+        persona.anotaciones_induccion = this.detalleInduccion.anotaciones;
+        persona.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(this.detalleInduccion.fecha_vigencia);
+      }
+    },
+
+    cerrarInduccionModal() {
+      this.showInduccionModal = false;
+    },
+
+    abrirFormularioInduccion(item) {
+      if (!this.puedeVerInduccion) {
+        this.mostrarToast("No tienes permisos para modificar inducciones.", "warning");
+        return;
+      }
+      this.showInduccionModal = false;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const ahora = new Date();
+      const hoyLocal = this.obtenerFechaHoraLocal(ahora).split(" ")[0];
+      const masUnAnio = this.obtenerFechaMasUnAnio(ahora);
+      const sesionNombre = (this.userDisplayName && this.userDisplayName !== "Usuario Activo")
+        ? this.userDisplayName
+        : (this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Auditor GESCO");
+
+      this.formInduccion = {
+        id_persona: item.id_persona,
+        persona_nombre: item.persona_nombre || "",
+        persona_apellido: item.persona_apellido || "",
+        persona_tipo_doc: item.persona_tipo_doc || "CC",
+        persona_identificacion: item.persona_identificacion || "",
+        persona_cargo: item.persona_cargo || "General",
+        responsable: sesionNombre,
+        anotaciones: item.anotaciones || "",
+        fecha_induccion: hoyLocal,
+        fecha_vigencia: masUnAnio,
+        ultima_empresa_contratista: item.ultima_empresa_contratista || "Sin contratista asignado"
+      };
+
+      this.showFormInduccionModal = true;
+    },
+
+    cerrarFormularioInduccion() {
+      this.showFormInduccionModal = false;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+      if (this.personaSeleccionadaInduccion) {
+        this.showInduccionModal = true;
+      }
+    },
+
+    async guardarInduccion() {
+      if (!this.formInduccion.id_persona) return;
+
+      this.guardandoInduccion = true;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const ahora = new Date();
+      const hoyLocal = this.obtenerFechaHoraLocal(ahora).split(" ")[0];
+      const fechaInd = this.formInduccion.fecha_induccion || hoyLocal;
+      const fechaVig = this.obtenerFechaMasUnAnio(fechaInd);
+      const sesionNombre = (this.userDisplayName && this.userDisplayName !== "Usuario Activo")
+        ? this.userDisplayName
+        : (this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Auditor GESCO");
+
+      const payload = {
+        responsable: this.formInduccion.responsable ? this.formInduccion.responsable.trim() : sesionNombre,
+        anotaciones: this.formInduccion.anotaciones ? this.formInduccion.anotaciones.trim() : null,
+        fecha_induccion: fechaInd,
+        fecha_vigencia: fechaVig
+      };
+
+      try {
+        const res = await fetch(`${API.inducciones}/persona/${this.formInduccion.id_persona}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || err.mensaje || "Error al actualizar inducción");
+        }
+
+        this.mensajeExitoInduccion = "¡Vigencia de inducción renovada exitosamente (+1 año)!";
+        this.mostrarToast("Inducción renovada con vigencia de 1 año", "success");
+
+        // Refrescar en memoria de la persona
+        if (this.personaSeleccionadaInduccion) {
+          this.personaSeleccionadaInduccion.fecha_induccion = fechaInd;
+          this.personaSeleccionadaInduccion.fecha_vigencia_induccion = fechaVig;
+          this.personaSeleccionadaInduccion.responsable_induccion = payload.responsable;
+          this.personaSeleccionadaInduccion.anotaciones_induccion = payload.anotaciones;
+          this.personaSeleccionadaInduccion.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(fechaVig);
+        }
+
+        // Actualizar detalleInduccion
+        if (this.detalleInduccion) {
+          this.detalleInduccion.fecha_induccion = fechaInd;
+          this.detalleInduccion.fecha_vigencia = fechaVig;
+          this.detalleInduccion.responsable = payload.responsable;
+          this.detalleInduccion.anotaciones = payload.anotaciones;
+        }
+
+        setTimeout(() => {
+          this.cerrarFormularioInduccion();
+        }, 1200);
+
+      } catch (e) {
+        this.mensajeErrorInduccion = e.message || "No fue posible guardar los cambios de inducción.";
+      } finally {
+        this.guardandoInduccion = false;
+      }
+    },
+
+    // =============================================================
+    // MODAL DE DISPOSITIVOS Y EQUIPOS (SOLO LECTURA)
+    // =============================================================
+
+    abrirModalDispositivos() {
+      this.filtroDispositivos = "";
+      this.showModalDispositivos = true;
+    },
+
+    cerrarModalDispositivos() {
+      this.showModalDispositivos = false;
+      this.filtroDispositivos = "";
+    },
+
+    async copiarSerieDispositivo(serie) {
+      if (!serie || serie === '—' || serie === 'S/N') return;
+      try {
+        await navigator.clipboard.writeText(serie);
+        this.dispositivoCopiado = serie;
+        this.mostrarToast("Número de serie copiado al portapapeles", "success");
+        setTimeout(() => {
+          if (this.dispositivoCopiado === serie) {
+            this.dispositivoCopiado = null;
+          }
+        }, 2000);
+      } catch (e) {
+        console.warn("No se pudo copiar serie:", e);
+      }
+    },
+
+    get listaDispositivos() {
+      const c = this.solicitud?.computos || this.solicitud?.equipos || this.solicitud?.eq_computo || [];
+      return Array.isArray(c) ? c : [];
+    },
+
+    get totalDispositivos() {
+      return this.listaDispositivos.length;
+    },
+
+    get dispositivosFiltrados() {
+      const q = (this.filtroDispositivos || "").trim().toLowerCase();
+      const list = this.listaDispositivos;
+      if (!q) return list;
+      return list.filter(d => 
+        (d.marca || "").toLowerCase().includes(q) ||
+        (d.modelo || "").toLowerCase().includes(q) ||
+        (d.serie || "").toLowerCase().includes(q)
+      );
     }
   };
 }

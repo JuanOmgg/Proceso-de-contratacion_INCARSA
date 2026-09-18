@@ -71,12 +71,37 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 if isinstance(v, dict)
                                 else ""
                             )
+                            id_persona_conductor = None
 
                             if isinstance(v, int):
                                 id_v = v
                             elif isinstance(v, dict):
-                                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
-                                    id_v = int(v["id_vehiculo"])
+                                cand_p = v.get("id_persona") or v.get("conductor_id")
+                                if cand_p and str(cand_p).isdigit() and int(cand_p) > 0:
+                                    id_persona_conductor = int(cand_p)
+                                elif v.get("conductor"):
+                                    cond_str = str(v.get("conductor")).strip()
+                                    if cond_str.isdigit() and int(cond_str) > 0:
+                                        id_persona_conductor = int(cond_str)
+                                    else:
+                                        cursor.execute(
+                                            """
+                                            SELECT id FROM personas 
+                                            WHERE TRIM(CONCAT_WS(' ', COALESCE(nombre, ''), COALESCE(apellido, ''))) = %s 
+                                               OR nombre = %s 
+                                               OR CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellido, '')) = %s
+                                               OR identificacion = %s
+                                            ORDER BY id DESC LIMIT 1
+                                            """,
+                                            (cond_str, cond_str, cond_str, cond_str),
+                                        )
+                                        p_found = cursor.fetchone()
+                                        if p_found:
+                                            id_persona_conductor = p_found["id"]
+
+                                target_id_v = v.get("id_vehiculo") or v.get("id")
+                                if target_id_v and str(target_id_v).isdigit():
+                                    id_v = int(target_id_v)
                                 elif v.get("placa"):
                                     placa_norm = v.get("placa")
                                     tipo_norm = v.get("tipo", "VEHICULO")
@@ -95,7 +120,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                         id_v = cursor.lastrowid
 
                             if id_v:
-                                resolved_vehiculos.append((id_v, lic_doc))
+                                resolved_vehiculos.append((id_v, lic_doc, id_persona_conductor))
 
                     # 1. Resolver empresa_origen válida
                     cursor.execute("SELECT id FROM empresa WHERE id = %s", (emp_origen,))
@@ -231,11 +256,11 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     if resolved_vehiculos:
                         try:
                             sql_vehingreso = """
-                                INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc)
-                                VALUES (%s, %s, %s)
+                                INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, id_persona)
+                                VALUES (%s, %s, %s, %s)
                             """
-                            for id_v, lic_doc in resolved_vehiculos:
-                                cursor.execute(sql_vehingreso, (solicitud_id, id_v, lic_doc))
+                            for id_v, lic_doc, id_persona_conductor in resolved_vehiculos:
+                                cursor.execute(sql_vehingreso, (solicitud_id, id_v, lic_doc, id_persona_conductor))
                                 if lic_doc:
                                     cursor.execute(
                                         "SELECT id FROM documentos_vehiculo WHERE id_vehiculo = %s AND nom_documento = %s",
@@ -434,9 +459,12 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 cursor.execute(
                     """
                     SELECT v.id, v.tipo, v.placa, vi.licencia_doc,
-                           COALESCE(vi.autorizado, 1) AS autorizado, vi.motivo
+                           COALESCE(vi.autorizado, 1) AS autorizado, vi.motivo,
+                           vi.id_persona,
+                           TRIM(CONCAT(COALESCE(p.nombre, ''), ' ', COALESCE(p.apellido, ''))) AS conductor
                     FROM Veh_ingreso vi
                     INNER JOIN vehiculos v ON vi.id_vehiculo = v.id
+                    LEFT JOIN personas p ON vi.id_persona = p.id
                     WHERE vi.id_solicitud = %s
                     """,
                     (real_id,),
@@ -469,10 +497,13 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                     """
                     SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
                            COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
-                           a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
+                           a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
+                           ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
+                           ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
                     LEFT JOIN antecedentes a ON a.id_persona = p.id
+                    LEFT JOIN inducciones ind ON ind.id_persona = p.id
                     WHERE i.id_solicitud = %s
                     """,
                     (real_id,),
@@ -490,9 +521,12 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                                 f"""
                                 SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
                                        1 AS autorizado, NULL AS motivo,
-                                       a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones
+                                       a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
+                                       ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
+                                       ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
                                 FROM personas p
                                 LEFT JOIN antecedentes a ON a.id_persona = p.id
+                                LEFT JOIN inducciones ind ON ind.id_persona = p.id
                                 WHERE p.id IN ({fmt})
                                 """,
                                 tuple(p_ids)
@@ -512,6 +546,14 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         p["ultima_revision"] = str(p["ultima_revision"])
                     else:
                         p["ultima_revision"] = None
+                    if p.get("fecha_induccion"):
+                        p["fecha_induccion"] = str(p["fecha_induccion"]).split(" ")[0]
+                    else:
+                        p["fecha_induccion"] = None
+                    if p.get("fecha_vigencia_induccion"):
+                        p["fecha_vigencia_induccion"] = str(p["fecha_vigencia_induccion"]).split(" ")[0]
+                    else:
+                        p["fecha_vigencia_induccion"] = None
 
                     cursor.execute(
                         "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
@@ -559,6 +601,66 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
     except Exception as e:
         print(f"❌ Error en GET_solicitud_bd #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
+
+def NOTIFICAR_edicion_sst_gesco_db(
+    cursor,
+    real_id: int,
+    codigo_sol: str,
+    rol: str,
+    nombre_revisor: str = "",
+    detalle: Optional[str] = None
+):
+    """
+    Envía una notificación a SCR y roles superiores (ADMINISTRADOR, SUPERADMIN, etc.)
+    cada vez que SST o GESCO realiza una edición o autoriza personas en una solicitud.
+    """
+    try:
+        cod_sol_clean = codigo_sol or f"RAD-{real_id:04d}"
+        revisor_txt = f" ({nombre_revisor})" if nombre_revisor else ""
+        tit_notif = f"⚠️ Edición de personal en {cod_sol_clean} ({rol})"
+        msg_notif = f"{rol}{revisor_txt} ha modificado la autorización de personas en la solicitud {cod_sol_clean} tras haber emitido visto bueno previo."
+        if detalle:
+            msg_notif += f" ({detalle})"
+        msg_notif += " Haz clic para revisar el expediente."
+
+        enlace_notif = f"/solicitudes/revision/{cod_sol_clean}"
+        now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Roles destinatarios: SCR y roles superiores
+        cursor.execute(
+            """
+            SELECT id FROM roles 
+            WHERE UPPER(nombre_rol) LIKE '%SCR%' 
+               OR UPPER(nombre_rol) IN ('ADMINISTRADOR', 'ADMIN', 'SUPERADMIN')
+            """
+        )
+        roles_dest = [r["id"] for r in (cursor.fetchall() or []) if r.get("id")]
+        if not roles_dest:
+            roles_dest = [8, 1, 2]
+
+        for r_id in roles_dest:
+            cursor.execute(
+                """
+                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
+                VALUES (%s, %s, %s, %s, %s, FALSE, NOW())
+                """,
+                (r_id, tit_notif, msg_notif, "warning", enlace_notif)
+            )
+
+        notification_broadcaster.notificar_nueva(
+            {
+                "titulo": tit_notif,
+                "mensaje": msg_notif,
+                "tipo": "warning",
+                "enlace": enlace_notif,
+                "fecha_creacion": now_notif_str,
+                "leido": False,
+            },
+            target_roles_ids=roles_dest
+        )
+        print(f"🔔 [NOTIFICACIÓN ENVIADA] Edición de {rol} en solicitud #{cod_sol_clean} notificada a roles {roles_dest}.")
+    except Exception as e:
+        print(f"⚠️ Error al notificar edición de SST/GESCO: {e}")
 
 def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
     try:
@@ -615,6 +717,25 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             if p_list:
                                 id_planta = p_list[0]
 
+                # Verificar si ya existía una revisión previa para este rol (visto bueno previo)
+                habia_visto_bueno_previo = False
+                if id_planta is None:
+                    cursor.execute(
+                        "SELECT id, decision FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
+                        (real_id, rol)
+                    )
+                    rev_existente = cursor.fetchone()
+                    if rev_existente and rev_existente.get("decision"):
+                        habia_visto_bueno_previo = True
+                else:
+                    cursor.execute(
+                        "SELECT id, decision FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta = %s AND UPPER(rol) = %s",
+                        (real_id, id_planta, rol)
+                    )
+                    rev_existente = cursor.fetchone()
+                    if rev_existente and rev_existente.get("decision"):
+                        habia_visto_bueno_previo = True
+
                 # 2. Insertar o actualizar en solicitud_revisiones
                 if id_planta is None:
                     cursor.execute(
@@ -664,6 +785,7 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 # 2.1 Sincronizar autorizaciones individuales de personas (ingresantes)
                 personas_input = dictamen.get("personas")
                 es_scr_o_superior = rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN")
+                hubo_cambio_personas_aut = False
 
                 if personas_input and isinstance(personas_input, list):
                     cursor.execute("SELECT id_persona, COALESCE(autorizado, 1) AS autorizado FROM ingresantes WHERE id_solicitud = %s", (real_id,))
@@ -683,12 +805,14 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         p_aut = bool(p_item.get("autorizado", True))
                         p_motivo = p_item.get("motivo") or p_item.get("motivo_rechazo") or None
 
-                        # Regla de negocio: Si ya estaba sin autorización (autorizado=0) en una revisión previa,
-                        # los demás roles NO pueden volver a autorizarla.
-                        # Solo SCR o roles superiores pueden volver a autorizarla.
+                        # Regla de negocio: GESCO, SST, SCR y roles superiores PUEDEN autorizar personas
+                        # incluso si estaban sin autorización en una revisión previa.
                         if p_id in ingresantes_db and not ingresantes_db[p_id]:
-                            if not es_scr_o_superior:
+                            if not (es_scr_o_superior or rol in ("SST", "GESCO")):
                                 p_aut = False
+
+                        if p_id in ingresantes_db and ingresantes_db[p_id] != p_aut:
+                            hubo_cambio_personas_aut = True
 
                         cursor.execute(
                             """
@@ -1060,6 +1184,18 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         nuevo_estado=nuevo_estado,
                         detalle=f"Dictamen de {rol}: {decision}"
                     )
+
+                    # Si SST o GESCO realiza una edición posterior a haber emitido dictamen previo,
+                    # o si modificó la autorización de personas: notificar a SCR y roles superiores
+                    if rol in ("SST", "GESCO") and (habia_visto_bueno_previo or dictamen.get("es_edicion") or hubo_cambio_personas_aut):
+                        NOTIFICAR_edicion_sst_gesco_db(
+                            cursor=cursor,
+                            real_id=real_id,
+                            codigo_sol=cod_sol,
+                            rol=rol,
+                            nombre_revisor=nombre_revisor,
+                            detalle="Edición de dictamen / autorización de personal"
+                        )
                 except Exception as e_notif:
                     print(f"⚠️ Aviso al registrar notificación de dictamen: {e_notif}")
 
@@ -1093,6 +1229,118 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
     except Exception as e:
         print(f"❌ Error al registrar dictamen para solicitud #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al registrar dictamen: {e}"}
+
+
+def ACTUALIZAR_autorizacion_personas_db(solicitud_id: Any, payload: dict) -> dict:
+    """
+    Permite a SST, GESCO, SCR y roles superiores autorizar o denegar personas individualmente
+    en una solicitud existente (incluso tras haber emitido dictamen previo).
+    Si SST o GESCO realizan una edición, notifica inmediatamente a SCR y roles superiores.
+    """
+    try:
+        rol = str(payload.get("rol", "")).strip().upper()
+        id_usuario = payload.get("id_usuario")
+        nombre_revisor = payload.get("nombre_revisor") or ""
+        personas_input = payload.get("personas") or []
+
+        if not personas_input or not isinstance(personas_input, list):
+            return {"exito": False, "mensaje": "No se recibieron personas para actualizar."}
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # 1. Verificar existencia y resolver ID numérico real
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT id, codigo, estado, diligenciado_por FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                real_id = int(sol["id"])
+                cod_sol = sol.get("codigo") or f"RAD-{real_id:04d}"
+
+                if not nombre_revisor and id_usuario:
+                    cursor.execute("SELECT nombres, apellidos FROM usuarios WHERE id = %s", (id_usuario,))
+                    u = cursor.fetchone()
+                    if u:
+                        nombre_revisor = f"{u.get('nombres', '')} {u.get('apellidos', '')}".strip()
+
+                # 2. Actualizar ingresantes
+                hubo_cambios = False
+                nombres_modificados = []
+
+                cursor.execute(
+                    """
+                    SELECT i.id_persona, COALESCE(i.autorizado, 1) AS autorizado, p.nombre, p.apellido 
+                    FROM ingresantes i 
+                    LEFT JOIN personas p ON i.id_persona = p.id 
+                    WHERE i.id_solicitud = %s
+                    """,
+                    (real_id,)
+                )
+                ing_db = {int(r["id_persona"]): r for r in (cursor.fetchall() or []) if r.get("id_persona") is not None}
+
+                for p_item in personas_input:
+                    if not isinstance(p_item, dict):
+                        continue
+                    p_id = p_item.get("id") or p_item.get("id_persona")
+                    if not p_id:
+                        continue
+                    try:
+                        p_id = int(p_id)
+                    except (ValueError, TypeError):
+                        continue
+
+                    p_aut = bool(p_item.get("autorizado", True))
+                    p_motivo = p_item.get("motivo") or p_item.get("motivo_rechazo") or None
+
+                    if p_id in ing_db:
+                        estado_prev = bool(ing_db[p_id]["autorizado"])
+                        if estado_prev != p_aut:
+                            hubo_cambios = True
+                            nom_completo = f"{ing_db[p_id].get('nombre', '')} {ing_db[p_id].get('apellido', '')}".strip()
+                            estado_txt = "Autorizado" if p_aut else "No Autorizado"
+                            nombres_modificados.append(f"{nom_completo or f'ID {p_id}'} ({estado_txt})")
+
+                    cursor.execute(
+                        """
+                        INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo)
+                        VALUES (%s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                            autorizado = VALUES(autorizado),
+                            motivo = VALUES(motivo)
+                        """,
+                        (real_id, p_id, 1 if p_aut else 0, p_motivo)
+                    )
+
+                # 3. Si el rol es SST o GESCO, notificar a SCR y roles superiores
+                if rol in ("SST", "GESCO"):
+                    detalle_txt = f"{len(nombres_modificados)} ingresante(s) actualizados: {', '.join(nombres_modificados[:3])}" if nombres_modificados else "Actualización individual de autorizaciones"
+                    NOTIFICAR_edicion_sst_gesco_db(
+                        cursor=cursor,
+                        real_id=real_id,
+                        codigo_sol=cod_sol,
+                        rol=rol,
+                        nombre_revisor=nombre_revisor,
+                        detalle=detalle_txt
+                    )
+
+                conexion.commit()
+
+                return {
+                    "exito": True,
+                    "mensaje": "Autorizaciones de personas actualizadas con éxito.",
+                    "solicitud_id": real_id,
+                    "codigo": cod_sol,
+                    "modificados": len(nombres_modificados)
+                }
+
+    except Exception as e:
+        print(f"❌ Error en ACTUALIZAR_autorizacion_personas_db #{solicitud_id}: {e}")
+        return {"exito": False, "mensaje": f"Error al actualizar personas: {e}"}
 
 
 def VALIDAR_token_edicion_db(solicitud_id: Any, token: str) -> dict:
@@ -1776,6 +2024,23 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                     aut = v.get("autorizado", True)
                                     aut_v = False if aut in (False, 0, "0", "false") else True
                                     mot_v = v.get("motivo") or v.get("motivo_rechazo") or None
+                                    id_persona_conductor = None
+
+                                    cand_p = v.get("id_persona") or v.get("conductor_id")
+                                    if cand_p and str(cand_p).isdigit() and int(cand_p) > 0:
+                                        id_persona_conductor = int(cand_p)
+                                    elif v.get("conductor"):
+                                        cond_str = str(v.get("conductor")).strip()
+                                        if cond_str.isdigit() and int(cond_str) > 0:
+                                            id_persona_conductor = int(cond_str)
+                                        else:
+                                            cursor.execute(
+                                                "SELECT id FROM personas WHERE CONCAT(nombre, ' ', apellido) = %s OR nombre = %s LIMIT 1",
+                                                (cond_str, cond_str),
+                                            )
+                                            p_found = cursor.fetchone()
+                                            if p_found:
+                                                id_persona_conductor = p_found["id"]
 
                                     if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
                                         id_v = int(v["id_vehiculo"])
@@ -1798,8 +2063,8 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                 if id_v:
                                     resolved_vids.append(id_v)
                                     cursor.execute(
-                                        "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo) VALUES (%s, %s, %s, %s, %s)",
-                                        (real_id, id_v, lic_doc, aut_v, mot_v)
+                                        "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo, id_persona) VALUES (%s, %s, %s, %s, %s, %s)",
+                                        (real_id, id_v, lic_doc, aut_v, mot_v, id_persona_conductor)
                                     )
 
                         if resolved_vids:
@@ -1845,6 +2110,7 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                         campos["empresa_contratista"] = int(raw_ec)
                     elif raw_ec:
                         cursor.execute("SELECT id FROM emp_contratista WHERE nombre = %s LIMIT 1", (str(raw_ec),))
+                        row_c = cursor.fetchone()
                         if row_c:
                             campos["empresa_contratista"] = int(row_c["id"])
 

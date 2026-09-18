@@ -1,0 +1,169 @@
+    <!-- ============================================================
+       MODAL: DISPOSITIVOS Y EQUIPOS DE CÓMPUTO INGRESADOS (SOLO LECTURA)
+    ============================================================= -->
+    <div x-show="showModalDispositivos" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      @keydown.escape.window="cerrarModalDispositivos()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="showModalDispositivos"
+        @click.outside="cerrarModalDispositivos()"
+        x-transition:enter="transition ease-out duration-300 transform"
+        x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+        x-transition:leave="transition ease-in duration-200 transform"
+        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+        class="modal-panel modal-ticket w-full max-w-3xl pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+        <!-- Botón de Cerrar (X) -->
+        <button type="button" @click="cerrarModalDispositivos()"
+          class="modal-ticket-close"
+          title="Cerrar modal">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+
+        <!-- Encabezado del Ticket -->
+        <div class="modal-ticket-header flex flex-col items-center justify-center text-center pb-5 border-b border-dashed border-[var(--paper-shadow)] relative">
+          <div class="w-13 h-13 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center text-2xl font-bold border border-purple-500/30 shadow-md shadow-purple-500/10 mb-2.5">
+            <i class="fa-solid fa-laptop-code"></i>
+          </div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-display font-black text-lg sm:text-xl text-[var(--paper-ink)] dark:text-white tracking-tight">
+              Dispositivos y Equipos Ingresados
+            </h3>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+              <i class="fa-solid fa-eye text-[9px]"></i> Solo Lectura
+            </span>
+          </div>
+          <p class="text-xs text-[var(--paper-muted)] dark:text-slate-400 mt-1">
+            Declaración de equipos para la Solicitud <strong class="text-[var(--paper-ink)] dark:text-slate-200" x-text="'#' + (solicitud?.codigo_radicado || solicitud?.id)"></strong>
+          </p>
+        </div>
+
+        <!-- Tarjetas Resumen de Estadísticas (Neón) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 my-5">
+          <!-- Total Dispositivos -->
+          <div class="historial-summary-card card-responsable p-3.5 rounded-2xl bg-[#efe9dc]/35 dark:bg-white/[0.025] border border-[var(--paper-shadow)] flex items-center gap-3 transition-all duration-300">
+            <div class="summary-icon-box w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-purple-500/25">
+              <i class="fa-solid fa-laptop"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Total Dispositivos</span>
+              <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white mt-0.5 truncate" x-text="totalDispositivos + (totalDispositivos === 1 ? ' equipo' : ' equipos')"></p>
+            </div>
+          </div>
+
+          <!-- Empresa Solicitante -->
+          <div class="historial-summary-card card-empresa p-3.5 rounded-2xl bg-[#efe9dc]/35 dark:bg-white/[0.025] border border-[var(--paper-shadow)] flex items-center gap-3 transition-all duration-300">
+            <div class="summary-icon-box w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-blue-500/25">
+              <i class="fa-solid fa-building"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Empresa / Contratista</span>
+              <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white mt-0.5 truncate" x-text="solicitud?.nombre_emContratista || solicitud?.contratista || 'Contratista asignado'"></p>
+            </div>
+          </div>
+
+          <!-- Estado Auditoría -->
+          <div class="historial-summary-card card-vigencia p-3.5 rounded-2xl bg-[#efe9dc]/35 dark:bg-white/[0.025] border border-[var(--paper-shadow)] flex items-center gap-3 transition-all duration-300">
+            <div class="summary-icon-box w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-emerald-500/25">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Estado de Registro</span>
+              <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">Registrado en Radicación</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtro (si hay dispositivos) -->
+        <div class="mb-4" x-show="totalDispositivos > 0">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+            <input type="text" x-model="filtroDispositivos"
+              placeholder="Buscar por marca, modelo o serie de equipo..."
+              class="w-full pl-9 pr-24 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-600 dark:text-slate-400"
+              x-text="dispositivosFiltrados.length + ' de ' + totalDispositivos"></span>
+          </div>
+        </div>
+
+        <!-- Listado de Dispositivos (Solo Lectura) -->
+        <div class="max-h-[50vh] overflow-y-auto pr-1 space-y-3">
+          <!-- Cuadrícula de tarjetas -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" x-show="dispositivosFiltrados.length > 0">
+            <template x-for="(eq, idx) in dispositivosFiltrados" :key="eq.id || idx">
+              <div class="modal-dispositivo-card p-4 rounded-2xl flex items-start gap-3.5">
+                <div class="dispositivo-icon-box w-11 h-11 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-lg border border-purple-500/25">
+                  <i class="fa-solid fa-laptop"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400" x-text="'Item #' + (idx + 1)"></span>
+                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md">
+                      <i class="fa-solid fa-lock text-[8px] opacity-70"></i> Fijo
+                    </span>
+                  </div>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate" x-text="eq.marca || 'Marca no especificada'"></h4>
+                  <p class="text-xs text-slate-600 dark:text-slate-300 truncate mt-0.5 font-medium" x-text="'Modelo: ' + (eq.modelo || '—')"></p>
+                  
+                  <!-- Serie y Copiar -->
+                  <div class="mt-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 min-w-0 font-mono text-xs">
+                      <span class="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400 tracking-wider">S/N:</span>
+                      <span class="font-bold text-slate-800 dark:text-slate-200 truncate select-all" x-text="eq.serie || 'S/N'"></span>
+                    </div>
+                    <button type="button" @click="copiarSerieDispositivo(eq.serie)"
+                      class="px-2 py-1 rounded-lg text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/15 transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer"
+                      title="Copiar serie">
+                      <i class="fa-regular fa-copy text-[10px]"></i>
+                      <span x-text="dispositivoCopiado === eq.serie ? '¡Copiado!' : 'Copiar'"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Empty State si el filtro no tiene resultados -->
+          <div class="text-center py-8 px-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]"
+            x-show="totalDispositivos > 0 && dispositivosFiltrados.length === 0">
+            <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-400 mb-2"></i>
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">No se encontraron dispositivos</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Intenta con otro término de búsqueda (marca, modelo o número de serie).</p>
+          </div>
+
+          <!-- Empty State si no hay ningún dispositivo registrado -->
+          <div class="text-center py-10 px-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]"
+            x-show="totalDispositivos === 0">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl text-slate-400 mx-auto mb-3">
+              <i class="fa-solid fa-laptop-file"></i>
+            </div>
+            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">Sin dispositivos declarados</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
+              No se declararon laptops, computadores ni herramientas electrónicas para esta solicitud de ingreso.
+            </p>
+          </div>
+        </div>
+
+        <!-- Aviso y Pie del Modal -->
+        <div class="mt-6 pt-4 border-t border-dashed border-[var(--paper-shadow)] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <p class="text-[11px] text-[var(--paper-muted)] dark:text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info text-purple-500 text-xs flex-shrink-0"></i>
+            <span>Módulo de solo lectura. No admite edición ni adición posterior a la radicación.</span>
+          </p>
+          <button type="button" @click="cerrarModalDispositivos()"
+            class="modal-btn-cancel px-7 py-2.5 text-xs sm:text-sm font-semibold flex-shrink-0">
+            Cerrar Ventana
+          </button>
+        </div>
+
+        <div class="modal-serrated"></div>
+      </div>
+    </div>

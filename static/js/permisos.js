@@ -108,6 +108,7 @@
       'plantas': ['ADMINISTRADOR', 'SCR'].includes(miRol),
       'contratistas': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'vehiculos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
+      'dispositivos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL', 'SST', 'GESCO'].includes(miRol),
       'personas': true,
       'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),

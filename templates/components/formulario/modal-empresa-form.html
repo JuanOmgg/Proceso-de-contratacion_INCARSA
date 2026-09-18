@@ -1,0 +1,70 @@
+<!-- ===== Modal: Registrar nueva empresa ===== -->
+          <div x-show="showContratistaModal" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @keydown.escape.window="closeContratistaModal()"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div x-show="showContratistaModal"
+              @click.outside="closeContratistaModal()"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+              x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+              class="modal-panel modal-ticket w-full max-w-lg pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+              <!-- Botón cerrar superior derecho -->
+              <button type="button" @click="closeContratistaModal()"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+                title="Cerrar modal">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+
+              <!-- Header estilo Ticket -->
+              <div class="flex items-center gap-3.5 mb-4">
+                <div class="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate">Registrar nueva empresa contratista</h3>
+                  <p class="text-xs text-[var(--paper-muted)] truncate">Ingresa los datos para registrar la empresa contratista</p>
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Nombre de la empresa</label>
+                  <input type="text" x-model="nuevaEmpresa.nombre"
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                    :class="nuevaEmpresaErrors.nombre ? 'has-error' : ''"
+                    placeholder="Ingrese el nombre de la empresa...">
+                  <p class="form-error" x-show="nuevaEmpresaErrors.nombre" x-text="nuevaEmpresaErrors.nombre"></p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Observación (Opcional)</label>
+                  <input type="text" x-model="nuevaEmpresa.observacion" placeholder="Ingrese una observación..."
+                    class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-dashed border-[var(--paper-shadow)]">
+                <button type="button" @click="closeContratistaModal()" :disabled="guardandoEmpresa"
+                  class="modal-btn-cancel px-5 py-2.5 text-sm font-semibold">
+                  Cancelar
+                </button>
+                <button type="button" @click="guardarNuevaEmpresa()" :disabled="guardandoEmpresa"
+                  class="modal-btn-confirm px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
+                  <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardandoEmpresa"></i>
+                  <span x-text="guardandoEmpresa ? 'Guardando...' : 'Guardar empresa'"></span>
+                </button>
+              </div>
+
+              <!-- Borde dentado ticket visible al pie -->
+              <div class="modal-serrated"></div>
+            </div>
+          </div>

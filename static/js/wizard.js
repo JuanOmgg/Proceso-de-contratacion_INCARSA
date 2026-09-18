@@ -1679,6 +1679,31 @@ function solicitudWizard() {
       this.vehiculoSearchQuery = "";
     },
 
+    /**
+     * Vincula reactivamente la persona seleccionada como conductor al vehículo
+     */
+    asignarConductorVehiculo(v) {
+      if (!v) return;
+      if (!v.conductor) {
+        v.id_persona = null;
+        v.conductor_id = null;
+        return;
+      }
+      const cVal = String(v.conductor).trim().toLowerCase();
+      const p = this.personas.find(p => {
+        const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+        const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+        const doc = String(p.numDoc || p.identificacion || '').trim().toLowerCase();
+        const pid = String(p.id || '').trim();
+        return nomComp === cVal || nomSolo === cVal || doc === cVal || pid === cVal;
+      });
+      if (p) {
+        v.id_persona = p.id;
+        v.conductor_id = p.id;
+        v.conductor = p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim();
+      }
+    },
+
     openVehiculoModal() {
       this.isEditingVehiculo = false;
       this.editingVehiculoId = null;
@@ -1871,6 +1896,21 @@ function solicitudWizard() {
 
       this.guardandoVehiculo = true;
 
+      let idPersonaConductor = null;
+      if (this.nuevoVehiculo.id_persona && !isNaN(parseInt(this.nuevoVehiculo.id_persona))) {
+        idPersonaConductor = parseInt(this.nuevoVehiculo.id_persona);
+      } else if (conductor) {
+        const cName = conductor.toLowerCase();
+        const pMatch = this.personas.find(p => {
+          const nomCompleto = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+          const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+          return nomCompleto === cName || nomSolo === cName;
+        });
+        if (pMatch && pMatch.id && !isNaN(parseInt(pMatch.id))) {
+          idPersonaConductor = parseInt(pMatch.id);
+        }
+      }
+
       if (this.isEditingVehiculo) {
         // ==================== MODO EDICIÓN ====================
         const vehiculoActualizado = {
@@ -1878,6 +1918,8 @@ function solicitudWizard() {
           tipo: tipo,
           placa: placa,
           conductor: conductor,
+          id_persona: idPersonaConductor,
+          conductor_id: idPersonaConductor,
           licencia_doc: licencia_doc,
           licencia_url: this.nuevoVehiculo.licencia_url || null,
           documentos: docsValidos
@@ -1942,6 +1984,8 @@ function solicitudWizard() {
         tipo: tipo,
         placa: placa,
         conductor: conductor,
+        id_persona: idPersonaConductor,
+        conductor_id: idPersonaConductor,
         licencia_doc: licencia_doc,
         documentos: docsValidos
       };
@@ -2161,21 +2205,46 @@ function solicitudWizard() {
       const diligenciadorId = (sesion && sesion.id && !isNaN(parseInt(sesion.id))) ? parseInt(sesion.id) : 1;
 
       // Vehículos estructurados con licencia y documentos
-      const vehiculosPayload = this.vehiculos.map(v => ({
-        id: v.id || undefined,
-        tipo: v.tipo || "Camioneta",
-        placa: (v.placa || "").toUpperCase().trim(),
-        conductor: v.conductor || "",
-        licencia_doc: v.licencia_doc || "",
-        documentos: (v.documentos || [])
-          .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-          .map(d => ({
-            id: d.id || undefined,
-            tipo_doc: d.tipo_doc || "soat",
-            nom_documento: d.nombre_archivo.trim(),
-            nombre_archivo: d.nombre_archivo.trim()
-          }))
-      }));
+      const vehiculosPayload = this.vehiculos.map(v => {
+        let conductorId = null;
+        if (v.id_persona && !isNaN(parseInt(v.id_persona))) {
+          conductorId = parseInt(v.id_persona);
+        } else if (v.conductor_id && !isNaN(parseInt(v.conductor_id))) {
+          conductorId = parseInt(v.conductor_id);
+        } else if (v.conductor) {
+          const cName = String(v.conductor).trim().toLowerCase();
+          const pMatch = this.personas.find(p => {
+            const nomCompleto = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+            const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+            const doc = String(p.numDoc || p.identificacion || '').trim().toLowerCase();
+            const pid = String(p.id || '').trim();
+            return nomCompleto === cName || nomSolo === cName || doc === cName || pid === cName;
+          });
+          if (pMatch && pMatch.id && !isNaN(parseInt(pMatch.id))) {
+            conductorId = parseInt(pMatch.id);
+          }
+        }
+
+        const vid = v.id || v.id_vehiculo || undefined;
+        return {
+          id: vid,
+          id_vehiculo: vid,
+          tipo: v.tipo || "Camioneta",
+          placa: (v.placa || "").toUpperCase().trim(),
+          conductor: v.conductor || "",
+          id_persona: conductorId || undefined,
+          conductor_id: conductorId || undefined,
+          licencia_doc: v.licencia_doc || "",
+          documentos: (v.documentos || [])
+            .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
+            .map(d => ({
+              id: d.id || undefined,
+              tipo_doc: d.tipo_doc || "soat",
+              nom_documento: d.nombre_archivo.trim(),
+              nombre_archivo: d.nombre_archivo.trim()
+            }))
+        };
+      });
 
       // Equipos de Cómputo
       const equiposPayload = (this.equipos || [])
