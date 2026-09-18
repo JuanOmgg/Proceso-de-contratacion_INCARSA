@@ -1,6 +1,6 @@
 {% extends 'pages/base.html' %}
 
-{% block title %}Antecedentes · INCARSA{% endblock %}
+{% block title %}Antecedentes · PSI{% endblock %}
 
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/antecedentes.js') }}?v=3.5"></script>
@@ -342,8 +342,8 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Responsable de Solicitud</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] truncate mt-0.5" x-text="detalleHistorial.responsable || 'Sin responsable asignado'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Registrado en sistema</span>
+                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultimo_usuario_solicitud || detalleHistorial.responsable || 'Sin responsable asignado'"></p>
+                  <span class="text-[11px] text-[var(--paper-muted)]">Usuario que registró solicitud</span>
                 </div>
               </div>
 

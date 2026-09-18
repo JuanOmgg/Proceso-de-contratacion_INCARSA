@@ -33,7 +33,7 @@ def upgrade() -> None:
         ('ADMINISTRADOR', ''),
         ('SUPERADMIN', ''),
         ('VIGILANTE', ''),
-        ('CONTRATISTA', ''),
+        ('EQUIPO SCR', ''),
         ('GESTION DOCUMENTAL', ''),
         ('SST', 'Seguridad y Salud en el Trabajo'),
         ('GESCO', 'Gestión del conocimiento'),
@@ -52,7 +52,7 @@ def upgrade() -> None:
     op.execute("""
         INSERT INTO empresa (nombre_empresa) VALUES
         ('INCARSA S.A.S.'),
-        ('MILPA S.A.S.'),
+        ('MILPA S.A.'),
         ('CARBOINSA S.A.S.'),
         ('UNIMINAS S.A.S.')
         ON DUPLICATE KEY UPDATE nombre_empresa = VALUES(nombre_empresa);

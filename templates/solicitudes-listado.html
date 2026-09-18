@@ -1,6 +1,6 @@
 {% extends 'pages/base.html' %}
 
-{% block title %}Solicitudes · INCARSA {% endblock %}
+{% block title %}Solicitudes · PSI {% endblock %}
 
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/solicitudes-listados.js') }}?v=3.5"></script>
@@ -632,7 +632,7 @@
                     </button>
                     <a :href="'/solicitudes/editar/' + (selected.codigo || selected.id)"
                       x-show="puedeEditarSolicitud(selected)"
-                      class="modal-btn-confirm px-6 py-2.5 flex items-center gap-2">
+                      class="px-6 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-900/30 transition-all cursor-pointer">
                       <i class="fa-solid fa-pen-to-square text-xs"></i>
                       <span>Editar solicitud</span>
                     </a>

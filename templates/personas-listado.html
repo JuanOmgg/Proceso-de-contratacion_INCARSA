@@ -1,6 +1,6 @@
 {% extends 'pages/base.html' %}
 
-{% block title %}Personas · INCARSA{% endblock %}
+{% block title %}Personas · PSI{% endblock %}
 
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/personas-listado.js') }}?v=3.5"></script>
@@ -538,7 +538,7 @@
                       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                       x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
                       class="absolute z-50 mt-1 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--paper-shadow)] dark:border-white/15 py-1 overflow-hidden max-h-52 overflow-y-auto">
-                      <template x-for="t in [{id:'CC',label:'CC (Cédula)'},{id:'CE',label:'CE (Extranjería)'},{id:'PAS',label:'Pasaporte'},{id:'PEP',label:'PEP'}]" :key="t.id">
+                      <template x-for="t in [{id:'CC',label:'CC (Cédula)'},{id:'CE',label:'CE (Extranjería)'},{id:'PAS',label:'PAS (Pasaporte)'},{id:'PPT', label:'PPT (Permiso por protección temporal)'}]" :key="t.id">
                         <div @click="form.tipo_doc = t.id; openTipoDocP = false"
                           class="mx-1 px-2.5 py-1.5 text-xs rounded-lg font-medium cursor-pointer transition-all flex items-center justify-between"
                           :class="form.tipo_doc === t.id ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--paper-ink)] dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5'">

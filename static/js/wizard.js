@@ -64,14 +64,16 @@ function solicitudWizard() {
 
     // Opciones para selectores y chips
     nivelesRiesgo: ["Bajo", "Medio", "Alto"],
-    tiposDocPersona: ["CC", "CE", "PA"],
+    tiposDocPersona: ["CC", "CE", "PAS", "PPT"],
     tiposDocAdjuntoPersona: [
-      "Cédula de ciudadanía",
-      "Seguridad Social / ARL",
+      "ARL",
+      "Cédula de Ciudadanía",
       "Certificado de Alturas",
       "Examen Médico Ocupacional",
-      "Certificado de Inducción",
-      "Licencia SST",
+      "Certificado de Espacios Confinados",
+      "EPS / Seguridad Social",
+      "Hoja de Vida / Certificación",
+      "Soporte de GESCO",
       "Otro documento"
     ],
     tiposVehiculo: ["Camioneta", "Camión", "Automóvil", "Motocicleta", "Volqueta", "Maquinaria", "Otro"],
@@ -193,8 +195,12 @@ function solicitudWizard() {
 
     // Modal / Búsqueda de Personas
     personaSearchQuery: "", // Texto escrito en el buscador de personas
-    showPersonaModal: false, // Visibilidad del modal para crear nueva persona
-    guardandoPersona: false, // Spinner durante la llamada POST al backend
+    showPersonaModal: false, // Visibilidad del modal para crear/editar persona
+    guardandoPersona: false, // Spinner durante la llamada POST/PUT al backend
+    isEditingPersona: false, // Indica si el modal está en modo edición
+    editingPersonaId: null, // ID de la persona que se está editando en la BD
+    editingPersonaOldDoc: "", // Documento previo de la persona en edición
+    editingPersonaIndex: -1, // Índice en this.personas si ya está en la solicitud
     nuevaPersona: {
       nombres: "",
       apellidos: "",
@@ -203,7 +209,7 @@ function solicitudWizard() {
       cargo: "",
       observacion: "",
       documentos: [
-        { tipo_doc: "", nombre_archivo: "" }
+        { tipo_doc: "ARL", nombre_archivo: "" }
       ]
     },
     personaModalErrors: {}, // Errores de validación dentro del modal de personas
@@ -219,6 +225,10 @@ function solicitudWizard() {
     vehiculoSearchQuery: "", // Texto escrito en el buscador de vehículos
     showVehiculoModal: false, // Visibilidad del modal para registrar nuevo vehículo
     guardandoVehiculo: false, // Spinner durante la llamada POST al backend
+    isEditingVehiculo: false, // Indica si el modal de vehículos está en modo edición
+    editingVehiculoId: null, // ID del vehículo en la BD si existe
+    editingVehiculoOldPlaca: "", // Placa previa del vehículo en edición
+    editingVehiculoIndex: -1, // Índice en this.vehiculos si ya está en la solicitud
     nuevoVehiculo: {
       tipo: "Camioneta",
       placa: "",
@@ -559,7 +569,7 @@ function solicitudWizard() {
       this.form.fechaSalida = found.fecha_salida || found.fecha_fin || found.fechaSalida || "";
       this.form.nivelRiesgo = found.nivel_de_riesgo || found.nivelRiesgo || found.riesgo || "Bajo";
       this.form.actividad = found.actividad || "";
-      this.form.diligenciadoPor = found.diligenciador || found.diligenciado_por || found.diligenciadoPor || "Juan Prieto";
+      this.form.diligenciadoPor = found.diligenciador || (found.diligenciado_por ? `Usuario #${found.diligenciado_por}` : "") || found.diligenciadoPor || "—";
       this.form.estado = (found.estado || "ENVIADO").toUpperCase();
       this.form.codigo = found.codigo || found.codigo_radicado || "";
 
@@ -1104,6 +1114,10 @@ function solicitudWizard() {
     },
 
     openPersonaModal() {
+      this.isEditingPersona = false;
+      this.editingPersonaId = null;
+      this.editingPersonaOldDoc = "";
+      this.editingPersonaIndex = -1;
       this.nuevaPersona = {
         nombres: "",
         apellidos: "",
@@ -1112,15 +1126,103 @@ function solicitudWizard() {
         cargo: "",
         observacion: "",
         documentos: [
-          { tipo_doc: "Cédula de ciudadanía", nombre_archivo: "" }
+          { tipo_doc: "ARL", nombre_archivo: "" }
         ]
       };
       this.personaModalErrors = {};
       this.showPersonaModal = true;
     },
 
+    /**
+     * Abre el modal de persona pre-llenando sus datos para edición
+     */
+    async openEditPersonaModal(persona, idx = -1) {
+      this.isEditingPersona = true;
+      this.editingPersonaId = persona.id || null;
+      this.editingPersonaOldDoc = String(persona.numDoc || persona.identificacion || "").trim();
+      this.editingPersonaIndex = idx !== -1 ? idx : this.personas.findIndex(p => String(p.numDoc || p.identificacion || "").trim() === this.editingPersonaOldDoc);
+
+      let nombres = (persona.nombre || "").trim();
+      let apellidos = (persona.apellido || "").trim();
+      if (!nombres && !apellidos && persona.nombres) {
+        const parts = persona.nombres.trim().split(" ");
+        if (parts.length > 2) {
+          nombres = parts.slice(0, 2).join(" ");
+          apellidos = parts.slice(2).join(" ");
+        } else if (parts.length === 2) {
+          nombres = parts[0];
+          apellidos = parts[1];
+        } else {
+          nombres = parts[0];
+          apellidos = "";
+        }
+      }
+
+      let docs = [];
+      if (Array.isArray(persona.documentos) && persona.documentos.length > 0) {
+        docs = persona.documentos.map(d => ({
+          id: d.id || null,
+          tipo_doc: d.tipo_doc || d.tipo || "ARL",
+          nombre_archivo: d.nombre_archivo || d.nom_documento || d.nombre || "",
+          url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
+          nombre_original: d.nombre_original || d.nombre_archivo || ""
+        }));
+      } else if (persona.documento) {
+        docs.push({
+          tipo_doc: "Cédula de Ciudadanía",
+          nombre_archivo: persona.documento,
+          url_documento: `/uploads/documentos/${persona.documento}`,
+          nombre_original: persona.documento
+        });
+      }
+
+      if (docs.length === 0) {
+        docs = [{ tipo_doc: "ARL", nombre_archivo: "" }];
+      }
+
+      this.nuevaPersona = {
+        nombres: nombres,
+        apellidos: apellidos,
+        tipoDoc: persona.tipoDoc || persona.tipo_doc || "CC",
+        numDoc: String(persona.numDoc || persona.identificacion || ""),
+        cargo: persona.cargo || "",
+        observacion: persona.observacion || "",
+        documentos: docs
+      };
+      this.personaModalErrors = {};
+      this.showPersonaModal = true;
+
+      // Si la persona tiene ID numérico en la BD, consultar para tener la versión fresca de documentos
+      if (persona.id && !isNaN(parseInt(persona.id))) {
+        try {
+          const res = await fetch(`${API.personas}/${persona.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            const pDb = data.persona || data.datos || data;
+            if (pDb && Array.isArray(pDb.documentos) && pDb.documentos.length > 0) {
+              this.nuevaPersona.documentos = pDb.documentos.map(d => ({
+                id: d.id || null,
+                tipo_doc: d.tipo_doc || "ARL",
+                nombre_archivo: d.nombre_archivo || "",
+                url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
+                nombre_original: d.nombre_archivo || ""
+              }));
+              if (pDb.nombre && !this.nuevaPersona.nombres) this.nuevaPersona.nombres = pDb.nombre;
+              if (pDb.apellido && !this.nuevaPersona.apellidos) this.nuevaPersona.apellidos = pDb.apellido;
+            }
+          }
+        } catch (e) {
+          console.warn("No se pudo obtener el detalle fresco de la persona:", e.message);
+        }
+      }
+    },
+
     closePersonaModal() {
       this.showPersonaModal = false;
+      this.isEditingPersona = false;
+      this.editingPersonaId = null;
+      this.editingPersonaOldDoc = "";
+      this.editingPersonaIndex = -1;
       this.nuevaPersona = {
         nombres: "",
         apellidos: "",
@@ -1129,7 +1231,7 @@ function solicitudWizard() {
         cargo: "",
         observacion: "",
         documentos: [
-          { tipo_doc: "Cédula de ciudadanía", nombre_archivo: "" }
+          { tipo_doc: "ARL", nombre_archivo: "" }
         ]
       };
       this.personaModalErrors = {};
@@ -1304,7 +1406,7 @@ function solicitudWizard() {
     },
 
     /**
-     * Valida los campos obligatorios del modal de creación de persona
+     * Valida los campos obligatorios del modal de persona
      */
     validateNuevaPersona() {
       this.personaModalErrors = {};
@@ -1317,14 +1419,28 @@ function solicitudWizard() {
       if (!nombres) this.personaModalErrors.nombres = "Ingresa los nombres.";
       if (!numDoc) this.personaModalErrors.numDoc = "Ingresa el número de documento.";
       if (!cargo) this.personaModalErrors.cargo = "Ingresa el cargo.";
-      if (numDoc && this.personas.some(p => String(p.numDoc || p.identificacion) === numDoc)) {
-        this.personaModalErrors.numDoc = "Ya existe una persona registrada con ese número de documento.";
+
+      // Al editar, ignorar el chequeo de duplicados contra sí mismo
+      const esDuplicado = this.personas.some((p, idx) => {
+        const docP = String(p.numDoc || p.identificacion || "").trim();
+        if (docP !== numDoc) return false;
+        if (this.isEditingPersona) {
+          if (this.editingPersonaIndex !== -1 && idx === this.editingPersonaIndex) return false;
+          if (this.editingPersonaId && p.id && String(p.id) === String(this.editingPersonaId)) return false;
+          if (this.editingPersonaOldDoc && docP === this.editingPersonaOldDoc) return false;
+        }
+        return true;
+      });
+
+      if (numDoc && esDuplicado) {
+        this.personaModalErrors.numDoc = "Ya existe una persona registrada en la solicitud con ese número de documento.";
       }
       return Object.keys(this.personaModalErrors).length === 0;
     },
 
     /**
-     * Guarda la persona en el backend (POST /personas/create), la agrega al catálogo y a la solicitud
+     * Guarda la persona en el backend (POST /personas/create o PUT /personas/{id}),
+     * la sincroniza con el catálogo y la actualiza en la solicitud activa
      */
     async guardarNuevaPersona() {
       if (!this.validateNuevaPersona()) return;
@@ -1341,78 +1457,185 @@ function solicitudWizard() {
       const docsValidos = (this.nuevaPersona.documentos || [])
         .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
         .map(d => ({
+          id: d.id || null,
           tipo_doc: d.tipo_doc,
-          nombre_archivo: d.nombre_archivo.trim()
+          nombre_archivo: d.nombre_archivo.trim(),
+          url_acceso: d.url_documento || `/uploads/documentos/${d.nombre_archivo.trim()}`
         }));
 
       this.guardandoPersona = true;
 
-      const personaNueva = {
-        item: this.personas.length + 1,
-        nombres: nombreCompleto,
-        nombre: nombres,
-        apellido: apellidos,
-        tipoDoc: tipoDoc,
-        numDoc: numDoc,
-        cargo: cargo,
-        observacion: observacion,
-        documentos: docsValidos
-      };
+      if (this.isEditingPersona) {
+        // ==================== MODO EDICIÓN ====================
+        const personaActualizada = {
+          id: this.editingPersonaId,
+          nombres: nombreCompleto,
+          nombre: nombres,
+          apellido: apellidos,
+          tipoDoc: tipoDoc,
+          numDoc: numDoc,
+          identificacion: numDoc,
+          cargo: cargo,
+          observacion: observacion,
+          documentos: docsValidos
+        };
 
-      try {
-        const response = await fetch(`${API.personas}/create`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nombre: nombres,
-            apellido: apellidos,
-            tipo_doc: tipoDoc,
-            identificacion: numDoc,
-            cargo: cargo,
-            observacion: observacion,
-            documentos_ids: docsValidos
-          })
-        });
+        try {
+          if (this.editingPersonaId && !isNaN(parseInt(this.editingPersonaId))) {
+            const response = await fetch(`${API.personas}/${this.editingPersonaId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                nombre: nombres,
+                apellido: apellidos,
+                tipo_doc: tipoDoc,
+                identificacion: numDoc,
+                cargo: cargo,
+                observacion: observacion,
+                documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo }))
+              })
+            });
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+            if (!response.ok) {
+              const errData = await response.json().catch(() => ({}));
+              throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+            }
+            console.log("✅ Persona actualizada exitosamente en BD");
+          }
+        } catch (error) {
+          console.warn("⚠️ No se pudo actualizar en backend, aplicando cambios localmente:", error.message);
+        } finally {
+          // 1. Actualizar en el catálogo de personas registradas
+          const idxCat = this.personasRegistradas.findIndex(p =>
+            (this.editingPersonaId && p.id && String(p.id) === String(this.editingPersonaId)) ||
+            String(p.numDoc || p.identificacion || "").trim() === this.editingPersonaOldDoc
+          );
+          if (idxCat !== -1) {
+            this.personasRegistradas[idxCat] = {
+              ...this.personasRegistradas[idxCat],
+              id: this.editingPersonaId || this.personasRegistradas[idxCat].id,
+              nombres: nombreCompleto,
+              nombre: nombres,
+              apellido: apellidos,
+              tipoDoc: tipoDoc,
+              numDoc: numDoc,
+              identificacion: numDoc,
+              cargo: cargo,
+              observacion: observacion,
+              documentos: docsValidos
+            };
+          }
+
+          // 2. Actualizar en la lista activa de la solicitud (this.personas)
+          let idxSol = this.editingPersonaIndex;
+          if (idxSol === -1 || idxSol >= this.personas.length) {
+            idxSol = this.personas.findIndex(p =>
+              (this.editingPersonaId && p.id && String(p.id) === String(this.editingPersonaId)) ||
+              String(p.numDoc || p.identificacion || "").trim() === this.editingPersonaOldDoc
+            );
+          }
+          if (idxSol !== -1) {
+            personaActualizada.item = this.personas[idxSol].item || (idxSol + 1);
+            this.personas[idxSol] = { ...this.personas[idxSol], ...personaActualizada };
+          } else {
+            personaActualizada.item = this.personas.length + 1;
+            this.personas.push(personaActualizada);
+          }
+
+          // 3. Sincronizar conductor de vehículos si estaba asignada
+          if (this.editingPersonaOldDoc) {
+            this.vehiculos.forEach(v => {
+              if (v.conductor && (v.conductor === this.editingPersonaOldDoc || v.conductor.includes(this.editingPersonaOldDoc))) {
+                v.conductor = `${nombreCompleto} (${numDoc})`;
+              }
+            });
+          }
+
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Persona actualizada correctamente',
+              showConfirmButton: false,
+              timer: 2500,
+              timerProgressBar: true
+            });
+          }
+
+          if (this.errors.personas) delete this.errors.personas;
+          this.guardandoPersona = false;
+          this.closePersonaModal();
         }
+      } else {
+        // ==================== MODO CREACIÓN ====================
+        const personaNueva = {
+          item: this.personas.length + 1,
+          nombres: nombreCompleto,
+          nombre: nombres,
+          apellido: apellidos,
+          tipoDoc: tipoDoc,
+          numDoc: numDoc,
+          cargo: cargo,
+          observacion: observacion,
+          documentos: docsValidos
+        };
 
-        const data = await response.json();
-        console.log("✅ Persona guardada exitosamente en BD:", data);
-        const nuevoId = data.persona || data.id || data.person_id || (data.datos && data.datos.id);
-        if (nuevoId && !isNaN(parseInt(nuevoId))) {
-          personaNueva.id = parseInt(nuevoId);
-        }
-      } catch (error) {
-        console.warn("⚠️ No se pudo guardar en backend, guardando localmente:", error.message);
-        personaNueva.id = `per-${Date.now()}`;
-      } finally {
-        // 1. Agregar al catálogo de búsqueda
-        if (!this.personasRegistradas.some(p => String(p.numDoc || p.identificacion) === numDoc)) {
-          this.personasRegistradas.unshift({
-            id: personaNueva.id,
-            nombres: nombreCompleto,
-            nombre: nombres,
-            apellido: apellidos,
-            tipoDoc: tipoDoc,
-            numDoc: numDoc,
-            cargo: cargo,
-            observacion: observacion,
-            documentos: docsValidos
+        try {
+          const response = await fetch(`${API.personas}/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nombre: nombres,
+              apellido: apellidos,
+              tipo_doc: tipoDoc,
+              identificacion: numDoc,
+              cargo: cargo,
+              observacion: observacion,
+              documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo }))
+            })
           });
-        }
 
-        // 2. Agregar directamente a la lista activa de la solicitud
-        if (!this.personaYaAgregada(numDoc)) {
-          this.personas.push(personaNueva);
-        }
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+          }
 
-        if (this.errors.personas) delete this.errors.personas;
-        this.personaSearchQuery = "";
-        this.guardandoPersona = false;
-        this.closePersonaModal();
+          const data = await response.json();
+          console.log("✅ Persona guardada exitosamente en BD:", data);
+          const nuevoId = data.persona || data.id || data.person_id || (data.datos && data.datos.id);
+          if (nuevoId && !isNaN(parseInt(nuevoId))) {
+            personaNueva.id = parseInt(nuevoId);
+          }
+        } catch (error) {
+          console.warn("⚠️ No se pudo guardar en backend, guardando localmente:", error.message);
+          personaNueva.id = `per-${Date.now()}`;
+        } finally {
+          // 1. Agregar al catálogo de búsqueda
+          if (!this.personasRegistradas.some(p => String(p.numDoc || p.identificacion) === numDoc)) {
+            this.personasRegistradas.unshift({
+              id: personaNueva.id,
+              nombres: nombreCompleto,
+              nombre: nombres,
+              apellido: apellidos,
+              tipoDoc: tipoDoc,
+              numDoc: numDoc,
+              cargo: cargo,
+              observacion: observacion,
+              documentos: docsValidos
+            });
+          }
+
+          // 2. Agregar directamente a la lista activa de la solicitud
+          if (!this.personaYaAgregada(numDoc)) {
+            this.personas.push(personaNueva);
+          }
+
+          if (this.errors.personas) delete this.errors.personas;
+          this.personaSearchQuery = "";
+          this.guardandoPersona = false;
+          this.closePersonaModal();
+        }
       }
     },
 
@@ -1456,7 +1679,36 @@ function solicitudWizard() {
       this.vehiculoSearchQuery = "";
     },
 
+    /**
+     * Vincula reactivamente la persona seleccionada como conductor al vehículo
+     */
+    asignarConductorVehiculo(v) {
+      if (!v) return;
+      if (!v.conductor) {
+        v.id_persona = null;
+        v.conductor_id = null;
+        return;
+      }
+      const cVal = String(v.conductor).trim().toLowerCase();
+      const p = this.personas.find(p => {
+        const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+        const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+        const doc = String(p.numDoc || p.identificacion || '').trim().toLowerCase();
+        const pid = String(p.id || '').trim();
+        return nomComp === cVal || nomSolo === cVal || doc === cVal || pid === cVal;
+      });
+      if (p) {
+        v.id_persona = p.id;
+        v.conductor_id = p.id;
+        v.conductor = p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim();
+      }
+    },
+
     openVehiculoModal() {
+      this.isEditingVehiculo = false;
+      this.editingVehiculoId = null;
+      this.editingVehiculoOldPlaca = "";
+      this.editingVehiculoIndex = -1;
       this.nuevoVehiculo = {
         tipo: "Camioneta",
         placa: "",
@@ -1471,8 +1723,45 @@ function solicitudWizard() {
       this.showVehiculoModal = true;
     },
 
+    /**
+     * Abre el modal de vehículo pre-llenando sus datos para edición
+     */
+    openEditVehiculoModal(vehiculo, idx = -1) {
+      this.isEditingVehiculo = true;
+      this.editingVehiculoId = vehiculo.id || null;
+      this.editingVehiculoOldPlaca = String(vehiculo.placa || "").toUpperCase().trim();
+      this.editingVehiculoIndex = idx !== -1 ? idx : this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca);
+
+      let docs = [];
+      if (Array.isArray(vehiculo.documentos) && vehiculo.documentos.length > 0) {
+        docs = vehiculo.documentos.map(d => ({
+          id: d.id || null,
+          tipo_doc: d.tipo_doc || d.tipo || "SOAT",
+          nombre_archivo: d.nombre_archivo || d.nom_documento || "",
+          url_documento: d.url_documento || d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null)
+        }));
+      } else {
+        docs = [{ tipo_doc: "SOAT", nombre_archivo: "" }];
+      }
+
+      this.nuevoVehiculo = {
+        tipo: vehiculo.tipo || "Camioneta",
+        placa: String(vehiculo.placa || "").toUpperCase().trim(),
+        conductor: vehiculo.conductor || "",
+        licencia_doc: vehiculo.licencia_doc || vehiculo.licencia || "",
+        licencia_url: vehiculo.licencia_url || null,
+        documentos: docs
+      };
+      this.vehiculoModalErrors = {};
+      this.showVehiculoModal = true;
+    },
+
     closeVehiculoModal() {
       this.showVehiculoModal = false;
+      this.isEditingVehiculo = false;
+      this.editingVehiculoId = null;
+      this.editingVehiculoOldPlaca = "";
+      this.editingVehiculoIndex = -1;
       this.nuevoVehiculo = {
         tipo: "Camioneta",
         placa: "",
@@ -1571,7 +1860,19 @@ function solicitudWizard() {
       if (!tipo) {
         this.vehiculoModalErrors.tipo = "Selecciona el tipo de vehículo.";
       }
-      if (placa && this.vehiculoYaAgregado(placa)) {
+
+      const esDuplicado = this.vehiculos.some((v, idx) => {
+        const pPlaca = String(v.placa || "").toUpperCase().trim();
+        if (pPlaca !== placa) return false;
+        if (this.isEditingVehiculo) {
+          if (this.editingVehiculoIndex !== -1 && idx === this.editingVehiculoIndex) return false;
+          if (this.editingVehiculoId && v.id && String(v.id) === String(this.editingVehiculoId)) return false;
+          if (this.editingVehiculoOldPlaca && pPlaca === this.editingVehiculoOldPlaca) return false;
+        }
+        return true;
+      });
+
+      if (placa && esDuplicado) {
         this.vehiculoModalErrors.placa = "Ya agregaste un vehículo con esta placa a la solicitud.";
       }
       return Object.keys(this.vehiculoModalErrors).length === 0;
@@ -1595,10 +1896,96 @@ function solicitudWizard() {
 
       this.guardandoVehiculo = true;
 
+      let idPersonaConductor = null;
+      if (this.nuevoVehiculo.id_persona && !isNaN(parseInt(this.nuevoVehiculo.id_persona))) {
+        idPersonaConductor = parseInt(this.nuevoVehiculo.id_persona);
+      } else if (conductor) {
+        const cName = conductor.toLowerCase();
+        const pMatch = this.personas.find(p => {
+          const nomCompleto = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+          const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+          return nomCompleto === cName || nomSolo === cName;
+        });
+        if (pMatch && pMatch.id && !isNaN(parseInt(pMatch.id))) {
+          idPersonaConductor = parseInt(pMatch.id);
+        }
+      }
+
+      if (this.isEditingVehiculo) {
+        // ==================== MODO EDICIÓN ====================
+        const vehiculoActualizado = {
+          id: this.editingVehiculoId,
+          tipo: tipo,
+          placa: placa,
+          conductor: conductor,
+          id_persona: idPersonaConductor,
+          conductor_id: idPersonaConductor,
+          licencia_doc: licencia_doc,
+          licencia_url: this.nuevoVehiculo.licencia_url || null,
+          documentos: docsValidos
+        };
+
+        try {
+          if (this.editingVehiculoId && !isNaN(parseInt(this.editingVehiculoId))) {
+            const response = await fetch(`${API.vehiculos}/${this.editingVehiculoId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tipo: tipo,
+                placa: placa,
+                conductor: conductor,
+                licencia_doc: licencia_doc,
+                licencia_url: this.nuevoVehiculo.licencia_url || null,
+                documentos: docsValidos
+              })
+            });
+
+            if (!response.ok) {
+              const errData = await response.json().catch(() => ({}));
+              throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+            }
+            console.log("✅ Vehículo actualizado exitosamente en BD");
+          }
+        } catch (error) {
+          console.warn("⚠️ No se pudo actualizar vehículo en el backend:", error.message);
+        }
+
+        // 1. Actualizar en this.vehiculos (lista de la solicitud activa)
+        if (this.editingVehiculoIndex !== -1 && this.vehiculos[this.editingVehiculoIndex]) {
+          this.vehiculos[this.editingVehiculoIndex] = {
+            ...this.vehiculos[this.editingVehiculoIndex],
+            ...vehiculoActualizado
+          };
+        } else {
+          const idxEncontrado = this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+          if (idxEncontrado !== -1) {
+            this.vehiculos[idxEncontrado] = {
+              ...this.vehiculos[idxEncontrado],
+              ...vehiculoActualizado
+            };
+          }
+        }
+
+        // 2. Actualizar en el catálogo de búsqueda
+        const regIdx = this.vehiculosRegistrados.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+        if (regIdx !== -1) {
+          this.vehiculosRegistrados[regIdx] = {
+            ...this.vehiculosRegistrados[regIdx],
+            ...vehiculoActualizado
+          };
+        }
+
+        this.guardandoVehiculo = false;
+        this.closeVehiculoModal();
+        return;
+      }
+
       const vehiculoNuevo = {
         tipo: tipo,
         placa: placa,
         conductor: conductor,
+        id_persona: idPersonaConductor,
+        conductor_id: idPersonaConductor,
         licencia_doc: licencia_doc,
         documentos: docsValidos
       };
@@ -1813,23 +2200,51 @@ function solicitudWizard() {
         motivo: null
       }));
 
-      // Usuario autenticado (Diligenciador)
+      // Usuario autenticado (Diligenciador únicamente para nueva solicitud)
       const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || "null");
       const diligenciadorId = (sesion && sesion.id && !isNaN(parseInt(sesion.id))) ? parseInt(sesion.id) : 1;
 
       // Vehículos estructurados con licencia y documentos
-      const vehiculosPayload = this.vehiculos.map(v => ({
-        tipo: v.tipo || "Camioneta",
-        placa: (v.placa || "").toUpperCase().trim(),
-        licencia_doc: v.licencia_doc || "",
-        documentos: (v.documentos || [])
-          .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-          .map(d => ({
-            tipo_doc: d.tipo_doc || "soat",
-            nom_documento: d.nombre_archivo.trim(),
-            nombre_archivo: d.nombre_archivo.trim()
-          }))
-      }));
+      const vehiculosPayload = this.vehiculos.map(v => {
+        let conductorId = null;
+        if (v.id_persona && !isNaN(parseInt(v.id_persona))) {
+          conductorId = parseInt(v.id_persona);
+        } else if (v.conductor_id && !isNaN(parseInt(v.conductor_id))) {
+          conductorId = parseInt(v.conductor_id);
+        } else if (v.conductor) {
+          const cName = String(v.conductor).trim().toLowerCase();
+          const pMatch = this.personas.find(p => {
+            const nomCompleto = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+            const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+            const doc = String(p.numDoc || p.identificacion || '').trim().toLowerCase();
+            const pid = String(p.id || '').trim();
+            return nomCompleto === cName || nomSolo === cName || doc === cName || pid === cName;
+          });
+          if (pMatch && pMatch.id && !isNaN(parseInt(pMatch.id))) {
+            conductorId = parseInt(pMatch.id);
+          }
+        }
+
+        const vid = v.id || v.id_vehiculo || undefined;
+        return {
+          id: vid,
+          id_vehiculo: vid,
+          tipo: v.tipo || "Camioneta",
+          placa: (v.placa || "").toUpperCase().trim(),
+          conductor: v.conductor || "",
+          id_persona: conductorId || undefined,
+          conductor_id: conductorId || undefined,
+          licencia_doc: v.licencia_doc || "",
+          documentos: (v.documentos || [])
+            .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
+            .map(d => ({
+              id: d.id || undefined,
+              tipo_doc: d.tipo_doc || "soat",
+              nom_documento: d.nombre_archivo.trim(),
+              nombre_archivo: d.nombre_archivo.trim()
+            }))
+        };
+      });
 
       // Equipos de Cómputo
       const equiposPayload = (this.equipos || [])
@@ -1846,7 +2261,7 @@ function solicitudWizard() {
         observaciones: this.form.observaciones || undefined,
         estado: (this.isEdit && this.esSuperAdmin) ? (this.form.estado || this.solicitudOriginal?.estado || "ENVIADO") : undefined,
         empresa_origen: empresaOrigenId,
-        diligenciado_por: diligenciadorId,
+        diligenciado_por: this.isEdit ? undefined : diligenciadorId,
         nivel_de_riesgo: this.form.nivelRiesgo || "Bajo",
         tipo_personal: "Contratista",
         empresa_contratista: contratistaId,
@@ -1897,6 +2312,7 @@ function solicitudWizard() {
               nivelRiesgo: this.form.nivelRiesgo,
               actividad: this.form.actividad,
               diligenciadoPor: this.form.diligenciadoPor,
+              diligenciado_por: this.solicitudOriginal?.diligenciado_por || this.solicitudOriginal?.id_diligenciador,
               personas: this.personas,
               vehiculos: this.vehiculos,
               equipos: this.equipos

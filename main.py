@@ -1,4 +1,3 @@
-
 from fastapi import Response
 from typing import Optional
 import sys
@@ -29,9 +28,12 @@ from src.routes.personas_route import router as personas_router
 from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
+from src.routes.inducciones_route import router as inducciones_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
 from src.routes.superadmin_router import router as superadmin_router
+from src.routes.correspondencia_route import router as correspondencia_router
+from src.routes.dispositivo_router import router as dispositivo_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.utils.security import decode_access_token
 
@@ -41,12 +43,21 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     import asyncio
     from src.utils.broadcaster import notification_broadcaster
+    from database import verificar_conexion
     try:
         loop = asyncio.get_running_loop()
         notification_broadcaster.set_loop(loop)
         print("🚀 [STARTUP] NotificationBroadcaster conectado al loop asíncrono para SSE en tiempo real.")
     except Exception as e:
         print(f"⚠️ Aviso inicializando loop para notificaciones: {e}")
+
+    try:
+        if verificar_conexion(max_reintentos=2, espera=1.0):
+            print("🚀 [STARTUP] Conexión a la base de datos MySQL verificada y lista.")
+        else:
+            print("⚠️ [STARTUP] La base de datos aún no responde; las peticiones reintentarán la conexión automáticamente.")
+    except Exception as e:
+        print(f"⚠️ [STARTUP] Aviso verificando base de datos: {e}")
     yield
 
 app = FastAPI(
@@ -56,11 +67,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-origins = [
-    "http://127.0.0.1:8000",
-    "http://127.0.0.1:5500",
-]
-
 # Configuración y preparación de carpetas de subida
 BASE_DIR = os.path.dirname(__file__)
 UPLOAD_DIR = os.path.abspath(os.path.join(BASE_DIR, "uploads"))
@@ -69,6 +75,28 @@ DOCUMENTOS_DIR = os.path.join(UPLOAD_DIR, "documentos")
 subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general", "vehiculos", "notificaciones"]
 for sub in subcategorias:
     os.makedirs(os.path.join(DOCUMENTOS_DIR, sub), exist_ok=True)
+
+# Cabeceras estándar de caché y seguridad para archivos adjuntos
+CACHE_HEADERS_UPLOADS = {
+    "Cache-Control": "public, max-age=86400",  # Cache de 24 horas en cliente
+    "X-Content-Type-Options": "nosniff",
+}
+
+# Subcarpetas frecuentes de almacenamiento para búsqueda directa O(1)
+SUBCARPETAS_UPLOADS_DIRECTAS = [
+    DOCUMENTOS_DIR,
+    os.path.join(DOCUMENTOS_DIR, "cedulas"),
+    os.path.join(DOCUMENTOS_DIR, "arl"),
+    os.path.join(DOCUMENTOS_DIR, "eps"),
+    os.path.join(DOCUMENTOS_DIR, "gesco_sst"),
+    os.path.join(DOCUMENTOS_DIR, "examenes_medicos"),
+    os.path.join(DOCUMENTOS_DIR, "vehiculos"),
+    os.path.join(DOCUMENTOS_DIR, "notificaciones"),
+    os.path.join(DOCUMENTOS_DIR, "general"),
+    os.path.join(DOCUMENTOS_DIR, "otros"),
+    os.path.join(UPLOAD_DIR, "vehiculos"),
+    UPLOAD_DIR,
+]
 
 # Servidor inteligente de archivos para /uploads
 # Resuelve tanto rutas directas (/uploads/documentos/general/xxx.jpg)
@@ -82,21 +110,54 @@ async def servir_archivo_upload(archivo_path: str):
 
     # 2. Si la ruta existe de forma exacta
     if os.path.isfile(ruta_candidata):
-        return FileResponse(ruta_candidata)
+        return FileResponse(ruta_candidata, headers=CACHE_HEADERS_UPLOADS)
 
-    # 3. Si solo se envió el nombre del archivo, buscarlo en las subcarpetas
+    # 3. Comprobación directa O(1) en subcarpetas frecuentes antes de fallback
     nombre_archivo = os.path.basename(archivo_path)
+    for carpeta in SUBCARPETAS_UPLOADS_DIRECTAS:
+        candidato = os.path.join(carpeta, nombre_archivo)
+        if os.path.isfile(candidato):
+            return FileResponse(candidato, headers=CACHE_HEADERS_UPLOADS)
+
+    # 4. Fallback secundario de tolerancia a fallos si se encuentra en otra subcarpeta
     for root, _, files in os.walk(UPLOAD_DIR):
         if nombre_archivo in files:
             ruta_encontrada = os.path.join(root, nombre_archivo)
-            return FileResponse(ruta_encontrada)
+            return FileResponse(ruta_encontrada, headers=CACHE_HEADERS_UPLOADS)
 
     raise HTTPException(status_code=404, detail="El documento solicitado no fue encontrado en el servidor.")
 
-# Conectamos los routers
+# ==============================================================================
+# CONFIGURACIÓN SEGURA DE CORS (Restricción de Orígenes y Credenciales)
+# ==============================================================================
+raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins = [orig.strip() for orig in raw_origins.split(",") if orig.strip()]
+
+# Orígenes estándar para entorno local y desarrollo
+default_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+for orig in default_origins:
+    if orig not in allowed_origins:
+        allowed_origins.append(orig)
+
+frontend_url = os.getenv("FRONTEND_URL", "").strip()
+if frontend_url and frontend_url not in allowed_origins:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r".*",
+    allow_origins=allowed_origins,
+    # Permite únicamente localhost, 127.0.0.1 y redes de área local privadas (192.168.x.x, 10.x.x.x)
+    # Bloquea orígenes externos maliciosos o no autorizados con credenciales
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -104,6 +165,16 @@ app.add_middleware(
 
 # Compresión Gzip para transferir CSS, JS, HTML y JSON con hasta un 80% menos de peso
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Cabeceras de Seguridad HTTP Globales (Protección OWASP)
+@app.middleware("http")
+async def agregar_cabeceras_seguridad(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    return response
 
 MODULO_NOMBRES = {
     "dashboard": "Dashboard y Estadísticas",
@@ -117,7 +188,8 @@ MODULO_NOMBRES = {
     "personas": "Directorio de Personas",
     "procesamiento": "Procesamiento de Solicitudes",
     "antecedentes": "Verificación de Antecedentes",
-    "revision_solicitud": "Revisión y Aprobación de Solicitudes"
+    "revision_solicitud": "Revisión y Aprobación de Solicitudes",
+    "dispositivos": "Consulta de Dispositivos"
 }
 
 def obtener_modulo_de_ruta(path: str) -> Optional[str]:
@@ -143,6 +215,8 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "contratistas"
     if p.startswith("/vehiculo") or p.startswith("/api/vehiculos") or p.startswith("/api/v1/vehiculos"):
         return "vehiculos"
+    if p.startswith("/api/v1/dispositivos") or p.startswith("/api/dispositivos") or p == "/dispositivos":
+        return "dispositivos"
     if p.startswith("/personas") or p.startswith("/api/v1/personas"):
         return "personas"
     if p.startswith("/procesamiento") or p.startswith("/api/v1/procesamiento"):
@@ -336,10 +410,15 @@ app.include_router(personas_router, prefix="/api/v1")
 app.include_router(vehiculo_router)
 app.include_router(empresa_router)
 app.include_router(antecedentes_router, prefix="/api/v1")
+app.include_router(inducciones_router, prefix="/api/v1")
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(notificacion_router, prefix="/api/v1")
 app.include_router(superadmin_router)
+app.include_router(correspondencia_router, prefix="/api/v1")
+app.include_router(correspondencia_router)
+app.include_router(dispositivo_router, prefix="/api/v1")
+app.include_router(dispositivo_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -351,13 +430,20 @@ def verificacion_servidor():
         "uploads": "/uploads",
     }
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+class CachedStaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        # Cache de 1 día para assets estáticos con versión (?v=...)
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
+
+app.mount("/static", CachedStaticFiles(directory="static"), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     icon_path = os.path.join(BASE_DIR, "static", "img", "icono.png")
     if os.path.exists(icon_path):
-        return FileResponse(icon_path, media_type="image/png")
+        return FileResponse(icon_path, media_type="image/png", headers={"Cache-Control": "public, max-age=604800"})
     return Response(status_code=204)
 
 templates = Jinja2Templates(directory="templates")
@@ -426,6 +512,15 @@ async def get_editar_solicitud(request: Request, codigo: str):
 @app.get("/revision-solicitud.html")
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
+
+
+@app.get("/formulario-correspondencia")
+async def get_formulario_correspondencia_publico(request: Request):
+    return templates.TemplateResponse(name="correspondencia-form.html", request=request)
+
+@app.get("/correspondencias")
+async def get_correspondencia(request: Request):
+    return templates.TemplateResponse(name="correspondencia-listado.html", request=request)
 
 @app.get("/403")
 @app.get("/error-403")

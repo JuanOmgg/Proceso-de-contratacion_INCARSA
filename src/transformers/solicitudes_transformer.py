@@ -143,28 +143,32 @@ def limpiar_vehiculos_solicitud(
         for v in raw_v:
             if isinstance(v, int) or (isinstance(v, str) and v.isdigit()):
                 vehiculos_limpios.append(
-                    {"id_vehiculo": int(v), "licencia_doc": 0}
+                    {"id_vehiculo": int(v), "licencia_doc": ""}
                 )
             elif isinstance(v, dict):
                 lic_doc_val = v.get("licencia_doc")
                 lic_doc = str(lic_doc_val).strip() if lic_doc_val is not None else ""
-                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
-                    vehiculos_limpios.append(
-                        {
-                            "id_vehiculo": int(v["id_vehiculo"]),
-                            "licencia_doc": lic_doc,
-                            "documentos": v.get("documentos") or [],
-                        }
-                    )
-                elif v.get("placa"):
-                    vehiculos_limpios.append(
-                        {
-                            "tipo": str(v.get("tipo") or "").strip().upper(),
-                            "placa": FORMATEAR_PLACA(v.get("placa")),
-                            "licencia_doc": lic_doc,
-                            "documentos": v.get("documentos") or [],
-                        }
-                    )
+                cond_val = str(v.get("conductor") or "").strip()
+                raw_pid = v.get("id_persona") or v.get("conductor_id")
+                id_persona = int(raw_pid) if raw_pid and str(raw_pid).isdigit() and int(raw_pid) > 0 else None
+                
+                target_vid = v.get("id_vehiculo") or v.get("id")
+                id_vehiculo = int(target_vid) if target_vid and str(target_vid).isdigit() and int(target_vid) > 0 else None
+
+                v_dict = {
+                    "licencia_doc": lic_doc,
+                    "conductor": cond_val,
+                    "id_persona": id_persona,
+                    "conductor_id": id_persona,
+                    "documentos": v.get("documentos") or [],
+                }
+                if id_vehiculo:
+                    v_dict["id_vehiculo"] = id_vehiculo
+                if v.get("placa"):
+                    v_dict["tipo"] = str(v.get("tipo") or "CAMIONETA").strip().upper()
+                    v_dict["placa"] = FORMATEAR_PLACA(v.get("placa"))
+
+                vehiculos_limpios.append(v_dict)
 
     return vehiculos_limpios
 

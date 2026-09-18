@@ -1,0 +1,130 @@
+    <!-- ============================================================
+       MODAL VISOR DE DOCUMENTOS (PDF / IMAGEN)
+    ============================================================= -->
+    <div x-show="docModalOpen" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      @keydown.escape.window="cerrarDocumento()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+      
+      <div x-show="docModalOpen"
+        @click.outside="cerrarDocumento()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="modal-panel modal-ticket w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl p-0 relative shadow-2xl border border-[var(--paper-shadow)]" x-cloak>
+        
+        <!-- Header del visor (Estilo Ticket) -->
+        <div class="modal-ticket-header px-6 py-4 flex items-center justify-between border-b border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/40 dark:bg-white/[0.04]" style="border-top-left-radius: 15px; border-top-right-radius: 15px;">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+              :class="docActual.esPdf ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'">
+              <i class="fa-solid" :class="docActual.esPdf ? 'fa-file-pdf' : (docActual.esImagen ? 'fa-file-image' : 'fa-file-lines')"></i>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-display font-bold text-sm sm:text-base text-[var(--paper-ink)] truncate" x-text="docActual.titulo"></h3>
+              <p class="text-xs text-[var(--paper-muted)] truncate" x-text="docActual.subtitulo || 'Documento adjunto al expediente'"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+            <a :href="docActual.url" target="_blank" 
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Abrir en pestaña nueva">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+            <a :href="docActual.url" download
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Descargar archivo">
+              <i class="fa-solid fa-download text-xs"></i>
+            </a>
+            <button type="button" @click="cerrarDocumento()" 
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors" 
+              title="Cerrar visor">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuerpo del visor -->
+        <div class="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col items-center justify-center gap-4 custom-scroll">
+          
+          <!-- Contenedor del documento -->
+          <div class="w-full flex items-center justify-center min-h-[280px] max-h-[55vh] rounded-xl overflow-hidden bg-black/5 dark:bg-black/25 border border-[var(--paper-shadow)] p-3 relative">
+            
+            <!-- 1. Si es Imagen -->
+            <template x-if="docActual.esImagen">
+              <img :src="docActual.url" :alt="docActual.nombreArchivo" 
+                loading="lazy" decoding="async"
+                class="max-h-[50vh] max-w-full object-contain rounded-lg shadow-sm" />
+            </template>
+
+            <!-- 2. Si es PDF -->
+            <template x-if="docActual.esPdf">
+              <div class="w-full h-full min-h-[380px] flex flex-col items-center justify-center">
+                <iframe :src="docActual.url" loading="lazy" class="w-full h-[50vh] rounded-lg border-0 bg-white" title="Visor PDF"></iframe>
+              </div>
+            </template>
+
+            <!-- 3. Si no es ni PDF ni Imagen (u otro formato) -->
+            <template x-if="!docActual.esImagen && !docActual.esPdf">
+              <div class="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center text-3xl">
+                  <i class="fa-regular fa-file-lines"></i>
+                </div>
+                <div>
+                  <h4 class="font-display font-bold text-base text-[var(--paper-ink)]" x-text="docActual.nombreArchivo"></h4>
+                  <p class="text-xs text-[var(--paper-muted)]">Vista previa directa no disponible para este formato.</p>
+                </div>
+              </div>
+            </template>
+
+          </div>
+
+          <!-- Ficha de Información del Archivo (Estilo Ticket) -->
+          <div class="w-full p-3 sm:p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-dashed border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)]">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-semibold text-[var(--paper-ink)] flex items-center gap-2 truncate">
+                <i class="fa-solid fa-file-check text-emerald-500"></i>
+                <span x-text="docActual.nombreArchivo"></span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 w-fit flex-shrink-0">
+                <i class="fa-solid fa-shield-check"></i> Documento Verificado
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer con botones (Estilo Ticket) -->
+        <div class="modal-ticket-footer px-6 py-3.5 border-t border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/20 dark:bg-white/[0.02] flex items-center justify-between gap-3 flex-wrap" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+          <button type="button" @click="cerrarDocumento()" 
+            class="modal-btn-cancel px-6 py-2 text-xs font-semibold">
+            Volver al expediente
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <a :href="docActual.url" target="_blank" 
+              class="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--paper-shadow)] hover:bg-black/5 dark:hover:bg-white/10 text-[var(--paper-ink)] inline-flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+              <span>Abrir pestaña</span>
+            </a>
+            <a :href="docActual.url" download 
+              class="btn-signal px-5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-download text-[11px]"></i>
+              <span>Descargar Documento</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Borde dentado ticket visible al pie -->
+        <div class="modal-serrated"></div>
+      </div>
+    </div>
+

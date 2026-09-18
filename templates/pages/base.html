@@ -53,8 +53,8 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Estilos globales compartidos -->
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=3.9">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.7">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.9">
   <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=3.8">
 
   <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
@@ -69,13 +69,14 @@
   <script src="{{ url_for('static', path='js/plantas.js') }}?v=3.5"></script>
   <script src="{{ url_for('static', path='js/contratistas.js') }}?v=3.5"></script>
   <script src="{{ url_for('static', path='js/vehiculos.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/dispositivos.js') }}?v=3.5"></script>
 
   <!-- Scripts que deben ejecutarse antes de inicializar Alpine -->
   {% block extra_js %}{% endblock %}
 
-  <!-- Alpine.js Collapse + Core -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <!-- Alpine.js Collapse + Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
 </head>
 
 <body class="antialiased">

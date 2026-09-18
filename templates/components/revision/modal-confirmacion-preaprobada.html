@@ -1,0 +1,76 @@
+    <!-- ============================================================
+       MODAL DE CONFIRMACIÓN RÁPIDA: SOLICITUD PRE-APROBADA (SCR)
+    ============================================================= -->
+    <div x-show="showModalConfirmacionPreaprobada" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      x-cloak>
+      <div class="modal-card relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4"
+        @click.outside="cerrarModalConfirmacionPreaprobada()">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white">Confirmar Aprobación Final</h3>
+              <p class="text-xs text-slate-500">Solicitud Pre-Aprobada por SCR</p>
+            </div>
+          </div>
+          <button type="button" @click="cerrarModalConfirmacionPreaprobada()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs text-slate-700 dark:text-slate-300">
+          <p>
+            La solicitud <strong class="text-slate-900 dark:text-white" x-text="'#' + (solicitud?.codigo_radicado || solicitud?.id)"></strong> fue pre-aprobada previamente por SCR y las auditorías de <strong>SST</strong> y <strong>GESCO</strong> ya han concluido favorablemente en todas las plantas.
+          </p>
+
+          <!-- Resumen de observaciones -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="flex items-center justify-between font-semibold text-slate-800 dark:text-slate-200">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-clipboard-check text-emerald-500"></i> Observaciones de Plantas:</span>
+              <span class="text-[10px] text-slate-500" x-text="observacionesSSTGESCO.length + ' dictámenes registrados'"></span>
+            </div>
+            <template x-if="observacionesSSTGESCO.length === 0">
+              <p class="text-[11px] text-slate-500 italic">No hubo observaciones especiales (SST y GESCO aprobaron sin novedades).</p>
+            </template>
+            <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1" x-show="observacionesSSTGESCO.length > 0">
+              <template x-for="(obs, idx) in observacionesSSTGESCO" :key="idx">
+                <div class="text-[11px] p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 mb-0.5">
+                    <strong class="text-slate-800 dark:text-slate-200" x-text="obs.rol + ' - ' + obs.planta"></strong>
+                    <span x-text="obs.fecha"></span>
+                  </div>
+                  <p class="text-slate-700 dark:text-slate-300" x-text="obs.observacion"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-500">
+            Puedes confirmar la aprobación definitiva directamente ahora, o cerrar este modal para revisar el expediente completo.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" @click="cerrarModalConfirmacionPreaprobada()"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            Revisar Detalle
+          </button>
+          <button type="button" @click="confirmarAprobacionFinalPreaprobada()" :disabled="guardando"
+            class="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 flex items-center gap-2">
+            <i class="fa-solid fa-circle-notch fa-spin text-xs" x-show="guardando"></i>
+            <i class="fa-solid fa-check-double text-xs" x-show="!guardando"></i>
+            <span x-text="guardando ? 'Aprobando...' : 'Confirmar Aprobación Final'"></span>
+          </button>
+        </div>
+
+      </div>
+    </div>

@@ -25,12 +25,16 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
             ec.nombre AS nombre_contratista,
             s.empresa_origen AS id_empresa,
             emp.nombre_empresa,
+            s.diligenciado_por AS id_usuario_registro,
+            TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario_registro,
+            TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS diligenciador,
             COALESCE(s.fecha_creacion, s.fecha_inicio) AS fecha_solicitud,
             '' AS observacion
         FROM ingresantes ing
         INNER JOIN solicitudes s ON ing.id_solicitud = s.id
         LEFT JOIN empresa emp ON s.empresa_origen = emp.id
         LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+        LEFT JOIN usuarios u ON s.diligenciado_por = u.id
         WHERE ing.id_persona = %s
     """
     try:
@@ -52,11 +56,15 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
             ec.nombre AS nombre_contratista,
             s.empresa_origen AS id_empresa,
             emp.nombre_empresa,
+            s.diligenciado_por AS id_usuario_registro,
+            TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario_registro,
+            TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS diligenciador,
             COALESCE(s.fecha_creacion, s.fecha_inicio) AS fecha_solicitud,
             '' AS observacion
         FROM solicitudes s
         LEFT JOIN empresa emp ON s.empresa_origen = emp.id
         LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+        LEFT JOIN usuarios u ON s.diligenciado_por = u.id
         WHERE (FIND_IN_SET(%s, REPLACE(REPLACE(REPLACE(s.personas_ids, '[', ''), ']', ''), ' ', '')) > 0)
            OR (s.personas_ids LIKE %s)
     """
@@ -83,12 +91,16 @@ def OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona: int, id_antecedente: 
                 ec.nombre AS nombre_contratista,
                 h.id_empresa,
                 emp.nombre_empresa,
+                s.diligenciado_por AS id_usuario_registro,
+                TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario_registro,
+                TRIM(CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, ''))) AS diligenciador,
                 h.fecha_solicitud,
                 h.observacion
             FROM antecedentes_historial_solicitudes h
             LEFT JOIN empresa emp ON h.id_empresa = emp.id
             LEFT JOIN solicitudes s ON h.id_solicitud = s.id
             LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+            LEFT JOIN usuarios u ON s.diligenciado_por = u.id
             WHERE h.id_antecedente = %s
         """
         try:
@@ -176,18 +188,34 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                 # 3. Obtener el historial completo consolidado de solicitudes
                 historial = OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_persona, antecedente_id)
 
-                # 4. Determinar la última empresa y contratista desde el historial
+                # 4. Determinar la última empresa, contratista y usuario responsable desde el historial
                 nombre_contratista = None
+                ultimo_responsable = None
                 if historial:
                     ultima_solicitud = historial[0]
                     nombre_contratista = ultima_solicitud.get("nombre_contratista")
                     ultima_empresa_id = ultima_solicitud.get("id_empresa")
+                    raw_user = (ultima_solicitud.get("usuario_registro") or ultima_solicitud.get("diligenciador") or "").strip()
+                    if raw_user:
+                        ultimo_responsable = raw_user
+
+                    # Actualizar empresa y responsable en antecedentes si aplica
+                    updates_ant = []
+                    params_ant = []
                     if ultima_empresa_id and antecedente.get("id_empresa") != ultima_empresa_id:
-                        cursor.execute("""
-                            UPDATE antecedentes SET id_empresa = %s WHERE id = %s
-                        """, (ultima_empresa_id, antecedente_id))
-                        conexion.commit()
+                        updates_ant.append("id_empresa = %s")
+                        params_ant.append(ultima_empresa_id)
                         antecedente["id_empresa"] = ultima_empresa_id
+
+                    if ultimo_responsable and antecedente.get("responsable") != ultimo_responsable:
+                        updates_ant.append("responsable = %s")
+                        params_ant.append(ultimo_responsable)
+                        antecedente["responsable"] = ultimo_responsable
+
+                    if updates_ant:
+                        params_ant.append(antecedente_id)
+                        cursor.execute(f"UPDATE antecedentes SET {', '.join(updates_ant)} WHERE id = %s", tuple(params_ant))
+                        conexion.commit()
 
                 # 5. Obtener nombre de la última empresa solicitante si existe
                 nombre_empresa = None
@@ -197,6 +225,8 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                     if emp_row:
                         nombre_empresa = emp_row["nombre_empresa"]
 
+                responsable_final = ultimo_responsable or antecedente.get("responsable") or "Sin responsable asignado"
+
                 # 6. Formatear campos para la respuesta
                 resultado = {
                     "id": antecedente["id"],
@@ -204,7 +234,8 @@ def GET_OR_CREATE_antecedente_persona_db(id_persona: int, actualizar_revision: b
                     "nombre_persona": f"{persona['nombre']} {persona['apellido']}".strip(),
                     "identificacion": persona["identificacion"],
                     "tipo_doc": persona["tipo_doc"],
-                    "responsable": antecedente.get("responsable"),
+                    "responsable": responsable_final,
+                    "ultimo_usuario_solicitud": ultimo_responsable or antecedente.get("responsable") or "Sin responsable asignado",
                     "anotaciones": antecedente.get("anotaciones"),
                     "id_empresa": antecedente.get("id_empresa"),
                     "nombre_empresa": nombre_empresa or "Sin registro de empresa",
@@ -355,15 +386,21 @@ def GET_ALL_antecedentes_db() -> Dict[str, Any]:
                     id_per = p["id_persona"]
                     id_ant = p.get("id_antecedente")
 
-                    # Consultamos el historial completo para conteo real y última contratista
+                    # Consultamos el historial completo para conteo real, última contratista y último responsable
                     historial = OBTENER_HISTORIAL_COMPLETO_PERSONA(cursor, id_per, id_ant)
 
                     nombre_contratista_final = None
                     nombre_empresa_final = p.get("nombre_empresa")
+                    ultimo_responsable_final = None
                     if historial:
                         nombre_contratista_final = historial[0].get("nombre_contratista")
                         if not nombre_empresa_final:
                             nombre_empresa_final = historial[0].get("nombre_empresa")
+                        raw_u = (historial[0].get("usuario_registro") or historial[0].get("diligenciador") or "").strip()
+                        if raw_u:
+                            ultimo_responsable_final = raw_u
+
+                    responsable_final = ultimo_responsable_final or p.get("responsable") or "Sin asignar"
 
                     resultados.append({
                         "id": id_ant,
@@ -372,7 +409,8 @@ def GET_ALL_antecedentes_db() -> Dict[str, Any]:
                         "identificacion": p["identificacion"],
                         "tipo_doc": p["tipo_doc"],
                         "cargo": p["cargo"],
-                        "responsable": p.get("responsable") or "Sin asignar",
+                        "responsable": responsable_final,
+                        "ultimo_usuario_solicitud": ultimo_responsable_final or p.get("responsable") or "Sin asignar",
                         "anotaciones": p.get("anotaciones") or "",
                         "id_empresa": p.get("id_empresa"),
                         "nombre_empresa": nombre_empresa_final or "Sin registros",

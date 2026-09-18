@@ -27,6 +27,8 @@ function superAdminPanel() {
       { id: 'nueva_solicitud', nombre: 'Nueva Solicitud', icono: 'fa-file-circle-plus', color: 'text-emerald-400' },
       { id: 'usuarios', nombre: 'Listado de Usuarios', icono: 'fa-users', color: 'text-blue-400' },
       { id: 'nuevo_usuario', nombre: 'Nuevo Usuario', icono: 'fa-user-plus', color: 'text-indigo-400' },
+      { id: 'correspondencias', nombre: 'Listado de Correspondencia', icono: 'fa-envelope-open-text', color: 'text-amber-400' },
+      { id: 'nueva_correspondencia', nombre: 'Nueva Correspondencia', icono: 'fa-paper-plane', color: 'text-emerald-400' },
       { id: 'plantas', nombre: 'Plantas y Zonas', icono: 'fa-building', color: 'text-violet-400' },
       { id: 'contratistas', nombre: 'Empresas Contratistas', icono: 'fa-id-card-clip', color: 'text-orange-400' },
       { id: 'vehiculos', nombre: 'Vehículos y Maquinaria', icono: 'fa-truck-front', color: 'text-teal-400' },
@@ -636,6 +638,8 @@ function superAdminPanel() {
         nueva_solicitud: 'Nueva Solicitud (Formulario)',
         usuarios: 'Listado de Usuarios',
         nuevo_usuario: 'Nuevo Usuario (Formulario)',
+        correspondencias: 'Listado de Correspondencia',
+        nueva_correspondencia: 'Nueva Correspondencia (Formulario)',
         plantas: 'Gestión de Plantas y Zonas',
         contratistas: 'Gestión de Contratistas',
         vehiculos: 'Gestión de Vehículos',
@@ -643,6 +647,7 @@ function superAdminPanel() {
         procesamiento: 'Procesamiento de Solicitudes',
         antecedentes: 'Verificación de Antecedentes',
         revision_solicitud: 'Revisión y Aprobación Detallada',
+        dispositivos: 'Consulta de Dispositivos',
         superadmin: 'Panel Maestro SuperAdmin'
       };
       return mapa[mod] || mod.replace('_', ' ').toUpperCase();
@@ -655,6 +660,8 @@ function superAdminPanel() {
         nueva_solicitud: 'fa-file-circle-plus text-emerald-400',
         usuarios: 'fa-users text-blue-400',
         nuevo_usuario: 'fa-user-plus text-indigo-400',
+        correspondencias: 'fa-envelope-open-text text-amber-400',
+        nueva_correspondencia: 'fa-paper-plane text-emerald-400',
         plantas: 'fa-building text-violet-400',
         contratistas: 'fa-id-card-clip text-orange-400',
         vehiculos: 'fa-truck-front text-teal-400',
@@ -662,6 +669,7 @@ function superAdminPanel() {
         procesamiento: 'fa-diagram-project text-yellow-400',
         antecedentes: 'fa-magnifying-glass-chart text-sky-400',
         revision_solicitud: 'fa-clipboard-check text-emerald-400',
+        dispositivos: 'fa-laptop-code text-purple-400',
         superadmin: 'fa-shield-halved text-rose-400'
       };
       return iconos[mod] || 'fa-folder text-slate-400';
@@ -674,6 +682,8 @@ function superAdminPanel() {
         nueva_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
         usuarios: 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-blue-500/10',
         nuevo_usuario: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-indigo-500/10',
+        correspondencias: 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-amber-500/10',
+        nueva_correspondencia: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
         plantas: 'bg-violet-500/15 border-violet-500/30 text-violet-400 shadow-violet-500/10',
         contratistas: 'bg-orange-500/15 border-orange-500/30 text-orange-400 shadow-orange-500/10',
         vehiculos: 'bg-teal-500/15 border-teal-500/30 text-teal-400 shadow-teal-500/10',
@@ -681,6 +691,7 @@ function superAdminPanel() {
         procesamiento: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400 shadow-yellow-500/10',
         antecedentes: 'bg-sky-500/15 border-sky-500/30 text-sky-400 shadow-sky-500/10',
         revision_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
+        dispositivos: 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-purple-500/10',
         superadmin: 'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/10'
       };
       return bgs[mod] || 'bg-slate-800 border-slate-700 text-slate-400';

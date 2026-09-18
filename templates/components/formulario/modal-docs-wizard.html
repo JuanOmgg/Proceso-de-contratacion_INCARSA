@@ -1,0 +1,88 @@
+<!-- ============================================================
+         MODAL DE VISUALIZACIÓN DE DOCUMENTOS (WIZARD)
+      ============================================================= -->
+      <div x-show="modalDocsOpen" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        @keydown.escape.window="cerrarModalDocs()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <div x-show="modalDocsOpen"
+          @click.outside="cerrarModalDocs()"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+          class="modal-panel modal-ticket w-full max-w-lg pt-7 px-6 sm:px-8 pb-9 relative text-left" x-cloak>
+
+          <!-- Botón cerrar superior derecho -->
+          <button type="button" @click="cerrarModalDocs()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Header estilo Ticket -->
+          <div class="flex items-center gap-3.5 mb-4">
+            <div class="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
+              <i class="fa-solid" :class="modalDocsIcon"></i>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-display font-bold text-lg text-[var(--paper-ink)] truncate" x-text="modalDocsTitle"></h3>
+              <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 dark:text-zinc-300 px-2 py-0.5 rounded border border-[var(--paper-shadow)]" x-text="modalDocsSubtitle"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de Documentos estilo Ticket con scroll -->
+          <div class="border-y border-dashed border-[var(--paper-shadow)] py-4 my-2 space-y-3 max-h-[55vh] overflow-y-auto custom-scroll pr-1">
+            <template x-for="(doc, idx) in modalDocsList" :key="idx">
+              <div class="doc-ticket-row p-3.5 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] hover:bg-[#efe9dc]/85 dark:hover:bg-white/[0.08] transition-all flex items-center justify-between gap-3 group">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="doc-type-badge inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#faf7f0] dark:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 border border-[var(--paper-shadow)]" x-text="doc.tipo"></span>
+                    <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-zinc-100 truncate mt-1" x-text="doc.nombre"></p>
+                  </div>
+                </div>
+                <template x-if="doc.url">
+                  <a :href="doc.url" target="_blank"
+                    class="modal-btn-confirm !py-1.5 !px-3.5 !text-xs !rounded-xl inline-flex items-center gap-1.5 flex-shrink-0"
+                    style="background: var(--paper-err) !important; color: var(--paper) !important; box-shadow: 0 4px 12px rgba(193, 68, 60, 0.35) !important;">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10.5px]"></i>
+                    <span>Abrir</span>
+                  </a>
+                </template>
+                <template x-if="!doc.url">
+                  <span class="text-[11px] text-[var(--paper-muted)] italic">No disponible</span>
+                </template>
+              </div>
+            </template>
+
+            <div x-show="modalDocsList.length === 0" class="py-8 text-center text-sm text-[var(--paper-muted)]">
+              <i class="fa-regular fa-folder-open text-2xl mb-2 block opacity-50"></i>
+              No se encontraron documentos adjuntos.
+            </div>
+          </div>
+
+          <!-- Pie del modal estilo SweetAlert / Ticket con botón centrado -->
+          <div class="flex items-center justify-center gap-3 pt-4">
+            <button type="button" @click="cerrarModalDocs()"
+              class="modal-btn-cancel px-8 py-2.5 text-sm font-semibold">
+              Cerrar
+            </button>
+          </div>
+
+          <!-- Borde dentado ticket visible al pie -->
+          <div class="modal-serrated"></div>
+        </div>
+      </div>

@@ -53,4 +53,7 @@ def DELETE_user(id_user: int) -> dict:
     if not resultado["exito"]:
         return {"exito": False, "mensaje": resultado["mensaje"]}
 
-    return {"exito": True, "mensaje": resultado["mensaje"]}
+    return {
+        "exito": True, 
+        "mensaje": resultado["mensaje"]
+    }

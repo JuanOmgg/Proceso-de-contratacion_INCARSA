@@ -198,6 +198,33 @@ function procesamientoBoard() {
     get filtered() {
       let rows = this.solicitudes;
 
+      // 1. Filtro para Gestión Documental: solo consultar solicitudes que haya diligenciado él mismo
+      const rolTextoProc = String((this.usuarioSesion && (this.usuarioSesion.rol || this.usuarioSesion.nombre_rol)) || "").toUpperCase();
+      const rolIdProc = Number(this.usuarioSesion ? this.usuarioSesion.id_rol : 0);
+      const esGestionDoc = rolTextoProc.includes("GESTION DOCUMENTAL") || rolTextoProc.includes("GESTIÓN DOCUMENTAL") || rolIdProc === 5;
+      if (esGestionDoc) {
+        const myId = Number(this.userId || (this.usuarioSesion && this.usuarioSesion.id) || 0);
+        rows = rows.filter(s => Number(s.diligenciado_por) === myId);
+      }
+
+      // 2. Filtro para SST y GESCO: únicamente solicitudes vinculadas a sus plantas asignadas
+      const esSstGesco = rolTextoProc.includes("SST") || rolTextoProc.includes("GESCO") || rolIdProc === 6 || rolIdProc === 7;
+      if (esSstGesco) {
+        const misPlantas = (this.usuarioSesion && this.usuarioSesion.plantas_ids ? this.usuarioSesion.plantas_ids : []).map(Number);
+        if (!misPlantas || misPlantas.length === 0) {
+          return [];
+        }
+        rows = rows.filter(s => {
+          let pIds = [];
+          if (Array.isArray(s.plantas_ids)) {
+            pIds = s.plantas_ids.map(Number);
+          } else if (s.plantas_ids) {
+            pIds = String(s.plantas_ids).replace(/[\[\]]/g, "").split(",").map(x => parseInt(x.trim(), 10)).filter(n => !isNaN(n));
+          }
+          return pIds.some(pid => misPlantas.includes(pid));
+        });
+      }
+
       // Filtro por activo / inactivo / todos
       if (this.filtroActivo === "activos") {
         rows = rows.filter(s => s.is_active === 1 || s.is_active === true || s.is_active === "1" || s.is_active === undefined);
@@ -324,9 +351,9 @@ function procesamientoBoard() {
 
     getBotonRevisionTexto(solicitud) {
       const estado = this.getEstadoRevisionUsuario(solicitud);
-      if (estado === 'aprobado') return 'Visto Bueno Otorgado';
-      if (estado === 'rechazado') return 'Dictamen: Rechazado';
-      return 'Revisar Expediente';
+      if (estado === 'aprobado') return 'Visto bueno otorgado';
+      if (estado === 'rechazado') return 'Rechazado';
+      return 'Revisar expediente';
     },
 
     getBotonRevisionClase(solicitud) {
@@ -359,8 +386,17 @@ function procesamientoBoard() {
         } catch (e) {}
 
         let url = `${API.solicitudes}/getall`;
-        if (sesion && sesion.id && (Number(sesion.id_rol) === 5 || Number(sesion.id_rol) === 6 || String(sesion.rol).toUpperCase().includes("SST") || String(sesion.rol).toUpperCase().includes("GESCO"))) {
-          url += `?id_usuario=${sesion.id}`;
+        const rolTextoProc = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
+        const rolIdProc = Number(sesion ? sesion.id_rol : 0);
+        const esSstGescoProc = rolTextoProc.includes("SST") || rolTextoProc.includes("GESCO") || rolIdProc === 6 || rolIdProc === 7;
+        const esGestionDoc = rolTextoProc.includes("GESTION DOCUMENTAL") || rolTextoProc.includes("GESTIÓN DOCUMENTAL") || rolIdProc === 5;
+
+        if (sesion && sesion.id) {
+          if (esSstGescoProc) {
+            url += `?id_usuario=${sesion.id}`;
+          } else if (esGestionDoc) {
+            url += `?diligenciado_por=${sesion.id}`;
+          }
         }
 
         const response = await fetch(url);

@@ -108,7 +108,19 @@ def GET_all_vehiculos_db() -> dict:
                         (SELECT vi.licencia_doc FROM Veh_ingreso vi WHERE vi.id_vehiculo = v.id AND vi.licencia_doc IS NOT NULL AND vi.licencia_doc != '' ORDER BY vi.id_solicitud DESC LIMIT 1),
                         (SELECT dv.nom_documento FROM documentos_vehiculo dv WHERE dv.id_vehiculo = v.id AND (dv.tipo_doc LIKE '%%licencia%%' OR dv.tipo_doc = 'general') ORDER BY dv.id DESC LIMIT 1),
                         ''
-                    ) AS licencia_doc
+                    ) AS licencia_doc,
+                    COALESCE(
+                        (SELECT TRIM(CONCAT(COALESCE(p.nombre, ''), ' ', COALESCE(p.apellido, '')))
+                         FROM Veh_ingreso vi
+                         JOIN personas p ON vi.id_persona = p.id
+                         WHERE vi.id_vehiculo = v.id AND vi.id_persona IS NOT NULL
+                         ORDER BY vi.id_solicitud DESC LIMIT 1),
+                        ''
+                    ) AS conductor,
+                    (SELECT vi.id_persona
+                     FROM Veh_ingreso vi
+                     WHERE vi.id_vehiculo = v.id AND vi.id_persona IS NOT NULL
+                     ORDER BY vi.id_solicitud DESC LIMIT 1) AS id_conductor
                 FROM vehiculos v
                 ORDER BY v.id DESC
                 """
@@ -157,7 +169,19 @@ def GET_vehiculo_by_id_db(vehiculo_id: int) -> dict:
                             (SELECT vi.licencia_doc FROM Veh_ingreso vi WHERE vi.id_vehiculo = v.id AND vi.licencia_doc IS NOT NULL AND vi.licencia_doc != '' ORDER BY vi.id_solicitud DESC LIMIT 1),
                             (SELECT dv.nom_documento FROM documentos_vehiculo dv WHERE dv.id_vehiculo = v.id AND (dv.tipo_doc LIKE '%%licencia%%' OR dv.tipo_doc = 'general') ORDER BY dv.id DESC LIMIT 1),
                             ''
-                        ) AS licencia_doc
+                        ) AS licencia_doc,
+                        COALESCE(
+                            (SELECT TRIM(CONCAT(COALESCE(p.nombre, ''), ' ', COALESCE(p.apellido, '')))
+                             FROM Veh_ingreso vi
+                             JOIN personas p ON vi.id_persona = p.id
+                             WHERE vi.id_vehiculo = v.id AND vi.id_persona IS NOT NULL
+                             ORDER BY vi.id_solicitud DESC LIMIT 1),
+                            ''
+                        ) AS conductor,
+                        (SELECT vi.id_persona
+                         FROM Veh_ingreso vi
+                         WHERE vi.id_vehiculo = v.id AND vi.id_persona IS NOT NULL
+                         ORDER BY vi.id_solicitud DESC LIMIT 1) AS id_conductor
                     FROM vehiculos v 
                     WHERE v.id = %s
                 """
@@ -291,6 +315,44 @@ def UPDATE_vehiculo_db(vehiculo_id: int, campos: dict) -> dict:
                         ]
                         if valores_docs:
                             cursor.executemany(sql_docs, valores_docs)
+
+                # 3. Sincronizar conductor y licencia en Veh_ingreso si existen solicitudes asociadas
+                id_persona_cond = None
+                raw_pid = campos.pop("id_persona", None) or campos.pop("conductor_id", None)
+                if raw_pid and str(raw_pid).isdigit() and int(raw_pid) > 0:
+                    id_persona_cond = int(raw_pid)
+                elif conductor:
+                    cond_s = str(conductor).strip()
+                    if cond_s.isdigit() and int(cond_s) > 0:
+                        id_persona_cond = int(cond_s)
+                    else:
+                        cursor.execute(
+                            """
+                            SELECT id FROM personas 
+                            WHERE TRIM(CONCAT_WS(' ', COALESCE(nombre, ''), COALESCE(apellido, ''))) = %s
+                               OR nombre = %s
+                               OR identificacion = %s
+                            ORDER BY id DESC LIMIT 1
+                            """,
+                            (cond_s, cond_s, cond_s),
+                        )
+                        p_row = cursor.fetchone()
+                        if p_row:
+                            id_persona_cond = p_row["id"]
+
+                if id_persona_cond or licencia_doc:
+                    cursor.execute(
+                        "SELECT id_solicitud FROM Veh_ingreso WHERE id_vehiculo = %s ORDER BY id_solicitud DESC LIMIT 1",
+                        (vehiculo_id,)
+                    )
+                    vi_row = cursor.fetchone()
+                    if vi_row:
+                        if id_persona_cond and licencia_doc:
+                            cursor.execute("UPDATE Veh_ingreso SET id_persona = %s, licencia_doc = %s WHERE id_vehiculo = %s AND id_solicitud = %s", (id_persona_cond, licencia_doc, vehiculo_id, vi_row["id_solicitud"]))
+                        elif id_persona_cond:
+                            cursor.execute("UPDATE Veh_ingreso SET id_persona = %s WHERE id_vehiculo = %s AND id_solicitud = %s", (id_persona_cond, vehiculo_id, vi_row["id_solicitud"]))
+                        elif licencia_doc:
+                            cursor.execute("UPDATE Veh_ingreso SET licencia_doc = %s WHERE id_vehiculo = %s AND id_solicitud = %s", (licencia_doc, vehiculo_id, vi_row["id_solicitud"]))
 
                 conexion.commit()
 

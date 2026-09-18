@@ -262,7 +262,12 @@ function usuariosTable() {
       const rolTexto = String(usuario.rol || usuario.nombre_rol || "").toUpperCase();
       if (rolTexto.includes("SST") || rolTexto.includes("GESCO")) return true;
       const rolId = Number(usuario.id_rol);
-      return rolId === 5 || rolId === 6;
+      const rolObj = (this.roles || []).find(r => Number(r.id) === rolId);
+      if (rolObj) {
+        const nom = String(rolObj.nombre_rol || "").trim().toUpperCase();
+        return nom === "SST" || nom === "GESCO";
+      }
+      return rolId === 6 || rolId === 7;
     },
     formatearFecha(fechaStr) {
       if (!fechaStr) return "No registrada";

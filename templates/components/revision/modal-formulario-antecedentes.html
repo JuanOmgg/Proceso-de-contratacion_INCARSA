@@ -1,0 +1,145 @@
+    <!-- ============================================================
+       MODAL 2: ACTUALIZACIÓN / RENOVACIÓN DE VIGENCIA DE ANTECEDENTES (Estilo Ticket)
+    ============================================================= -->
+    <div x-show="showFormModal && puedeVerAntecedentes" x-cloak
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      @keydown.escape.window="cerrarFormularioAntecedentes()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <div x-show="showFormModal"
+        @click.outside="cerrarFormularioAntecedentes()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="modal-panel modal-ticket w-full max-w-3xl pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
+        
+        <!-- Botón cerrar superior derecho -->
+        <button type="button" @click="cerrarFormularioAntecedentes()"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
+          title="Cerrar modal">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <!-- Encabezado estilo Ticket -->
+        <div class="text-center mb-4">
+          <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
+            x-text="'Actualizar Vigencia: ' + (formAntecedente.persona_nombre || '') + ' ' + (formAntecedente.persona_apellido || '')"></h2>
+          <div class="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
+            <span class="status-pill inline-flex select-none font-semibold status-revision text-xs">
+              <i class="fa-solid fa-id-card-clip mr-1.5"></i> Renovación y Vigencia
+            </span>
+            <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+              x-text="(formAntecedente.persona_tipo_doc || 'CC') + ': ' + formAntecedente.persona_identificacion"></span>
+            <span class="text-xs text-[var(--paper-muted)] font-medium" x-show="formAntecedente.persona_cargo">
+              · <span x-text="formAntecedente.persona_cargo"></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Cuerpo scrollable cómodo estilo Ticket -->
+        <div class="max-h-[62vh] overflow-y-auto custom-scroll pr-1.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3.5 my-3.5 space-y-4">
+          
+          <!-- Feedback Alertas -->
+          <div x-show="mensajeExitoAntecedente" x-transition class="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-3 font-medium">
+            <i class="fa-solid fa-circle-check text-base"></i>
+            <span x-text="mensajeExitoAntecedente"></span>
+          </div>
+          <div x-show="mensajeErrorAntecedente" x-transition class="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-sm flex items-center gap-3 font-medium">
+            <i class="fa-solid fa-circle-exclamation text-base"></i>
+            <span x-text="mensajeErrorAntecedente"></span>
+          </div>
+
+          <!-- TARJETAS INFORMATIVAS DE LA RENOVACIÓN -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Última Empresa Contratista -->
+            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-cyan-500/30">
+                <i class="fa-solid fa-briefcase"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_contratista || formAntecedente.nombre_contratista || formAntecedente.ultima_empresa_solicitante || 'Sin contratista registrado'"></p>
+                <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
+              </div>
+            </div>
+
+            <!-- Última Revisión -->
+            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-purple-500/30">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Fecha de Revisión</span>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Auto-actualizada hoy</span>
+              </div>
+            </div>
+
+            <!-- Próxima Consulta (+1 Año) -->
+            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-emerald-500/30">
+                <i class="fa-solid fa-calendar-plus"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Nueva Vigencia (+1 Año)</span>
+                <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Vigente (365 días)</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- FORMULARIO ANOTACIONES -->
+          <div class="p-4 sm:p-5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-4">
+            <div class="flex items-center justify-between border-b border-dashed border-[var(--paper-shadow)] pb-3">
+              <h4 class="font-display font-semibold text-sm text-[var(--paper-ink)] flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-[var(--signal-500)]"></i>
+                <span>Anotaciones de Seguridad</span>
+              </h4>
+              <span class="subtitles-modal text-xs">Auditoría SCR</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+         
+
+              <!-- Anotaciones -->
+              <div class="sm:col-span-7">
+                <label class="subtitles-modal text-xs font-semibold block mb-1">
+                  Anotaciones (Opcional)
+                </label>
+                <textarea x-model="formAntecedente.anotaciones" rows="3" placeholder="Ingrese apuntes sobre los antecedentes de esta persona..."
+                  class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--paper-shadow)] resize-none"></textarea>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Pie del modal de formulario -->
+        <div class="flex items-center justify-center gap-3 pt-3">
+          <button type="button" @click="cerrarFormularioAntecedentes()"
+            class="modal-btn-cancel px-7 py-2.5 text-sm font-semibold">
+            Volver al Historial
+          </button>
+          
+          <button type="button" @click="guardarAntecedente()" :disabled="guardandoAntecedente"
+            class="btn-signal rounded-lg px-7 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm"
+            :class="guardandoAntecedente ? 'opacity-60 cursor-not-allowed' : ''">
+            <i class="fa-solid" :class="guardandoAntecedente ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+            <span x-text="guardandoAntecedente ? 'Guardando y Renovando...' : 'Guardar y Renovar Vigencia (+1 Año)'"></span>
+          </button>
+        </div>
+
+        <div class="modal-serrated"></div>
+      </div>
+    </div>

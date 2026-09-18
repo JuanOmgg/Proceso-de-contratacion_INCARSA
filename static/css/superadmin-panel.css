@@ -1,0 +1,110 @@
+/* =========================================================
+   FIX & MODERN DESIGN: RBAC MATRIX & TOGGLE SWITCHES
+   ========================================================= */
+
+/* Override dark-mode.css text-shadow blur on RBAC table headers */
+.rbac-table thead th,
+:root.dark .rbac-table thead th,
+:root.dark .rbac-table thead tr th,
+:root.dark .rbac-table th {
+  text-shadow: none !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Custom RBAC Toggle Switches */
+.rbac-toggle {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: 44px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  border-radius: 9999px !important;
+  background-color: #1e293b !important;
+  border: 1.5px solid #475569 !important;
+  cursor: pointer !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+
+.rbac-toggle:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: #64748b !important;
+}
+
+.rbac-toggle:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.rbac-toggle:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Knob / Thumb: CRITICAL FIX. 
+   Forces true white background and soft drop shadow, 
+   preventing dark-mode.css .bg-white from turning it dark var(--surface) */
+.rbac-toggle-thumb,
+:root.dark .rbac-toggle-thumb,
+:root.dark span.rbac-toggle-thumb {
+  position: absolute !important;
+  top: 2px !important;
+  left: 2.5px !important;
+  display: inline-block !important;
+  width: 17px !important;
+  height: 17px !important;
+  border-radius: 9999px !important;
+  background-color: #94a3b8 !important;
+  background: #94a3b8 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.22s ease !important;
+  pointer-events: none !important;
+}
+
+/* Knob Active: Pure white with soft glow */
+.rbac-toggle.is-active .rbac-toggle-thumb,
+:root.dark .rbac-toggle.is-active .rbac-toggle-thumb,
+:root.dark .rbac-toggle.is-active span.rbac-toggle-thumb {
+  transform: translateX(19px) !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Color-coded Variants when Active */
+.rbac-toggle.is-active.toggle-ver {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.45) !important;
+}
+
+.rbac-toggle.is-active.toggle-crear {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.45) !important;
+}
+
+.rbac-toggle.is-active.toggle-editar {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.45) !important;
+}
+
+.rbac-toggle.is-active.toggle-eliminar {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  border-color: #fb7185 !important;
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.45) !important;
+}
+
+.rbac-toggle.is-active.toggle-aprobar {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%) !important;
+  border-color: #c084fc !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.45) !important;
+}
+
+/* General fix for all other switches on this page (e.g. maintenance toggle) */
+:root.dark .switch-thumb-white,
+:root.dark span.switch-thumb-white {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}

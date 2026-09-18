@@ -11,6 +11,7 @@ from src.loaders.solicitudes_loaders import (
     GET_ALL_solicitudes_bd,
     GET_date_count_db,
     REGISTRAR_dictamen_db,
+    ACTUALIZAR_autorizacion_personas_db,
     VALIDAR_token_edicion_db,
     CONSUMIR_token_edicion_db
 )
@@ -114,16 +115,27 @@ def GET_fechasCount_rt(current_user: dict = Depends(get_current_user)):
 def GET_ALL_solicitudes(
     active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None"),
     id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO"),
+    diligenciado_por: Optional[int] = Query(None, description="Filtrar por usuario que diligenció la solicitud"),
     current_user: dict = Depends(get_current_user)
 ):
-    # Si no se envió id_usuario y el usuario es SST (5) o GESCO (6), filtrar por su id
     rol_user = str(current_user.get("rol", "")).strip().upper()
-    if id_usuario is None and (current_user.get("id_rol") in (5, 6) or rol_user in ("SST", "GESCO")):
+    id_rol_user = current_user.get("id_rol")
+    try:
+        id_rol_user = int(id_rol_user) if id_rol_user is not None else None
+    except (ValueError, TypeError):
+        pass
+
+    # Si el usuario autenticado es SST (6) o GESCO (7), SIEMPRE filtrar estrictamente por sus plantas asignadas
+    if id_rol_user in (6, 7) or rol_user in ("SST", "GESCO"):
         id_usuario = current_user.get("id")
 
-    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario})...")
+    # Si el usuario autenticado es Gestión Documental (5), SIEMPRE filtrar estrictamente por las que él haya diligenciado
+    if id_rol_user == 5 or "GESTION DOCUMENTAL" in rol_user or "GESTIÓN DOCUMENTAL" in rol_user:
+        diligenciado_por = current_user.get("id")
+
+    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por})...")
     
-    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario)
+    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario, diligenciado_por=diligenciado_por)
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")
@@ -175,6 +187,42 @@ def REGISTRAR_dictamen_rt(
             detail=resultado.get("mensaje", "Error al registrar dictamen.")
         )
     return resultado
+ 
+@router.post("/{solicitud_id}/personas-autorizacion", status_code=status.HTTP_200_OK)
+@router.put("/{solicitud_id}/personas-autorizacion", status_code=status.HTTP_200_OK)
+def ACTUALIZAR_personas_autorizacion_rt(
+    solicitud_id: str,
+    payload: Dict[str, Any],
+    current_user: dict = Depends(get_current_user)
+):
+    rol_user = str(current_user.get("rol", "")).strip().upper()
+    id_rol_user = current_user.get("id_rol")
+    try:
+        id_rol_user = int(id_rol_user) if id_rol_user is not None else None
+    except (ValueError, TypeError):
+        pass
+
+    roles_validos = ("SST", "GESCO", "SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN", "EQUIPO SCR - RADICADOS")
+    if id_rol_user not in (1, 2, 4, 6, 7, 8) and rol_user not in roles_validos:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para modificar autorizaciones de personal en esta solicitud."
+        )
+
+    if not payload.get("id_usuario"):
+        payload["id_usuario"] = current_user.get("id")
+    if not payload.get("rol"):
+        payload["rol"] = current_user.get("rol") or current_user.get("nombre_rol") or rol_user
+    if not payload.get("nombre_revisor"):
+        payload["nombre_revisor"] = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
+
+    resultado = ACTUALIZAR_autorizacion_personas_db(solicitud_id, payload)
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=resultado.get("mensaje", "Error al actualizar autorizaciones de personas.")
+        )
+    return resultado
 
 @router.get("/{solicitud_id}/validar-token-edicion", status_code=status.HTTP_200_OK)
 def VALIDAR_token_edicion_rt(
@@ -208,6 +256,9 @@ def UPDATE_solicitud(solicitud_id: str, datos_in: UPDATE_Schema_Optionals, curre
     # Restricciones de edición según rol y estado:
     user_rol = str(current_user.get("rol", "")).strip().lower()
     es_super = user_rol in ("superadmin", "super admin", "super_admin")
+
+    # Proteger el solicitante original: al editar una solicitud (o cambiar su estado) NUNCA se debe alterar la persona que la diligenció
+    new_updates.pop("diligenciado_por", None)
 
     token_edicion = new_updates.pop("token_edicion", None)
     consumir_token = False

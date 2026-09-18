@@ -1,0 +1,241 @@
+<!-- ============================================================
+      MODAL CONTRATISTAS       
+  =============================================================-->
+  <div x-data="contratistaManager()" x-cloak>
+    <!-- Backdrop oscuro -->
+    <div x-show="isOpen" x-cloak
+      class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 modal-backdrop overflow-y-auto"
+      @keydown.escape.window="cerrarModal()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0">
+
+      <!-- Panel del Modal Ticket -->
+      <div x-show="isOpen"
+        @click.outside="cerrarModal()"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+        x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+        class="modal-panel w-full max-w-3xl pt-6 sm:pt-7 px-3.5 sm:px-8 pb-8 sm:pb-9 relative text-center" x-cloak>
+
+        <!-- Botón cerrar superior derecho -->
+        <button type="button" @click="cerrarModal()"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
+          title="Cerrar modal">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <!-- ============================================================
+             VISTA 503 CUANDO EL MÓDULO ESTÁ EN MANTENIMIENTO
+        ============================================================= -->
+        <div x-show="isModuloMantenimiento('contratistas')" class="py-6 px-4 text-center space-y-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 text-2xl shadow-lg shadow-amber-500/10 mb-1">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+
+          <div>
+            <p class="text-3xl font-black font-mono tracking-wider text-amber-500 mb-1">503</p>
+            <span class="status-pill status-revision font-bold text-xs px-3 py-1 inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Módulo en Mantenimiento Programado
+            </span>
+            <h3 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] mt-2">
+              Empresas Contratistas
+            </h3>
+            <p class="text-xs sm:text-sm text-[var(--paper-muted)] max-w-md mx-auto mt-2 leading-relaxed"
+              x-text="estadoMantenimiento?.mensaje || 'Estamos realizando labores de optimización y mantenimiento programado en este módulo. El resto de la plataforma sigue operando con normalidad.'">
+            </p>
+          </div>
+
+          <!-- CRONÓMETRO VISUAL DENTRO DEL MODAL -->
+          <div class="p-3.5 rounded-xl bg-black/40 border border-amber-500/30 max-w-xs mx-auto shadow-inner" x-data="modalTimerCountdown()">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-stopwatch animate-pulse"></i> Tiempo Estimado de Reapertura
+            </p>
+            <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="hours">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Horas</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="minutes">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Minutos</span>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-1.5">
+                <span class="block text-xl font-black text-amber-400" x-text="seconds">00</span>
+                <span class="text-[8px] uppercase text-slate-400">Segundos</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-300 mt-2 font-medium" x-text="estadoMantenimiento?.tiempo || 'Disponible en breve'"></p>
+          </div>
+
+          <div class="pt-3 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             CONTENIDO HABITUAL (Cuando el módulo NO está en mantenimiento)
+        ============================================================= -->
+        <div x-show="!isModuloMantenimiento('contratistas')">
+        <!-- Cabecera estilo Ticket -->
+        <div class="text-center mb-3">
+          <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+            Empresas Contratistas
+          </h2>
+          <div class="flex items-center justify-center gap-2 mt-1">
+            <span class="status-pill inline-flex select-none shadow-xs font-semibold status-revision text-xs">
+              <i class="fa-solid fa-handshake mr-1.5"></i> Directorio Oficial
+            </span>
+            <span class="text-xs text-[var(--paper-muted)] font-mono font-bold bg-[#efe9dc] px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+              x-text="(totalContratistas || 0) + ' contratistas'"></span>
+          </div>
+        </div>
+
+        <!-- Contenedor scrollable -->
+        <div class="max-h-[52vh] overflow-y-auto custom-scroll pr-1 space-y-3.5 text-left">
+
+          <!-- Alertas -->
+          <div x-show="mensajeExito" x-transition class="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2.5 font-medium">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+            <span x-text="mensajeExito"></span>
+          </div>
+          <div x-show="mensajeError" x-transition class="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center gap-2.5 font-medium">
+            <i class="fa-solid fa-circle-exclamation text-red-400 text-sm"></i>
+            <span x-text="mensajeError"></span>
+          </div>
+
+          <!-- Formulario registrar / editar contratista -->
+          <div class="p-3.5 rounded-xl border border-dashed border-[var(--paper-shadow)] bg-[#efe9dc]/20"
+            x-show="puedeAccion('contratistas', 'crear') || editandoId"
+            :class="editandoId ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''">
+            <div class="flex items-center justify-between mb-2">
+              <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                <i class="fa-solid" :class="editandoId ? 'fa-pen-to-square text-blue-400' : 'fa-plus-circle text-[var(--signal-500)]'"></i>
+                <span x-text="editandoId ? ('Editar Empresa Contratista (ID #' + editandoId + ')') : 'Registrar Nueva Empresa Contratista'"></span>
+              </span>
+              <button type="button" x-show="editandoId" @click="cancelarEdicion()"
+                class="text-xs text-[var(--paper-muted)] hover:text-[var(--paper-ink)] font-medium underline flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+              </button>
+            </div>
+
+            <form @submit.prevent="guardarContratista()" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+              <div class="sm:col-span-5">
+                <label class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block mb-1">Nombre de empresa</label>
+                <input type="text" id="inputNombreContratista" x-model="form.nombre" placeholder="Ej: Maderos Samacá, Servicios SAS..." required
+                  class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs border border-[var(--paper-shadow)]">
+              </div>
+              <div class="sm:col-span-4">
+                <label class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block mb-1">Observación (opcional)</label>
+                <input type="text" id="inputObservacionContratista" x-model="form.observacion" placeholder="Escriba una observación..."
+                  class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs border border-[var(--paper-shadow)]">
+              </div>
+              <div class="sm:col-span-3 flex gap-2">
+                <button type="submit" :disabled="guardando"
+                  class="modal-btn-confirm flex-1 rounded-lg py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5"
+                  :class="editandoId ? 'bg-blue-600 hover:bg-blue-700' : ''">
+                  <i class="fa-solid text-xs" :class="guardando ? 'fa-spinner fa-spin' : (editandoId ? 'fa-check' : 'fa-floppy-disk')"></i>
+                  <span x-text="guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Guardar')"></span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filtros y Tabla -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="subtitles-modal text-[10.5px] font-bold uppercase tracking-wider block">
+                Empresas registradas
+              </span>
+              <div class="w-48 sm:w-56">
+                <input type="text" x-model.debounce.250ms="search" placeholder="Buscar contratista..."
+                  class="input-field w-full rounded-lg px-2.5 py-1 text-xs border border-[var(--paper-shadow)]">
+              </div>
+            </div>
+
+            <div class="border-modal-table border rounded-xl overflow-x-auto shadow-xs custom-scroll">
+              <table class="w-full min-w-[500px] text-xs data-table">
+                <thead>
+                  <tr class="bg-[#efe9dc] border-b border-[var(--paper-shadow)] text-[10.5px] uppercase font-bold tracking-wider text-[var(--paper-muted)]">
+                    <th class="px-3 py-2 w-12 text-center">#</th>
+                    <th class="px-3 py-2 text-left">Empresa Contratista</th>
+                    <th class="px-3 py-2 text-left">Observación</th>
+                    <th class="px-3 py-2 w-24 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--paper-shadow)]">
+                  <template x-for="(c, index) in contratistasPagina" :key="c.id">
+                    <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" :class="editandoId === c.id ? 'bg-blue-500/10' : ''">
+                      <td class="px-3 py-2 text-center text-xs font-semibold text-[var(--paper-muted)]" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                      <td class="px-3 py-2 font-semibold text-[var(--paper-ink)]" x-text="c.nombre"></td>
+                      <td class="px-3 py-2 text-[var(--paper-muted)] text-[11px]" x-text="c.observacion || '—'"></td>
+                      <td class="px-3 py-2 text-center">
+                        <div class="inline-flex items-center gap-1">
+                          <button type="button" 
+                            x-show="puedeAccion('contratistas', 'editar')"
+                            @click="iniciarEdicion(c)"
+                            class="action-icon-btn w-7 h-7 rounded-lg inline-flex items-center justify-center text-yellow-400 hover:text-yellow-600 transition-colors"
+                            data-tooltip="Editar contratista">
+                            <i class="fa-solid fa-pen text-[11px]"></i>
+                          </button>
+                          <button type="button" 
+                            x-show="puedeAccion('contratistas', 'eliminar')"
+                            @click="eliminarContratista(c.id, c.nombre)"
+                            class="action-icon-btn danger w-7 h-7 rounded-lg inline-flex items-center justify-center text-red-500 hover:text-red-700 transition-colors"
+                            data-tooltip="Eliminar contratista">
+                            <i class="fa-solid fa-trash-can text-[11px]"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="contratistasPagina.length === 0">
+                    <td colspan="4" class="px-4 py-6 text-center text-xs text-[var(--paper-muted)]">
+                      <i class="fa-solid fa-triangle-exclamation mb-1 text-base block opacity-60"></i>
+                      No se encontraron empresas contratistas registradas.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="flex items-center justify-between text-[11px] text-[var(--paper-muted)] pt-1">
+              <span>Página <strong x-text="currentPage" class="text-[var(--paper-ink)]"></strong> de <span x-text="totalPaginas"></span> (<span x-text="rangoMostrado"></span>)</span>
+              <div class="flex items-center gap-1.5">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="action-icon-btn px-2 py-0.5 rounded border border-[var(--paper-shadow)]"
+                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-left text-[9px]"></i>
+                </button>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="action-icon-btn px-2 py-0.5 rounded border border-[var(--paper-shadow)]"
+                  :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
+                  <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción SweetAlert Style (Fijos en la parte inferior) -->
+        <div class="flex items-center justify-center gap-3 pt-3.5 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
+          <button type="button" @click="cerrarModal()" class="modal-btn-cancel px-8 py-2.5">
+            Cerrar
+          </button>
+        </div>
+        </div>
+
+        <!-- Borde dentado fijo al pie de la tarjeta -->
+        <div class="modal-serrated"></div>
+      </div>
+    </div>
+  </div>

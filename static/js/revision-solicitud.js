@@ -97,6 +97,90 @@ function revisionSolicitudApp() {
       return rol === "SUPERADMIN" || idRol === 2;
     },
 
+    /**
+     * Determina si el usuario actual tiene permisos para ver y auditar antecedentes en revisión.
+     * Habilitado exclusivamente para SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
+     */
+    get puedeVerAntecedentes() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      // Si el rol activo (simulado o real) es un rol operativo sin atribución de antecedentes
+      const rolesExcluidos = ["SST", "GESCO", "GESTION DOCUMENTAL", "GESTIÓN DOCUMENTAL", "VIGILANTE", "COORDINADOR"];
+      if (rolesExcluidos.includes(rolActualNorm)) {
+        return false;
+      }
+
+      // SuperAdmin siempre tiene acceso
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN") {
+        return true;
+      }
+
+      // SCR y roles superiores (ADMINISTRADOR y SUPERADMIN)
+      const rolesPermitidos = ["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"];
+      if (rolesPermitidos.includes(rolActualNorm) || rolesPermitidos.includes(rolSesionNorm)) {
+        return true;
+      }
+
+      if ([1, 2, 8].includes(idRol)) {
+        return true;
+      }
+
+      if (typeof window.puedeModulo === "function" && window.puedeModulo("antecedentes")) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
+     * Determina si el usuario actual tiene permisos para ver y auditar la vigencia de inducciones.
+     * Habilitado para GESCO, SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
+     */
+    get puedeVerInduccion() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN" || rolActualNorm === "SUPERADMIN") {
+        return true;
+      }
+
+      const rolesPermitidos = ["GESCO", "SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"];
+      if (rolesPermitidos.includes(rolActualNorm) || rolesPermitidos.includes(rolSesionNorm)) {
+        return true;
+      }
+
+      if ([1, 2, 4, 8].includes(idRol)) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
+     * Determina si el rol del usuario es SCR o un rol superior (ADMINISTRADOR, SUPERADMIN).
+     */
+    get esScrOSuperior() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN") return true;
+      if (["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"].includes(rolActualNorm)) return true;
+      if (["SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"].includes(rolSesionNorm)) return true;
+      if ([1, 2, 8].includes(idRol)) return true;
+      return false;
+    },
+
+    get esSstOGesco() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+      return ["SST", "GESCO"].includes(rolActualNorm) || ["SST", "GESCO"].includes(rolSesionNorm) || [6, 7].includes(idRol);
+    },
+
     get userDisplayName() {
       if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
         return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
@@ -112,9 +196,14 @@ function revisionSolicitudApp() {
       return (name.slice(0, 2) || "UA").toUpperCase();
     },
 
+    // Control de cambios en personas
+    hayCambiosPersonas: false,
+    guardandoPersonas: false,
+
     // Estado de revisiones por roles (se almacena localmente y se sincroniza)
     revisionesHistorial: [],
     plantaSeleccionadaDictamen: null,
+    editandoRevision: null, // Guarda { rol, id_planta, plantaNombre } si se está editando una revisión específica
     revisiones: {
       sst: {
         aprobado: false,
@@ -153,6 +242,11 @@ function revisionSolicitudApp() {
     // Modal de confirmación rápida para solicitudes pre-aprobadas
     showModalConfirmacionPreaprobada: false,
 
+    // Modal de Dispositivos y Equipos de Cómputo (Solo Lectura)
+    showModalDispositivos: false,
+    filtroDispositivos: "",
+    dispositivoCopiado: null,
+
     // Verificación individual de ítems (Checklist de auditoría)
     verificaciones: {
       personas: {},
@@ -168,6 +262,28 @@ function revisionSolicitudApp() {
     copiadoFeedback: null,
     mensajeExitoAntecedente: "",
     mensajeErrorAntecedente: "",
+
+    // Modales de inducciones y vigencia (GESCO)
+    showInduccionModal: false,
+    showFormInduccionModal: false,
+    cargandoInduccion: false,
+    guardandoInduccion: false,
+    mensajeExitoInduccion: "",
+    mensajeErrorInduccion: "",
+    personaSeleccionadaInduccion: null,
+    detalleInduccion: {},
+    formInduccion: {
+      id_persona: null,
+      persona_nombre: "",
+      persona_apellido: "",
+      persona_identificacion: "",
+      persona_tipo_doc: "CC",
+      persona_cargo: "",
+      responsable: "",
+      anotaciones: "",
+      fecha_induccion: "",
+      fecha_vigencia: ""
+    },
 
     // Filtros del historial
     searchHistorial: "",
@@ -238,6 +354,7 @@ function revisionSolicitudApp() {
       persona_identificacion: "",
       persona_cargo: "",
       responsable: "",
+      ultimo_usuario_solicitud: "",
       anotaciones: "",
       id_empresa: null,
       ultima_empresa_solicitante: "",
@@ -364,7 +481,7 @@ function revisionSolicitudApp() {
         );
         if (sesion) {
           this.usuarioSesion = sesion;
-          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Gestion documental", 5: "SST", 6: "GESCO", 7: "SCR" };
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
           const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Gestion documental";
           this.rolActual = rol;
           this.rolNombre = rol;
@@ -471,8 +588,10 @@ function revisionSolicitudApp() {
           this.dictamenForm.decision = "aprobar";
         }
 
-        // Cargar vigencias de antecedentes de cada ingresante
-        await this.cargarVigenciasPersonas();
+        // Cargar vigencias de antecedentes e inducciones de cada ingresante
+        if (this.puedeVerAntecedentes || this.puedeVerInduccion) {
+          await this.cargarVigenciasPersonas();
+        }
 
         // Si la solicitud está en 'ENVIADO' y entra un rol auditor/revisor, actualizar visualmente a 'EN REVISIÓN'
         const estadoActual = (this.solicitud.estado || "").toUpperCase();
@@ -528,10 +647,12 @@ function revisionSolicitudApp() {
       if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
         listaVehiculos = s.vehiculos.split('###').map(v => {
           const [id, tipo, placa, licencia, autorizado, motivo_rechazo] = v.split('|||');
+          const isAut = autorizado !== '0' && autorizado !== false && autorizado !== 'false';
           return {
             id, tipo: tipo || "Vehículo", placa, licencia,
             licencia_doc: licencia || "—",
-            autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+            autorizado: isAut,
+            denegadoEnBd: !isAut,
             motivo_rechazo: motivo_rechazo || "",
             documentos: [
               { tipo_doc: "soat", nombre_archivo: `SOAT_${placa || 'DOC'}.pdf` },
@@ -542,24 +663,28 @@ function revisionSolicitudApp() {
         });
       } else if (Array.isArray(s.vehiculos) || Array.isArray(s.vehiculo)) {
         const rawV = Array.isArray(s.vehiculos) ? s.vehiculos : s.vehiculo;
-        listaVehiculos = rawV.map((v, vIdx) => ({
-          id: v.id || v.id_vehiculo || vIdx,
-          tipo: v.tipo || "Vehículo",
-          placa: v.placa || "—",
-          licencia: v.licencia_doc || v.licencia || "—",
-          licencia_doc: v.licencia_doc || v.licencia || "—",
-          autorizado: v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false',
-          motivo_rechazo: v.motivo_rechazo || v.motivo || "",
-          documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
-            id: d.id || dIdx,
-            tipo_doc: d.tipo_doc || "documento",
-            nombre_archivo: d.nom_documento || d.nombre_archivo || `doc_${v.placa || 'veh'}_${dIdx}.pdf`,
-            url_acceso: d.url_acceso || (d.nom_documento ? `/uploads/documentos/vehiculos/${d.nom_documento}` : null)
-          })) : [
-            { tipo_doc: "soat", nombre_archivo: `SOAT_${v.placa || 'DOC'}.pdf` },
-            { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${v.placa || 'DOC'}.pdf` }
-          ]
-        }));
+        listaVehiculos = rawV.map((v, vIdx) => {
+          const isAut = v.autorizado !== false && v.autorizado !== 0 && v.autorizado !== '0' && v.autorizado !== 'false';
+          return {
+            id: v.id || v.id_vehiculo || vIdx,
+            tipo: v.tipo || "Vehículo",
+            placa: v.placa || "—",
+            licencia: v.licencia_doc || v.licencia || "—",
+            licencia_doc: v.licencia_doc || v.licencia || "—",
+            autorizado: isAut,
+            denegadoEnBd: !isAut,
+            motivo_rechazo: v.motivo_rechazo || v.motivo || "",
+            documentos: Array.isArray(v.documentos) && v.documentos.length > 0 ? v.documentos.map((d, dIdx) => ({
+              id: d.id || dIdx,
+              tipo_doc: d.tipo_doc || "documento",
+              nombre_archivo: d.nom_documento || d.nombre_archivo || `doc_${v.placa || 'veh'}_${dIdx}.pdf`,
+              url_acceso: d.url_acceso || (d.nom_documento ? `/uploads/documentos/vehiculos/${d.nom_documento}` : null)
+            })) : [
+              { tipo_doc: "soat", nombre_archivo: `SOAT_${v.placa || 'DOC'}.pdf` },
+              { tipo_doc: "tecnomecanica", nombre_archivo: `RTM_${v.placa || 'DOC'}.pdf` }
+            ]
+          };
+        });
       }
 
       // Cargar autorizaciones individuales de vehículos persistidas en localStorage
@@ -570,10 +695,11 @@ function revisionSolicitudApp() {
           listaVehiculos = listaVehiculos.map(v => {
             const match = vehiculosGuardados.find(vg => String(vg.id) === String(v.id) || (vg.placa && vg.placa === v.placa));
             if (match) {
+              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
               return {
                 ...v,
-                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
-                motivo_rechazo: match.motivo_rechazo || ""
+                autorizado: autGuardado,
+                motivo_rechazo: match.motivo_rechazo || v.motivo_rechazo || ""
               };
             }
             return v;
@@ -586,13 +712,15 @@ function revisionSolicitudApp() {
         if (s.personas.includes('|||') || s.personas.includes('###')) {
           listaPersonas = s.personas.split('###').map(p => {
             const [id, ap_nombre, tipo_doc, identificacion, cargo, autorizado, motivo_rechazo] = p.split('|||');
+            const isAut = autorizado !== '0' && autorizado !== false && autorizado !== 'false';
             return {
               id,
               nombre: ap_nombre || "Contratista",
               tipo_doc: tipo_doc || "CC",
               identificacion: identificacion || "—",
               cargo: cargo || "Operario",
-              autorizado: autorizado !== '0' && autorizado !== false && autorizado !== 'false',
+              autorizado: isAut,
+              denegadaEnBd: !isAut,
               motivo_rechazo: motivo_rechazo || "",
               documentos: [
                 { tipo_doc: "cedula", nombre_archivo: `Cedula_${identificacion || 'doc'}.pdf` },
@@ -605,26 +733,35 @@ function revisionSolicitudApp() {
         }
       } else if (Array.isArray(s.personas) || Array.isArray(s.ingresantes)) {
         const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
-        listaPersonas = rawP.map(p => ({
-          id: p.id,
-          id_persona: p.id_persona || p.id,
-          nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
-          tipo_doc: p.tipo_doc || "CC",
-          identificacion: p.identificacion || "—",
-          cargo: p.cargo || "Operario",
-          autorizado: p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false',
-          motivo_rechazo: p.motivo_rechazo || "",
-          fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
-          ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
-          responsable: p.responsable || null,
-          anotaciones: p.anotaciones || "",
-          documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
-            { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "examen_medico", nombre_archivo: `Examen_${p.identificacion || 'doc'}.pdf` },
-            { tipo_doc: "induccion", nombre_archivo: `Induccion_${p.identificacion || 'doc'}.pdf` }
-          ]
-        }));
+        listaPersonas = rawP.map(p => {
+          const isAut = p.autorizado !== false && p.autorizado !== 0 && p.autorizado !== '0' && p.autorizado !== 'false';
+          return {
+            id: p.id,
+            id_persona: p.id_persona || p.id,
+            nombre: `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.ap_nombre || "Contratista",
+            tipo_doc: p.tipo_doc || "CC",
+            identificacion: p.identificacion || "—",
+            cargo: p.cargo || "Operario",
+            autorizado: isAut,
+            denegadaEnBd: !isAut,
+            motivo_rechazo: p.motivo_rechazo || "",
+            fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
+            ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
+            responsable: p.responsable || null,
+            anotaciones: p.anotaciones || "",
+            fecha_induccion: (p.fecha_induccion && p.fecha_induccion !== "None" && p.fecha_induccion !== "null") ? p.fecha_induccion : null,
+            fecha_vigencia_induccion: (p.fecha_vigencia_induccion && p.fecha_vigencia_induccion !== "None" && p.fecha_vigencia_induccion !== "null") ? p.fecha_vigencia_induccion : null,
+            responsable_induccion: p.responsable_induccion || null,
+            anotaciones_induccion: p.anotaciones_induccion || "",
+            estadoVigenciaInduccion: this.getEstadoVigenciaInduccion(p.fecha_vigencia_induccion || (p.fecha_induccion ? this.obtenerFechaMasUnAnio(p.fecha_induccion) : null)),
+            documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
+              { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "examen_medico", nombre_archivo: `Examen_${p.identificacion || 'doc'}.pdf` },
+              { tipo_doc: "induccion", nombre_archivo: `Induccion_${p.identificacion || 'doc'}.pdf` }
+            ]
+          };
+        });
       }
 
       // Cargar autorizaciones individuales previas persistidas en localStorage
@@ -635,10 +772,11 @@ function revisionSolicitudApp() {
           listaPersonas = listaPersonas.map(p => {
             const match = personasGuardadas.find(pg => String(pg.id) === String(p.id) || (pg.identificacion && pg.identificacion === p.identificacion));
             if (match) {
+              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
               return {
                 ...p,
-                autorizado: match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false',
-                motivo_rechazo: match.motivo_rechazo || ""
+                autorizado: autGuardado,
+                motivo_rechazo: match.motivo_rechazo || p.motivo_rechazo || ""
               };
             }
             return p;
@@ -746,9 +884,25 @@ function revisionSolicitudApp() {
     },
 
     get puedeEditarAutorizacion() {
+      // SCR y roles superiores tienen potestad para editar autorizaciones en todo momento
+      if (this.esScrOSuperior) {
+        return true;
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
-      // Si la solicitud ya está en estado final APROBADO o RECHAZADO
-      if (estado === "APROBADO" || estado === "RECHAZADO") {
+      // Si la solicitud ya está en estado final RECHAZADO para roles operativos
+      if (estado === "RECHAZADO") {
+        return false;
+      }
+
+      // SST y GESCO pueden autorizar personas de una solicitud aunque ya hayan enviado su visto bueno
+      if (this.esSstOGesco) {
+        if (!this.tienePlantaAsignadaParaSolicitud) return false;
+        return true;
+      }
+
+      // Si la solicitud ya fue APROBADA de forma definitiva para otros roles operativos
+      if (estado === "APROBADO") {
         return false;
       }
 
@@ -761,9 +915,37 @@ function revisionSolicitudApp() {
       return Boolean(this.puedeDictaminar);
     },
 
+    puedeAutorizarPersona(persona) {
+      if (!this.puedeEditarAutorizacion) return false;
+      // SCR, roles superiores, SST y GESCO siempre pueden autorizar personas
+      if (this.esScrOSuperior || this.esSstOGesco) {
+        return true;
+      }
+      // Regla de negocio para otros roles: Si ya estaba denegada en BD
+      if (persona && persona.denegadaEnBd) {
+        return false;
+      }
+      return true;
+    },
+
+    puedeAutorizarVehiculo(vehiculo) {
+      if (!this.puedeEditarAutorizacion) return false;
+      if (this.esScrOSuperior || this.esSstOGesco) {
+        return true;
+      }
+      if (vehiculo && vehiculo.denegadoEnBd) {
+        return false;
+      }
+      return true;
+    },
+
     setAutorizacionPersona(persona, estaAutorizado, motivo = "") {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        this.mostrarToast("No puedes modificar la autorización: la solicitud está bloqueada para tu rol.", "info");
+        return;
+      }
+      if (estaAutorizado && !this.puedeAutorizarPersona(persona)) {
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
         return;
       }
       persona.autorizado = estaAutorizado;
@@ -772,44 +954,60 @@ function revisionSolicitudApp() {
       } else if (estaAutorizado) {
         persona.motivo_rechazo = "";
       }
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
       const nombre = persona.nombre || "Ingresante";
       this.mostrarToast(
-        estaAutorizado ? `✅ ${nombre} ha sido autorizado` : `⛔ Acceso denegado a ${nombre}`,
+        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (guarda los cambios para notificar)` : `⛔ Acceso denegado a ${nombre} (guarda los cambios para notificar)`,
         estaAutorizado ? "success" : "info"
       );
     },
 
     toggleAutorizacionPersona(persona) {
       if (!this.puedeEditarAutorizacion) return;
+      if (!persona.autorizado && !this.puedeAutorizarPersona(persona)) {
+        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
+        return;
+      }
       this.setAutorizacionPersona(persona, !persona.autorizado);
     },
 
     autorizarTodasPersonas() {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        this.mostrarToast("No puedes modificar autorizaciones: la solicitud está bloqueada.", "info");
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
+      let omitidas = 0;
       this.solicitud.personas.forEach(p => {
-        p.autorizado = true;
-        p.motivo_rechazo = "";
+        if (this.puedeAutorizarPersona(p)) {
+          p.autorizado = true;
+          p.motivo_rechazo = "";
+        } else {
+          omitidas++;
+        }
       });
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
-      this.mostrarToast("Todas las personas de la solicitud han sido autorizadas", "success");
+      if (omitidas > 0) {
+        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados).`, "info");
+      } else {
+        this.mostrarToast("Todas las personas marcadas como autorizadas (recuerda guardar cambios)", "success");
+      }
     },
 
     denegarTodasPersonas() {
       if (!this.puedeEditarAutorizacion) {
-        this.mostrarToast("No puedes modificar autorizaciones: ya has emitido tu dictamen.", "info");
+        this.mostrarToast("No puedes modificar autorizaciones: la solicitud está bloqueada.", "info");
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.solicitud.personas.forEach(p => {
         p.autorizado = false;
       });
+      this.hayCambiosPersonas = true;
       this.persistirPersonasEnStorage();
-      this.mostrarToast("Todas las personas han sido marcadas como No Autorizadas", "info");
+      this.mostrarToast("Todas las personas marcadas como No Autorizadas (recuerda guardar cambios)", "info");
     },
 
     async persistirPersonasEnStorage() {
@@ -829,9 +1027,66 @@ function revisionSolicitudApp() {
       }
     },
 
+    async guardarCambiosPersonas() {
+      if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
+      this.guardandoPersonas = true;
+      try {
+        const nombreUsuario = this.usuarioSesion?.nombres 
+          ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
+          : `Auditor (${this.rolActual})`;
+
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const targetId = this.solicitud?.id || this.solicitudId;
+        const payload = {
+          rol: this.rolActual,
+          id_usuario: this.usuarioSesion?.id || null,
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          }))
+        };
+
+        const res = await fetch(`${API.solicitudes}/${targetId}/personas-autorizacion`, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          this.hayCambiosPersonas = false;
+          this.mostrarToast("✅ Autorizaciones actualizadas y notificación enviada a SCR y roles superiores.", "success");
+          await this.cargarSolicitud();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
+          this.mostrarToast(`Error al guardar autorizaciones: ${errMsg}`, "error");
+        }
+      } catch (err) {
+        console.error("Error al guardar autorizaciones de personas:", err);
+        this.mostrarToast("Error de conexión al guardar autorizaciones: " + err.message, "error");
+      } finally {
+        this.guardandoPersonas = false;
+      }
+    },
+
+    async descartarCambiosPersonas() {
+      this.hayCambiosPersonas = false;
+      await this.cargarSolicitud();
+      this.mostrarToast("Cambios descartados.", "info");
+    },
+
     setAutorizacionVehiculo(vehiculo, estaAutorizado, motivo = "") {
       if (!this.puedeEditarAutorizacion) {
         this.mostrarToast("No puedes modificar la autorización: ya has emitido dictamen o la solicitud ya fue procesada.", "info");
+        return;
+      }
+      if (estaAutorizado && !this.puedeAutorizarVehiculo(vehiculo)) {
+        this.mostrarToast("No puedes autorizar este vehículo: fue denegado en una revisión previa. Solo SCR o superiores en modo de edición de revisión pueden reautorizarlo.", "warning");
         return;
       }
       vehiculo.autorizado = estaAutorizado;
@@ -850,6 +1105,10 @@ function revisionSolicitudApp() {
 
     toggleAutorizacionVehiculo(vehiculo) {
       if (!this.puedeEditarAutorizacion) return;
+      if (!vehiculo.autorizado && !this.puedeAutorizarVehiculo(vehiculo)) {
+        this.mostrarToast("No puedes autorizar este vehículo: fue denegado en una revisión previa. Solo SCR o superior en edición pueden reautorizarlo.", "warning");
+        return;
+      }
       this.setAutorizacionVehiculo(vehiculo, !vehiculo.autorizado);
     },
 
@@ -859,12 +1118,21 @@ function revisionSolicitudApp() {
         return;
       }
       if (!this.solicitud?.vehiculos || this.solicitud.vehiculos.length === 0) return;
+      let omitidos = 0;
       this.solicitud.vehiculos.forEach(v => {
-        v.autorizado = true;
-        v.motivo_rechazo = "";
+        if (this.puedeAutorizarVehiculo(v)) {
+          v.autorizado = true;
+          v.motivo_rechazo = "";
+        } else {
+          omitidos++;
+        }
       });
       this.persistirVehiculosEnStorage();
-      this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+      if (omitidos > 0) {
+        this.mostrarToast(`Se autorizaron los vehículos disponibles (${omitidos} vehículo(s) se mantuvieron denegados por revisión previa).`, "info");
+      } else {
+        this.mostrarToast("Todos los vehículos de la solicitud han sido autorizados", "success");
+      }
     },
 
     denegarTodosVehiculos() {
@@ -1091,13 +1359,21 @@ function revisionSolicitudApp() {
         }
       }
 
+      // Si está en modo edición de una revisión activa, puede dictaminar / guardar cambios
+      if (this.editandoRevision) {
+        return true;
+      }
+
+      // SCR y roles superiores pueden emitir o editar revisiones en cualquier momento
+      if (this.esScrOSuperior) {
+        return true;
+      }
+
       const estado = String(this.solicitud?.estado || "").toUpperCase();
 
       if (estado === "RECHAZADO" || estado === "APROBADO") {
-        return this.rolActual === "Administrador";
+        return false;
       }
-
-      if (this.rolActual === "Administrador") return true;
 
       // Validación para SST y GESCO:
       if (this.rolActual === "SST" || this.rolActual === "GESCO") {
@@ -1107,17 +1383,91 @@ function revisionSolicitudApp() {
         return true;
       }
 
-      // SCR puede dictaminar (Pre-aprobar o devolver/rechazar) en estados previos, o aprobar en 'POR APROBAR'
-      if (this.rolActual === "SCR") {
-        return estado === "POR APROBAR" || estado === "EN REVISIÓN" || estado === "EN REVISION" || estado === "ENVIADO";
-      }
-
       return false;
     },
 
+    /**
+     * Carga una revisión existente (SST, GESCO o SCR) en el formulario de dictamen para que el revisor o SCR/Admin puedan editarla
+     */
+    cargarRevisionParaEdicion(rol, id_planta = null, plantaNombre = "") {
+      const rolUpper = String(rol).toUpperCase();
+      const esMio = (String(this.rolActual).toUpperCase() === rolUpper);
+      if (!this.esScrOSuperior && !esMio) {
+        this.mostrarToast(`Solo puedes editar revisiones de tu propio rol (${this.rolActual}).`, "warning");
+        return;
+      }
+
+      const revs = this.revisionesHistorial || [];
+      const encontrada = revs.find(r =>
+        String(r.rol).toUpperCase() === rolUpper &&
+        (id_planta === null || Number(r.id_planta) === Number(id_planta))
+      );
+
+      let decision = "aprobar";
+      let motivoRechazo = "";
+      let motivoDevolucion = "";
+      let observaciones = "";
+
+      if (encontrada) {
+        const dec = String(encontrada.decision || "").toUpperCase();
+        if (dec === "RECHAZADO") decision = "rechazar";
+        else if (dec === "DEVUELTO") decision = "devolver";
+        else if (dec === "PREAPROBADO") decision = "preaprobar";
+        else decision = "aprobar";
+
+        motivoRechazo = encontrada.motivo_rechazo || "";
+        motivoDevolucion = encontrada.motivo_devolucion || "";
+        observaciones = encontrada.observacion || "";
+      }
+
+      this.editandoRevision = {
+        rol: rolUpper,
+        id_planta: id_planta ? Number(id_planta) : null,
+        plantaNombre: plantaNombre || (id_planta ? `Planta #${id_planta}` : "General")
+      };
+
+      if (id_planta) {
+        this.plantaSeleccionadaDictamen = Number(id_planta);
+      }
+
+      this.dictamenForm = {
+        decision: decision,
+        motivoRechazo: motivoRechazo,
+        motivoDevolucion: motivoDevolucion,
+        observaciones: observaciones
+      };
+
+      // Desplazamiento suave al formulario de dictamen
+      this.$nextTick(() => {
+        const el = document.getElementById("seccion-dictamen");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+      this.mostrarToast(`Modo edición activado: ${rolUpper} (${this.editandoRevision.plantaNombre})`, "info");
+    },
+
+    async cancelarEdicionRevision() {
+      this.editandoRevision = null;
+      this.dictamenForm = {
+        decision: (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.estado !== "POR APROBAR" ? "preaprobar" : "aprobar",
+        motivoRechazo: "",
+        motivoDevolucion: "",
+        observaciones: ""
+      };
+      await this.cargarSolicitud();
+      this.mostrarToast("Edición cancelada.", "info");
+    },
+
     async emitirDictamen() {
+      const esEdicion = Boolean(this.editandoRevision);
+      const rolDictamen = this.editandoRevision ? this.editandoRevision.rol : this.rolActual;
+      const idPlantaDictamen = this.editandoRevision 
+        ? this.editandoRevision.id_planta 
+        : ((this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null);
+
       // Asegurar selección de planta
-      if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
+      if (!this.editandoRevision && (this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
         if (this.misPlantasDictaminables.length > 0) {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
         } else if (this.plantasSolicitud.length > 0) {
@@ -1125,7 +1475,7 @@ function revisionSolicitudApp() {
         }
       }
 
-      if ((this.rolActual === "SST" || this.rolActual === "GESCO") && !this.tienePlantaAsignadaParaSolicitud) {
+      if (!this.esScrOSuperior && (this.rolActual === "SST" || this.rolActual === "GESCO") && !this.tienePlantaAsignadaParaSolicitud) {
         this.mostrarToast("No puedes dictaminar: ninguna planta de esta solicitud coincide con tus zonas asignadas.", "error");
         return;
       }
@@ -1161,15 +1511,30 @@ function revisionSolicitudApp() {
         else if (decision === "devolver") decisionBackend = "DEVUELTO";
         else if (decision === "preaprobar") decisionBackend = "PREAPROBADO";
 
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         const payloadDictamen = {
-          id_planta: (this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null,
-          rol: this.rolActual,
+          id_planta: idPlantaDictamen,
+          rol: rolDictamen,
           decision: decisionBackend,
+          es_edicion: esEdicion,
           motivo_rechazo: decision === "rechazar" ? motivo : (decision === "devolver" ? motivoDev : null),
           motivo_devolucion: decision === "devolver" ? motivoDev : null,
           observacion: obs || null,
           id_usuario: this.usuarioSesion?.id || null,
-          nombre_revisor: nombreUsuario
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          })),
+          vehiculos: (this.solicitud?.vehiculos || []).map(v => ({
+            id: v.id || v.id_vehiculo,
+            autorizado: Boolean(v.autorizado),
+            motivo: v.motivo_rechazo || v.motivo || ""
+          }))
         };
 
         await this.persistirPersonasEnStorage();
@@ -1179,34 +1544,41 @@ function revisionSolicitudApp() {
         const targetId = this.solicitud?.id || this.solicitudId;
         const res = await fetch(`${API.solicitudes}/${targetId}/dictamen`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: headers,
           body: JSON.stringify(payloadDictamen)
         });
 
         if (res.ok) {
           const dataRes = await res.json();
+          this.hayCambiosPersonas = false;
           this.solicitud.estado = dataRes.nuevo_estado;
           if (decision === "preaprobar" || decisionBackend === "PREAPROBADO") {
             this.solicitud.pre_aprobado = true;
           }
           this.revisionesHistorial = dataRes.revisiones || [];
           this.guardarRevisionesEnStorage();
-          const mensajeToast = decision === "preaprobar"
-            ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
-            : (decision === "devolver"
-                ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
-                : (decision === "rechazar"
-                    ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
-                    : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
-          this.mostrarToast(mensajeToast, "success");
 
-          // Redirigir a procesamiento tras completar la acción para evitar bloqueos o error 403
-          setTimeout(() => {
-            if (typeof window.showPageLoader === "function") {
-              window.showPageLoader();
-            }
-            window.location.href = "/procesamiento";
-          }, 1200);
+          if (esEdicion) {
+            this.editandoRevision = null;
+            this.mostrarToast(`Revisión de ${rolDictamen} actualizada exitosamente (${dataRes.nuevo_estado}).`, "success");
+            await this.cargarSolicitud();
+          } else {
+            const mensajeToast = decision === "preaprobar"
+              ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
+              : (decision === "devolver"
+                  ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
+                  : (decision === "rechazar"
+                      ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
+                      : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
+            this.mostrarToast(mensajeToast, "success");
+
+            setTimeout(() => {
+              if (typeof window.showPageLoader === "function") {
+                window.showPageLoader();
+              }
+              window.location.href = "/procesamiento";
+            }, 1200);
+          }
         } else {
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.detail || errData.mensaje || `Error del servidor (${res.status})`;
@@ -1216,10 +1588,12 @@ function revisionSolicitudApp() {
 
         this.guardarRevisionesEnStorage();
 
-        // Limpiar formulario
-        this.dictamenForm.motivoRechazo = "";
-        this.dictamenForm.motivoDevolucion = "";
-        this.dictamenForm.observaciones = "";
+        // Limpiar formulario si no es edición
+        if (!esEdicion) {
+          this.dictamenForm.motivoRechazo = "";
+          this.dictamenForm.motivoDevolucion = "";
+          this.dictamenForm.observaciones = "";
+        }
 
       } catch (err) {
         console.error("Error al emitir dictamen:", err);
@@ -1260,7 +1634,17 @@ function revisionSolicitudApp() {
           decision: "APROBADO",
           observacion: "Aprobación definitiva confirmada por SCR tras superar revisiones de SST y GESCO.",
           id_usuario: this.usuarioSesion?.id || null,
-          nombre_revisor: nombreUsuario
+          nombre_revisor: nombreUsuario,
+          personas: (this.solicitud?.personas || []).map(p => ({
+            id: p.id || p.id_persona,
+            autorizado: Boolean(p.autorizado),
+            motivo: p.motivo_rechazo || p.motivo || ""
+          })),
+          vehiculos: (this.solicitud?.vehiculos || []).map(v => ({
+            id: v.id || v.id_vehiculo,
+            autorizado: Boolean(v.autorizado),
+            motivo: v.motivo_rechazo || v.motivo || ""
+          }))
         };
 
         const targetId = this.solicitud?.id || this.solicitudId;
@@ -1332,8 +1716,16 @@ function revisionSolicitudApp() {
         url = url.startsWith("/") ? `${API.base}${url}` : `${API.base}/${url}`;
       }
 
+      // Nombre de tipo limpio sin incluir el nombre del archivo en la parte superior
+      let tipoTitulo = "DOCUMENTO ADJUNTO";
+      if (tipo && tipo.toLowerCase() !== "adjunto") {
+        tipoTitulo = tipo.toUpperCase().replace(/_/g, ' ');
+      } else if (doc.nom_documento && doc.nom_documento !== nom) {
+        tipoTitulo = doc.nom_documento.toUpperCase().replace(/_/g, ' ');
+      }
+
       this.docActual = {
-        titulo: `${tipo.toUpperCase().replace('_', ' ')} · ${nom}`,
+        titulo: tipoTitulo,
         subtitulo: itemPadre ? `Perteneciente a: ${itemPadre}` : "",
         tipo: tipo,
         url: url,
@@ -1357,6 +1749,9 @@ function revisionSolicitudApp() {
       this.rolActual = nuevoRol;
       this.rolNombre = nuevoRol;
       this.mostrarToast(`Sesión cambiada a rol: ${nuevoRol}`, "info");
+      if ((this.puedeVerAntecedentes || this.puedeVerInduccion) && this.solicitud?.personas?.length > 0) {
+        this.cargarVigenciasPersonas();
+      }
     },
 
     // Clases y colores de estado
@@ -1372,7 +1767,7 @@ function revisionSolicitudApp() {
     },
 
     // =============================================================
-    // GESTIÓN Y AUDITORÍA DE ANTECEDENTES (HISTORIAL Y RENOVACIÓN)
+    // GESTIÓN Y AUDITORÍA DE ANTECEDENTES E INDUCCIONES (HISTORIAL Y RENOVACIÓN)
     // =============================================================
 
     async cargarVigenciasPersonas() {
@@ -1382,45 +1777,80 @@ function revisionSolicitudApp() {
         const idPersona = p.id_persona || p.id;
         const ident = String(p.identificacion || "").trim();
 
-        // 1. Ver si está en localStorage (solo si fue guardado recientemente con fecha válida)
-        const localKey = `incarsa_antecedente_${ident}`;
-        const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
-        if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
-          p.fecha_consulta = localSaved.fecha_consulta;
-          p.ultima_revision = localSaved.ultima_revision;
-          p.responsable = localSaved.responsable;
-          p.anotaciones = localSaved.anotaciones;
-          p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
-          return;
-        }
-
-        // 2. Si ya tiene fecha_consulta válida en el objeto
-        if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
-          p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
-          return;
-        }
-
-        // 3. Consultar backend si existe registro previo
-        try {
-          if (idPersona) {
-            const res = await fetch(`${API.antecedentes}/persona/${idPersona}?actualizar_revision=false`);
-            if (res.ok) {
-              const resData = await res.json().catch(() => ({}));
-              const data = resData.data || resData;
-              if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
-                p.fecha_consulta = data.fecha_consulta;
-                p.ultima_revision = data.ultima_revision;
-                p.responsable = data.responsable;
-                p.anotaciones = data.anotaciones;
-                p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
-                return;
-              }
-            }
+        // 1. CARGA DE ANTECEDENTES (SCR, Administrador, SuperAdmin)
+        if (this.puedeVerAntecedentes) {
+          let antecedenteCargado = false;
+          // Ver si está en localStorage (guardado recientemente con fecha válida)
+          const localKey = `incarsa_antecedente_${ident}`;
+          const localSaved = JSON.parse(localStorage.getItem(localKey) || "null");
+          if (localSaved && localSaved.fecha_consulta && localSaved.fecha_consulta !== "Pendiente" && localSaved.fecha_consulta !== "No registrada") {
+            p.fecha_consulta = localSaved.fecha_consulta;
+            p.ultima_revision = localSaved.ultima_revision;
+            p.responsable = localSaved.responsable;
+            p.anotaciones = localSaved.anotaciones;
+            p.estadoVigencia = this.getEstadoVigencia(localSaved.fecha_consulta);
+            antecedenteCargado = true;
+          } else if (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") {
+            p.estadoVigencia = this.getEstadoVigencia(p.fecha_consulta);
+            antecedenteCargado = true;
           }
-        } catch (e) {}
 
-        // Fallback por defecto si no tiene registro previo de revisión: Sin revisión
-        p.estadoVigencia = this.getEstadoVigencia(null);
+          if (!antecedenteCargado) {
+            try {
+              if (idPersona) {
+                const res = await fetch(`${API.antecedentes}/persona/${idPersona}?actualizar_revision=false`);
+                if (res.ok) {
+                  const resData = await res.json().catch(() => ({}));
+                  const data = resData.data || resData;
+                  if (data && data.fecha_consulta && data.fecha_consulta !== "Pendiente" && data.fecha_consulta !== "No registrada") {
+                    p.fecha_consulta = data.fecha_consulta;
+                    p.ultima_revision = data.ultima_revision;
+                    p.responsable = data.responsable;
+                    p.anotaciones = data.anotaciones;
+                    p.estadoVigencia = this.getEstadoVigencia(data.fecha_consulta);
+                    antecedenteCargado = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!antecedenteCargado) {
+            p.estadoVigencia = this.getEstadoVigencia(null);
+          }
+        }
+
+        // 2. CARGA DE INDUCCIONES (GESCO, SCR, Administrador, SuperAdmin)
+        if (this.puedeVerInduccion) {
+          let induccionCargada = false;
+          if (p.fecha_vigencia_induccion || p.fecha_induccion) {
+            p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(p.fecha_vigencia_induccion || (p.fecha_induccion ? this.obtenerFechaMasUnAnio(p.fecha_induccion) : null));
+            induccionCargada = true;
+          }
+
+          if (!induccionCargada) {
+            try {
+              if (idPersona) {
+                const resInd = await fetch(`${API.inducciones}/persona/${idPersona}?auto_renovar=false`);
+                if (resInd.ok) {
+                  const dataInd = await resInd.json().catch(() => ({}));
+                  if (dataInd && (dataInd.fecha_vigencia || dataInd.fecha_induccion)) {
+                    p.fecha_induccion = dataInd.fecha_induccion;
+                    p.fecha_vigencia_induccion = dataInd.fecha_vigencia;
+                    p.responsable_induccion = dataInd.responsable;
+                    p.anotaciones_induccion = dataInd.anotaciones;
+                    p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(dataInd.fecha_vigencia || this.obtenerFechaMasUnAnio(dataInd.fecha_induccion));
+                    induccionCargada = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!induccionCargada) {
+            p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(null);
+          }
+        }
       });
 
       await Promise.all(tareas);
@@ -1542,6 +1972,83 @@ function revisionSolicitudApp() {
       }
     },
 
+    getEstadoVigenciaInduccion(fechaVigenciaStr) {
+      if (!fechaVigenciaStr) {
+        return {
+          estado: 'sin_induccion',
+          etiqueta: 'Sin inducción',
+          textoDias: 'Sin curso de inducción registrado',
+          icono: 'fa-solid fa-graduation-cap',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaLimite = this.parsearFechaLocal(fechaVigenciaStr);
+      if (!fechaLimite || isNaN(fechaLimite.getTime())) {
+        return {
+          estado: 'sin_induccion',
+          etiqueta: 'Fecha inválida',
+          textoDias: 'Fecha inválida',
+          icono: 'fa-solid fa-circle-question',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+      fechaLimite.setHours(0, 0, 0, 0);
+
+      const diffMs = fechaLimite.getTime() - hoy.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDias < 0) {
+        const diasVencidos = Math.abs(diffDias);
+        return {
+          estado: 'vencido',
+          etiqueta: `Vencida (${diasVencidos}d)`,
+          textoDias: `Inducción vencida hace ${diasVencidos} ${diasVencidos === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-circle-xmark',
+          badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60',
+          dotClass: 'bg-red-500',
+          dias: diffDias
+        };
+      } else if (diffDias === 0) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: 'Vence hoy',
+          textoDias: 'La inducción vence hoy',
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: 0
+        };
+      } else if (diffDias <= 30) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: `Por vencer (${diffDias}d)`,
+          textoDias: `${diffDias} ${diffDias === 1 ? 'día restante de vigencia' : 'días restantes de vigencia'}`,
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: diffDias
+        };
+      } else {
+        return {
+          estado: 'vigente',
+          etiqueta: `Vigente (${diffDias}d)`,
+          textoDias: `${diffDias} días restantes de vigencia`,
+          icono: 'fa-solid fa-circle-check',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
+          dotClass: 'bg-emerald-500',
+          dias: diffDias
+        };
+      }
+    },
+
     calcularFechaConsulta(ultimaRevisionStr, fechaConsultaExistente = null) {
       if (fechaConsultaExistente && fechaConsultaExistente !== "None" && fechaConsultaExistente !== "null" && fechaConsultaExistente !== "Pendiente") {
         const clean = String(fechaConsultaExistente).split("T")[0].split(" ")[0].trim();
@@ -1585,6 +2092,27 @@ function revisionSolicitudApp() {
       }
     },
 
+    formatearFechaLegible(fechaStr) {
+      if (!fechaStr || fechaStr === "—" || fechaStr === "-" || fechaStr === "No registrada" || fechaStr === "Sin fecha" || fechaStr === "Sin vigencia registrada") {
+        return fechaStr || "—";
+      }
+      try {
+        const str = String(fechaStr).trim().split("T")[0].split(" ")[0];
+        const fPartes = str.split("-");
+        if (fPartes.length === 3) {
+          const anio = fPartes[0];
+          const mesIdx = parseInt(fPartes[1], 10) - 1;
+          const dia = parseInt(fPartes[2], 10);
+          const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+          const mesNombre = meses[mesIdx] || fPartes[1];
+          return `${dia} ${mesNombre} ${anio}`;
+        }
+        return this.formatearSoloFecha(fechaStr);
+      } catch {
+        return fechaStr;
+      }
+    },
+
     copiarCodigo(codigo) {
       if (!codigo) return;
       navigator.clipboard.writeText(codigo).then(() => {
@@ -1600,6 +2128,10 @@ function revisionSolicitudApp() {
     },
 
     async abrirHistorialModal(persona) {
+      if (!this.puedeVerAntecedentes) {
+        this.mostrarToast("No tienes permisos para consultar antecedentes.", "warning");
+        return;
+      }
       this.personaSeleccionadaAntecedente = persona;
       const idPersona = persona.id_persona || persona.id;
       const identificacion = String(persona.identificacion || "").trim();
@@ -1624,7 +2156,8 @@ function revisionSolicitudApp() {
         persona_tipo_doc: tipoDoc,
         persona_identificacion: identificacion,
         persona_cargo: cargo,
-        responsable: persona.responsable || "Sin asignar",
+        responsable: persona.ultimo_usuario_solicitud || persona.responsable || this.solicitud?.diligenciador || "Sin asignar",
+        ultimo_usuario_solicitud: persona.ultimo_usuario_solicitud || this.solicitud?.diligenciador || persona.responsable || null,
         anotaciones: persona.anotaciones || "",
         id_empresa: null,
         ultima_empresa_contratista: contratistaSolicitud,
@@ -1638,6 +2171,8 @@ function revisionSolicitudApp() {
             codigo_radicado: this.solicitud?.codigo || "SOL-ACTUAL",
             nombre_empresa: empresaSolicitud,
             nombre_contratista: contratistaSolicitud,
+            usuario_registro: this.solicitud?.diligenciador || null,
+            diligenciador: this.solicitud?.diligenciador || null,
             fecha_inicio: this.solicitud?.fecha_inicio || this.solicitud?.fecha_registro,
             fecha_fin: this.solicitud?.fecha_fin || this.solicitud?.fecha_estimada,
             fecha_solicitud: this.solicitud?.fecha_registro || new Date().toISOString()
@@ -1684,7 +2219,12 @@ function revisionSolicitudApp() {
           if (data.persona_tipo_doc) this.detalleHistorial.persona_tipo_doc = data.persona_tipo_doc;
           if (data.persona_identificacion) this.detalleHistorial.persona_identificacion = String(data.persona_identificacion);
           if (data.persona_cargo) this.detalleHistorial.persona_cargo = data.persona_cargo;
-          if (data.responsable) this.detalleHistorial.responsable = data.responsable;
+          
+          const responsableBackend = (Array.isArray(data.historial) && data.historial.length > 0 ? (data.historial[0].usuario_registro || data.historial[0].diligenciador) : null) || data.ultimo_usuario_solicitud || data.responsable;
+          if (responsableBackend) {
+            this.detalleHistorial.responsable = responsableBackend;
+            this.detalleHistorial.ultimo_usuario_solicitud = responsableBackend;
+          }
           if (data.anotaciones) this.detalleHistorial.anotaciones = data.anotaciones;
           const contratistaBackend = data.ultima_empresa_contratista || data.nombre_contratista || (Array.isArray(data.historial) && data.historial.length > 0 ? data.historial[0].nombre_contratista : null);
           const contratistaFinal = contratistaBackend || contratistaSolicitud;
@@ -1717,6 +2257,10 @@ function revisionSolicitudApp() {
     },
 
     abrirFormularioAntecedentes(item) {
+      if (!this.puedeVerAntecedentes) {
+        this.mostrarToast("No tienes permisos para modificar antecedentes.", "warning");
+        return;
+      }
       this.showHistorialModal = false;
       this.mensajeExitoAntecedente = "";
       this.mensajeErrorAntecedente = "";
@@ -1840,6 +2384,231 @@ function revisionSolicitudApp() {
       } finally {
         this.guardandoAntecedente = false;
       }
+    },
+
+    // =============================================================
+    // GESTIÓN Y AUDITORÍA DE INDUCCIONES (GESCO)
+    // =============================================================
+
+    async abrirInduccionModal(persona) {
+      if (!this.puedeVerInduccion) {
+        this.mostrarToast("No tienes permisos para auditar inducciones.", "warning");
+        return;
+      }
+      this.personaSeleccionadaInduccion = persona;
+      this.cargandoInduccion = true;
+      this.showInduccionModal = true;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const idPersona = persona.id_persona || persona.id;
+      const contratistaActual = this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || "Sin contratista asignado";
+
+      this.detalleInduccion = {
+        id: null,
+        id_persona: idPersona,
+        persona_nombre: persona.nombre || "Contratista",
+        persona_apellido: persona.apellido || "",
+        persona_identificacion: persona.identificacion || "—",
+        persona_tipo_doc: persona.tipo_doc || "CC",
+        persona_cargo: persona.cargo || "Operario",
+        responsable: persona.responsable_induccion || "Auditor GESCO",
+        anotaciones: persona.anotaciones_induccion || "",
+        fecha_induccion: persona.fecha_induccion || null,
+        fecha_vigencia: persona.fecha_vigencia_induccion || (persona.fecha_induccion ? this.obtenerFechaMasUnAnio(persona.fecha_induccion) : null),
+        ultima_empresa_contratista: contratistaActual,
+        ultima_revision: null
+      };
+
+      try {
+        if (idPersona) {
+          const res = await fetch(`${API.inducciones}/persona/${idPersona}?auto_renovar=false`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data) {
+              this.detalleInduccion.id = data.id;
+              this.detalleInduccion.responsable = data.responsable || this.detalleInduccion.responsable;
+              this.detalleInduccion.anotaciones = data.anotaciones || "";
+              this.detalleInduccion.fecha_induccion = data.fecha_induccion || this.detalleInduccion.fecha_induccion;
+              this.detalleInduccion.fecha_vigencia = data.fecha_vigencia || (data.fecha_induccion ? this.obtenerFechaMasUnAnio(data.fecha_induccion) : this.detalleInduccion.fecha_vigencia);
+              this.detalleInduccion.ultima_revision = data.ultima_revision;
+              if (data.nombre_empresa) {
+                this.detalleInduccion.ultima_empresa_contratista = data.nombre_empresa;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso al consultar inducción:", err);
+      } finally {
+        this.cargandoInduccion = false;
+        persona.fecha_induccion = this.detalleInduccion.fecha_induccion;
+        persona.fecha_vigencia_induccion = this.detalleInduccion.fecha_vigencia;
+        persona.responsable_induccion = this.detalleInduccion.responsable;
+        persona.anotaciones_induccion = this.detalleInduccion.anotaciones;
+        persona.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(this.detalleInduccion.fecha_vigencia);
+      }
+    },
+
+    cerrarInduccionModal() {
+      this.showInduccionModal = false;
+    },
+
+    abrirFormularioInduccion(item) {
+      if (!this.puedeVerInduccion) {
+        this.mostrarToast("No tienes permisos para modificar inducciones.", "warning");
+        return;
+      }
+      this.showInduccionModal = false;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const ahora = new Date();
+      const hoyLocal = this.obtenerFechaHoraLocal(ahora).split(" ")[0];
+      const masUnAnio = this.obtenerFechaMasUnAnio(ahora);
+      const sesionNombre = (this.userDisplayName && this.userDisplayName !== "Usuario Activo")
+        ? this.userDisplayName
+        : (this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Auditor GESCO");
+
+      this.formInduccion = {
+        id_persona: item.id_persona,
+        persona_nombre: item.persona_nombre || "",
+        persona_apellido: item.persona_apellido || "",
+        persona_tipo_doc: item.persona_tipo_doc || "CC",
+        persona_identificacion: item.persona_identificacion || "",
+        persona_cargo: item.persona_cargo || "General",
+        responsable: sesionNombre,
+        anotaciones: item.anotaciones || "",
+        fecha_induccion: hoyLocal,
+        fecha_vigencia: masUnAnio,
+        ultima_empresa_contratista: item.ultima_empresa_contratista || "Sin contratista asignado"
+      };
+
+      this.showFormInduccionModal = true;
+    },
+
+    cerrarFormularioInduccion() {
+      this.showFormInduccionModal = false;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+      if (this.personaSeleccionadaInduccion) {
+        this.showInduccionModal = true;
+      }
+    },
+
+    async guardarInduccion() {
+      if (!this.formInduccion.id_persona) return;
+
+      this.guardandoInduccion = true;
+      this.mensajeExitoInduccion = "";
+      this.mensajeErrorInduccion = "";
+
+      const ahora = new Date();
+      const hoyLocal = this.obtenerFechaHoraLocal(ahora).split(" ")[0];
+      const fechaInd = this.formInduccion.fecha_induccion || hoyLocal;
+      const fechaVig = this.obtenerFechaMasUnAnio(fechaInd);
+      const sesionNombre = (this.userDisplayName && this.userDisplayName !== "Usuario Activo")
+        ? this.userDisplayName
+        : (this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Auditor GESCO");
+
+      const payload = {
+        responsable: this.formInduccion.responsable ? this.formInduccion.responsable.trim() : sesionNombre,
+        anotaciones: this.formInduccion.anotaciones ? this.formInduccion.anotaciones.trim() : null,
+        fecha_induccion: fechaInd,
+        fecha_vigencia: fechaVig
+      };
+
+      try {
+        const res = await fetch(`${API.inducciones}/persona/${this.formInduccion.id_persona}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || err.mensaje || "Error al actualizar inducción");
+        }
+
+        this.mensajeExitoInduccion = "¡Vigencia de inducción renovada exitosamente (+1 año)!";
+        this.mostrarToast("Inducción renovada con vigencia de 1 año", "success");
+
+        // Refrescar en memoria de la persona
+        if (this.personaSeleccionadaInduccion) {
+          this.personaSeleccionadaInduccion.fecha_induccion = fechaInd;
+          this.personaSeleccionadaInduccion.fecha_vigencia_induccion = fechaVig;
+          this.personaSeleccionadaInduccion.responsable_induccion = payload.responsable;
+          this.personaSeleccionadaInduccion.anotaciones_induccion = payload.anotaciones;
+          this.personaSeleccionadaInduccion.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(fechaVig);
+        }
+
+        // Actualizar detalleInduccion
+        if (this.detalleInduccion) {
+          this.detalleInduccion.fecha_induccion = fechaInd;
+          this.detalleInduccion.fecha_vigencia = fechaVig;
+          this.detalleInduccion.responsable = payload.responsable;
+          this.detalleInduccion.anotaciones = payload.anotaciones;
+        }
+
+        setTimeout(() => {
+          this.cerrarFormularioInduccion();
+        }, 1200);
+
+      } catch (e) {
+        this.mensajeErrorInduccion = e.message || "No fue posible guardar los cambios de inducción.";
+      } finally {
+        this.guardandoInduccion = false;
+      }
+    },
+
+    // =============================================================
+    // MODAL DE DISPOSITIVOS Y EQUIPOS (SOLO LECTURA)
+    // =============================================================
+
+    abrirModalDispositivos() {
+      this.filtroDispositivos = "";
+      this.showModalDispositivos = true;
+    },
+
+    cerrarModalDispositivos() {
+      this.showModalDispositivos = false;
+      this.filtroDispositivos = "";
+    },
+
+    async copiarSerieDispositivo(serie) {
+      if (!serie || serie === '—' || serie === 'S/N') return;
+      try {
+        await navigator.clipboard.writeText(serie);
+        this.dispositivoCopiado = serie;
+        this.mostrarToast("Número de serie copiado al portapapeles", "success");
+        setTimeout(() => {
+          if (this.dispositivoCopiado === serie) {
+            this.dispositivoCopiado = null;
+          }
+        }, 2000);
+      } catch (e) {
+        console.warn("No se pudo copiar serie:", e);
+      }
+    },
+
+    get listaDispositivos() {
+      const c = this.solicitud?.computos || this.solicitud?.equipos || this.solicitud?.eq_computo || [];
+      return Array.isArray(c) ? c : [];
+    },
+
+    get totalDispositivos() {
+      return this.listaDispositivos.length;
+    },
+
+    get dispositivosFiltrados() {
+      const q = (this.filtroDispositivos || "").trim().toLowerCase();
+      const list = this.listaDispositivos;
+      if (!q) return list;
+      return list.filter(d => 
+        (d.marca || "").toLowerCase().includes(q) ||
+        (d.modelo || "").toLowerCase().includes(q) ||
+        (d.serie || "").toLowerCase().includes(q)
+      );
     }
   };
 }
