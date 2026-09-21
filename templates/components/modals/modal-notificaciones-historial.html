@@ -241,16 +241,18 @@
         <!-- Paginación -->
         <div x-show="notificacionesFiltradas.length > notifPageSize" class="flex items-center justify-between text-[11px] text-[var(--paper-muted)] pt-3 border-t border-dashed border-[var(--paper-shadow)] mt-3">
           <span>Página <strong x-text="notifPage" class="text-[var(--paper-ink)]"></strong> de <span x-text="notifTotalPaginas"></span> (<span x-text="notificacionesFiltradas.length + ' en total'"></span>)</span>
-          <div class="flex items-center gap-1.5">
-            <button @click="notifPage = Math.max(1, notifPage - 1)" :disabled="notifPage === 1"
-              class="action-icon-btn px-2.5 py-1 rounded border border-[var(--paper-shadow)] cursor-pointer"
+          <div class="flex items-center gap-2">
+            <button type="button" @click="notifPage = Math.max(1, notifPage - 1)" :disabled="notifPage === 1"
+              class="px-3 py-1.5 rounded-lg border border-[var(--paper-shadow)] bg-[#faf7f0] dark:bg-white/5 hover:bg-[#efe9dc] dark:hover:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               :class="notifPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
-              <i class="fa-solid fa-chevron-left text-[9px] mr-1"></i> Anterior
+              <i class="fa-solid fa-chevron-left text-[10px]"></i>
+              <span>Anterior</span>
             </button>
-            <button @click="notifPage = Math.min(notifTotalPaginas, notifPage + 1)" :disabled="notifPage >= notifTotalPaginas"
-              class="action-icon-btn px-2.5 py-1 rounded border border-[var(--paper-shadow)] cursor-pointer"
+            <button type="button" @click="notifPage = Math.min(notifTotalPaginas, notifPage + 1)" :disabled="notifPage >= notifTotalPaginas"
+              class="px-3 py-1.5 rounded-lg border border-[var(--paper-shadow)] bg-[#faf7f0] dark:bg-white/5 hover:bg-[#efe9dc] dark:hover:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               :class="notifPage >= notifTotalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
-              Siguiente <i class="fa-solid fa-chevron-right text-[9px] ml-1"></i>
+              <span>Siguiente</span>
+              <i class="fa-solid fa-chevron-right text-[10px]"></i>
             </button>
           </div>
         </div>

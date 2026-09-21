@@ -31,6 +31,8 @@
   --state-aprobar-bg: #f6f8d3;
   --state-aprobado: #027E02;
   --state-aprobado-bg: #e1f8e2;
+  --state-rechazado: #ff4d6d;
+  --state-rechazado-bg: rgba(255, 77, 109, 0.15);
 
   /* Tokens Paper para modales estilo ticket en modo oscuro */
   --paper:          #222226;
@@ -70,34 +72,44 @@
   font-weight: 700 !important;
   letter-spacing: 0.025em !important;
   transition: all 0.2s ease !important;
+  justify-content: center !important;
+  text-align: center !important;
 }
 
-:root.dark .status-pill::before {
-  box-shadow: 0 0 6px currentColor, 0 0 10px currentColor !important;
+:root.dark .status-pill::before,
+:root.dark .status-enviado::before,
+:root.dark .status-revision::before,
+:root.dark .status-aprobar::before,
+:root.dark .status-devuelto::before,
+:root.dark .status-aprobado::before,
+:root.dark .status-rechazado::before,
+:root.dark .modal-panel .status-enviado::before,
+:root.dark .modal-panel .status-revision::before,
+:root.dark .modal-panel .status-aprobar::before,
+:root.dark .modal-panel .status-aprobado::before,
+:root.dark .modal-panel .status-rechazado::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  box-shadow: none !important;
 }
 
 /* 1. ETIQUETA CIAN / AZUL ELÉCTRICO NEÓN (STATUS-ENVIADO) */
 :root.dark .status-enviado,
 :root.dark .status-pill.status-enviado,
 :root.dark .modal-panel .status-enviado {
-  background-color: rgba(6, 182, 212, 0.16) !important;
-  color: #ecfeff !important;
-  border: 1px solid rgba(6, 182, 212, 0.7) !important;
-  box-shadow: 0 0 14px rgba(6, 182, 212, 0.45), inset 0 0 8px rgba(6, 182, 212, 0.2) !important;
-  text-shadow: 0 0 8px rgba(34, 211, 238, 1), 0 0 16px rgba(6, 182, 212, 0.6) !important;
-}
-
-:root.dark .status-enviado::before,
-:root.dark .status-pill.status-enviado::before,
-:root.dark .modal-panel .status-enviado::before {
-  background-color: #00f0ff !important;
-  box-shadow: 0 0 6px #00f0ff, 0 0 12px #06b6d4 !important;
+  background-color: rgba(6, 182, 212, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #00e5ff !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.55), inset 0 0 6px rgba(0, 229, 255, 0.2) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .status-enviado i,
 :root.dark .modal-panel .status-enviado i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 1)) drop-shadow(0 0 12px rgba(6, 182, 212, 0.8)) !important;
+  filter: none !important;
 }
 
 /* 2. ETIQUETA MORADA / VIOLETA NEÓN (STATUS-REVISION) */
@@ -106,61 +118,45 @@
 :root.dark .status-pill.is-revision,
 :root.dark .modal-panel .status-revision,
 :root.dark .modal-panel .status-aprobar {
-  background-color: rgba(168, 85, 247, 0.16) !important;
-  color: #f3e8ff !important;
-  border: 1px solid rgba(192, 132, 252, 0.7) !important;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.45), inset 0 0 8px rgba(168, 85, 247, 0.2) !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 1), 0 0 16px rgba(168, 85, 247, 0.6) !important;
-}
-
-:root.dark .status-revision::before,
-:root.dark .status-pill.status-revision::before,
-:root.dark .modal-panel .status-revision::before,
-:root.dark .modal-panel .status-aprobar::before {
-  background-color: #c084fc !important;
-  box-shadow: 0 0 6px #c084fc, 0 0 12px #a855f7 !important;
+  background-color: rgba(168, 85, 247, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #c084fc !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55), inset 0 0 6px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .status-revision i,
 :root.dark .modal-panel .status-revision i,
 :root.dark .modal-panel .status-aprobar i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 1)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.8)) !important;
+  filter: none !important;
 }
 
 :root.dark .status-revision:hover,
 :root.dark .modal-panel .status-revision:hover,
 :root.dark .modal-panel .status-aprobar:hover {
-  background-color: rgba(168, 85, 247, 0.25) !important;
-  border-color: #c084fc !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.3) !important;
+  background-color: rgba(168, 85, 247, 0.30) !important;
+  border-color: #e9d5ff !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.75), inset 0 0 8px rgba(168, 85, 247, 0.3) !important;
 }
 
-/* 3. ETIQUETA ÁMBAR / DORADO NEÓN (STATUS-APROBAR) */
+/* 3. ETIQUETA ÁMBAR / DORADO NEÓN (STATUS-APROBAR / DEVUELTO) */
 :root.dark .status-aprobar,
 :root.dark .status-pill.status-aprobar,
 :root.dark .status-pill.is-aprobar,
 :root.dark .status-devuelto,
 :root.dark .status-pill.status-devuelto {
-  background-color: rgba(245, 158, 11, 0.16) !important;
-  color: #fffbeb !important;
-  border: 1px solid rgba(245, 158, 11, 0.7) !important;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.45), inset 0 0 8px rgba(245, 158, 11, 0.2) !important;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 1), 0 0 16px rgba(245, 158, 11, 0.6) !important;
-}
-
-:root.dark .status-aprobar::before,
-:root.dark .status-pill.status-aprobar::before,
-:root.dark .status-devuelto::before,
-:root.dark .status-pill.status-devuelto::before {
-  background-color: #ffb700 !important;
-  box-shadow: 0 0 6px #ffb700, 0 0 12px #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #fbbf24 !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.55), inset 0 0 6px rgba(245, 158, 11, 0.2) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .status-aprobar i,
 :root.dark .status-devuelto i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(255, 183, 0, 1)) drop-shadow(0 0 12px rgba(245, 158, 11, 0.8)) !important;
+  filter: none !important;
 }
 
 /* 4. ETIQUETA VERDE ESMERALDA NEÓN (STATUS-APROBADO) */
@@ -168,24 +164,17 @@
 :root.dark .status-pill.status-aprobado,
 :root.dark .status-pill.is-aprobado,
 :root.dark .modal-panel .status-aprobado {
-  background-color: rgba(0, 255, 157, 0.16) !important;
-  color: #f0fdf4 !important;
-  border: 1px solid rgba(0, 255, 157, 0.7) !important;
-  box-shadow: 0 0 14px rgba(0, 255, 157, 0.45), inset 0 0 8px rgba(0, 255, 157, 0.2) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 1), 0 0 16px rgba(0, 255, 157, 0.6) !important;
-}
-
-:root.dark .status-aprobado::before,
-:root.dark .status-pill.status-aprobado::before,
-:root.dark .modal-panel .status-aprobado::before {
-  background-color: #00ff9d !important;
-  box-shadow: 0 0 6px #00ff9d, 0 0 12px #059669 !important;
+  background-color: rgba(16, 185, 129, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #34d399 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.55), inset 0 0 6px rgba(16, 185, 129, 0.2) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .status-aprobado i,
 :root.dark .modal-panel .status-aprobado i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 1)) drop-shadow(0 0 12px rgba(0, 255, 157, 0.8)) !important;
+  filter: none !important;
 }
 
 /* 5. ETIQUETA ROJO / CARMESÍ NEÓN (STATUS-RECHAZADO) */
@@ -193,53 +182,46 @@
 :root.dark .status-pill.status-rechazado,
 :root.dark .status-pill.is-rechazado,
 :root.dark .modal-panel .status-rechazado {
-  background-color: rgba(255, 42, 85, 0.16) !important;
-  color: #fff1f2 !important;
-  border: 1px solid rgba(255, 42, 85, 0.7) !important;
-  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45), inset 0 0 8px rgba(255, 42, 85, 0.2) !important;
-  text-shadow: 0 0 8px rgba(255, 42, 85, 1), 0 0 16px rgba(255, 42, 85, 0.6) !important;
-}
-
-:root.dark .status-rechazado::before,
-:root.dark .status-pill.status-rechazado::before,
-:root.dark .modal-panel .status-rechazado::before {
-  background-color: #ff2a55 !important;
-  box-shadow: 0 0 6px #ff2a55, 0 0 12px #e11d48 !important;
+  background-color: rgba(239, 68, 68, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #f87171 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.55), inset 0 0 6px rgba(239, 68, 68, 0.2) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .status-rechazado i,
 :root.dark .modal-panel .status-rechazado i {
   color: #ffffff !important;
-  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 1)) drop-shadow(0 0 12px rgba(255, 42, 85, 0.8)) !important;
+  filter: none !important;
 }
 
 /* =========================================================
-   ESTADOS DE ACTIVIDAD (ACTIVO / INACTIVO) EN MODO OSCURO (NEON GLOW)
+   ESTADOS DE ACTIVIDAD (ACTIVO / INACTIVO) EN MODO OSCURO
    ========================================================= */
 :root.dark .status-usuario-activo {
-  background-color: rgba(0, 255, 157, 0.12) !important;
-  color: #00ff9d !important;
-  border: 1px solid rgba(0, 255, 157, 0.4) !important;
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.25), inset 0 0 6px rgba(0, 255, 157, 0.08) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.65) !important;
+  background-color: rgba(16, 185, 129, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #34d399 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.55), inset 0 0 6px rgba(16, 185, 129, 0.2) !important;
+  text-shadow: none !important;
   font-weight: 700 !important;
   letter-spacing: 0.02em !important;
   transition: all 0.2s ease !important;
 }
 
 :root.dark .status-usuario-activo:hover {
-  background-color: rgba(0, 255, 157, 0.2) !important;
-  box-shadow: 0 0 14px rgba(0, 255, 157, 0.45), inset 0 0 8px rgba(0, 255, 157, 0.15) !important;
-  text-shadow: 0 0 12px rgba(0, 255, 157, 0.9) !important;
+  background-color: rgba(16, 185, 129, 0.30) !important;
+  border-color: #6ee7b7 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.75), inset 0 0 8px rgba(16, 185, 129, 0.3) !important;
 }
 
 :root.dark .status-usuario-inactivo,
 :root.dark .status-usuario-inactivo.bg-red-100 {
-  background-color: rgba(255, 42, 85, 0.12) !important;
-  color: #ff2a55 !important;
-  border: 1px solid rgba(255, 42, 85, 0.4) !important;
-  box-shadow: 0 0 10px rgba(255, 42, 85, 0.25), inset 0 0 6px rgba(255, 42, 85, 0.08) !important;
-  text-shadow: 0 0 8px rgba(255, 42, 85, 0.65) !important;
+  background-color: rgba(239, 68, 68, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #f87171 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.55), inset 0 0 6px rgba(239, 68, 68, 0.2) !important;
+  text-shadow: none !important;
   font-weight: 700 !important;
   letter-spacing: 0.02em !important;
   transition: all 0.2s ease !important;
@@ -247,9 +229,9 @@
 
 :root.dark .status-usuario-inactivo:hover,
 :root.dark .status-usuario-inactivo.bg-red-100:hover {
-  background-color: rgba(255, 42, 85, 0.2) !important;
-  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45), inset 0 0 8px rgba(255, 42, 85, 0.15) !important;
-  text-shadow: 0 0 12px rgba(255, 42, 85, 0.9) !important;
+  background-color: rgba(239, 68, 68, 0.30) !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.75), inset 0 0 8px rgba(239, 68, 68, 0.3) !important;
 }
 
 /* =========================================================
@@ -1278,8 +1260,8 @@ html.dark select option:checked {
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-:root.dark .modal-panel p,
-:root.dark .modal-panel p.italic {
+:root.dark .modal-panel p:not(.form-error),
+:root.dark .modal-panel p.italic:not(.form-error) {
   color: #94a3b8 !important;
 }
 
@@ -1450,6 +1432,76 @@ html.dark select option:checked {
   border-color: var(--signal-500, #fa051a) !important;
   box-shadow: 0 0 12px rgba(250, 5, 26, 0.35), 0 0 0 2px rgba(250, 5, 26, 0.2) !important;
   outline: none !important;
+}
+
+/* =========================================================
+   ALERTAS Y VALIDACIONES EN MODALES Y FORMULARIOS (MODO OSCURO)
+   ========================================================= */
+:root.dark .form-error,
+:root.dark .modal-panel .form-error,
+:root.dark .modal-panel p.form-error,
+html.dark .form-error,
+body.dark .form-error {
+  color: #ff526c !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.01em !important;
+  text-shadow: 0 0 8px rgba(255, 82, 108, 0.5) !important;
+  gap: 5px !important;
+  margin-top: 4px !important;
+}
+
+/* Ocultar estrictamente cuando esté vacío o cuando x-show lo oculte */
+:root.dark .form-error:empty,
+:root.dark .form-error[style*="display: none"],
+:root.dark .form-error[style*="display:none"],
+:root.dark .modal-panel p.form-error:empty,
+:root.dark .modal-panel p.form-error[style*="display: none"],
+:root.dark .modal-panel p.form-error[style*="display:none"],
+:root.dark [x-cloak] .form-error {
+  display: none !important;
+}
+
+:root.dark .form-error:not(:empty)::before,
+:root.dark .modal-panel .form-error:not(:empty)::before,
+:root.dark .modal-panel p.form-error:not(:empty)::before,
+html.dark .form-error:not(:empty)::before,
+body.dark .form-error:not(:empty)::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 13px !important;
+  height: 13px !important;
+  flex-shrink: 0 !important;
+  background-color: #ff526c !important;
+  filter: drop-shadow(0 0 6px rgba(255, 82, 108, 0.8)) !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat center / contain !important;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat center / contain !important;
+}
+
+/* Inputs con error en modo oscuro */
+:root.dark input.input-field.has-error,
+:root.dark select.input-field.has-error,
+:root.dark textarea.input-field.has-error,
+:root.dark .modal-panel input.input-field.has-error,
+:root.dark .modal-panel select.input-field.has-error,
+:root.dark .modal-panel textarea.input-field.has-error,
+html.dark .input-field.has-error,
+body.dark .input-field.has-error {
+  border-color: #ff4d6d !important;
+  box-shadow: 0 0 0 2px rgba(255, 77, 109, 0.4), 0 0 14px rgba(255, 77, 109, 0.3) !important;
+  background-color: rgba(255, 77, 109, 0.08) !important;
+}
+
+:root.dark input.input-field.has-error:focus,
+:root.dark select.input-field.has-error:focus,
+:root.dark textarea.input-field.has-error:focus,
+:root.dark .modal-panel input.input-field.has-error:focus,
+:root.dark .modal-panel select.input-field.has-error:focus,
+:root.dark .modal-panel textarea.input-field.has-error:focus,
+html.dark .input-field.has-error:focus,
+body.dark .input-field.has-error:focus {
+  border-color: #ff6b8b !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 139, 0.55), 0 0 18px rgba(255, 107, 139, 0.45) !important;
 }
 
 :root.dark .modal-panel .bg-\[\#efe9dc\]\/20,
@@ -1658,10 +1710,43 @@ html.dark select option:checked {
   transform: scale(1.1) !important;
 }
 
-/* Transición base y bordes en botones de acción */
+/* ==========================================================================
+   BOTONES DE ACCIÓN FOSFORECENTES EN TABLAS (MODO OSCURO)
+   Iconos con halo de luz puro (sin caja, sin fondo, sin borde)
+   ========================================================================== */
+
+/* Base limpia y transparente: solo el icono interactivo sin recuadro ni fondo */
+:root.dark .action-icon-btn,
+:root.dark .action-icon-btn:hover,
+:root.dark .action-icon-btn:focus,
+:root.dark .action-icon-btn:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 :root.dark .action-icon-btn {
   border-radius: 8px !important;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, background-color 0.2s ease, color 0.2s ease !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, color 0.2s ease !important;
+}
+
+:root.dark .action-icon-btn:hover {
+  transform: scale(1.22) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+:root.dark .action-icon-btn:active {
+  transform: scale(0.95) !important;
+}
+
+:root.dark .action-icon-btn i {
+  transition: filter 0.2s ease, transform 0.2s ease, color 0.2s ease !important;
 }
 
 /* 1. Botón VER (Ojo - Azul eléctrico / Cian fosforescente) */
@@ -1670,6 +1755,9 @@ html.dark select option:checked {
 :root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn),
 :root.dark .action-icon-btn:has(> .fa-eye-slash):not(.password-toggle-btn) {
   color: #00e5ff !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   filter: none !important;
 }
 
@@ -1683,8 +1771,10 @@ html.dark select option:checked {
 :root.dark .action-icon-btn.text-blue-600:hover,
 :root.dark .action-icon-btn.text-blue-500:hover,
 :root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover {
-  background: rgba(0, 229, 255, 0.16) !important;
-  transform: scale(1.18) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
   filter: none !important;
 }
 
@@ -1702,6 +1792,9 @@ html.dark select option:checked {
 :root.dark .action-icon-btn:has(> .fa-pen-to-square),
 :root.dark .action-icon-btn:has(> .fa-pencil) {
   color: #ffea00 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   filter: none !important;
 }
 
@@ -1719,8 +1812,10 @@ html.dark select option:checked {
 :root.dark .action-icon-btn.text-amber-500:hover,
 :root.dark .action-icon-btn:has(> .fa-pen-to-square):hover,
 :root.dark .action-icon-btn:has(> .fa-pencil):hover {
-  background: rgba(255, 234, 0, 0.16) !important;
-  transform: scale(1.18) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
   filter: none !important;
 }
 
@@ -1740,6 +1835,9 @@ html.dark select option:checked {
 :root.dark .action-icon-btn:has(> .fa-trash-can),
 :root.dark .action-icon-btn:has(> .fa-trash) {
   color: #ff2a55 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   filter: none !important;
 }
 
@@ -1757,8 +1855,10 @@ html.dark select option:checked {
 :root.dark .action-icon-btn.danger:hover,
 :root.dark .action-icon-btn:has(> .fa-trash-can):hover,
 :root.dark .action-icon-btn:has(> .fa-trash):hover {
-  background: rgba(255, 42, 85, 0.16) !important;
-  transform: scale(1.18) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
   filter: none !important;
 }
 
@@ -1775,6 +1875,9 @@ html.dark select option:checked {
 :root.dark .action-icon-btn.text-indigo-600,
 :root.dark .action-icon-btn:has(> .fa-clipboard-check) {
   color: #c084fc !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   filter: none !important;
 }
 
@@ -1786,8 +1889,10 @@ html.dark select option:checked {
 
 :root.dark .action-icon-btn.text-indigo-600:hover,
 :root.dark .action-icon-btn:has(> .fa-clipboard-check):hover {
-  background: rgba(192, 132, 252, 0.16) !important;
-  transform: scale(1.18) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
   filter: none !important;
 }
 
@@ -2052,11 +2157,23 @@ html.dark select option:checked {
 }
 
 /* 5. Botón '+ Otro' documento */
-:root.dark .modal-panel button:has(> .fa-plus) {
+:root.dark .modal-panel button:has(> .fa-plus),
+:root.dark .btn-adjuntar-otro {
+  background-color: rgba(0, 255, 157, 0.12) !important;
   color: #00ff9d !important;
+  border: 1px solid rgba(0, 255, 157, 0.35) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.15) !important;
   text-shadow: 0 0 8px rgba(0, 255, 157, 0.6) !important;
 }
-:root.dark .modal-panel button:has(> .fa-plus) i {
+:root.dark .modal-panel button:has(> .fa-plus):hover,
+:root.dark .btn-adjuntar-otro:hover {
+  background-color: rgba(0, 255, 157, 0.22) !important;
+  border-color: rgba(0, 255, 157, 0.65) !important;
+  box-shadow: 0 0 14px rgba(0, 255, 157, 0.35) !important;
+  color: #00ff9d !important;
+}
+:root.dark .modal-panel button:has(> .fa-plus) i,
+:root.dark .btn-adjuntar-otro i {
   color: #00ff9d !important;
   filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.95)) drop-shadow(0 0 12px rgba(0, 255, 157, 0.6)) !important;
 }
@@ -2519,55 +2636,104 @@ html.dark select option:checked {
   transform: scale(1.14) rotate(-4deg) !important;
 }
 
-/* Badges de Días Restantes con halo neón */
-:root.dark .bg-emerald-50.text-emerald-700 {
-  background: rgba(0, 255, 157, 0.14) !important;
-  border-color: rgba(0, 255, 157, 0.6) !important;
-  color: #00ff9d !important;
-  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
-  text-shadow: 0 0 6px rgba(0, 255, 157, 0.8) !important;
+/* Badges de Días Restantes y Chips en Modo Oscuro - Legibilidad y Nitidez */
+/* Badges de Días Restantes y Chips en Modo Oscuro - Con brillo neón y letras blancas de alta legibilidad */
+:root.dark .bg-emerald-50.text-emerald-700,
+:root.dark button.bg-emerald-50.text-emerald-700,
+:root.dark span.bg-emerald-50.text-emerald-700 {
+  background: rgba(16, 185, 129, 0.20) !important;
+  border: 1.5px solid #34d399 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), inset 0 0 5px rgba(16, 185, 129, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .bg-emerald-50.text-emerald-700:hover,
+:root.dark button.bg-emerald-50.text-emerald-700:hover {
+  background: rgba(16, 185, 129, 0.32) !important;
+  border-color: #6ee7b7 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.75), inset 0 0 8px rgba(16, 185, 129, 0.3) !important;
 }
 :root.dark .bg-emerald-50.text-emerald-700 i {
-  filter: drop-shadow(0 0 4px #00ff9d) !important;
+  color: #ffffff !important;
+  filter: none !important;
 }
 
-:root.dark .bg-amber-50.text-amber-700 {
-  background: rgba(255, 183, 0, 0.14) !important;
-  border-color: rgba(255, 183, 0, 0.6) !important;
-  color: #ffb700 !important;
-  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
-  text-shadow: 0 0 6px rgba(255, 183, 0, 0.8) !important;
+:root.dark .bg-amber-50.text-amber-700,
+:root.dark button.bg-amber-50.text-amber-700,
+:root.dark span.bg-amber-50.text-amber-700 {
+  background: rgba(245, 158, 11, 0.20) !important;
+  border: 1.5px solid #fbbf24 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5), inset 0 0 5px rgba(245, 158, 11, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .bg-amber-50.text-amber-700:hover,
+:root.dark button.bg-amber-50.text-amber-700:hover {
+  background: rgba(245, 158, 11, 0.32) !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 8px rgba(245, 158, 11, 0.3) !important;
 }
 :root.dark .bg-amber-50.text-amber-700 i {
-  filter: drop-shadow(0 0 4px #ffb700) !important;
+  color: #ffffff !important;
+  filter: none !important;
 }
 
-:root.dark .bg-red-50.text-red-700 {
-  background: rgba(255, 42, 85, 0.14) !important;
-  border-color: rgba(255, 42, 85, 0.6) !important;
-  color: #ff2a55 !important;
-  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
-  text-shadow: 0 0 6px rgba(255, 42, 85, 0.8) !important;
+:root.dark .bg-red-50.text-red-700,
+:root.dark button.bg-red-50.text-red-700,
+:root.dark span.bg-red-50.text-red-700 {
+  background: rgba(239, 68, 68, 0.20) !important;
+  border: 1.5px solid #f87171 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 5px rgba(239, 68, 68, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .bg-red-50.text-red-700:hover,
+:root.dark button.bg-red-50.text-red-700:hover {
+  background: rgba(239, 68, 68, 0.32) !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.75), inset 0 0 8px rgba(239, 68, 68, 0.3) !important;
 }
 :root.dark .bg-red-50.text-red-700 i {
-  filter: drop-shadow(0 0 4px #ff2a55) !important;
+  color: #ffffff !important;
+  filter: none !important;
 }
 
-/* Badge / Botón de Ingresos Solicitados */
+:root.dark .bg-blue-50.text-blue-700,
+:root.dark button.bg-blue-50.text-blue-700,
+:root.dark span.bg-blue-50.text-blue-700 {
+  background: rgba(14, 165, 233, 0.20) !important;
+  border: 1.5px solid #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.5), inset 0 0 5px rgba(14, 165, 233, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .bg-blue-50.text-blue-700:hover,
+:root.dark button.bg-blue-50.text-blue-700:hover {
+  background: rgba(14, 165, 233, 0.32) !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.75), inset 0 0 8px rgba(14, 165, 233, 0.3) !important;
+}
+:root.dark .bg-blue-50.text-blue-700 i {
+  color: #ffffff !important;
+  filter: none !important;
+}
+
+/* Badge / Botón de Ingresos Solicitados (Púrpura neón con letras blancas) */
 :root.dark .bg-purple-100.text-purple-700 {
-  background: rgba(168, 85, 247, 0.16) !important;
-  border-color: rgba(192, 132, 252, 0.6) !important;
-  color: #f3e8ff !important;
-  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35) !important;
-  text-shadow: 0 0 6px rgba(192, 132, 252, 0.8) !important;
+  background: rgba(168, 85, 247, 0.20) !important;
+  border: 1.5px solid #c084fc !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55), inset 0 0 6px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .bg-purple-100.text-purple-700:hover {
-  background: rgba(168, 85, 247, 0.28) !important;
-  border-color: #c084fc !important;
-  box-shadow: 0 0 18px rgba(192, 132, 252, 0.6) !important;
+  background: rgba(168, 85, 247, 0.32) !important;
+  border-color: #e9d5ff !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.8), inset 0 0 8px rgba(168, 85, 247, 0.3) !important;
 }
 :root.dark .bg-purple-100.text-purple-700 i {
-  filter: drop-shadow(0 0 4px #c084fc) !important;
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.9)) !important;
 }
 
 /* Avatar de persona y documento en tabla */
@@ -2583,37 +2749,254 @@ html.dark select option:checked {
 }
 
 /* =========================================================
-   BOTÓN PARA ACTUALIZAR VIGENCIA (MODO OSCURO)
+   BOTONES DE ACCIÓN EN TABLAS Y LISTADOS (MODO OSCURO)
+   Halo neón en iconos sin caja, fondos ni bordes
    ========================================================= */
 
-/* 1. Botón de acción en la tabla (action-icon-btn con fa-calendar-check) */
+/* 1. BOTÓN VER FICHA TICKET (Púrpura neón) */
+:root.dark .action-icon-btn.text-purple-600,
+:root.dark .action-icon-btn.text-purple-400,
+:root.dark .action-icon-btn.action-btn-ficha,
+:root.dark .action-icon-btn:has(> .fa-id-card-clip) {
+  color: #c084fc !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root.dark .action-icon-btn.text-purple-600 i,
+:root.dark .action-icon-btn.text-purple-400 i,
+:root.dark .action-icon-btn.action-btn-ficha i,
+:root.dark .action-icon-btn:has(> .fa-id-card-clip) i {
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.5)) !important;
+}
+
+:root.dark .action-icon-btn.text-purple-600:hover,
+:root.dark .action-icon-btn.text-purple-400:hover,
+:root.dark .action-icon-btn.action-btn-ficha:hover,
+:root.dark .action-icon-btn:has(> .fa-id-card-clip):hover {
+  color: #e9d5ff !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .action-icon-btn.text-purple-600:hover i,
+:root.dark .action-icon-btn.text-purple-400:hover i,
+:root.dark .action-icon-btn.action-btn-ficha:hover i,
+:root.dark .action-icon-btn:has(> .fa-id-card-clip):hover i {
+  color: #e9d5ff !important;
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 1)) drop-shadow(0 0 16px rgba(168, 85, 247, 0.8)) !important;
+}
+
+/* 2. BOTÓN AGREGAR NOTA / EDITAR / DETALLE / VER (Azul / Sky neón) */
+:root.dark .action-icon-btn.text-blue-600:not(.password-toggle-btn),
+:root.dark .action-icon-btn.text-blue-500:not(.password-toggle-btn),
+:root.dark .action-icon-btn.text-sky-400:not(.password-toggle-btn),
+:root.dark .action-icon-btn.action-btn-nota,
+:root.dark .action-icon-btn.action-btn-historial,
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn) {
+  color: #00e5ff !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600:not(.password-toggle-btn) i,
+:root.dark .action-icon-btn.text-blue-500:not(.password-toggle-btn) i,
+:root.dark .action-icon-btn.text-sky-400:not(.password-toggle-btn) i,
+:root.dark .action-icon-btn.action-btn-nota i,
+:root.dark .action-icon-btn.action-btn-historial i,
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn) i {
+  color: #00e5ff !important;
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 12px rgba(0, 229, 255, 0.5)) !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600:not(.password-toggle-btn):hover,
+:root.dark .action-icon-btn.text-blue-500:not(.password-toggle-btn):hover,
+:root.dark .action-icon-btn.text-sky-400:not(.password-toggle-btn):hover,
+:root.dark .action-icon-btn.action-btn-nota:hover,
+:root.dark .action-icon-btn.action-btn-historial:hover,
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover {
+  color: #38f8ff !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .action-icon-btn.text-blue-600:not(.password-toggle-btn):hover i,
+:root.dark .action-icon-btn.text-blue-500:not(.password-toggle-btn):hover i,
+:root.dark .action-icon-btn.text-sky-400:not(.password-toggle-btn):hover i,
+:root.dark .action-icon-btn.action-btn-nota:hover i,
+:root.dark .action-icon-btn.action-btn-historial:hover i,
+:root.dark .action-icon-btn:has(> .fa-eye):not(.password-toggle-btn):hover i {
+  color: #38f8ff !important;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 1)) drop-shadow(0 0 16px rgba(0, 229, 255, 0.8)) !important;
+}
+
+/* 3. BOTÓN RENOVAR (+1 AÑO) / APROBAR (Esmeralda neón) */
+:root.dark .action-icon-btn.text-emerald-600,
+:root.dark .action-icon-btn.text-emerald-500,
+:root.dark .action-icon-btn.action-btn-renovar,
+:root.dark .action-icon-btn:has(> .fa-arrows-rotate) {
+  color: #34d399 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root.dark .action-icon-btn.text-emerald-600 i,
+:root.dark .action-icon-btn.text-emerald-500 i,
+:root.dark .action-icon-btn.action-btn-renovar i,
+:root.dark .action-icon-btn:has(> .fa-arrows-rotate) i {
+  color: #34d399 !important;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.85)) drop-shadow(0 0 12px rgba(52, 211, 153, 0.5)) !important;
+}
+
+:root.dark .action-icon-btn.text-emerald-600:hover,
+:root.dark .action-icon-btn.text-emerald-500:hover,
+:root.dark .action-icon-btn.action-btn-renovar:hover,
+:root.dark .action-icon-btn:has(> .fa-arrows-rotate):hover {
+  color: #6ee7b7 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .action-icon-btn.text-emerald-600:hover i,
+:root.dark .action-icon-btn.text-emerald-500:hover i,
+:root.dark .action-icon-btn.action-btn-renovar:hover i,
+:root.dark .action-icon-btn:has(> .fa-arrows-rotate):hover i {
+  color: #6ee7b7 !important;
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 1)) drop-shadow(0 0 16px rgba(52, 211, 153, 0.8)) !important;
+}
+
+/* 4. BOTÓN ACTUALIZAR VIGENCIA (ANTECEDENTES / SIGNAL NEÓN) */
 :root.dark .action-icon-btn.action-btn-vigencia,
-:root.dark .action-icon-btn:has(> .fa-calendar-check),
-:root.dark .action-icon-btn:has(> i.fa-calendar-check) {
+:root.dark .action-icon-btn.text-\[var\(--signal-500\)\],
+:root.dark .action-icon-btn.text-rose-500,
+:root.dark .action-icon-btn.text-pink-500 {
   color: #ff3366 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   filter: none !important;
 }
 
 :root.dark .action-icon-btn.action-btn-vigencia i,
-:root.dark .action-icon-btn:has(> .fa-calendar-check) i,
-:root.dark .action-icon-btn:has(> i.fa-calendar-check) i {
+:root.dark .action-icon-btn.text-\[var\(--signal-500\)\] i,
+:root.dark .action-icon-btn.text-rose-500 i,
+:root.dark .action-icon-btn.text-pink-500 i {
   color: #ff3366 !important;
-  filter: drop-shadow(0 0 6px rgba(255, 51, 102, 1)) drop-shadow(0 0 14px rgba(255, 51, 102, 0.75)) !important;
+  filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.85)) drop-shadow(0 0 12px rgba(255, 51, 102, 0.5)) !important;
 }
 
 :root.dark .action-icon-btn.action-btn-vigencia:hover,
-:root.dark .action-icon-btn:has(> .fa-calendar-check):hover,
-:root.dark .action-icon-btn:has(> i.fa-calendar-check):hover {
-  background: rgba(255, 51, 102, 0.22) !important;
+:root.dark .action-icon-btn.text-\[var\(--signal-500\)\]:hover,
+:root.dark .action-icon-btn.text-rose-500:hover,
+:root.dark .action-icon-btn.text-pink-500:hover {
+  color: #ff6688 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   transform: scale(1.22) !important;
   filter: none !important;
 }
 
 :root.dark .action-icon-btn.action-btn-vigencia:hover i,
-:root.dark .action-icon-btn:has(> .fa-calendar-check):hover i,
-:root.dark .action-icon-btn:has(> i.fa-calendar-check):hover i {
+:root.dark .action-icon-btn.text-\[var\(--signal-500\)\]:hover i,
+:root.dark .action-icon-btn.text-rose-500:hover i,
+:root.dark .action-icon-btn.text-pink-500:hover i {
   color: #ff6688 !important;
-  filter: drop-shadow(0 0 8px rgba(255, 51, 102, 1)) drop-shadow(0 0 20px rgba(255, 51, 102, 0.9)) !important;
+  filter: drop-shadow(0 0 8px rgba(255, 51, 102, 1)) drop-shadow(0 0 16px rgba(255, 51, 102, 0.8)) !important;
+}
+
+/* 5. BOTÓN EDITAR (Ámbar / Oro neón) */
+:root.dark .action-icon-btn.text-yellow-400,
+:root.dark .action-icon-btn.text-yellow-500,
+:root.dark .action-icon-btn.text-amber-500,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square),
+:root.dark .action-icon-btn:has(> .fa-pencil) {
+  color: #ffea00 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400 i,
+:root.dark .action-icon-btn.text-yellow-500 i,
+:root.dark .action-icon-btn.text-amber-500 i,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square) i,
+:root.dark .action-icon-btn:has(> .fa-pencil) i {
+  color: #ffea00 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 234, 0, 0.85)) drop-shadow(0 0 12px rgba(255, 234, 0, 0.5)) !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400:hover,
+:root.dark .action-icon-btn.text-yellow-500:hover,
+:root.dark .action-icon-btn.text-amber-500:hover,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square):hover,
+:root.dark .action-icon-btn:has(> .fa-pencil):hover {
+  color: #fff777 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .action-icon-btn.text-yellow-400:hover i,
+:root.dark .action-icon-btn.text-yellow-500:hover i,
+:root.dark .action-icon-btn.text-amber-500:hover i,
+:root.dark .action-icon-btn:has(> .fa-pen-to-square):hover i,
+:root.dark .action-icon-btn:has(> .fa-pencil):hover i {
+  color: #fff777 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 234, 0, 1)) drop-shadow(0 0 16px rgba(255, 234, 0, 0.8)) !important;
+}
+
+/* 6. BOTÓN ELIMINAR / RECHAZAR (Rojo neón) */
+:root.dark .action-icon-btn.text-red-500,
+:root.dark .action-icon-btn.text-red-600,
+:root.dark .action-icon-btn.danger,
+:root.dark .action-icon-btn:has(> .fa-trash-can),
+:root.dark .action-icon-btn:has(> .fa-trash) {
+  color: #ff2a55 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root.dark .action-icon-btn.text-red-500 i,
+:root.dark .action-icon-btn.text-red-600 i,
+:root.dark .action-icon-btn.danger i,
+:root.dark .action-icon-btn:has(> .fa-trash-can) i,
+:root.dark .action-icon-btn:has(> .fa-trash) i {
+  color: #ff2a55 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 85, 0.85)) drop-shadow(0 0 12px rgba(255, 42, 85, 0.5)) !important;
+}
+
+:root.dark .action-icon-btn.text-red-500:hover,
+:root.dark .action-icon-btn.text-red-600:hover,
+:root.dark .action-icon-btn.danger:hover,
+:root.dark .action-icon-btn:has(> .fa-trash-can):hover,
+:root.dark .action-icon-btn:has(> .fa-trash):hover {
+  color: #ff5e80 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: scale(1.22) !important;
+}
+
+:root.dark .action-icon-btn.text-red-500:hover i,
+:root.dark .action-icon-btn.text-red-600:hover i,
+:root.dark .action-icon-btn.danger:hover i,
+:root.dark .action-icon-btn:has(> .fa-trash-can):hover i,
+:root.dark .action-icon-btn:has(> .fa-trash):hover i {
+  color: #ff5e80 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 42, 85, 1)) drop-shadow(0 0 16px rgba(255, 42, 85, 0.8)) !important;
 }
 
 /* 2. Botón 'Actualizar Vigencia' y 'Revisar Expediente' tipo píldora (btn-signal) */
@@ -3074,6 +3457,60 @@ html.dark select option:checked {
 :root.dark .flatpickr-input[readonly]:hover {
   border-color: rgba(0, 240, 255, 0.6) !important;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+}
+
+/* Wrapper y campos de vigencia en modo oscuro */
+:root.dark .flatpickr-vigencia-wrapper input.flatpickr-input,
+:root.dark .flatpickr-vigencia-wrapper input.input,
+:root.dark .flatpickr-vigencia-wrapper input {
+  background-color: #18181b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  padding-left: 32px !important;
+  padding-right: 12px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  box-sizing: border-box !important;
+  border-radius: 8px !important;
+}
+
+:root.dark .flatpickr-vigencia-wrapper input.flatpickr-input:hover,
+:root.dark .flatpickr-vigencia-wrapper input.input:hover {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+:root.dark .flatpickr-vigencia-wrapper input.flatpickr-input:focus,
+:root.dark .flatpickr-vigencia-wrapper input.input:focus {
+  border-color: var(--signal-500, #fa051a) !important;
+  box-shadow: 0 0 12px rgba(250, 5, 26, 0.35), 0 0 0 2px rgba(250, 5, 26, 0.2) !important;
+  outline: none !important;
+}
+
+:root.dark .flatpickr-vigencia-wrapper .fa-calendar {
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.6)) !important;
+}
+
+/* Alineación hacia la derecha en modo oscuro */
+:root.dark .flatpickr-vigencia-wrapper .flatpickr-calendar,
+html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar {
+  right: 0 !important;
+  left: auto !important;
+}
+
+:root.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:before,
+:root.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:after,
+html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:before,
+html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:after,
+:root.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:before,
+:root.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:after,
+html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:before,
+html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:after {
+  right: 28px !important;
+  left: auto !important;
 }
 
 /* Contenedor emergente de Flatpickr */
@@ -3830,10 +4267,11 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
 }
 
 :root.dark .btn-autorizar-action.is-active {
-  background: linear-gradient(135deg, rgba(0, 255, 136, 0.3) 0%, rgba(5, 150, 105, 0.55) 100%) !important;
-  border: 1px solid rgba(0, 255, 136, 0.8) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.65) 100%) !important;
+  border: 1.5px solid #34d399 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 14px rgba(0, 255, 136, 0.45) !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.3) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .btn-autorizar-action.is-inactive {
@@ -3842,15 +4280,16 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
 }
 
 :root.dark .btn-autorizar-action.is-inactive:hover {
-  color: #00ff88 !important;
-  background: rgba(0, 255, 136, 0.1) !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
 }
 
 :root.dark .btn-denegar-action.is-active {
-  background: linear-gradient(135deg, rgba(255, 42, 85, 0.3) 0%, rgba(220, 38, 38, 0.55) 100%) !important;
-  border: 1px solid rgba(255, 42, 85, 0.8) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.35) 0%, rgba(185, 28, 28, 0.65) 100%) !important;
+  border: 1.5px solid #f87171 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 14px rgba(255, 42, 85, 0.45) !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.6), inset 0 0 6px rgba(239, 68, 68, 0.3) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .btn-denegar-action.is-inactive {
@@ -3859,8 +4298,95 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
 }
 
 :root.dark .btn-denegar-action.is-inactive:hover {
-  color: #ff2a55 !important;
-  background: rgba(255, 42, 85, 0.1) !important;
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Badge de número de persona (1, 2, 3...) con brillo neón */
+:root.dark .persona-num-badge {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+:root.dark .persona-revision-card.is-autorizado .persona-num-badge {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border: 1.5px solid #34d399 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), inset 0 0 5px rgba(16, 185, 129, 0.2) !important;
+}
+:root.dark .persona-revision-card.is-denegado .persona-num-badge {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border: 1.5px solid #f87171 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 5px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Chips de Inducción y Antecedentes con halo neón y texto blanco */
+:root.dark .btn-induccion-chip {
+  background: rgba(168, 85, 247, 0.20) !important;
+  border: 1.5px solid #c084fc !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5), inset 0 0 6px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .btn-induccion-chip:hover {
+  background: rgba(168, 85, 247, 0.32) !important;
+  border-color: #e9d5ff !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.8), inset 0 0 8px rgba(168, 85, 247, 0.3) !important;
+}
+:root.dark .btn-induccion-chip i {
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.8)) !important;
+}
+
+:root.dark .btn-antecedente-chip {
+  background: rgba(14, 165, 233, 0.20) !important;
+  border: 1.5px solid #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.5), inset 0 0 6px rgba(14, 165, 233, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .btn-antecedente-chip:hover {
+  background: rgba(14, 165, 233, 0.32) !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.8), inset 0 0 8px rgba(14, 165, 233, 0.3) !important;
+}
+:root.dark .btn-antecedente-chip i {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)) !important;
+}
+
+/* Enlaces directos a Vigencia de Inducción e Historial en Expediente */
+:root.dark button:has(> .fa-graduation-cap):not(.action-icon-btn):not(.btn-induccion-chip) {
+  background: rgba(168, 85, 247, 0.20) !important;
+  border: 1.5px solid #c084fc !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55), inset 0 0 6px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark button:has(> .fa-graduation-cap):not(.action-icon-btn):not(.btn-induccion-chip):hover {
+  background: rgba(168, 85, 247, 0.32) !important;
+  border-color: #e9d5ff !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.8), inset 0 0 8px rgba(168, 85, 247, 0.3) !important;
+}
+:root.dark button:has(> .fa-graduation-cap):not(.action-icon-btn):not(.btn-induccion-chip) i {
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.8)) !important;
+}
+
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip) {
+  background: rgba(14, 165, 233, 0.20) !important;
+  border: 1.5px solid #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.55), inset 0 0 6px rgba(14, 165, 233, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip):hover {
+  background: rgba(14, 165, 233, 0.32) !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.8), inset 0 0 8px rgba(14, 165, 233, 0.3) !important;
+}
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip) i {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)) !important;
 }
 
 /* 5. OPCIONES DE DECISIÓN DEL DICTAMEN (APROBAR / RECHAZAR) */
@@ -4880,45 +5406,53 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 }
 
 :root.dark .status-rol-admin {
-  background: rgba(168, 85, 247, 0.16) !important;
-  color: #d8b4fe !important;
-  border: 1px solid rgba(192, 132, 252, 0.5) !important;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3) !important;
+  background: rgba(168, 85, 247, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #c084fc !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55), inset 0 0 6px rgba(168, 85, 247, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-gesco {
-  background: rgba(16, 185, 129, 0.16) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(52, 211, 153, 0.5) !important;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #34d399 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.55), inset 0 0 6px rgba(16, 185, 129, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-sst {
-  background: rgba(245, 158, 11, 0.16) !important;
-  color: #fbbf24 !important;
-  border: 1px solid rgba(251, 191, 36, 0.5) !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+  background: rgba(245, 158, 11, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #fbbf24 !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.55), inset 0 0 6px rgba(245, 158, 11, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-vigilante {
-  background: rgba(14, 165, 233, 0.16) !important;
-  color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.5) !important;
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.3) !important;
+  background: rgba(14, 165, 233, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.55), inset 0 0 6px rgba(14, 165, 233, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-scr {
-  background: rgba(244, 63, 94, 0.16) !important;
-  color: #fb7185 !important;
-  border: 1px solid rgba(251, 113, 133, 0.5) !important;
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.3) !important;
+  background: rgba(244, 63, 94, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #fb7185 !important;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.55), inset 0 0 6px rgba(244, 63, 94, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-documental {
-  background: rgba(236, 72, 153, 0.16) !important;
-  color: #f472b6 !important;
-  border: 1px solid rgba(244, 114, 182, 0.5) !important;
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.3) !important;
+  background: rgba(236, 72, 153, 0.20) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #f472b6 !important;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.55), inset 0 0 6px rgba(236, 72, 153, 0.2) !important;
+  text-shadow: none !important;
 }
 :root.dark .status-rol-default {
-  background: rgba(148, 163, 184, 0.14) !important;
-  color: #cbd5e1 !important;
-  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  background: rgba(148, 163, 184, 0.18) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.6) !important;
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.4), inset 0 0 6px rgba(148, 163, 184, 0.15) !important;
+  text-shadow: none !important;
 }
 
 

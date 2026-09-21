@@ -1,7 +1,10 @@
 import os
 import shutil
 import uuid
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query, Depends
+import io
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query, Depends, Request, Response
 from src.utils.file_manager import guardar_documento_seguro
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
@@ -13,7 +16,8 @@ from src.loaders.solicitudes_loaders import (
     REGISTRAR_dictamen_db,
     ACTUALIZAR_autorizacion_personas_db,
     VALIDAR_token_edicion_db,
-    CONSUMIR_token_edicion_db
+    CONSUMIR_token_edicion_db,
+    GET_resumen_verificacion_porteria_db
 )
 from src.schemas.solicitud_schema import SolicitudInput, UPDATE_Schema_Optionals, DictamenInput
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
@@ -146,6 +150,161 @@ def GET_ALL_solicitudes(
         )
 
     return resultado.get("datos", resultado)
+
+
+@router.get("/publico/verificar/{codigo}", status_code=status.HTTP_200_OK)
+def VERIFICAR_solicitud_porteria_publico_rt(codigo: str):
+    """
+    Endpoint público optimizado para vigilantes y control de acceso en porterías.
+    No requiere sesión activa para permitir escaneo rápido desde teléfonos móviles de portería.
+    """
+    print(f"🛡️ [PORTERÍA] Consultando resumen de acceso para solicitud '{codigo}'...")
+    resultado = GET_resumen_verificacion_porteria_db(codigo)
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=resultado.get("mensaje", "Solicitud no encontrada.")
+        )
+    return resultado["datos"]
+
+
+@router.get("/{codigo}/qr", status_code=status.HTTP_200_OK)
+@router.get("/publico/qr/{codigo}", status_code=status.HTTP_200_OK)
+def GENERAR_qr_solicitud_rt(codigo: str, request: Request):
+    """
+    Genera dinámicamente la imagen PNG del código QR que apunta a la página de verificación.
+    """
+    cod_clean = codigo.strip().upper()
+    base_url = str(request.base_url).rstrip("/")
+
+    # Si se accede desde localhost o 127.0.0.1, reemplazar por la IP LAN local
+    # para que al escanear con la cámara del celular en la misma red Wi-Fi funcione de inmediato
+    if "localhost" in base_url or "127.0.0.1" in base_url:
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            lan_ip = s.getsockname()[0]
+            s.close()
+            if lan_ip and lan_ip != "127.0.0.1":
+                base_url = base_url.replace("localhost", lan_ip).replace("127.0.0.1", lan_ip)
+        except Exception:
+            pass
+
+    url_verificacion = f"{base_url}/verificar/{cod_clean}"
+
+    # Consultar información de la solicitud para rotular la tarjeta (empresa origen y código)
+    empresa_origen = "INCARSA"
+    empresa_contratista = ""
+    codigo_mostrado = cod_clean
+    try:
+        resumen = GET_resumen_verificacion_porteria_db(cod_clean)
+        if resumen.get("exito"):
+            datos = resumen.get("datos", {})
+            empresa_origen = str(datos.get("empresa_origen") or "INCARSA").strip()
+            empresa_contratista = str(datos.get("empresa_contratista") or "").strip()
+            codigo_mostrado = str(datos.get("codigo") or cod_clean).strip()
+    except Exception as e_res:
+        print(f"⚠️ Aviso al rotular tarjeta QR: {e_res}")
+
+    # Generar el código QR base
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(url_verificacion)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#0f172a", back_color="#ffffff").convert("RGB")
+    qr_w, qr_h = qr_img.size
+
+    # Cargar fuentes del sistema con fallback seguro multiplataforma
+    def _cargar_fuente(nombre_archivo, tamano):
+        rutas_candidatas = [
+            os.path.join("C:/Windows/Fonts", nombre_archivo),
+            f"/usr/share/fonts/truetype/dejavu/{nombre_archivo}",
+            f"/usr/share/fonts/TTF/{nombre_archivo}",
+            f"/Library/Fonts/{nombre_archivo}"
+        ]
+        for ruta in rutas_candidatas:
+            if os.path.exists(ruta):
+                try:
+                    return ImageFont.truetype(ruta, tamano)
+                except Exception:
+                    pass
+        return ImageFont.load_default()
+
+    font_titulo = _cargar_fuente("arialbd.ttf", 23)
+    font_sub = _cargar_fuente("segoeuib.ttf", 11)
+    font_contratista = _cargar_fuente("arial.ttf", 11)
+    font_codigo = _cargar_fuente("consolab.ttf", 25)
+    font_ayuda = _cargar_fuente("arial.ttf", 10)
+
+    # Calcular dimensiones de la tarjeta
+    tiene_contratista = bool(empresa_contratista and empresa_contratista.lower() not in ("no especificada", "—", "-"))
+    header_h = 100 if tiene_contratista else 82
+    footer_h = 108
+    card_w = max(qr_w + 90, 460)
+    card_h = header_h + qr_h + footer_h
+
+    canvas = Image.new("RGB", (card_w, card_h), "#FFFFFF")
+    draw = ImageDraw.Draw(canvas)
+
+    # 1. Cabecera: Empresa Origen (Título superior solicitado)
+    tit_texto = empresa_origen.upper()
+    if len(tit_texto) > 34:
+        tit_texto = tit_texto[:32] + "..."
+    draw.text((card_w // 2, 30), tit_texto, fill="#0f172a", font=font_titulo, anchor="mm")
+    draw.text((card_w // 2, 56), "PASE PARA CONTROL DE ACCESO", fill="#0284c7", font=font_sub, anchor="mm")
+
+    if tiene_contratista:
+        c_texto = f"Contratista: {empresa_contratista}"
+        if len(c_texto) > 46:
+            c_texto = c_texto[:44] + "..."
+        draw.text((card_w // 2, 77), c_texto, fill="#475569", font=font_contratista, anchor="mm")
+
+    # Separador cabecera
+    draw.line([(28, header_h - 6), (card_w - 28, header_h - 6)], fill="#e2e8f0", width=1)
+
+    # 2. Código QR centrado
+    qr_x = (card_w - qr_w) // 2
+    qr_y = header_h + 8
+    canvas.paste(qr_img, (qr_x, qr_y))
+
+    # Separador inferior
+    sep_inf_y = qr_y + qr_h + 8
+    draw.line([(28, sep_inf_y), (card_w - 28, sep_inf_y)], fill="#e2e8f0", width=1)
+
+    # 3. Pie de tarjeta: Caja con el Código de Radicado para digitación manual del vigilante
+    box_w = min(card_w - 60, 320)
+    box_x1 = (card_w - box_w) // 2
+    box_y1 = sep_inf_y + 14
+    box_x2 = box_x1 + box_w
+    box_y2 = box_y1 + 44
+    draw.rounded_rectangle([box_x1, box_y1, box_x2, box_y2], radius=10, fill="#f8fafc", outline="#94a3b8", width=1)
+
+    # Código radicado destacado
+    draw.text((card_w // 2, (box_y1 + box_y2) // 2), codigo_mostrado, fill="#0f172a", font=font_codigo, anchor="mm")
+
+    # Leyenda para el vigilante
+    draw.text((card_w // 2, box_y2 + 18), "En caso de no leer el QR, digite este radicado en el sistema", fill="#64748b", font=font_ayuda, anchor="mm")
+
+    # Borde redondeado exterior de la tarjeta
+    draw.rounded_rectangle([2, 2, card_w - 3, card_h - 3], radius=16, outline="#cbd5e1", width=2)
+
+    buf = io.BytesIO()
+    canvas.save(buf, format="PNG")
+    buf.seek(0)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=3600",
+            "Content-Disposition": f'inline; filename="PASE-{cod_clean}.png"'
+        }
+    )
 
 
 @router.get("/{solicitud_id}", status_code=status.HTTP_200_OK)

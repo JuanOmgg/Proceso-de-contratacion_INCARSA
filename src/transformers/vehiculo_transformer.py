@@ -4,66 +4,15 @@ from typing import Any, Dict, List, Optional
 
 def FORMATEAR_PLACA(placa_raw: Optional[str]) -> str:
     """
-    Estandariza el formato de placas vehiculares en Colombia según el estándar del RUNT / MinTransporte:
-
-    1. Carros (Particulares, Públicos, Oficiales, Diplomáticos 3L-3N):
-       - Formato: 3 letras y 3 números -> 'ABC-123'
-    2. Motos y Motocarros (Formato actual):
-       - Formato: 3 letras, 2 números y 1 letra -> 'ABC-12D'
-    3. Motos anteriores / clásicas:
-       - Formato: 3 letras y 2 números -> 'ABC-12'
-    4. Remolques y Semirremolques:
-       - Formato: R o S y 5 números -> 'R-12345' / 'S-12345'
-    5. Importación Temporal:
-       - Formato: T y 4 números -> 'T-1234'
-    6. Misiones Diplomáticas / Consulares (2L-4N):
-       - Formato: 2 letras y 4 números -> 'CD-1234'
-    7. Fallback:
-       - Si contiene letras y números, separa con guion o retorna la cadena limpia en mayúsculas.
+    Estandariza el formato de placas vehiculares:
+    Elimina espacios, guiones y caracteres no alfanuméricos, retornando
+    la placa en mayúsculas sin guiones (ej. 'ABC123', 'ABC12D', 'R12345').
     """
     if not placa_raw:
         return ""
 
     # Limpiar espacios, guiones, puntos y caracteres no alfanuméricos, pasando a mayúsculas
     texto_limpio = re.sub(r"[^A-Z0-9]", "", str(placa_raw).strip().upper())
-    if not texto_limpio:
-        return ""
-
-    # 1. Motocicletas y motocarros actuales (3 letras, 2 números, 1 letra) -> ABC-12D
-    m_moto = re.match(r"^([A-Z]{3})(\d{2}[A-Z])$", texto_limpio)
-    if m_moto:
-        return f"{m_moto.group(1)}-{m_moto.group(2)}"
-
-    # 2. Carros particulares, públicos, oficiales y diplomáticos (3 letras, 3 números) -> ABC-123
-    m_carro = re.match(r"^([A-Z]{3})(\d{3})$", texto_limpio)
-    if m_carro:
-        return f"{m_carro.group(1)}-{m_carro.group(2)}"
-
-    # 3. Motos anteriores / clásicas (3 letras, 2 números) -> ABC-12
-    m_moto_antigua = re.match(r"^([A-Z]{3})(\d{2})$", texto_limpio)
-    if m_moto_antigua:
-        return f"{m_moto_antigua.group(1)}-{m_moto_antigua.group(2)}"
-
-    # 4. Remolques y Semirremolques (R o S + 5 números) -> R-12345 / S-12345
-    m_remolque = re.match(r"^([RS])(\d{5})$", texto_limpio)
-    if m_remolque:
-        return f"{m_remolque.group(1)}-{m_remolque.group(2)}"
-
-    # 5. Importación Temporal (T + 4 números) -> T-1234
-    m_temporal = re.match(r"^(T)(\d{4})$", texto_limpio)
-    if m_temporal:
-        return f"{m_temporal.group(1)}-{m_temporal.group(2)}"
-
-    # 6. Misiones Diplomáticas / Consulares (2 letras + 4 números) -> CD-1234
-    m_diplo = re.match(r"^([A-Z]{2})(\d{4})$", texto_limpio)
-    if m_diplo:
-        return f"{m_diplo.group(1)}-{m_diplo.group(2)}"
-
-    # 7. Fallback genérico: Si tiene letras al inicio y números/letras después
-    m_fallback = re.match(r"^([A-Z]+)(\d+.*)$", texto_limpio)
-    if m_fallback:
-        return f"{m_fallback.group(1)}-{m_fallback.group(2)}"
-
     return texto_limpio
 
 

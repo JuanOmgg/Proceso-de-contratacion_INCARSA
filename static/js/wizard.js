@@ -13,6 +13,11 @@
  */
 
 function solicitudWizard() {
+  const sesionInit = (typeof getAuthSession === 'function') ? getAuthSession() : null;
+  const nombreUsuarioInit = sesionInit
+    ? (sesionInit.nombre || sesionInit.nombres || `${sesionInit.nombre || sesionInit.nombres || ''} ${sesionInit.apellido || sesionInit.apellidos || ''}`.trim() || sesionInit.usuario || sesionInit.username || '')
+    : '';
+
   return {
     // ========================================================================
     // 1. ESTADO GENERAL DEL STEPPER
@@ -74,6 +79,7 @@ function solicitudWizard() {
       "EPS / Seguridad Social",
       "Hoja de Vida / Certificación",
       "Soporte de GESCO",
+      "Planilla seguridad social",
       "Otro documento"
     ],
     tiposVehiculo: ["Camioneta", "Camión", "Automóvil", "Motocicleta", "Volqueta", "Maquinaria", "Otro"],
@@ -108,6 +114,7 @@ function solicitudWizard() {
           return {
             tipo: d.tipo_doc || d.tipo || "Documento",
             nombre: nombre,
+            vigencia: d.vigencia ? String(d.vigencia).split(" ")[0] : null,
             url: d.url_acceso || (nombre ? `/uploads/documentos/${nombre}` : null)
           };
         });
@@ -183,11 +190,12 @@ function solicitudWizard() {
       fechaSalida: "", // Fecha de finalización en formato YYYY-MM-DD
       nivelRiesgo: "", // "Bajo" | "Medio" | "Alto"
       actividad: "", // Descripción detallada de las labores a ejecutar
-      diligenciadoPor: "Juan Prieto", // Nombre del usuario autenticado
+      diligenciadoPor: nombreUsuarioInit || "", // Nombre del usuario autenticado
       estado: "ENVIADO", // Estado editable por SUPERADMIN en modo edición
       codigo: "" // Código de radicado en modo edición
     },
     aceptaVeracidad: false, // Checkbox de confirmación y veracidad en el Paso 4
+    aceptaTratamientoDatos: false, // Checkbox de autorización de tratamiento de datos personales en el Paso 4
 
     // ========================================================================
     // 5. ESTADO DE BÚSQUEDA Y MODALES
@@ -207,9 +215,10 @@ function solicitudWizard() {
       tipoDoc: "CC",
       numDoc: "",
       cargo: "",
+      correo: "",
       observacion: "",
       documentos: [
-        { tipo_doc: "ARL", nombre_archivo: "" }
+        { tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "" }
       ]
     },
     personaModalErrors: {}, // Errores de validación dentro del modal de personas
@@ -218,7 +227,7 @@ function solicitudWizard() {
     contratistaSearchQuery: "", // Texto escrito en el buscador de contratistas
     showContratistaModal: false, // Visibilidad del modal para registrar nueva empresa
     guardandoEmpresa: false, // Spinner durante la llamada POST al backend
-    nuevaEmpresa: { nombre: "", observacion: "" },
+    nuevaEmpresa: { nombre: "", nit: "", observacion: "" },
     nuevaEmpresaErrors: {}, // Errores de validación dentro del modal de empresas
 
     // Modal / Búsqueda de Vehículos
@@ -236,7 +245,7 @@ function solicitudWizard() {
       licencia_doc: "",
       licencia_url: null,
       documentos: [
-        { tipo_doc: "SOAT", nombre_archivo: "" }
+        { tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }
       ]
     },
     vehiculoModalErrors: {}, // Errores de validación del modal de vehículos
@@ -279,7 +288,16 @@ function solicitudWizard() {
         this.cargarVehiculos();
       });
 
-      // 2. Verificar si es modo edición
+      // 2. Verificar si es modo edición y sincronizar usuario radicador
+      const sesionActual = (typeof getAuthSession === "function") ? getAuthSession() : null;
+      const nombreActual = sesionActual
+        ? (sesionActual.nombre || sesionActual.nombres || `${sesionActual.nombre || sesionActual.nombres || ''} ${sesionActual.apellido || sesionActual.apellidos || ''}`.trim() || sesionActual.usuario || sesionActual.username || '')
+        : '';
+
+      if (!isEditar) {
+        this.form.diligenciadoPor = nombreActual || "Usuario";
+      }
+
       await this.inicializarModoEdicion();
     },
 
@@ -610,7 +628,7 @@ function solicitudWizard() {
         if (found.vehiculos.includes('|||') || found.vehiculos.includes('###')) {
           listaVehiculos = found.vehiculos.split('###').map(v => {
             const [id, placa, marca, modelo, serie] = v.split('|||');
-            return { id, placa, marca, modelo, tipo: 'Camioneta', conductor: '' };
+            return { id, placa: (placa || "").replace(/[^A-Za-z0-9]/g, '').toUpperCase(), marca, modelo, tipo: 'Camioneta', conductor: '' };
           });
         } else {
           try { listaVehiculos = JSON.parse(found.vehiculos); } catch (e) {}
@@ -621,19 +639,68 @@ function solicitudWizard() {
         listaVehiculos = found.vehiculo;
       }
 
-      this.vehiculos = listaVehiculos.map(v => ({
-        id: v.id,
-        tipo: v.tipo || "Camioneta",
-        placa: (v.placa || "").toUpperCase().trim(),
-        conductor: v.conductor || "",
-        licencia_doc: v.licencia_doc || v.licencia || "",
-        documentos: Array.isArray(v.documentos) && v.documentos.length > 0
-          ? v.documentos.map(d => ({
-              tipo_doc: d.tipo_doc || d.tipo || "SOAT",
-              nombre_archivo: d.nombre_archivo || d.nom_documento || d.nombre || ""
-            }))
-          : [{ tipo_doc: "SOAT", nombre_archivo: "" }]
-      }));
+      this.vehiculos = listaVehiculos.map(v => {
+        const idPersona = v.id_persona || v.conductor_id || null;
+        let conductorNombre = v.conductor || "";
+
+        if (v.tipo && !this.tiposVehiculo.some(t => t.toLowerCase() === String(v.tipo).toLowerCase())) {
+          this.tiposVehiculo.push(v.tipo);
+        }
+
+        if (idPersona && this.personas && this.personas.length > 0) {
+          const pMatch = this.personas.find(p => String(p.id) === String(idPersona));
+          if (pMatch && pMatch.nombres) {
+            conductorNombre = pMatch.nombres;
+          }
+        }
+        if (!conductorNombre && v.conductor && this.personas && this.personas.length > 0) {
+          const cVal = String(v.conductor).trim().toLowerCase();
+          const pMatch = this.personas.find(p => {
+            const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+            const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+            return nomComp === cVal || nomSolo === cVal;
+          });
+          if (pMatch && pMatch.nombres) {
+            conductorNombre = pMatch.nombres;
+          }
+        } else if (conductorNombre && this.personas && this.personas.length > 0) {
+          const cVal = String(conductorNombre).trim().toLowerCase();
+          const pMatch = this.personas.find(p => {
+            const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+            const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+            return nomComp === cVal || nomSolo === cVal;
+          });
+          if (pMatch && pMatch.nombres) {
+            conductorNombre = pMatch.nombres;
+          }
+        }
+
+        return {
+          id: v.id,
+          tipo: v.tipo || "Camioneta",
+          placa: (v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim(),
+          conductor: conductorNombre,
+          id_persona: idPersona,
+          conductor_id: idPersona,
+          licencia_doc: v.licencia_doc || v.licencia || "",
+          licencia_url: v.url_licencia || v.licencia_url || null,
+          documentos: Array.isArray(v.documentos) && v.documentos.length > 0
+            ? v.documentos.map(d => ({
+                tipo_doc: d.tipo_doc || d.tipo || "SOAT",
+                nombre_archivo: d.nombre_archivo || d.nom_documento || d.nombre || ""
+              }))
+            : [{ tipo_doc: "SOAT", nombre_archivo: "" }]
+        };
+      });
+
+      this.$nextTick(() => {
+        this.vehiculos.forEach(v => this.asignarConductorVehiculo(v));
+        this.vehiculos = [...this.vehiculos];
+      });
+      setTimeout(() => {
+        this.vehiculos.forEach(v => this.asignarConductorVehiculo(v));
+        this.vehiculos = [...this.vehiculos];
+      }, 60);
 
       // 7. Equipos de cómputo
       let listaComputos = [];
@@ -657,7 +724,8 @@ function solicitudWizard() {
         serie: e.serie || ""
       }));
 
-      this.aceptaVeracidad = true;
+      this.aceptaVeracidad = false;
+      this.aceptaTratamientoDatos = false;
       this.errors = {}; // Limpiar cualquier error previo
 
       // 8. Sincronizar fechas con Flatpickr (con timeout para asegurar DOM montado)
@@ -738,6 +806,7 @@ function solicitudWizard() {
             tipoDoc: p.tipo_doc || p.tipoDoc || "CC",
             numDoc: p.identificacion || p.numDoc,
             cargo: p.cargo || "Personal",
+            correo: p.correo || "",
             observacion: p.observacion || "",
             documento: p.documento_doc || p.documento || null,
             documentos: Array.isArray(p.documentos) && p.documentos.length > 0
@@ -764,7 +833,7 @@ function solicitudWizard() {
           this.vehiculosRegistrados = lista.map(v => ({
             id: v.id,
             tipo: v.tipo || "Camioneta",
-            placa: (v.placa || "").toUpperCase().trim(),
+            placa: (v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim(),
             conductor: v.conductor || "",
             licencia_doc: v.licencia_doc || v.licencia || "",
             documentos: Array.isArray(v.documentos) ? v.documentos : (Array.isArray(v.documentos_ids) ? v.documentos_ids : [])
@@ -828,6 +897,40 @@ function solicitudWizard() {
 
       if (this.form[field]) {
         fpInstance.setDate(this.form[field], false);
+      }
+    },
+
+    /**
+     * Inicializa Flatpickr en un input de vigencia de documento
+     * @param {HTMLElement} el - Elemento input DOM
+     * @param {Object} doc - Objeto documento reactivo
+     */
+    initFlatpickrDoc(el, doc) {
+      if (typeof flatpickr === "undefined" || !el) return;
+      if (el._flatpickr) {
+        if (doc.vigencia && el._flatpickr.input.value !== doc.vigencia) {
+          el._flatpickr.setDate(doc.vigencia, false);
+        }
+        return;
+      }
+      const modalPanel = el.closest('.modal-panel');
+      const fp = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: el.className,
+        defaultDate: doc.vigencia || null,
+        disableMobile: "true",
+        position: "auto right",
+        static: true,
+        appendTo: modalPanel || undefined,
+        onChange: (selectedDates, dateStr) => {
+          doc.vigencia = dateStr;
+        }
+      });
+      if (doc.vigencia) {
+        fp.setDate(doc.vigencia, false);
       }
     },
 
@@ -963,9 +1066,22 @@ function solicitudWizard() {
       return this.empresasContratistas
         .filter(empresa => {
           const nombre = String(empresa?.nombre || empresa?.N_empresa || empresa || "");
-          return nombre.toLowerCase().includes(q);
+          const nit = String(empresa?.nit || "");
+          return nombre.toLowerCase().includes(q) || nit.toLowerCase().includes(q);
         })
         .slice(0, 6);
+    },
+
+    /**
+     * Retorna el objeto completo de la empresa contratista seleccionada
+     */
+    getContratistaSeleccionada() {
+      if (!this.form.contratista) return null;
+      const contratistaActual = String(this.form.contratista || "").toLowerCase().trim();
+      return this.empresasContratistas.find(empresa => {
+        const nombre = String(empresa?.nombre || empresa?.N_empresa || empresa || "").toLowerCase().trim();
+        return nombre === contratistaActual || String(empresa?.id || "") === contratistaActual;
+      }) || null;
     },
 
     /**
@@ -989,13 +1105,13 @@ function solicitudWizard() {
 
     openContratistaModal() {
       this.showContratistaModal = true;
-      this.nuevaEmpresa = { nombre: "", observacion: "" };
+      this.nuevaEmpresa = { nombre: "", nit: "", observacion: "" };
       this.nuevaEmpresaErrors = {};
     },
 
     closeContratistaModal() {
       this.showContratistaModal = false;
-      this.nuevaEmpresa = { nombre: "", observacion: "" };
+      this.nuevaEmpresa = { nombre: "", nit: "", observacion: "" };
       this.nuevaEmpresaErrors = {};
     },
 
@@ -1004,11 +1120,40 @@ function solicitudWizard() {
      */
     async guardarNuevaEmpresa() {
       const nombre = String(this.nuevaEmpresa?.nombre || "").trim();
+      const nit = String(this.nuevaEmpresa?.nit || "").trim();
       const observacion = String(this.nuevaEmpresa?.observacion || "").trim();
       this.nuevaEmpresaErrors = {};
 
       if (!nombre) {
         this.nuevaEmpresaErrors.nombre = "Ingresa el nombre de la empresa.";
+        return;
+      }
+
+      if (!nit) {
+        this.nuevaEmpresaErrors.nit = "Ingresa el NIT de la empresa.";
+        return;
+      }
+
+      if (!/^\d+$/.test(nit)) {
+        this.nuevaEmpresaErrors.nit = "El NIT debe contener únicamente números.";
+        return;
+      }
+
+      // Validar que el nombre no esté duplicado localmente
+      const existeNombre = this.empresasContratistas.find(c =>
+        String(c.nombre || c.N_empresa || "").trim().toLowerCase() === nombre.toLowerCase()
+      );
+      if (existeNombre) {
+        this.nuevaEmpresaErrors.nombre = "Ya existe una empresa contratista con este nombre.";
+        return;
+      }
+
+      // Validar que el NIT no esté repetido para otra empresa
+      const existeNit = this.empresasContratistas.find(c =>
+        String(c.nit || "").trim() === nit
+      );
+      if (existeNit) {
+        this.nuevaEmpresaErrors.nit = `El NIT ${nit} ya está registrado para la empresa "${existeNit.nombre}".`;
         return;
       }
 
@@ -1020,6 +1165,7 @@ function solicitudWizard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nombre: nombre,
+            nit: nit,
             observacion: observacion
           })
         });
@@ -1035,6 +1181,7 @@ function solicitudWizard() {
         const nueva = {
           id: data.empcont_id || `ec-${Date.now()}`,
           nombre: nombre,
+          nit: nit,
           observacion: observacion
         };
 
@@ -1049,6 +1196,7 @@ function solicitudWizard() {
         const fallback = {
           id: `ec-${Date.now()}`,
           nombre: nombre,
+          nit: nit,
           observacion: observacion
         };
         this.empresasContratistas.unshift(fallback);
@@ -1079,7 +1227,7 @@ function solicitudWizard() {
       const q = String(this.personaSearchQuery || "").trim().toLowerCase();
       if (!q) return [];
       return this.personasRegistradas
-        .filter(p => (p.nombres || "").toLowerCase().includes(q) || String(p.numDoc || p.identificacion || "").toLowerCase().includes(q))
+        .filter(p => (p.nombres || "").toLowerCase().includes(q) || String(p.numDoc || p.identificacion || "").toLowerCase().includes(q) || (p.correo || "").toLowerCase().includes(q))
         .slice(0, 6);
     },
 
@@ -1096,6 +1244,7 @@ function solicitudWizard() {
         tipoDoc: persona.tipoDoc || persona.tipo_doc || "CC",
         numDoc: doc,
         cargo: persona.cargo || "Personal",
+        correo: persona.correo || "",
         observacion: persona.observacion || "",
         documentos: Array.isArray(persona.documentos) && persona.documentos.length > 0
           ? persona.documentos
@@ -1124,9 +1273,10 @@ function solicitudWizard() {
         tipoDoc: "CC",
         numDoc: "",
         cargo: "",
+        correo: "",
         observacion: "",
         documentos: [
-          { tipo_doc: "ARL", nombre_archivo: "" }
+          { tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "", vigencia: "" }
         ]
       };
       this.personaModalErrors = {};
@@ -1160,16 +1310,23 @@ function solicitudWizard() {
 
       let docs = [];
       if (Array.isArray(persona.documentos) && persona.documentos.length > 0) {
-        docs = persona.documentos.map(d => ({
-          id: d.id || null,
-          tipo_doc: d.tipo_doc || d.tipo || "ARL",
-          nombre_archivo: d.nombre_archivo || d.nom_documento || d.nombre || "",
-          url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
-          nombre_original: d.nombre_original || d.nombre_archivo || ""
-        }));
+        docs = persona.documentos.map(d => {
+          const rawTipo = d.tipo_doc || d.tipo || "ARL";
+          const isPredefined = this.tiposDocAdjuntoPersona.includes(rawTipo) && rawTipo !== "Otro documento";
+          return {
+            id: d.id || null,
+            tipo_doc: isPredefined ? rawTipo : "Otro documento",
+            tipo_doc_otro: isPredefined ? "" : rawTipo,
+            nombre_archivo: d.nombre_archivo || d.nom_documento || d.nombre || "",
+            vigencia: d.vigencia ? String(d.vigencia).split(" ")[0] : "",
+            url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
+            nombre_original: d.nombre_original || d.nombre_archivo || ""
+          };
+        });
       } else if (persona.documento) {
         docs.push({
           tipo_doc: "Cédula de Ciudadanía",
+          tipo_doc_otro: "",
           nombre_archivo: persona.documento,
           url_documento: `/uploads/documentos/${persona.documento}`,
           nombre_original: persona.documento
@@ -1177,7 +1334,7 @@ function solicitudWizard() {
       }
 
       if (docs.length === 0) {
-        docs = [{ tipo_doc: "ARL", nombre_archivo: "" }];
+        docs = [{ tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "" }];
       }
 
       this.nuevaPersona = {
@@ -1186,6 +1343,7 @@ function solicitudWizard() {
         tipoDoc: persona.tipoDoc || persona.tipo_doc || "CC",
         numDoc: String(persona.numDoc || persona.identificacion || ""),
         cargo: persona.cargo || "",
+        correo: persona.correo || "",
         observacion: persona.observacion || "",
         documentos: docs
       };
@@ -1200,13 +1358,19 @@ function solicitudWizard() {
             const data = await res.json();
             const pDb = data.persona || data.datos || data;
             if (pDb && Array.isArray(pDb.documentos) && pDb.documentos.length > 0) {
-              this.nuevaPersona.documentos = pDb.documentos.map(d => ({
-                id: d.id || null,
-                tipo_doc: d.tipo_doc || "ARL",
-                nombre_archivo: d.nombre_archivo || "",
-                url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
-                nombre_original: d.nombre_archivo || ""
-              }));
+              this.nuevaPersona.documentos = pDb.documentos.map(d => {
+                const rawTipo = d.tipo_doc || "ARL";
+                const isPredefined = this.tiposDocAdjuntoPersona.includes(rawTipo) && rawTipo !== "Otro documento";
+                return {
+                  id: d.id || null,
+                  tipo_doc: isPredefined ? rawTipo : "Otro documento",
+                  tipo_doc_otro: isPredefined ? "" : rawTipo,
+                  nombre_archivo: d.nombre_archivo || "",
+                  vigencia: d.vigencia ? String(d.vigencia).split(" ")[0] : "",
+                  url_documento: d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null),
+                  nombre_original: d.nombre_archivo || ""
+                };
+              });
               if (pDb.nombre && !this.nuevaPersona.nombres) this.nuevaPersona.nombres = pDb.nombre;
               if (pDb.apellido && !this.nuevaPersona.apellidos) this.nuevaPersona.apellidos = pDb.apellido;
             }
@@ -1229,9 +1393,10 @@ function solicitudWizard() {
         tipoDoc: "CC",
         numDoc: "",
         cargo: "",
+        correo: "",
         observacion: "",
         documentos: [
-          { tipo_doc: "ARL", nombre_archivo: "" }
+          { tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "", vigencia: "" }
         ]
       };
       this.personaModalErrors = {};
@@ -1368,8 +1533,10 @@ function solicitudWizard() {
      */
     addDocumentoPersona() {
       this.nuevaPersona.documentos.push({
-        tipo_doc: "Seguridad Social / ARL",
-        nombre_archivo: ""
+        tipo_doc: "ARL",
+        tipo_doc_otro: "",
+        nombre_archivo: "",
+        vigencia: ""
       });
     },
 
@@ -1414,11 +1581,17 @@ function solicitudWizard() {
       const apellidos = String(this.nuevaPersona.apellidos || "").trim();
       const numDoc = String(this.nuevaPersona.numDoc || "").trim();
       const cargo = String(this.nuevaPersona.cargo || "").trim();
+      const correo = String(this.nuevaPersona.correo || "").trim();
 
       if (!apellidos) this.personaModalErrors.apellidos = "Ingresa los apellidos.";
       if (!nombres) this.personaModalErrors.nombres = "Ingresa los nombres.";
       if (!numDoc) this.personaModalErrors.numDoc = "Ingresa el número de documento.";
       if (!cargo) this.personaModalErrors.cargo = "Ingresa el cargo.";
+      if (!correo) {
+        this.personaModalErrors.correo = "Ingresa el correo electrónico.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        this.personaModalErrors.correo = "Ingresa un correo electrónico válido.";
+      }
 
       // Al editar, ignorar el chequeo de duplicados contra sí mismo
       const esDuplicado = this.personas.some((p, idx) => {
@@ -1451,17 +1624,26 @@ function solicitudWizard() {
       const tipoDoc = this.nuevaPersona.tipoDoc || "CC";
       const numDoc = String(this.nuevaPersona.numDoc || "").trim();
       const cargo = String(this.nuevaPersona.cargo || "").trim();
+      const correo = String(this.nuevaPersona.correo || "").trim().toLowerCase();
       const observacion = String(this.nuevaPersona.observacion || "").trim();
 
       // Filtra y estructura los documentos válidos adjuntados
       const docsValidos = (this.nuevaPersona.documentos || [])
         .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-        .map(d => ({
-          id: d.id || null,
-          tipo_doc: d.tipo_doc,
-          nombre_archivo: d.nombre_archivo.trim(),
-          url_acceso: d.url_documento || `/uploads/documentos/${d.nombre_archivo.trim()}`
-        }));
+        .map(d => {
+          let tipoFinal = d.tipo_doc;
+          if (d.tipo_doc === 'Otro documento' || d.tipo_doc === 'Otro') {
+            tipoFinal = (d.tipo_doc_otro && d.tipo_doc_otro.trim()) ? d.tipo_doc_otro.trim() : 'Otro documento';
+          }
+          return {
+            id: d.id || null,
+            tipo_doc: tipoFinal,
+            tipo_doc_otro: d.tipo_doc_otro || "",
+            nombre_archivo: d.nombre_archivo.trim(),
+            vigencia: (d.tipo_doc === 'Planilla seguridad social' || (d.tipo_doc && d.tipo_doc.toLowerCase().includes('planilla'))) ? (d.vigencia || null) : null,
+            url_acceso: d.url_documento || `/uploads/documentos/${d.nombre_archivo.trim()}`
+          };
+        });
 
       this.guardandoPersona = true;
 
@@ -1476,6 +1658,7 @@ function solicitudWizard() {
           numDoc: numDoc,
           identificacion: numDoc,
           cargo: cargo,
+          correo: correo,
           observacion: observacion,
           documentos: docsValidos
         };
@@ -1491,8 +1674,9 @@ function solicitudWizard() {
                 tipo_doc: tipoDoc,
                 identificacion: numDoc,
                 cargo: cargo,
+                correo: correo || null,
                 observacion: observacion,
-                documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo }))
+                documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo, vigencia: d.vigencia || null }))
               })
             });
 
@@ -1521,6 +1705,7 @@ function solicitudWizard() {
               numDoc: numDoc,
               identificacion: numDoc,
               cargo: cargo,
+              correo: correo,
               observacion: observacion,
               documentos: docsValidos
             };
@@ -1577,6 +1762,7 @@ function solicitudWizard() {
           tipoDoc: tipoDoc,
           numDoc: numDoc,
           cargo: cargo,
+          correo: correo,
           observacion: observacion,
           documentos: docsValidos
         };
@@ -1591,8 +1777,9 @@ function solicitudWizard() {
               tipo_doc: tipoDoc,
               identificacion: numDoc,
               cargo: cargo,
+              correo: correo || null,
               observacion: observacion,
-              documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo }))
+              documentos_ids: docsValidos.map(d => ({ tipo_doc: d.tipo_doc, nombre_archivo: d.nombre_archivo, vigencia: d.vigencia || null }))
             })
           });
 
@@ -1621,6 +1808,7 @@ function solicitudWizard() {
               tipoDoc: tipoDoc,
               numDoc: numDoc,
               cargo: cargo,
+              correo: correo,
               observacion: observacion,
               documentos: docsValidos
             });
@@ -1644,8 +1832,8 @@ function solicitudWizard() {
     // ========================================================================
     vehiculoYaAgregado(placa) {
       if (!placa) return false;
-      const cleanPlaca = String(placa).toUpperCase().trim();
-      return this.vehiculos.some(v => (v.placa || "").toUpperCase().trim() === cleanPlaca);
+      const cleanPlaca = String(placa).toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+      return this.vehiculos.some(v => (v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim() === cleanPlaca);
     },
 
     vehiculosFiltrados() {
@@ -1661,7 +1849,7 @@ function solicitudWizard() {
     },
 
     agregarVehiculoDesdeBusqueda(vehiculo) {
-      const placa = (vehiculo.placa || "").toUpperCase().trim();
+      const placa = (vehiculo.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
       if (this.vehiculoYaAgregado(placa)) return;
       this.vehiculos.push({
         id: vehiculo.id,
@@ -1682,25 +1870,76 @@ function solicitudWizard() {
     /**
      * Vincula reactivamente la persona seleccionada como conductor al vehículo
      */
-    asignarConductorVehiculo(v) {
+    asignarConductorVehiculo(v, eventOrVal) {
       if (!v) return;
-      if (!v.conductor) {
-        v.id_persona = null;
-        v.conductor_id = null;
+
+      let rawVal = undefined;
+      if (eventOrVal !== undefined && eventOrVal !== null) {
+        if (eventOrVal.target && eventOrVal.target.value !== undefined) {
+          rawVal = eventOrVal.target.value;
+        } else if (typeof eventOrVal === "string" || typeof eventOrVal === "number") {
+          rawVal = String(eventOrVal);
+        }
+      }
+
+      // 1. Si el cambio proviene de una interacción directa del usuario en el select
+      if (rawVal !== undefined) {
+        const valStr = String(rawVal).trim();
+        if (!valStr) {
+          // Usuario seleccionó la opción vacía: desasigna el conductor
+          v.id_persona = null;
+          v.conductor_id = null;
+          v.conductor = "";
+          return;
+        }
+
+        // Buscar primero por ID exacto de la persona
+        let p = this.personas.find(pers => String(pers.id) === valStr);
+        if (!p) {
+          const valLower = valStr.toLowerCase();
+          p = this.personas.find(pers => {
+            const nomComp = `${pers.nombres || pers.nombre || ''} ${pers.apellidos || pers.apellido || ''}`.trim().toLowerCase();
+            const nomSolo = `${pers.nombres || pers.nombre || ''}`.trim().toLowerCase();
+            const doc = String(pers.numDoc || pers.identificacion || '').trim().toLowerCase();
+            return nomComp === valLower || nomSolo === valLower || doc === valLower;
+          });
+        }
+
+        if (p) {
+          v.id_persona = p.id;
+          v.conductor_id = p.id;
+          v.conductor = p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim();
+        } else {
+          v.conductor = valStr;
+          v.id_persona = null;
+          v.conductor_id = null;
+        }
         return;
       }
-      const cVal = String(v.conductor).trim().toLowerCase();
-      const p = this.personas.find(p => {
-        const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
-        const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
-        const doc = String(p.numDoc || p.identificacion || '').trim().toLowerCase();
-        const pid = String(p.id || '').trim();
-        return nomComp === cVal || nomSolo === cVal || doc === cVal || pid === cVal;
-      });
+
+      // 2. Sincronización automática (carga inicial o llamada sin evento de usuario)
+      let p = null;
+      if (v.id_persona) {
+        p = this.personas.find(pers => String(pers.id) === String(v.id_persona));
+      }
+      if (!p && v.conductor) {
+        const cVal = String(v.conductor).trim().toLowerCase();
+        p = this.personas.find(pers => {
+          const nomComp = `${pers.nombres || pers.nombre || ''} ${pers.apellidos || pers.apellido || ''}`.trim().toLowerCase();
+          const nomSolo = `${pers.nombres || pers.nombre || ''}`.trim().toLowerCase();
+          const doc = String(pers.numDoc || pers.identificacion || '').trim().toLowerCase();
+          const pid = String(pers.id || '').trim();
+          return nomComp === cVal || nomSolo === cVal || doc === cVal || pid === cVal;
+        });
+      }
+
       if (p) {
         v.id_persona = p.id;
         v.conductor_id = p.id;
         v.conductor = p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim();
+      } else if (!v.conductor && !v.id_persona) {
+        v.id_persona = null;
+        v.conductor_id = null;
       }
     },
 
@@ -1716,7 +1955,7 @@ function solicitudWizard() {
         licencia_doc: "",
         licencia_url: null,
         documentos: [
-          { tipo_doc: "SOAT", nombre_archivo: "" }
+          { tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }
         ]
       };
       this.vehiculoModalErrors = {};
@@ -1729,25 +1968,57 @@ function solicitudWizard() {
     openEditVehiculoModal(vehiculo, idx = -1) {
       this.isEditingVehiculo = true;
       this.editingVehiculoId = vehiculo.id || null;
-      this.editingVehiculoOldPlaca = String(vehiculo.placa || "").toUpperCase().trim();
-      this.editingVehiculoIndex = idx !== -1 ? idx : this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca);
+      this.editingVehiculoOldPlaca = String(vehiculo.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+      this.editingVehiculoIndex = idx !== -1 ? idx : this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim() === this.editingVehiculoOldPlaca);
+
+      // Si el tipo no está en tiposVehiculo, agregarlo para que el select lo muestre
+      if (vehiculo.tipo && !this.tiposVehiculo.some(t => t.toLowerCase() === String(vehiculo.tipo).toLowerCase())) {
+        this.tiposVehiculo.push(vehiculo.tipo);
+      }
+      const matchTipo = this.tiposVehiculo.find(t => t.toLowerCase() === String(vehiculo.tipo || "").toLowerCase());
+      const tipoFinal = matchTipo || vehiculo.tipo || "Camioneta";
+
+      let conductorNombre = vehiculo.conductor || "";
+      let idPersona = vehiculo.id_persona || vehiculo.conductor_id || null;
+      if (idPersona && this.personas && this.personas.length > 0) {
+        const pMatch = this.personas.find(p => String(p.id) === String(idPersona));
+        if (pMatch && pMatch.nombres) conductorNombre = pMatch.nombres;
+      } else if (conductorNombre && this.personas && this.personas.length > 0) {
+        const cVal = String(conductorNombre).trim().toLowerCase();
+        const pMatch = this.personas.find(p => {
+          const nomComp = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
+          const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
+          return nomComp === cVal || nomSolo === cVal;
+        });
+        if (pMatch) {
+          idPersona = pMatch.id;
+          conductorNombre = pMatch.nombres;
+        }
+      }
 
       let docs = [];
       if (Array.isArray(vehiculo.documentos) && vehiculo.documentos.length > 0) {
-        docs = vehiculo.documentos.map(d => ({
-          id: d.id || null,
-          tipo_doc: d.tipo_doc || d.tipo || "SOAT",
-          nombre_archivo: d.nombre_archivo || d.nom_documento || "",
-          url_documento: d.url_documento || d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null)
-        }));
+        docs = vehiculo.documentos.map(d => {
+          const rawTipo = d.tipo_doc || d.tipo || "SOAT";
+          const isPredefined = this.tiposDocAdjuntoVehiculo.includes(rawTipo) && rawTipo !== "Otro documento";
+          return {
+            id: d.id || null,
+            tipo_doc: isPredefined ? rawTipo : "Otro documento",
+            tipo_doc_otro: isPredefined ? "" : rawTipo,
+            nombre_archivo: d.nombre_archivo || d.nom_documento || "",
+            url_documento: d.url_documento || d.url_acceso || (d.nombre_archivo ? `/uploads/documentos/${d.nombre_archivo}` : null)
+          };
+        });
       } else {
-        docs = [{ tipo_doc: "SOAT", nombre_archivo: "" }];
+        docs = [{ tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }];
       }
 
       this.nuevoVehiculo = {
-        tipo: vehiculo.tipo || "Camioneta",
-        placa: String(vehiculo.placa || "").toUpperCase().trim(),
-        conductor: vehiculo.conductor || "",
+        tipo: tipoFinal,
+        placa: String(vehiculo.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim(),
+        conductor: conductorNombre,
+        id_persona: idPersona,
+        conductor_id: idPersona,
         licencia_doc: vehiculo.licencia_doc || vehiculo.licencia || "",
         licencia_url: vehiculo.licencia_url || null,
         documentos: docs
@@ -1769,7 +2040,7 @@ function solicitudWizard() {
         licencia_doc: "",
         licencia_url: null,
         documentos: [
-          { tipo_doc: "SOAT", nombre_archivo: "" }
+          { tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }
         ]
       };
       this.vehiculoModalErrors = {};
@@ -1778,6 +2049,7 @@ function solicitudWizard() {
     addDocumentoNuevoVehiculo() {
       this.nuevoVehiculo.documentos.push({
         tipo_doc: "Revisión Tecnomecánica",
+        tipo_doc_otro: "",
         nombre_archivo: ""
       });
     },
@@ -1851,7 +2123,7 @@ function solicitudWizard() {
 
     validateNuevoVehiculo() {
       this.vehiculoModalErrors = {};
-      const placa = String(this.nuevoVehiculo.placa || "").toUpperCase().trim();
+      const placa = String(this.nuevoVehiculo.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
       const tipo = String(this.nuevoVehiculo.tipo || "").trim();
 
       if (!placa) {
@@ -1862,7 +2134,7 @@ function solicitudWizard() {
       }
 
       const esDuplicado = this.vehiculos.some((v, idx) => {
-        const pPlaca = String(v.placa || "").toUpperCase().trim();
+        const pPlaca = String(v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
         if (pPlaca !== placa) return false;
         if (this.isEditingVehiculo) {
           if (this.editingVehiculoIndex !== -1 && idx === this.editingVehiculoIndex) return false;
@@ -1881,26 +2153,38 @@ function solicitudWizard() {
     async guardarNuevoVehiculo() {
       if (!this.validateNuevoVehiculo()) return;
 
-      const placa = String(this.nuevoVehiculo.placa || "").toUpperCase().trim();
+      const placa = String(this.nuevoVehiculo.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
       const tipo = this.nuevoVehiculo.tipo || "Camioneta";
       const conductor = String(this.nuevoVehiculo.conductor || "").trim();
       const licencia_doc = String(this.nuevoVehiculo.licencia_doc || "").trim();
 
       const docsValidos = (this.nuevoVehiculo.documentos || [])
         .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-        .map(d => ({
-          tipo_doc: d.tipo_doc,
-          nom_documento: d.nombre_archivo.trim(),
-          nombre_archivo: d.nombre_archivo.trim()
-        }));
+        .map(d => {
+          let tipoFinal = d.tipo_doc;
+          if (d.tipo_doc === 'Otro documento' || d.tipo_doc === 'Otro') {
+            tipoFinal = (d.tipo_doc_otro && d.tipo_doc_otro.trim()) ? d.tipo_doc_otro.trim() : 'Otro documento';
+          }
+          return {
+            tipo_doc: tipoFinal,
+            tipo_doc_otro: d.tipo_doc_otro || "",
+            nom_documento: d.nombre_archivo.trim(),
+            nombre_archivo: d.nombre_archivo.trim()
+          };
+        });
 
       this.guardandoVehiculo = true;
 
       let idPersonaConductor = null;
+      let nombreConductor = conductor;
       if (this.nuevoVehiculo.id_persona && !isNaN(parseInt(this.nuevoVehiculo.id_persona))) {
         idPersonaConductor = parseInt(this.nuevoVehiculo.id_persona);
+        const pMatch = this.personas.find(p => String(p.id) === String(idPersonaConductor));
+        if (pMatch && pMatch.nombres) {
+          nombreConductor = pMatch.nombres;
+        }
       } else if (conductor) {
-        const cName = conductor.toLowerCase();
+        const cName = conductor.trim().toLowerCase();
         const pMatch = this.personas.find(p => {
           const nomCompleto = `${p.nombres || p.nombre || ''} ${p.apellidos || p.apellido || ''}`.trim().toLowerCase();
           const nomSolo = `${p.nombres || p.nombre || ''}`.trim().toLowerCase();
@@ -1908,7 +2192,11 @@ function solicitudWizard() {
         });
         if (pMatch && pMatch.id && !isNaN(parseInt(pMatch.id))) {
           idPersonaConductor = parseInt(pMatch.id);
+          nombreConductor = pMatch.nombres;
         }
+      } else {
+        idPersonaConductor = null;
+        nombreConductor = "";
       }
 
       if (this.isEditingVehiculo) {
@@ -1917,7 +2205,7 @@ function solicitudWizard() {
           id: this.editingVehiculoId,
           tipo: tipo,
           placa: placa,
-          conductor: conductor,
+          conductor: nombreConductor,
           id_persona: idPersonaConductor,
           conductor_id: idPersonaConductor,
           licencia_doc: licencia_doc,
@@ -1933,7 +2221,7 @@ function solicitudWizard() {
               body: JSON.stringify({
                 tipo: tipo,
                 placa: placa,
-                conductor: conductor,
+                conductor: nombreConductor,
                 licencia_doc: licencia_doc,
                 licencia_url: this.nuevoVehiculo.licencia_url || null,
                 documentos: docsValidos
@@ -1956,24 +2244,33 @@ function solicitudWizard() {
             ...this.vehiculos[this.editingVehiculoIndex],
             ...vehiculoActualizado
           };
+          this.asignarConductorVehiculo(this.vehiculos[this.editingVehiculoIndex]);
         } else {
-          const idxEncontrado = this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+          const idxEncontrado = this.vehiculos.findIndex(v => String(v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
           if (idxEncontrado !== -1) {
             this.vehiculos[idxEncontrado] = {
               ...this.vehiculos[idxEncontrado],
               ...vehiculoActualizado
             };
+            this.asignarConductorVehiculo(this.vehiculos[idxEncontrado]);
           }
         }
 
         // 2. Actualizar en el catálogo de búsqueda
-        const regIdx = this.vehiculosRegistrados.findIndex(v => String(v.placa || "").toUpperCase().trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
+        const regIdx = this.vehiculosRegistrados.findIndex(v => String(v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim() === this.editingVehiculoOldPlaca || (this.editingVehiculoId && String(v.id) === String(this.editingVehiculoId)));
         if (regIdx !== -1) {
           this.vehiculosRegistrados[regIdx] = {
             ...this.vehiculosRegistrados[regIdx],
             ...vehiculoActualizado
           };
         }
+
+        // Forzar reactividad reasignando el arreglo y disparando sincronización
+        this.vehiculos = [...this.vehiculos];
+        this.$nextTick(() => {
+          this.vehiculos.forEach(v => this.asignarConductorVehiculo(v));
+          this.vehiculos = [...this.vehiculos];
+        });
 
         this.guardandoVehiculo = false;
         this.closeVehiculoModal();
@@ -2016,7 +2313,7 @@ function solicitudWizard() {
         vehiculoNuevo.id = `veh-${Date.now()}`;
       } finally {
         // 1. Agregar al catálogo de búsqueda
-        if (!this.vehiculosRegistrados.some(v => (v.placa || "").toUpperCase().trim() === placa)) {
+        if (!this.vehiculosRegistrados.some(v => (v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim() === placa)) {
           this.vehiculosRegistrados.unshift({
             id: vehiculoNuevo.id,
             tipo: tipo,
@@ -2030,6 +2327,8 @@ function solicitudWizard() {
         // 2. Agregar a la solicitud activa
         if (!this.vehiculoYaAgregado(placa)) {
           this.vehiculos.push(vehiculoNuevo);
+          this.asignarConductorVehiculo(vehiculoNuevo);
+          this.vehiculos = [...this.vehiculos];
         }
 
         this.vehiculoSearchQuery = "";
@@ -2082,9 +2381,14 @@ function solicitudWizard() {
         }
       }
 
-      // Validación Paso 4: Confirmación de veracidad
+      // Validación Paso 4: Confirmación de veracidad y tratamiento de datos
       if (step === 4) {
-        if (!this.aceptaVeracidad) this.errors.veracidad = "Debes confirmar que la información es veraz.";
+        if (!this.aceptaVeracidad) {
+          this.errors.veracidad = "Debes confirmar que la información registrada es veraz y completa.";
+        }
+        if (!this.aceptaTratamientoDatos) {
+          this.errors.tratamientoDatos = "Es obligatorio autorizar el tratamiento de datos personales para radicar la solicitud.";
+        }
       }
 
       return Object.keys(this.errors).length === 0;
@@ -2127,7 +2431,19 @@ function solicitudWizard() {
      * Envía la solicitud al endpoint FastAPI (POST /api/v1/solicitudes/)
      */
     async submitForm() {
-      if (!this.validateStep(4)) return;
+      if (!this.aceptaVeracidad || !this.aceptaTratamientoDatos || !this.validateStep(4)) {
+        if (!this.aceptaVeracidad) {
+          this.errors.veracidad = "Debes confirmar que la información registrada es veraz y completa.";
+        }
+        if (!this.aceptaTratamientoDatos) {
+          this.errors.tratamientoDatos = "Es obligatorio autorizar el tratamiento de datos personales para radicar la solicitud.";
+        }
+        setTimeout(() => {
+          const errEl = document.querySelector(".form-error:not([style*='display: none'])");
+          if (errEl) errEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+        return;
+      }
       this.submitting = true;
 
       // 1. Resolver IDs para Backend
@@ -2196,12 +2512,13 @@ function solicitudWizard() {
         identificacion: p.numDoc || p.identificacion || "",
         tipo_doc: p.tipoDoc || p.tipo_doc || "CC",
         cargo: p.cargo || "Personal",
+        correo: p.correo || "",
         autorizado: true,
         motivo: null
       }));
 
       // Usuario autenticado (Diligenciador únicamente para nueva solicitud)
-      const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || "null");
+      const sesion = (typeof getAuthSession === "function") ? getAuthSession() : JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
       const diligenciadorId = (sesion && sesion.id && !isNaN(parseInt(sesion.id))) ? parseInt(sesion.id) : 1;
 
       // Vehículos estructurados con licencia y documentos
@@ -2230,10 +2547,12 @@ function solicitudWizard() {
           id: vid,
           id_vehiculo: vid,
           tipo: v.tipo || "Camioneta",
-          placa: (v.placa || "").toUpperCase().trim(),
+          placa: (v.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim(),
           conductor: v.conductor || "",
-          id_persona: conductorId || undefined,
-          conductor_id: conductorId || undefined,
+          id_persona: conductorId !== null ? conductorId : null,
+          conductor_id: conductorId !== null ? conductorId : null,
+          autorizado: v.autorizado !== undefined ? v.autorizado : true,
+          motivo: v.motivo || null,
           licencia_doc: v.licencia_doc || "",
           documentos: (v.documentos || [])
             .filter(d => d.nombre_archivo && d.nombre_archivo.trim())

@@ -112,6 +112,7 @@
       'personas': true,
       'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),
+      'inducciones': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SST'].includes(miRol),
       'correspondencias': true,
       'nueva_correspondencia': true,
       'superadmin': miRol === 'SUPERADMIN'

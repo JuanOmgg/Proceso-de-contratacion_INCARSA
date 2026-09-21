@@ -4,7 +4,7 @@
 
   <!-- Datos + lógica (deben ir antes de Alpine) -->
    {% block extra_js %}
-  <script src="{{ url_for('static', path='js/wizard.js') }}?v=3.6"></script>
+  <script src="{{ url_for('static', path='js/wizard.js') }}?v=4.8"></script>
   {% endblock %}
 
 {% block content %}
@@ -258,7 +258,7 @@
           </div>
 
           <!-- ===== Formulario ===== -->
-          <form @submit.prevent x-show="!submitted" x-cloak class="wizard-card p-6 sm:p-8">
+          <form @submit.prevent x-show="!submitted" x-cloak class="wizard-card p-6 sm:p-8" autocomplete="off">
 
             <!-- ===== PANEL SUPERADMIN: EDICIÓN DE ESTADO Y CONTROL ===== -->
             <div x-show="isEdit && esSuperAdmin" x-cloak class="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 backdrop-blur-xs">
@@ -324,7 +324,17 @@
                 <div class="relative flex-1">
                   <i
                     class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
-                  <input type="text" x-model="contratistaSearchQuery" placeholder="Buscar empresa contratista"
+                  <input type="search" x-model="contratistaSearchQuery"
+                    name="contratista_search_filter"
+                    id="searchContratistaInput"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    role="searchbox"
+                    placeholder="Buscar empresa contratista"
                     class="input-field w-full rounded-lg pl-9 pr-3 py-2.5 text-sm">
                 </div>
                 <button type="button" @click="openContratistaModal()"
@@ -345,7 +355,10 @@
                         <div class="wizard-option-icon contratista-option-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
                           <i class="fa-solid fa-building text-xs"></i>
                         </div>
-                        <p class="text-sm font-semibold truncate wizard-option-name contratista-option-name" x-text="empresa.nombre || empresa.N_empresa || empresa"></p>
+                        <div class="min-w-0">
+                          <p class="text-sm font-semibold truncate wizard-option-name contratista-option-name" x-text="empresa.nombre || empresa.N_empresa || empresa"></p>
+                          <p class="text-[11px] text-[var(--text-muted)] font-mono" x-show="empresa.nit" x-text="'NIT: ' + empresa.nit"></p>
+                        </div>
                       </div>
                       <div class="wizard-option-action contratista-option-action flex items-center gap-2 flex-shrink-0 text-xs font-semibold">
                         <span class="wizard-select-text contratista-select-text opacity-0 group-hover:opacity-100 transition-opacity duration-200">Seleccionar</span>
@@ -374,7 +387,12 @@
                     <div class="min-w-0">
                       <p class="text-xs text-[var(--text-muted)] font-medium mb-0.5">Empresa contratista seleccionada:
                       </p>
-                      <p class="text-sm font-semibold truncate" x-text="form.contratista"></p>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-sm font-semibold truncate" x-text="form.contratista"></p>
+                        <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[var(--text-muted)]"
+                          x-show="getContratistaSeleccionada()?.nit"
+                          x-text="'NIT: ' + getContratistaSeleccionada().nit"></span>
+                      </div>
                     </div>
                     <button type="button" @click="removeContratista()" class="action-icon-btn danger flex-shrink-0"
                       title="Eliminar">
@@ -408,7 +426,7 @@
                     </template>
                   </div>
 
-                  <p class="text-xs text-red-500 mt-1" x-show="errors.empresas" x-text="errors.empresas"></p>
+                  <p class="form-error" x-show="errors.empresas" x-text="errors.empresas"></p>
 
                   <!-- Plantas anidadas por cada empresa seleccionada -->
                   <div class="space-y-3 mt-4" x-show="form.empresas.length > 0"
@@ -517,8 +535,17 @@
                 <div class="relative flex-1">
                   <i
                     class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
-                  <input type="text" x-model="personaSearchQuery"
-                    placeholder="Buscar por nombre o número de identificación…"
+                  <input type="search" x-model="personaSearchQuery"
+                    name="persona_search_filter"
+                    id="searchPersonaInput"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    role="searchbox"
+                    placeholder="Buscar por nombre o documento de identidad…"
                     class="input-field w-full rounded-lg pl-9 pr-3 py-2.5 text-sm">
                 </div>
                 <button type="button" @click="openPersonaModal()"
@@ -544,7 +571,7 @@
                         <div class="min-w-0">
                           <p class="text-sm font-semibold truncate wizard-option-name" x-text="persona.nombres"></p>
                           <p class="text-xs text-[var(--text-muted)] wizard-option-subtext"
-                            x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo"></p>
+                            x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo + (persona.correo ? (' · ' + persona.correo) : '')"></p>
                         </div>
                       </div>
                       <div class="wizard-option-action flex items-center gap-2 flex-shrink-0 text-xs font-semibold">
@@ -585,7 +612,7 @@
                       <div class="min-w-0">
                         <p class="text-sm font-medium truncate" x-text="persona.nombres"></p>
                         <p class="text-xs text-[var(--text-muted)]"
-                          x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo"></p>
+                          x-text="persona.tipoDoc + ' ' + persona.numDoc + ' · ' + persona.cargo + (persona.correo ? (' · ' + persona.correo) : '')"></p>
                         <!-- Botón para ver documentos en modal -->
                         <div class="mt-2" x-show="(persona.documentos && persona.documentos.length > 0) || persona.documento">
                           <button type="button" @click="abrirModalDocsPersona(persona)"
@@ -636,7 +663,16 @@
                   <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <div class="search-input-wrapper flex-1">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" x-model="vehiculoSearchQuery"
+                      <input type="search" x-model="vehiculoSearchQuery"
+                        name="vehiculo_search_filter"
+                        id="searchVehiculoInput"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        data-lpignore="true"
+                        data-form-type="other"
+                        role="searchbox"
                         placeholder="Buscar por placa, tipo o conductor..."
                         class="input-field w-full rounded-lg px-3 py-2 text-xs">
                     </div>
@@ -696,7 +732,7 @@
                       x-show="vehiculos.length > 0">
                       Vehículos agregados (<span x-text="vehiculos.length"></span>)
                     </h4>
-                    <template x-for="(v, idx) in vehiculos" :key="idx">
+                    <template x-for="(v, idx) in vehiculos" :key="v.id ? ('veh-' + v.id) : ('idx-' + idx + '-' + (v.placa || ''))">
                       <div class="entry-card p-3.5 rounded-xl border border-[var(--border-subtle)] bg-white"
                         x-transition:enter="transition ease-out duration-[300ms]"
                         x-transition:enter-start="opacity-0 -translate-y-2"
@@ -730,10 +766,15 @@
                                     Conductor asignado
                                   </label>
                                   <template x-if="personas.length > 0">
-                                    <select x-model="v.conductor" @change="asignarConductorVehiculo(v)" class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                    <select :value="v.id_persona || ''"
+                                      @change="asignarConductorVehiculo(v, $event)"
+                                      x-effect="$nextTick(() => { if ($el && v) $el.value = v.id_persona || ''; })"
+                                      class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs">
                                       <option value="">-- Seleccionar conductor --</option>
-                                      <template x-for="p in personas" :key="p.numDoc || p.identificacion || p.id">
-                                        <option :value="p.nombres" x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
+                                      <template x-for="p in personas" :key="p.id || p.numDoc || p.identificacion">
+                                        <option :value="p.id"
+                                          :selected="v.id_persona && String(v.id_persona) === String(p.id)"
+                                          x-text="p.nombres + ' (' + (p.cargo || 'Personal') + ')'"></option>
                                       </template>
                                     </select>
                                   </template>
@@ -844,6 +885,7 @@
                     <div>
                       <p class="text-[var(--text-muted)] text-xs">Contratista</p>
                       <p class="font-medium" x-text="form.contratista || '—'"></p>
+                      <p class="text-xs text-[var(--text-muted)] font-mono" x-show="getContratistaSeleccionada()?.nit" x-text="'NIT: ' + getContratistaSeleccionada().nit"></p>
                     </div>
                     <div>
                       <p class="text-[var(--text-muted)] text-xs">Nivel de riesgo</p>
@@ -1006,12 +1048,21 @@
                   </p>
                 </div>
 
-                <div class="border-t border-[var(--border-subtle)] pt-4">
-                  <label class="flex items-start gap-2.5 text-sm cursor-pointer">
-                    <input type="checkbox" x-model="aceptaVeracidad" class="mt-0.5">
-                    <span>Confirmo que la información registrada en esta solicitud es veraz y completa.</span>
-                  </label>
-                  <p class="form-error" x-show="errors.veracidad" x-text="errors.veracidad"></p>
+                <div class="border-t border-[var(--border-subtle)] pt-4 space-y-3">
+                  <div :class="errors.veracidad ? 'p-2.5 rounded-lg bg-red-500/10 border border-red-500/30' : ''">
+                    <label class="flex items-start gap-2.5 text-sm cursor-pointer select-none">
+                      <input type="checkbox" x-model="aceptaVeracidad" @change="if (aceptaVeracidad) delete errors.veracidad" class="mt-0.5 rounded border-[var(--border-subtle)] text-[var(--signal-500)] focus:ring-[var(--signal-500)]">
+                      <span>Confirmo que la información registrada en esta solicitud es veraz y completa. <span class="text-red-500 font-bold" title="Campo obligatorio">*</span></span>
+                    </label>
+                    <p class="form-error mt-1.5 font-semibold text-xs text-red-500" x-show="errors.veracidad" x-text="errors.veracidad"></p>
+                  </div>
+                  <div :class="errors.tratamientoDatos ? 'p-2.5 rounded-lg bg-red-500/10 border border-red-500/30' : ''">
+                    <label class="flex items-start gap-2.5 text-sm cursor-pointer select-none">
+                      <input type="checkbox" x-model="aceptaTratamientoDatos" @change="if (aceptaTratamientoDatos) delete errors.tratamientoDatos" required class="mt-0.5 rounded border-[var(--border-subtle)] text-[var(--signal-500)] focus:ring-[var(--signal-500)]">
+                      <span>Autorizo de manera previa, expresa e informada el tratamiento de datos personales conforme a la política de privacidad. <span class="text-red-500 font-bold" title="Campo obligatorio">*</span></span>
+                    </label>
+                    <p class="form-error mt-1.5 font-semibold text-xs text-red-500" x-show="errors.tratamientoDatos" x-text="errors.tratamientoDatos"></p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1028,12 +1079,18 @@
                 class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium">
                 Siguiente <i class="fa-solid fa-arrow-right ml-1.5 text-xs"></i>
               </button>
-              <button type="button" @click="submitForm()" x-show="currentStep === 4" :disabled="submitting"
-                class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2"
-                :class="submitting ? 'opacity-70 cursor-not-allowed' : ''">
-                <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
-                <span x-text="submitting ? 'Enviando…' : (isEdit ? 'Guardar cambios' : 'Enviar solicitud')"></span>
-              </button>
+              <div class="flex flex-col items-end">
+                <button type="button" @click="submitForm()" x-show="currentStep === 4"
+                  :disabled="submitting || !aceptaVeracidad || !aceptaTratamientoDatos"
+                  class="btn-signal rounded-lg px-5 py-2.5 text-sm font-medium flex items-center gap-2 transition-all duration-200"
+                  :class="(submitting || !aceptaVeracidad || !aceptaTratamientoDatos) ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:shadow-md'">
+                  <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
+                  <span x-text="submitting ? 'Enviando…' : (isEdit ? 'Guardar cambios' : 'Enviar solicitud')"></span>
+                </button>
+                <p class="text-[11px] text-[var(--text-muted)] mt-1.5" x-show="currentStep === 4 && (!aceptaVeracidad || !aceptaTratamientoDatos)">
+                  <i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i> Marca ambas casillas obligatorias para radicar.
+                </p>
+              </div>
             </div>
 
           </form>

@@ -1,3 +1,4 @@
+import re
 import json
 import secrets
 import string
@@ -5,6 +6,7 @@ from datetime import datetime
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
 from src.utils.broadcaster import notification_broadcaster
+from src.transformers.vehiculo_transformer import FORMATEAR_PLACA
 
 def Generate_unique_code(cursor) -> str:
     """
@@ -103,7 +105,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 if target_id_v and str(target_id_v).isdigit():
                                     id_v = int(target_id_v)
                                 elif v.get("placa"):
-                                    placa_norm = v.get("placa")
+                                    placa_norm = re.sub(r"[^A-Z0-9]", "", str(v.get("placa")).strip().upper())
                                     tipo_norm = v.get("tipo", "VEHICULO")
                                     cursor.execute(
                                         "SELECT id FROM vehiculos WHERE placa = %s",
@@ -403,6 +405,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         COALESCE({obs_expr}, '') AS observaciones,
                         e.nombre_empresa,
                         ec.nombre AS nombre_emContratista,
+                        ec.nit AS nit_emContratista,
                         CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
                         u.correo AS diligenciador_correo
                     FROM solicitudes s
@@ -556,12 +559,14 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                         p["fecha_vigencia_induccion"] = None
 
                     cursor.execute(
-                        "SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s",
+                        "SELECT id, tipo_doc, nombre_archivo, vigencia FROM documentos_persona WHERE persona_id = %s",
                         (p["id"],),
                     )
                     docs = cursor.fetchall() or []
                     for d in docs:
                         d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
+                        if d.get("vigencia"):
+                            d["vigencia"] = str(d["vigencia"]).split(" ")[0]
                     p["documentos"] = docs
 
                 solicitud["ingresantes"] = personas
@@ -1611,6 +1616,7 @@ def GET_ALL_solicitudes_bd(
                         COALESCE({obs_expr}, '') AS observaciones,
                         e.nombre_empresa,
                         ec.nombre AS nombre_emContratista,
+                        ec.nit AS nit_emContratista,
                         CONCAT(u.nombres, ' ', u.apellidos) AS diligenciador,
                         so.diligenciado_por,
                         so.fecha_inicio   AS fecha_ingreso,
@@ -2007,73 +2013,81 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
 
                 # 3. Sincronizar vehículos / Veh_ingreso
                 if vehiculo is not None or raw_vehiculos_ids is not None:
-                    if estado_actual not in ("APROBADO", "RECHAZADO"):
-                        cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
-                        resolved_vids = []
-                        if vehiculo and isinstance(vehiculo, list):
-                            for v in vehiculo:
-                                id_v = None
-                                lic_doc = 0
-                                aut_v = True
-                                mot_v = None
+                    # Preservar autorización y motivo previos si ya existían para estos vehículos
+                    cursor.execute("SELECT id_vehiculo, COALESCE(autorizado, 1) AS autorizado, motivo FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                    prev_veh_info = {r["id_vehiculo"]: r for r in (cursor.fetchall() or [])}
 
-                                if isinstance(v, (int, str)) and str(v).isdigit():
-                                    id_v = int(v)
-                                elif isinstance(v, dict):
-                                    lic_doc = v.get("licencia_doc") or 0
-                                    aut = v.get("autorizado", True)
+                    cursor.execute("DELETE FROM Veh_ingreso WHERE id_solicitud = %s", (real_id,))
+                    resolved_vids = []
+                    if vehiculo and isinstance(vehiculo, list):
+                        for v in vehiculo:
+                            id_v = None
+                            lic_doc = 0
+                            aut_v = True
+                            mot_v = None
+
+                            if isinstance(v, (int, str)) and str(v).isdigit():
+                                id_v = int(v)
+                            elif isinstance(v, dict):
+                                lic_doc = v.get("licencia_doc") or 0
+                                aut = v.get("autorizado")
+                                if aut is not None:
                                     aut_v = False if aut in (False, 0, "0", "false") else True
-                                    mot_v = v.get("motivo") or v.get("motivo_rechazo") or None
-                                    id_persona_conductor = None
+                                id_persona_conductor = None
 
-                                    cand_p = v.get("id_persona") or v.get("conductor_id")
-                                    if cand_p and str(cand_p).isdigit() and int(cand_p) > 0:
-                                        id_persona_conductor = int(cand_p)
-                                    elif v.get("conductor"):
-                                        cond_str = str(v.get("conductor")).strip()
-                                        if cond_str.isdigit() and int(cond_str) > 0:
-                                            id_persona_conductor = int(cond_str)
-                                        else:
-                                            cursor.execute(
-                                                "SELECT id FROM personas WHERE CONCAT(nombre, ' ', apellido) = %s OR nombre = %s LIMIT 1",
-                                                (cond_str, cond_str),
-                                            )
-                                            p_found = cursor.fetchone()
-                                            if p_found:
-                                                id_persona_conductor = p_found["id"]
+                                cand_p = v.get("id_persona") or v.get("conductor_id")
+                                if cand_p and str(cand_p).isdigit() and int(cand_p) > 0:
+                                    id_persona_conductor = int(cand_p)
+                                elif v.get("conductor"):
+                                    cond_str = str(v.get("conductor")).strip()
+                                    if cond_str.isdigit() and int(cond_str) > 0:
+                                        id_persona_conductor = int(cond_str)
+                                    else:
+                                        cursor.execute(
+                                            "SELECT id FROM personas WHERE CONCAT(nombre, ' ', apellido) = %s OR nombre = %s LIMIT 1",
+                                            (cond_str, cond_str),
+                                        )
+                                        p_found = cursor.fetchone()
+                                        if p_found:
+                                            id_persona_conductor = p_found["id"]
 
-                                    if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
-                                        id_v = int(v["id_vehiculo"])
-                                    elif v.get("id") and str(v.get("id")).isdigit():
-                                        id_v = int(v["id"])
-                                    elif v.get("placa"):
-                                        placa_norm = str(v.get("placa")).strip().upper()
-                                        tipo_norm = str(v.get("tipo", "Camioneta")).strip()
-                                        cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
-                                        vehi_existente = cursor.fetchone()
-                                        if vehi_existente:
-                                            id_v = vehi_existente["id"]
-                                        else:
-                                            cursor.execute(
-                                                "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
-                                                (tipo_norm, placa_norm),
-                                            )
-                                            id_v = cursor.lastrowid
+                                if v.get("id_vehiculo") and str(v.get("id_vehiculo")).isdigit():
+                                    id_v = int(v["id_vehiculo"])
+                                elif v.get("id") and str(v.get("id")).isdigit():
+                                    id_v = int(v["id"])
+                                elif v.get("placa"):
+                                    placa_norm = re.sub(r"[^A-Z0-9]", "", str(v.get("placa")).strip().upper())
+                                    tipo_norm = str(v.get("tipo", "Camioneta")).strip()
+                                    cursor.execute("SELECT id FROM vehiculos WHERE placa = %s", (placa_norm,))
+                                    vehi_existente = cursor.fetchone()
+                                    if vehi_existente:
+                                        id_v = vehi_existente["id"]
+                                    else:
+                                        cursor.execute(
+                                            "INSERT INTO vehiculos (tipo, placa) VALUES (%s, %s)",
+                                            (tipo_norm, placa_norm),
+                                        )
+                                        id_v = cursor.lastrowid
 
-                                if id_v:
-                                    resolved_vids.append(id_v)
-                                    cursor.execute(
-                                        "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo, id_persona) VALUES (%s, %s, %s, %s, %s, %s)",
-                                        (real_id, id_v, lic_doc, aut_v, mot_v, id_persona_conductor)
-                                    )
+                                if id_v and aut is None and id_v in prev_veh_info:
+                                    aut_v = bool(prev_veh_info[id_v].get("autorizado", 1))
 
-                        if resolved_vids:
-                            campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
-                        elif raw_vehiculos_ids:
-                            if isinstance(raw_vehiculos_ids, list):
-                                campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
-                            elif isinstance(raw_vehiculos_ids, str):
-                                campos["vehiculos_ids"] = raw_vehiculos_ids
+                                mot_v = v.get("motivo") or v.get("motivo_rechazo") or (prev_veh_info.get(id_v, {}).get("motivo") if id_v in prev_veh_info else None)
+
+                            if id_v:
+                                resolved_vids.append(id_v)
+                                cursor.execute(
+                                    "INSERT INTO Veh_ingreso (id_solicitud, id_vehiculo, licencia_doc, autorizado, motivo, id_persona) VALUES (%s, %s, %s, %s, %s, %s)",
+                                    (real_id, id_v, lic_doc, aut_v, mot_v, id_persona_conductor)
+                                )
+
+                    if resolved_vids:
+                        campos["vehiculos_ids"] = ",".join(map(str, resolved_vids))
+                    elif raw_vehiculos_ids:
+                        if isinstance(raw_vehiculos_ids, list):
+                            campos["vehiculos_ids"] = ",".join(map(str, raw_vehiculos_ids))
+                        elif isinstance(raw_vehiculos_ids, str):
+                            campos["vehiculos_ids"] = raw_vehiculos_ids
 
                 # 4. Sincronizar equipos de cómputo
                 if eq_computo is not None:
@@ -2212,4 +2226,304 @@ def VINCULAR_solicitud_plantas_db(id_solicitud: int, plantas_ids: list[int]) -> 
         return {
             "exito": False,
             "mensaje": f"❌❌ Error al relacionar plantas con la solicitud: {e} ❌❌",
+        }
+
+
+def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
+    """
+    Obtiene el resumen público y rápido optimizado para porterías y vigilantes.
+    Permite buscar por código ('RAD-XXXXXX') o por id numérico.
+    Retorna estrictamente:
+      - Empresa relacionada (Origen y Contratista con NIT)
+      - Fechas de vigencia (con estado de vigencia hoy)
+      - Estado de la solicitud y veredicto de ingreso
+      - Integrantes: únicamente nombres y apellidos, identificación y si está autorizado
+    """
+    try:
+        if not identificador:
+            return {"exito": False, "mensaje": "Se requiere un código o ID de solicitud."}
+
+        term = str(identificador).strip().upper()
+        id_num = int(term) if term.isdigit() else None
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # 1. Consultar solicitud principal con datos de empresas
+                if id_num:
+                    sql_sol = """
+                        SELECT s.id, s.codigo, s.estado, s.is_active, s.fecha_inicio, s.fecha_fin,
+                               s.personas_ids, s.pre_aprobado,
+                               em.nombre_empresa AS empresa_origen_nombre,
+                               ec.nombre AS empresa_contratista_nombre,
+                               ec.nit AS empresa_contratista_nit
+                        FROM solicitudes s
+                        LEFT JOIN empresa em ON em.id = s.empresa_origen
+                        LEFT JOIN emp_contratista ec ON ec.id = s.empresa_contratista
+                        WHERE s.id = %s OR s.codigo = %s
+                        LIMIT 1
+                    """
+                    cursor.execute(sql_sol, (id_num, term))
+                else:
+                    sql_sol = """
+                        SELECT s.id, s.codigo, s.estado, s.is_active, s.fecha_inicio, s.fecha_fin,
+                               s.personas_ids, s.pre_aprobado,
+                               em.nombre_empresa AS empresa_origen_nombre,
+                               ec.nombre AS empresa_contratista_nombre,
+                               ec.nit AS empresa_contratista_nit
+                        FROM solicitudes s
+                        LEFT JOIN empresa em ON em.id = s.empresa_origen
+                        LEFT JOIN emp_contratista ec ON ec.id = s.empresa_contratista
+                        WHERE s.codigo = %s
+                        LIMIT 1
+                    """
+                    cursor.execute(sql_sol, (term,))
+
+                sol = cursor.fetchone()
+                if not sol:
+                    return {
+                        "exito": False,
+                        "mensaje": f"No se encontró ninguna solicitud con el código o ID '{term}'.",
+                    }
+
+                sol_id = sol["id"]
+                codigo_radicado = sol.get("codigo") or f"RAD-{sol_id:04d}"
+
+                # 2. Consultar plantas autorizadas
+                cursor.execute("""
+                    SELECT pl.nombre AS nombre_planta
+                    FROM visita v
+                    INNER JOIN planta pl ON v.id_planta = pl.id
+                    WHERE v.id_solicitud = %s
+                    ORDER BY pl.nombre ASC
+                """, (sol_id,))
+                plantas = [r["nombre_planta"] for r in (cursor.fetchall() or []) if r.get("nombre_planta")]
+
+                # 3.1 Consultar vehículos asociados (vía Veh_ingreso)
+                cursor.execute("""
+                    SELECT v.id, v.tipo, v.placa, vi.licencia_doc,
+                           COALESCE(vi.autorizado, 1) AS autorizado, vi.motivo,
+                           vi.id_persona,
+                           TRIM(CONCAT(COALESCE(p.nombre, ''), ' ', COALESCE(p.apellido, ''))) AS conductor_nombre
+                    FROM Veh_ingreso vi
+                    INNER JOIN vehiculos v ON vi.id_vehiculo = v.id
+                    LEFT JOIN personas p ON vi.id_persona = p.id
+                    WHERE vi.id_solicitud = %s
+                """, (sol_id,))
+                filas_veh = cursor.fetchall() or []
+
+                vehiculos = []
+                conductores_dict = {}  # id_persona -> placa
+                total_veh_autorizados = 0
+
+                for v in filas_veh:
+                    v_aut = bool(v.get("autorizado", True))
+                    if v_aut:
+                        total_veh_autorizados += 1
+                    p_id_cond = v.get("id_persona")
+                    placa_fmt = FORMATEAR_PLACA(v.get("placa") or "") or v.get("placa") or "—"
+                    if p_id_cond:
+                        conductores_dict[int(p_id_cond)] = placa_fmt
+
+                    vehiculos.append({
+                        "id": v.get("id"),
+                        "tipo": str(v.get("tipo") or "Vehículo").strip(),
+                        "placa": placa_fmt,
+                        "conductor": str(v.get("conductor_nombre") or "").strip(),
+                        "id_persona_conductor": p_id_cond,
+                        "autorizado": v_aut,
+                        "motivo": (v.get("motivo") or "").strip() if not v_aut else "",
+                    })
+
+                # 3.2 Consultar dispositivos / equipos de cómputo (vía equipos_solicitud)
+                cursor.execute("""
+                    SELECT id, marca, modelo, serie 
+                    FROM equipos_solicitud 
+                    WHERE solicitud_id = %s
+                """, (sol_id,))
+                filas_eq = cursor.fetchall() or []
+                dispositivos = []
+                for e in filas_eq:
+                    dispositivos.append({
+                        "id": e.get("id"),
+                        "marca": str(e.get("marca") or "").strip(),
+                        "modelo": str(e.get("modelo") or "").strip(),
+                        "serie": str(e.get("serie") or "").strip(),
+                    })
+
+                # 3.3 Consultar integrantes (personas) con cargo y verificación de si es conductor
+                cursor.execute("""
+                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo
+                    FROM ingresantes i
+                    INNER JOIN personas p ON i.id_persona = p.id
+                    WHERE i.id_solicitud = %s
+                    ORDER BY p.apellido ASC, p.nombre ASC
+                """, (sol_id,))
+                filas_personas = cursor.fetchall() or []
+
+                # Fallback con personas_ids si la tabla ingresantes está vacía para esta solicitud
+                if not filas_personas and sol.get("personas_ids"):
+                    try:
+                        raw_pids = str(sol["personas_ids"]).replace("[", "").replace("]", "").split(",")
+                        p_ids = [int(x.strip()) for x in raw_pids if x.strip().isdigit()]
+                        if p_ids:
+                            fmt = ",".join(["%s"] * len(p_ids))
+                            cursor.execute(f"""
+                                SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                                       1 AS autorizado, NULL AS motivo
+                                FROM personas p
+                                WHERE p.id IN ({fmt})
+                                ORDER BY p.apellido ASC, p.nombre ASC
+                            """, tuple(p_ids))
+                            filas_personas = cursor.fetchall() or []
+                    except Exception as e_f:
+                        print(f"⚠️ Fallback personas_ids portería: {e_f}")
+
+                integrantes = []
+                total_autorizados = 0
+                for p in filas_personas:
+                    es_aut = bool(p.get("autorizado", True))
+                    if es_aut:
+                        total_autorizados += 1
+                    p_id = p.get("id")
+                    nombres = str(p.get("nombre") or "").strip()
+                    apellidos = str(p.get("apellido") or "").strip()
+                    nombre_completo = f"{nombres} {apellidos}".strip() or "Sin nombre"
+                    cargo_str = str(p.get("cargo") or "").strip()
+
+                    # Determinar si la persona fue seleccionada explícitamente como conductor del vehículo
+                    es_cond = bool(p_id and int(p_id) in conductores_dict)
+                    veh_asig = conductores_dict.get(int(p_id)) if (p_id and int(p_id) in conductores_dict) else ""
+
+                    integrantes.append({
+                        "id": p_id,
+                        "nombres": nombres,
+                        "apellidos": apellidos,
+                        "nombre_completo": nombre_completo,
+                        "tipo_doc": str(p.get("tipo_doc") or "CC").strip(),
+                        "identificacion": str(p.get("identificacion") or "—").strip(),
+                        "cargo": cargo_str,
+                        "es_conductor": es_cond,
+                        "vehiculo_asignado": veh_asig,
+                        "autorizado": es_aut,
+                        "motivo": (p.get("motivo") or "").strip() if not es_aut else "",
+                    })
+
+                # 4. Cálculo de vigencia temporal
+                hoy = datetime.now().date()
+                fecha_ini = sol.get("fecha_inicio")
+                fecha_fn = sol.get("fecha_fin")
+
+                # Asegurar formato date
+                if isinstance(fecha_ini, datetime):
+                    fecha_ini = fecha_ini.date()
+                elif isinstance(fecha_ini, str):
+                    try:
+                        fecha_ini = datetime.strptime(fecha_ini.split("T")[0], "%Y-%m-%d").date()
+                    except Exception:
+                        pass
+
+                if isinstance(fecha_fn, datetime):
+                    fecha_fn = fecha_fn.date()
+                elif isinstance(fecha_fn, str):
+                    try:
+                        fecha_fn = datetime.strptime(fecha_fn.split("T")[0], "%Y-%m-%d").date()
+                    except Exception:
+                        pass
+
+                vigente_hoy = False
+                estado_vigencia = "DESCONOCIDA"
+                dias_restantes = 0
+                mensaje_vigencia = ""
+
+                meses_abr = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+                f_ini_fmt = f"{fecha_ini.day} {meses_abr[fecha_ini.month - 1]} {fecha_ini.year}" if fecha_ini else ""
+                f_fin_fmt = f"{fecha_fn.day} {meses_abr[fecha_fn.month - 1]} {fecha_fn.year}" if fecha_fn else ""
+
+                if fecha_ini and fecha_fn:
+                    if hoy < fecha_ini:
+                        estado_vigencia = "POR_INICIAR"
+                        dias_para_iniciar = (fecha_ini - hoy).days
+                        mensaje_vigencia = f"Inicia en {dias_para_iniciar} día(s) (desde el {f_ini_fmt})"
+                    elif hoy > fecha_fn:
+                        estado_vigencia = "VENCIDA"
+                        dias_vencida = (hoy - fecha_fn).days
+                        mensaje_vigencia = f"Expiró hace {dias_vencida} día(s) (el {f_fin_fmt})"
+                    else:
+                        vigente_hoy = True
+                        estado_vigencia = "VIGENTE"
+                        dias_restantes = (fecha_fn - hoy).days
+                        mensaje_vigencia = f"Vigente (quedan {dias_restantes} día(s) hasta el {f_fin_fmt})"
+
+                # 5. Determinación del veredicto final para portería
+                estado_raw = str(sol.get("estado") or "ENVIADO").strip().upper()
+                is_active = bool(sol.get("is_active", 1))
+
+                if not is_active:
+                    resultado_ingreso = "NO_AUTORIZADO"
+                    color_semaforo = "rojo"
+                    mensaje_semaforo = "SOLICITUD INACTIVA - INGRESO DENEGADO"
+                elif "RECHAZ" in estado_raw:
+                    resultado_ingreso = "NO_AUTORIZADO"
+                    color_semaforo = "rojo"
+                    mensaje_semaforo = "SOLICITUD RECHAZADA - INGRESO DENEGADO"
+                elif "POR APROBAR" in estado_raw or "REVISI" in estado_raw or "ENVIADO" in estado_raw or "DEVUELTO" in estado_raw:
+                    resultado_ingreso = "EN_TRAMITE"
+                    color_semaforo = "amarillo"
+                    mensaje_semaforo = f"SOLICITUD EN TRÁMITE - INGRESO NO AUTORIZADO"
+                elif estado_raw in ("APROBADO", "APROBADA", "PRE-APROBADO", "PRE-APROBADA") or (estado_raw.startswith("APROB") and "POR" not in estado_raw):
+                    if vigente_hoy:
+                        resultado_ingreso = "AUTORIZADO"
+                        color_semaforo = "verde"
+                        mensaje_semaforo = "INGRESO AUTORIZADO"
+                    elif estado_vigencia == "POR_INICIAR":
+                        resultado_ingreso = "POR_INICIAR"
+                        color_semaforo = "amarillo"
+                        mensaje_semaforo = "APROBADA PERO VIGENCIA AÚN NO INICIA"
+                    else:
+                        resultado_ingreso = "VENCIDO"
+                        color_semaforo = "rojo"
+                        mensaje_semaforo = "SOLICITUD APROBADA PERO VIGENCIA VENCIDA"
+                else:
+                    resultado_ingreso = "EN_TRAMITE"
+                    color_semaforo = "amarillo"
+                    mensaje_semaforo = "SOLICITUD EN TRÁMITE - INGRESO NO AUTORIZADO"
+
+                return {
+                    "exito": True,
+                    "datos": {
+                        "id": sol_id,
+                        "codigo": codigo_radicado,
+                        "estado": estado_raw,
+                        "is_active": is_active,
+                        "empresa_contratista": sol.get("empresa_contratista_nombre") or "No especificada",
+                        "empresa_contratista_nit": sol.get("empresa_contratista_nit") or "",
+                        "empresa_origen": sol.get("empresa_origen_nombre") or "INCARSA",
+                        "fecha_inicio": str(fecha_ini) if fecha_ini else "",
+                        "fecha_fin": str(fecha_fn) if fecha_fn else "",
+                        "vigente_hoy": vigente_hoy,
+                        "estado_vigencia": estado_vigencia,
+                        "dias_restantes": dias_restantes,
+                        "mensaje_vigencia": mensaje_vigencia,
+                        "resultado_ingreso": resultado_ingreso,
+                        "color_semaforo": color_semaforo,
+                        "mensaje_semaforo": mensaje_semaforo,
+                        "plantas": plantas,
+                        "total_integrantes": len(integrantes),
+                        "total_autorizados": total_autorizados,
+                        "integrantes": integrantes,
+                        "total_vehiculos": len(vehiculos),
+                        "total_veh_autorizados": total_veh_autorizados,
+                        "vehiculos": vehiculos,
+                        "total_dispositivos": len(dispositivos),
+                        "dispositivos": dispositivos,
+                        "fecha_verificacion": datetime.now().strftime("%d/%m/%Y %I:%M:%S %p"),
+                    }
+                }
+
+    except Exception as e:
+        print(f"❌ Error en GET_resumen_verificacion_porteria_db: {e}")
+        return {
+            "exito": False,
+            "mensaje": f"Error al consultar datos de portería: {str(e)}",
         }

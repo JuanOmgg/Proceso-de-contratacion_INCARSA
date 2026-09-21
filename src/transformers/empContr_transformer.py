@@ -1,3 +1,5 @@
+import re
+
 def TRANSFORM_EMPCONTRATISTA(data_raw: dict) -> dict:
 
     data_clean = {}
@@ -7,5 +9,8 @@ def TRANSFORM_EMPCONTRATISTA(data_raw: dict) -> dict:
 
     if "observacion" in data_raw and data_raw["observacion"] is not None:
         data_clean["observacion"] = str(data_raw["observacion"]).strip()
+
+    if "nit" in data_raw and data_raw["nit"] is not None:
+        data_clean["nit"] = re.sub(r"\D", "", str(data_raw["nit"]))
 
     return data_clean   

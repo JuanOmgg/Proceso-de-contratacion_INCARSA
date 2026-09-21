@@ -1,7 +1,8 @@
 from typing import Dict, Any, Optional
 from src.loaders.inducciones_loader import (
     GET_OR_CREATE_induccion_persona_db,
-    UPDATE_induccion_persona_db
+    UPDATE_induccion_persona_db,
+    GET_ALL_inducciones_db
 )
 from src.schemas.inducciones_schema import InduccionUpdate
 
@@ -21,3 +22,8 @@ def ACTUALIZAR_INDUCCION(id_persona: int, payload: InduccionUpdate, responsable_
         else:
             data_limpia[k] = v
     return UPDATE_induccion_persona_db(id_persona, data_limpia, responsable_defecto=responsable_defecto)
+
+
+def LISTAR_TODAS_INDUCCIONES() -> Dict[str, Any]:
+    return GET_ALL_inducciones_db()
+

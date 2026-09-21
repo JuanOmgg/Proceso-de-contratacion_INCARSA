@@ -163,8 +163,8 @@
                 <div class="sm:col-span-6">
                   <label class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block mb-1">Placa del vehículo</label>
                   <input type="text" id="inputPlacaVehiculoModal" x-model="form.placa"
-                    @input="form.placa = form.placa.toUpperCase()"
-                    placeholder="Ej: ABC-123" required
+                    @input="form.placa = form.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                    placeholder="Ej: ABC123" required
                     class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs font-mono font-semibold uppercase border border-[var(--paper-shadow)]">
                 </div>
 
@@ -218,22 +218,30 @@
 
                   <div class="space-y-1.5">
                     <template x-for="(doc, dIdx) in form.documentos" :key="dIdx">
-                      <div class="flex items-center gap-1.5">
-                        <select x-model="doc.tipo_doc" class="input-field w-5/12 rounded-lg px-2 py-1 text-xs border border-[var(--paper-shadow)]">
-                          <template x-for="td in tiposDocAdjuntoVehiculo" :key="td">
-                            <option :value="td" x-text="td"></option>
-                          </template>
-                        </select>
-                        <div class="flex-1 relative flex items-center min-w-0">
-                          <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-[var(--signal-500)] rounded-lg px-2 py-1 text-xs bg-white/50 transition">
-                            <span class="truncate text-[var(--paper-muted)] text-[11px]" x-text="doc.nombre_archivo || 'Subir PDF...'"></span>
-                            <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-[10px] ml-1"></i>
-                            <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoFile($event, dIdx)" class="hidden">
-                          </label>
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-1.5">
+                          <select x-model="doc.tipo_doc" class="input-field w-5/12 rounded-lg px-2 py-1 text-xs border border-[var(--paper-shadow)]">
+                            <template x-for="td in tiposDocAdjuntoVehiculo" :key="td">
+                              <option :value="td" x-text="td"></option>
+                            </template>
+                          </select>
+                          <div class="flex-1 relative flex items-center min-w-0">
+                            <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-[var(--signal-500)] rounded-lg px-2 py-1 text-xs bg-white/50 transition">
+                              <span class="truncate text-[var(--paper-muted)] text-[11px]" x-text="doc.nombre_archivo || 'Subir PDF...'"></span>
+                              <i class="fa-solid fa-cloud-arrow-up text-[var(--signal-500)] text-[10px] ml-1"></i>
+                              <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoFile($event, dIdx)" class="hidden">
+                            </label>
+                          </div>
+                          <button type="button" @click="removeDocumento(dIdx)" class="action-icon-btn danger text-xs p-1" title="Quitar">
+                            <i class="fa-solid fa-trash text-[10px]"></i>
+                          </button>
                         </div>
-                        <button type="button" @click="removeDocumento(dIdx)" class="action-icon-btn danger text-xs p-1" title="Quitar">
-                          <i class="fa-solid fa-trash text-[10px]"></i>
-                        </button>
+                        <!-- Input condicional para 'Otro documento' -->
+                        <div x-show="doc.tipo_doc === 'Otro documento' || doc.tipo_doc === 'Otro'" class="pt-0.5">
+                          <input type="text" x-model="doc.tipo_doc_otro"
+                            placeholder="Especifica el documento..."
+                            class="input-field w-full rounded-lg px-2 py-1 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500">
+                        </div>
                       </div>
                     </template>
                   </div>

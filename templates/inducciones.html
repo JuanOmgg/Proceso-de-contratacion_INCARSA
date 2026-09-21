@@ -1,9 +1,9 @@
 {% extends 'pages/base.html' %}
 
-{% block title %}Antecedentes · PSI{% endblock %}
+{% block title %}Inducciones · PSI{% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/antecedentes.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/inducciones.js') }}?v=1.1"></script>
 {% endblock %}
 
 {% block content %}
@@ -14,14 +14,13 @@
     <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
 
     <!-- ============================================================ -->
-    <!--SIDEBAR -->
-    
+    <!-- SIDEBAR -->
     {% include 'pages/sidebar.html' %}
 
     <!-- ============================================================
        MAIN COLUMN
     ============================================================= -->
-    <div class="flex-1 min-w-0 flex flex-col" x-data="antecedentesModule()">
+    <div class="flex-1 min-w-0 flex flex-col" x-data="induccionesModule()">
 
       <!-- ---------- TOPBAR ---------- -->
       {% set page_title = "Inducciones" %}
@@ -48,44 +47,44 @@
             <!-- Vigentes (Verde Esmeralda Neón) -->
             <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-uniminas rounded-xl">
               <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-shield-halved text-base sm:text-xl"></i>
+                <i class="fa-solid fa-graduation-cap text-base sm:text-xl text-emerald-400"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium truncate sm:whitespace-normal" title="Revisiones vigentes">Revisiones vigentes</p>
-                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVigentes"></p>
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium truncate sm:whitespace-normal" title="Inducciones vigentes">Inducciones vigentes</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value text-emerald-400" x-text="cargando ? '...' : totalVigentes"></p>
               </div>
             </div>
 
             <!-- Por Vencer (Ámbar / Oro Neón) -->
             <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
               <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-clock-rotate-left text-base sm:text-xl"></i>
+                <i class="fa-solid fa-clock-rotate-left text-base sm:text-xl text-amber-400"></i>
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Por vencer (≤30d)</p>
-                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalPorVencer"></p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value text-amber-400" x-text="cargando ? '...' : totalPorVencer"></p>
               </div>
             </div>
 
-            <!-- Consultas Vencidas (Rojo Carmesí Neón) -->
+            <!-- Inducciones Vencidas (Rojo Carmesí Neón) -->
             <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-total rounded-xl">
               <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-calendar-xmark text-base sm:text-xl"></i>
+                <i class="fa-solid fa-calendar-xmark text-base sm:text-xl text-red-400"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Consultas vencidas</p>
-                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVencidos"></p>
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Inducciones vencidas</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value text-red-400" x-text="cargando ? '...' : totalVencidos"></p>
               </div>
             </div>
 
-            <!-- Total Solicitudes Históricas (Morada Neón) -->
+            <!-- Sin Inducción (Gris / Púrpura Neón) -->
             <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 col-span-2 sm:col-span-1 neon-stat-card neon-card-milpa rounded-xl">
               <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-clipboard-list text-base sm:text-xl"></i>
+                <i class="fa-solid fa-id-card text-base sm:text-xl text-purple-400"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Ingresos solicitados</p>
-                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalIngresosHistoricos"></p>
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Sin inducción</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value text-purple-400" x-text="cargando ? '...' : totalSinInduccion"></p>
               </div>
             </div>
 
@@ -97,11 +96,11 @@
             <!-- Buscador general -->
             <div class="search-input-wrapper flex-1 min-w-[240px]">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar persona por nombre, cargo o documento..."
+              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar..."
                 class="input-field w-full rounded-lg py-2 text-xs sm:text-sm">
             </div>
 
-            <!-- Chips de Vigencia con brillo libre y sin puntos -->
+            <!-- Chips de Vigencia -->
             <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1">
               <button type="button" @click="filtroVigencia = 'todos'" 
                 class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
@@ -123,21 +122,28 @@
                 :class="filtroVigencia === 'vencido' ? 'is-active scale-105' : 'is-idle'">
                 <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Vencidos
               </button>
+              <button type="button" @click="filtroVigencia = 'sin_induccion'" 
+                class="filter-status-chip chip-neon-milpa relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                :class="filtroVigencia === 'sin_induccion' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-clock-rotate-left text-xs mr-1"></i> Sin inducción
+              </button>
             </div>
 
           </div>
 
-          <!-- ===== 3. TABLA DE ANTECEDENTES (wizard-card) ===== -->
+          <!-- ===== 3. TABLA DE INDUCCIONES (wizard-card) ===== -->
           <div class="wizard-card overflow-hidden">
             <div class="w-full overflow-x-auto xl:overflow-x-visible custom-scroll">
-              <table class="data-table w-full min-w-[850px] text-left text-sm">
+              <table class="data-table w-full min-w-[950px] text-left text-sm">
                 <thead>
                   <tr class="border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
                     <th class="px-4 py-3.5 text-center w-12">#</th>
                     <th class="px-4 py-3.5">Persona / Documento</th>
-                    <th class="px-4 py-3.5">Última Revisión</th>
-                    <th class="px-4 py-3.5">Fecha Consulta (+1 Año)</th>
-                    <th class="px-4 py-3.5 text-center">Días Restantes</th>
+                    <th class="px-4 py-3.5">Empresa / Contratista</th>
+                    <th class="px-4 py-3.5">Fecha Inducción</th>
+                    <th class="px-4 py-3.5">Fecha Vigencia (+1 Año)</th>
+                    <th class="px-4 py-3.5 text-center">Estado / Vigencia</th>
+                    <th class="px-4 py-3.5">Auditor Responsable</th>
                     <th class="px-4 py-3.5 text-center w-36">Acciones</th>
                   </tr>
                 </thead>
@@ -146,7 +152,7 @@
                   <!-- Skeleton / Loading -->
                   <template x-if="cargando">
                     <tr>
-                      <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                      <td colspan="8" class="px-4 py-12 text-center text-slate-400">
                         <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)] mb-2"></i>
                         <p class="text-sm font-medium">Cargando registros de inducciones...</p>
                       </td>
@@ -154,8 +160,8 @@
                   </template>
 
                   <!-- Filas de la tabla -->
-                  <template x-for="(item, index) in antecedentesPagina" :key="item.id_persona || index">
-                    <tr class="hover:bg-slate-50/70 transition-colors">
+                  <template x-for="(item, index) in induccionesPagina" :key="item.id_persona || index">
+                    <tr class="hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors">
                       
                       <!-- Índice -->
                       <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-400"
@@ -164,71 +170,85 @@
                       <!-- Persona -->
                       <td class="px-4 py-3.5">
                         <div class="flex items-center gap-3">
-                          <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs flex-shrink-0 border border-slate-200">
-                            <span x-text="obtenerIniciales(item)"></span>
-                          </div>
-                          <div>
-                            <p class="font-semibold text-[var(--text-primary)] text-sm"
-                              x-text="obtenerNombreCompleto(item)"></p>
+                          
+                          <div class="min-w-0">
+                            <p class="font-semibold text-[var(--text-primary)] text-sm truncate max-w-[220px]"
+                              x-text="item.nombre_completo || (item.persona_nombre + ' ' + (item.persona_apellido || ''))"></p>
                             <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                              <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px]" x-text="item.persona_tipo_doc + ': ' + item.persona_identificacion"></span>
+                              <span class="font-mono bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px]" x-text="item.tipo_doc + ': ' + item.identificacion"></span>
+                              <span class="truncate max-w-[120px] opacity-80" x-text="item.cargo" :title="item.cargo"></span>
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      <!-- Última Revisión -->
+                      <!-- Empresa / Contratista -->
                       <td class="px-4 py-3.5">
-                        <div class="text-xs text-slate-700 font-medium flex items-center gap-1.5">
-                          <i class="fa-regular fa-clock text-slate-400"></i>
-                          <span x-text="formatearFecha(item.ultima_revision, true)"></span>
+                        <div class="text-xs text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5">
+                          <i class="fa-solid fa-building text-sky-400 text-xs flex-shrink-0"></i>
+                          <span class="truncate max-w-[160px]" x-text="item.nombre_empresa" :title="item.nombre_empresa"></span>
                         </div>
                       </td>
 
-                      <!-- Fecha Consulta (+1 Año) Formateada como fecha -->
+                      <!-- Fecha Inducción -->
                       <td class="px-4 py-3.5">
-                        <div class="text-xs text-slate-700 font-medium flex items-center gap-1.5">
-                          <i class="fa-regular fa-calendar-check text-slate-400"></i>
-                          <span x-text="formatearFecha(item.fecha_consulta, false)"></span>
+                        <div class="text-xs text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5">
+                          <i class="fa-regular fa-calendar text-purple-400 text-xs"></i>
+                          <span :class="!item.fecha_induccion ? 'text-slate-400 dark:text-zinc-500 font-normal italic' : 'font-medium'"
+                            x-text="formatearFecha(item.fecha_induccion, 'Sin inducción')"></span>
                         </div>
                       </td>
 
-                      <!-- Días Restantes -->
-                      <td class="px-4 py-3.5 text-center">
-                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border"
-                          :class="getEstadoVigencia(item.fecha_consulta).badgeClass">
-                          <i :class="getEstadoVigencia(item.fecha_consulta).icono" class="text-[11px]"></i>
-                          <span x-text="getEstadoVigencia(item.fecha_consulta).textoDias"></span>
+                      <!-- Fecha Vigencia (+1 Año) -->
+                      <td class="px-4 py-3.5">
+                        <div class="text-xs text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5">
+                          <i class="fa-regular fa-calendar-check text-emerald-400 text-xs"></i>
+                          <span class="font-semibold" x-text="formatearFecha(item.fecha_vigencia)"></span>
                         </div>
                       </td>
 
-                      <!-- Conteo informativo de Ingresos / Solicitudes (Clickable) -->
+                      <!-- Estado / Días Restantes -->
                       <td class="px-4 py-3.5 text-center">
-                        <button type="button" @click="abrirHistorialModal(item)"
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all hover:scale-105"
-                          :class="item.total_solicitudes > 0 ? 'bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                          title="Clic para ver historial de solicitudes">
-                          <i class="fa-solid fa-layer-group text-[10px]"></i>
-                          <span x-text="item.total_solicitudes + ' ' + (item.total_solicitudes === 1 ? 'solicitud' : 'solicitudes')"></span>
-                        </button>
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                          :class="getEstadoVigenciaInfo(item).badgeClass">
+                          <i :class="getEstadoVigenciaInfo(item).icono" class="text-[11px]"></i>
+                          <span x-text="getEstadoVigenciaInfo(item).textoDias"></span>
+                        </div>
                       </td>
 
-                      <!-- Acciones Estándar (action-icon-btn con tooltips) -->
+                      <!-- Auditor Responsable -->
+                      <td class="px-4 py-3.5">
+                        <div class="text-xs text-slate-600 dark:text-zinc-400 font-medium flex items-center gap-1.5">
+                          <i class="fa-solid fa-user-shield text-slate-400 text-xs"></i>
+                          <span class="truncate max-w-[140px]" x-text="item.responsable || 'Auditor GESCO'" :title="item.responsable"></span>
+                        </div>
+                      </td>
+
+                      <!-- Acciones -->
                       <td class="px-4 py-3.5 text-center">
                         <div class="flex items-center justify-center gap-1.5">
-                          <!-- Botón 1: Ver Historial (Solo lectura) -->
-                          <button type="button" @click="abrirHistorialModal(item)"
-                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                            data-tooltip="Ver historial de solicitudes">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                          
+                          <!-- Botón 1: Ver Ficha Ticket -->
+                          <button type="button" @click="abrirFichaInduccion(item)"
+                            class="action-icon-btn action-btn-ficha text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            title="Ver ficha de inducción">
+                            <i class="fa-solid fa-id-card-clip text-xs"></i>
                           </button>
 
-                          <!-- Botón 2: Actualizar Vigencia y Formulario -->
-                          <button type="button" @click="abrirFormularioAntecedentes(item)"
-                            class="action-icon-btn action-btn-vigencia text-[var(--signal-500)] hover:text-red-700 hover:bg-red-50 transition-colors"
-                            data-tooltip="Actualizar vigencia y notas">
-                            <i class="fa-solid fa-calendar-check"></i>
+                          <!-- Botón 2: Editar Renovar con Formulario -->
+                          <button type="button" @click="abrirFormularioInduccion(item)"
+                            class="action-icon-btn action-btn-nota text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            title="Agregar nota">
+                            <i class="fa-solid fa-calendar-check text-xs"></i>
                           </button>
+
+                          <!-- Botón 3: Renovación Rápida (+1 Año con 1 clic) -->
+                          <button type="button" @click="renovarRapido(item)"
+                            class="action-icon-btn action-btn-renovar text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            title="Renovar">
+                            <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                          </button>
+
                         </div>
                       </td>
 
@@ -236,10 +256,10 @@
                   </template>
 
                   <!-- Estado vacío -->
-                  <tr x-show="!cargando && antecedentesFiltrados.length === 0">
-                    <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                  <tr x-show="!cargando && induccionesFiltradas.length === 0">
+                    <td colspan="8" class="px-4 py-12 text-center text-slate-400">
                       <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
-                      <p class="text-sm font-medium">No se encontraron registros de antecedentes con los filtros aplicados.</p>
+                      <p class="text-sm font-medium">No se encontraron registros de inducciones con los filtros aplicados.</p>
                     </td>
                   </tr>
                 </tbody>
@@ -286,570 +306,426 @@
       {% include 'pages/footer.html' %}
 
       <!-- ============================================================
-         MODAL 1: HISTORIAL DE SOLICITUDES Y OBSERVACIONES (Estilo Ticket)
+         MODAL 1: FICHA DE INDUCCIÓN (Estilo Ticket Oficial INCARSA)
       ============================================================= -->
-      <div x-show="showHistorialModal" x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      <div x-show="showFichaModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        @keydown.escape.window="cerrarHistorialModal()">
+        @keydown.escape.window="cerrarFichaModal()">
 
-        <div x-show="showHistorialModal"
-          @click.outside="cerrarHistorialModal()"
+        <!-- Panel del Modal Ticket -->
+        <div x-show="showFichaModal"
+          @click.outside="cerrarFichaModal()"
+          class="modal-panel w-full max-w-lg pt-6 px-6 pb-6 relative text-center"
           x-transition:enter="transition ease-out duration-300"
           x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
           x-transition:enter-end="opacity-100 scale-100 translate-y-0"
           x-transition:leave="transition ease-in duration-200"
           x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-          x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
-          class="modal-panel w-full max-w-4xl pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
-          
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4">
+
           <!-- Botón cerrar superior derecho -->
-          <button type="button" @click="cerrarHistorialModal()"
-            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
-            title="Cerrar modal">
+          <button type="button" @click="cerrarFichaModal()"
+            class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all z-20 cursor-pointer">
             <i class="fa-solid fa-xmark text-base"></i>
           </button>
 
-          <!-- Encabezado estilo Ticket -->
+          <!-- Cabecera estilo Ticket -->
           <div class="text-center mb-4">
-            <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
-              x-text="'Historial de Solicitudes: ' + obtenerNombreCompleto(detalleHistorial)"></h2>
-            <div class="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
-              <span class="status-pill inline-flex select-none font-semibold status-enviado text-xs">
-                <i class="fa-solid fa-clock-rotate-left mr-1.5"></i> Registro Histórico
-              </span>
-              <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
-                x-text="detalleHistorial.persona_tipo_doc + ': ' + detalleHistorial.persona_identificacion"></span>
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-500 text-xl shadow-lg shadow-purple-500/10 mb-2">
+              <i class="fa-solid fa-graduation-cap"></i>
             </div>
+            <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] dark:text-white tracking-tight"
+                x-text="detalleInduccion.nombre_completo || 'Ficha de Inducción'"></h3>
+            <p class="text-xs text-[var(--paper-muted)] font-mono mt-0.5">
+              <span x-text="(detalleInduccion.tipo_doc || 'CC') + ': ' + (detalleInduccion.identificacion || '')"></span>
+              <span x-show="detalleInduccion.cargo" x-text="' · ' + detalleInduccion.cargo"></span>
+            </p>
           </div>
 
-          <!-- Cuerpo scrollable cómodo estilo Ticket -->
-          <div class="max-h-[62vh] overflow-y-auto custom-scroll pr-1.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3.5 my-3.5 space-y-4">
+          <!-- Estado de Vigencia Badge -->
+          <div class="my-3">
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs"
+              :class="getEstadoVigenciaInfo(detalleInduccion).badgeClass">
+              <i :class="getEstadoVigenciaInfo(detalleInduccion).icono" class="text-xs"></i>
+              <span x-text="getEstadoVigenciaInfo(detalleInduccion).etiqueta"></span>
+              <span class="opacity-75">·</span>
+              <span x-text="getEstadoVigenciaInfo(detalleInduccion).textoDias"></span>
+            </span>
+          </div>
+
+          <!-- Grid de Detalles Estructurados -->
+          <div class="space-y-2.5 text-left text-xs bg-slate-50/80 dark:bg-white/5 p-4 rounded-xl border border-[var(--paper-shadow)] mt-4">
             
-            <!-- Resumen Informativo: Responsable, Observaciones y Vigencia Actual -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              
-              <!-- 1. Responsable Registrado -->
-              <div class="historial-summary-card card-responsable p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
-                <div class="summary-icon-box w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-indigo-500/30">
-                  <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Responsable de Solicitud</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultimo_usuario_solicitud || detalleHistorial.responsable || 'Sin responsable asignado'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Usuario que registró solicitud</span>
-                </div>
-              </div>
-
-              <!-- 2. Última Empresa Contratista -->
-              <div class="historial-summary-card card-empresa p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
-                <div class="summary-icon-box w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-cyan-500/30">
-                  <i class="fa-solid fa-briefcase"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_contratista || detalleHistorial.nombre_contratista || detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
-                </div>
-              </div>
-
-              <!-- 3. Vigencia Actual (Sin alterar) -->
-              <div class="historial-summary-card card-vigencia p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
-                <div class="summary-icon-box w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-emerald-500/30">
-                  <i class="fa-solid fa-calendar-check"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Vigencia Actual</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(detalleHistorial.fecha_consulta, false)"></p>
-                  <span class="text-[11px] font-medium" :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass" x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
-                </div>
-              </div>
-
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-building text-sky-400"></i> Contratista:
+              </span>
+              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-200 truncate max-w-[220px]"
+                x-text="detalleInduccion.nombre_empresa || 'Sin empresa asignada'"></span>
             </div>
 
-            <!-- Observaciones / Anotaciones Registradas -->
-            <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] space-y-1.5">
-              <div class="subtitles-modal text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-                <i class="fa-regular fa-note-sticky text-amber-500 text-sm"></i>
-                <span>Anotaciones y Observaciones Registradas</span>
-              </div>
-              <p class="text-xs text-[var(--paper-ink)] leading-relaxed whitespace-pre-line bg-[#efe9dc]/50 dark:bg-white/[0.02] p-3 rounded-lg border border-[var(--paper-shadow)] font-medium"
-                x-text="detalleHistorial.anotaciones || 'No se han registrado observaciones de antecedentes para esta persona.'"></p>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar text-purple-400"></i> Fecha Inducción:
+              </span>
+              <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-zinc-200"
+                x-text="formatearFecha(detalleInduccion.fecha_induccion)"></span>
             </div>
 
-            <!-- Tabla de Historial de Solicitudes -->
-            <div class="p-4 sm:p-5 rounded-xl bg-[#efe9dc]/20 dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-3.5">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-dashed border-[var(--paper-shadow)] pb-3">
-                <div>
-                  <h4 class="font-display font-semibold text-sm text-[var(--paper-ink)] flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-cyan-500"></i>
-                    <span>Historial de Solicitudes Registradas</span>
-                  </h4>
-                  <p class="text-xs text-[var(--paper-muted)] mt-0.5">
-                    Listado cronológico de solicitudes en las que la persona ha sido incluida.
-                  </p>
-                </div>
-                <span class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-cyan-500/30"
-                  x-text="(detalleHistorial.historial.length || 0) + ' solicitudes'"></span>
-              </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar-check text-emerald-400"></i> Fecha Vigencia (+1 Año):
+              </span>
+              <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                x-text="formatearFecha(detalleInduccion.fecha_vigencia)"></span>
+            </div>
 
-              <!-- Filtros de Historial en Modal -->
-              <div class="flex flex-col md:flex-row items-center justify-between gap-2.5 pt-1">
-                <div class="relative flex-1 w-full">
-                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] text-xs"></i>
-                  <input type="text" x-model="searchHistorial" placeholder="Filtrar por radicado, empresa o contratista..."
-                    class="input-field w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--paper-shadow)]">
-                </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-user-shield text-slate-400"></i> Auditor Responsable:
+              </span>
+              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-200"
+                x-text="detalleInduccion.responsable || 'Auditor GESCO'"></span>
+            </div>
 
-                <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
-                    @click="$refs.fpHistDesdeInput && $refs.fpHistDesdeInput._flatpickr && $refs.fpHistDesdeInput._flatpickr.open()">
-                    <span class="subtitles-modal text-[10px] font-semibold select-none">Desde:</span>
-                    <input type="text" x-ref="fpHistDesdeInput" x-init="initFlatpickrHistorial($el, 'desde')"
-                      placeholder="dd/mm/aaaa"
-                      class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
-                    <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
-                  </div>
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
-                    @click="$refs.fpHistHastaInput && $refs.fpHistHastaInput._flatpickr && $refs.fpHistHastaInput._flatpickr.open()">
-                    <span class="subtitles-modal text-[10px] font-semibold select-none">Hasta:</span>
-                    <input type="text" x-ref="fpHistHastaInput" x-init="initFlatpickrHistorial($el, 'hasta')"
-                      placeholder="dd/mm/aaaa"
-                      class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
-                    <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
-                  </div>
-                  <button type="button" x-show="searchHistorial || fechaDesdeHistorial || fechaHastaHistorial"
-                    @click="limpiarFiltrosHistorial()"
-                    class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] text-xs p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Limpiar filtros de historial">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-clipboard-check text-indigo-400"></i> Total Solicitudes:
+              </span>
+              <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-zinc-200"
+                x-text="detalleInduccion.total_solicitudes + ' solicitudes'"></span>
+            </div>
 
-                  <span class="subtitles-modal text-[11px] ml-1">Mostrar</span>
-                  <select x-model.number="historialPageSize" @change="historialPage = 1"
-                    class="input-field rounded-lg px-2 py-1 text-xs border border-[var(--paper-shadow)] font-medium">
-                    <option value="3">3</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs data-table">
-                  <thead>
-                    <tr class="bg-[#efe9dc]/60 dark:bg-white/[0.04] text-[var(--paper-muted)] font-semibold uppercase tracking-wider border-b border-[var(--paper-shadow)]">
-                      <th class="px-3 py-2.5 w-10 text-center">#</th>
-                      <th class="px-3 py-2.5">Código / Radicado</th>
-                      <th class="px-3 py-2.5">Empresa Solicitante</th>
-                      <th class="px-3 py-2.5">Empresa Contratista</th>
-                      <th class="px-3 py-2.5">Periodo Solicitado</th>
-                      <th class="px-3 py-2.5">Fecha Registro</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-dashed divide-[var(--paper-shadow)]">
-                    <template x-for="(h, hIndex) in historialPagina" :key="h.id || hIndex">
-                      <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-                        <td class="px-3 py-2.5 text-center text-[var(--paper-muted)] font-mono" x-text="(historialPage - 1) * historialPageSize + hIndex + 1"></td>
-                        <td class="px-3 py-2.5">
-                          <template x-if="h.codigo_radicado">
-                            <div class="inline-flex items-center gap-1.5 bg-[#efe9dc]/70 dark:bg-white/10 px-2 py-1 rounded-md border border-[var(--paper-shadow)]">
-                              <span class="font-mono font-bold text-[var(--paper-ink)] text-[11px]" x-text="h.codigo_radicado"></span>
-                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
-                                class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors p-0.5"
-                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
-                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-500' : 'fa-copy'"></i>
-                              </button>
-                            </div>
-                          </template>
-                          <template x-if="!h.codigo_radicado">
-                            <span class="text-[var(--paper-muted)] italic text-[11px]">Directo</span>
-                          </template>
-                        </td>
-                        <td class="px-3 py-2.5">
-                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-cyan-400 font-semibold text-[11px] border border-blue-500/20">
-                            <i class="fa-regular fa-building text-[10px]"></i>
-                            <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
-                          </span>
-                        </td>
-                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)]">
-                          <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
-                        </td>
-                        <td class="px-3 py-2.5 text-[var(--paper-ink)]">
-                          <div class="flex items-center gap-1.5">
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
-                            <i class="fa-solid fa-arrow-right text-[10px] text-[var(--paper-muted)]"></i>
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_fin)"></span>
-                          </div>
-                        </td>
-                        <td class="px-3 py-2.5 text-[var(--paper-muted)] font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
-                      </tr>
-                    </template>
-                    <tr x-show="historialFiltrado.length === 0">
-                      <td colspan="6" class="px-4 py-8 text-center text-xs text-[var(--paper-muted)]">
-                        <i class="fa-solid fa-folder-open text-2xl text-[var(--paper-muted)] mb-1 block"></i>
-                        <span>No se encontraron solicitudes registradas para esta persona.</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Paginación de Historial en Modal -->
-              <div x-show="totalPaginasHistorial > 1 || detalleHistorial.historial.length > 5"
-                class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-dashed border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)]">
-                <span>Mostrando <strong class="text-[var(--paper-ink)]" x-text="rangoHistorialMostrado"></strong></span>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" @click="goToHistorialPage(historialPage - 1)" :disabled="historialPage === 1"
-                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--paper-shadow)] text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors"
-                    :class="historialPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
-                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                  </button>
-                  <span>Página <strong class="text-[var(--paper-ink)]" x-text="historialPage"></strong> de <span x-text="totalPaginasHistorial"></span></span>
-                  <button type="button" @click="goToHistorialPage(historialPage + 1)" :disabled="historialPage === totalPaginasHistorial"
-                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--paper-shadow)] text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors"
-                    :class="historialPage === totalPaginasHistorial ? 'opacity-40 cursor-not-allowed' : ''">
-                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-
+            <!-- Anotaciones -->
+            <div class="pt-2.5 border-t border-dashed border-[var(--paper-shadow)] mt-2">
+              <span class="text-[var(--paper-muted)] font-medium block mb-1">Observaciones / Notas:</span>
+              <p class="text-[11px] text-[var(--paper-ink)] dark:text-zinc-300 italic bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-[var(--paper-shadow)]"
+                x-text="detalleInduccion.anotaciones || 'Sin observaciones registradas para esta inducción.'"></p>
             </div>
 
           </div>
 
-          <!-- Pie del modal -->
-          <div class="flex items-center justify-center gap-3 pt-3">
-            <button type="button" @click="cerrarHistorialModal()"
-              class="modal-btn-cancel px-7 py-2.5 text-sm font-semibold">
+          <!-- Botones de Acción -->
+          <div class="flex items-center justify-center gap-3 pt-4 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="cerrarFichaModal()" class="modal-btn-cancel px-6 py-2 cursor-pointer">
               Cerrar
             </button>
-            <button type="button" @click="cerrarHistorialModal(); abrirFormularioAntecedentes(detalleHistorial);"
-              class="btn-signal rounded-lg px-7 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm"
-              title="Abrir formulario para renovar vigencia y editar notas">
-              <i class="fa-solid fa-calendar-check"></i>
-              <span>Actualizar Vigencia</span>
+            <button type="button" @click="cerrarFichaModal(); abrirFormularioInduccion(detalleInduccion)"
+              class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Renovar / Editar</span>
             </button>
           </div>
 
+          <!-- Borde dentado decorativo ticket -->
           <div class="modal-serrated"></div>
         </div>
       </div>
 
       <!-- ============================================================
-         MODAL: DETALLES, SEGUIMIENTO E HISTORIAL DE ANTECEDENTES (Estilo Ticket)
-         (Actualiza 'ultima_revision' a hoy y calcula 'fecha_consulta' a +1 año automáticamente)
+         MODAL 2: FORMULARIO DE RENOVACIÓN DE INDUCCIÓN (+1 Año)
       ============================================================= -->
       <div x-show="showFormModal" x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        @keydown.escape.window="cerrarFormularioAntecedentes()">
+        @keydown.escape.window="cerrarFormModal()">
 
+        <!-- Panel del Formulario Ticket -->
         <div x-show="showFormModal"
-          @click.outside="cerrarFormularioAntecedentes()"
+          @click.outside="cerrarFormModal()"
+          class="modal-panel w-full max-w-xl pt-6 px-6 pb-6 relative text-left"
           x-transition:enter="transition ease-out duration-300"
           x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
           x-transition:enter-end="opacity-100 scale-100 translate-y-0"
           x-transition:leave="transition ease-in duration-200"
           x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-          x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
-          class="modal-panel w-full max-w-5xl pt-7 px-6 sm:px-8 pb-9 relative text-center" x-cloak>
-          
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4">
+
           <!-- Botón cerrar superior derecho -->
-          <button type="button" @click="cerrarFormularioAntecedentes()"
-            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 transition-all z-20"
-            title="Cerrar modal">
+          <button type="button" @click="cerrarFormModal()"
+            class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all z-20 cursor-pointer">
             <i class="fa-solid fa-xmark text-base"></i>
           </button>
 
-          <!-- Encabezado estilo Ticket -->
+          <!-- Cabecera -->
           <div class="text-center mb-4">
-            <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
-              x-text="'Detalle de Antecedentes: ' + obtenerNombreCompleto(formAntecedente)"></h2>
-            <div class="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
-              <span class="status-pill inline-flex select-none font-semibold status-revision text-xs">
-                <i class="fa-solid fa-id-card-clip mr-1.5"></i> Seguimiento y Vigencia
-              </span>
-              <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
-                x-text="formAntecedente.persona_tipo_doc + ': ' + formAntecedente.persona_identificacion"></span>
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-xl shadow-lg shadow-emerald-500/10 mb-2">
+              <i class="fa-solid fa-calendar-plus"></i>
             </div>
+            <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] dark:text-white tracking-tight">
+              Renovar Inducción
+            </h3>
+            <p class="text-xs text-[var(--paper-muted)] font-medium mt-0.5"
+               x-text="formInduccion.persona_nombre + ' (' + formInduccion.persona_tipo_doc + ': ' + formInduccion.persona_identificacion + ')'"></p>
           </div>
 
-          <!-- Cuerpo scrollable cómodo estilo Ticket -->
-          <div class="max-h-[62vh] overflow-y-auto custom-scroll pr-1.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3.5 my-3.5 space-y-4">
-            
-            <!-- Feedback Alertas -->
-            <div x-show="mensajeExito" x-transition class="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-3 font-medium">
-              <i class="fa-solid fa-circle-check text-base"></i>
-              <span x-text="mensajeExito"></span>
-            </div>
-            <div x-show="mensajeError" x-transition class="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-sm flex items-center gap-3 font-medium">
-              <i class="fa-solid fa-circle-exclamation text-base"></i>
-              <span x-text="mensajeError"></span>
-            </div>
+          <!-- Alertas de Estado Formulario -->
+          <div x-show="mensajeExitoForm" x-transition class="p-3 mb-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 font-medium">
+            <i class="fa-solid fa-circle-check text-emerald-500"></i>
+            <span x-text="mensajeExitoForm"></span>
+          </div>
+          <div x-show="mensajeErrorForm" x-transition class="p-3 mb-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center gap-2 font-medium">
+            <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+            <span x-text="mensajeErrorForm"></span>
+          </div>
 
-            <!-- TARJETA INFORMATIVA: ESTADO DE REVISIÓN Y ÚLTIMA EMPRESA (AUTO-ACTUALIZADOS) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Campos del Formulario -->
+          <form @submit.prevent="guardarInduccion()" class="space-y-4 text-xs">
+            
+            <!-- TARJETAS INFORMATIVAS: EMPRESA, FECHA RENOVACIÓN (HOY) Y VIGENCIA (+1 AÑO) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               
-              <!-- Última Empresa Contratista -->
-              <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
-                <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-cyan-500/30">
+              <!-- Empresa Contratista -->
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-cyan-500/30">
                   <i class="fa-solid fa-briefcase"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formAntecedente.ultima_empresa_contratista || formAntecedente.nombre_contratista || formAntecedente.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
+                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Empresa</span>
+                  <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formInduccion.nombre_empresa || 'Sin asignar'"></p>
+                  <span class="text-[10px] text-[var(--paper-muted)]">Contratista</span>
                 </div>
               </div>
 
-              <!-- Última Revisión -->
-              <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-purple-500/30">
+              <!-- Fecha de Renovación (Hoy) -->
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-purple-500/30">
                   <i class="fa-solid fa-clock-rotate-left"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Revisión</span>
-                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.ultima_revision, true)"></p>
-                  <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Auto-actualizada hoy</span>
+                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Fecha Inducción</span>
+                  <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formInduccion.fecha_induccion_texto"></p>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Auto hoy</span>
                 </div>
               </div>
 
-              <!-- Próxima Consulta (+1 Año) -->
-              <div class="p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3.5">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-lg font-bold border border-emerald-500/30">
+              <!-- Nueva Vigencia (+1 Año) -->
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-emerald-500/30">
                   <i class="fa-solid fa-calendar-plus"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Vigencia / Fecha Consulta</span>
-                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(formAntecedente.fecha_consulta, false)"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)] font-medium" x-text="getEstadoVigencia(formAntecedente.fecha_consulta).etiqueta"></span>
+                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Nueva Vigencia</span>
+                  <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formInduccion.fecha_vigencia_texto"></p>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">+1 Año</span>
                 </div>
               </div>
 
             </div>
 
-            <!-- SECCIÓN 1: FORMULARIO MANUAL (Responsable y Anotaciones) -->
-            <div class="p-4 sm:p-5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-4">
-              <div class="flex items-center justify-between border-b border-dashed border-[var(--paper-shadow)] pb-3">
-                <h4 class="font-display font-semibold text-sm text-[var(--paper-ink)] flex items-center gap-2">
-                  <i class="fa-solid fa-user-pen text-[var(--signal-500)]"></i>
-                  <span>Responsable y Anotaciones de Seguridad</span>
-                </h4>
-                <span class="subtitles-modal text-xs">Ingreso manual</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                
-                <!-- Responsable (Manual) -->
-                <div class="sm:col-span-5">
-                  <label class="subtitles-modal text-xs font-semibold block mb-1">
-                    Responsable solicitud <span class="text-red-500">*</span>
-                  </label>
-                  <div class="relative">
-                    <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] text-xs"></i>
-                    <input type="text" x-model="formAntecedente.responsable" placeholder="Ej: Dr. Andrea Pérez / SST..."
-                      class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--paper-shadow)]">
-                  </div>
-                </div>
-
-                <!-- Anotaciones (Detalle del seguimiento) -->
-                <div class="sm:col-span-7">
-                  <label class="subtitles-modal text-xs font-semibold block mb-1">
-                    Anotaciones / Hallazgos del Antecedente
-                  </label>
-                  <textarea x-model="formAntecedente.anotaciones" rows="2" placeholder="Observaciones de antecedentes, certificados judiciales, notas especiales..."
-                    class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--paper-shadow)] resize-none"></textarea>
-                </div>
-
-              </div>
-
-              <div class="flex justify-end pt-1">
-                <button type="button" @click="guardarAntecedente()" :disabled="guardando"
-                  class="btn-signal px-5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm">
-                  <i class="fa-solid" :class="guardando ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
-                  <span x-text="guardando ? 'Guardando...' : 'Guardar Responsable y Anotaciones'"></span>
-                </button>
-              </div>
+            <!-- Auditor Responsable (Automático por Usuario en Sesión) -->
+            <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#efe9dc]/25 dark:bg-white/[0.02] border border-dashed border-[var(--paper-shadow)] text-xs">
+              <span class="text-[var(--paper-muted)] flex items-center gap-2 font-medium">
+                <i class="fa-solid fa-user-shield text-slate-400"></i> Auditor Responsable (GESCO):
+              </span>
+              <span class="font-bold text-[var(--paper-ink)] dark:text-zinc-200" x-text="auditorActualNombre"></span>
             </div>
 
-            <!-- SECCIÓN 2: HISTORIAL DE SOLICITUDES (1 A MUCHOS) -->
-            <div class="p-4 sm:p-5 rounded-xl bg-[#efe9dc]/20 dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-4">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-dashed border-[var(--paper-shadow)] pb-3">
-                <div>
-                  <h4 class="font-display font-semibold text-sm text-[var(--paper-ink)] flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-purple-500"></i>
-                    <span>Historial de Solicitudes y Fechas en las que ha sido Solicitado</span>
-                  </h4>
-                  <p class="text-xs text-[var(--paper-muted)] mt-0.5">
-                    Registro de todas las solicitudes, contratistas y periodos en los que la persona ha ingresado o sido solicitada.
-                  </p>
-                </div>
-                
-                <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold border border-purple-500/30"
-                  x-text="(formAntecedente.historial.length || 0) + ' solicitudes registradas'"></span>
-              </div>
-
-              <!-- Filtros de Historial en Modal Formulario -->
-              <div class="flex flex-col md:flex-row items-center justify-between gap-2.5 pt-1">
-                <div class="relative flex-1 w-full">
-                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] text-xs"></i>
-                  <input type="text" x-model="searchFormHistorial" placeholder="Filtrar por radicado, empresa o contratista..."
-                    class="input-field w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--paper-shadow)]">
-                </div>
-
-                <div class="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
-                    @click="$refs.fpFormDesdeInput && $refs.fpFormDesdeInput._flatpickr && $refs.fpFormDesdeInput._flatpickr.open()">
-                    <span class="subtitles-modal text-[10px] font-semibold select-none">Desde:</span>
-                    <input type="text" x-ref="fpFormDesdeInput" x-init="initFlatpickrForm($el, 'desde')"
-                      placeholder="dd/mm/aaaa"
-                      class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
-                    <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
-                  </div>
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] text-xs bg-[#efe9dc]/40 dark:bg-white/[0.04] cursor-pointer hover:border-red-500/40 dark:hover:border-cyan-400/40 transition-colors"
-                    @click="$refs.fpFormHastaInput && $refs.fpFormHastaInput._flatpickr && $refs.fpFormHastaInput._flatpickr.open()">
-                    <span class="subtitles-modal text-[10px] font-semibold select-none">Hasta:</span>
-                    <input type="text" x-ref="fpFormHastaInput" x-init="initFlatpickrForm($el, 'hasta')"
-                      placeholder="dd/mm/aaaa"
-                      class="text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium">
-                    <i class="fa-regular fa-calendar text-[11px] text-[var(--paper-muted)] dark:text-slate-400 pointer-events-none"></i>
-                  </div>
-                  <button type="button" x-show="searchFormHistorial || searchFormFechaDesde || searchFormFechaHasta"
-                    @click="limpiarFiltrosForm()"
-                    class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] text-xs p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Limpiar filtros">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
-
-                  <span class="subtitles-modal text-[11px] ml-1">Mostrar</span>
-                  <select x-model.number="formHistorialPageSize" @change="formHistorialPage = 1"
-                    class="input-field rounded-lg px-2 py-1 text-xs border border-[var(--paper-shadow)] font-medium">
-                    <option value="3">3</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Tabla de Historial Detallado -->
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs data-table">
-                  <thead>
-                    <tr class="bg-[#efe9dc]/60 dark:bg-white/[0.04] text-[var(--paper-muted)] font-semibold uppercase tracking-wider border-b border-[var(--paper-shadow)]">
-                      <th class="px-3 py-2.5 w-10 text-center">#</th>
-                      <th class="px-3 py-2.5">Código / Radicado</th>
-                      <th class="px-3 py-2.5">Empresa Solicitante</th>
-                      <th class="px-3 py-2.5">Empresa Contratista</th>
-                      <th class="px-3 py-2.5">Periodo de Solicitud</th>
-                      <th class="px-3 py-2.5">Fecha Registro</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-dashed divide-[var(--paper-shadow)]">
-                    <template x-for="(h, hIndex) in formHistorialPagina" :key="h.id || hIndex">
-                      <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-                        
-                        <!-- Índice -->
-                        <td class="px-3 py-2.5 text-center text-[var(--paper-muted)] font-mono" x-text="(formHistorialPage - 1) * formHistorialPageSize + hIndex + 1"></td>
-                        
-                        <!-- Código / Radicado con botón de copiar -->
-                        <td class="px-3 py-2.5">
-                          <template x-if="h.codigo_radicado">
-                            <div class="inline-flex items-center gap-1.5 bg-[#efe9dc]/70 dark:bg-white/10 px-2 py-1 rounded-md border border-[var(--paper-shadow)]">
-                              <span class="font-mono font-bold text-[var(--paper-ink)] text-[11px]" x-text="h.codigo_radicado"></span>
-                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
-                                class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors p-0.5"
-                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
-                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
-                              </button>
-                            </div>
-                          </template>
-                          <template x-if="!h.codigo_radicado">
-                            <span class="text-[var(--paper-muted)] italic text-[11px]">Directo</span>
-                          </template>
-                        </td>
-
-                        <!-- Empresa Solicitante -->
-                        <td class="px-3 py-2.5">
-                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-cyan-400 font-semibold text-[11px] border border-blue-500/20">
-                            <i class="fa-regular fa-building text-[10px]"></i>
-                            <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
-                          </span>
-                        </td>
-
-                        <!-- Empresa Contratista -->
-                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)]">
-                          <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
-                        </td>
-
-                        <!-- Fechas Inicio y Fin -->
-                        <td class="px-3 py-2.5 text-[var(--paper-ink)]">
-                          <div class="flex items-center gap-1.5">
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
-                            <i class="fa-solid fa-arrow-right text-[10px] text-[var(--paper-muted)]"></i>
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_fin)"></span>
-                          </div>
-                        </td>
-
-                        <!-- Fecha de Registro del Historial -->
-                        <td class="px-3 py-2.5 text-[var(--paper-muted)] font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
-
-                      </tr>
-                    </template>
-
-                    <tr x-show="formHistorialFiltrado.length === 0">
-                      <td colspan="6" class="px-4 py-8 text-center text-xs text-[var(--paper-muted)]">
-                        <i class="fa-solid fa-folder-open text-2xl text-[var(--paper-muted)] mb-1 block"></i>
-                        <span>No se encontraron solicitudes registradas con los filtros aplicados.</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Paginación de Historial en Modal Formulario -->
-              <div x-show="totalPaginasFormHistorial > 1 || formAntecedente.historial.length > 5"
-                class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-dashed border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)]">
-                <span>Mostrando <strong class="text-[var(--paper-ink)]" x-text="rangoFormHistorialMostrado"></strong></span>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" @click="goToFormHistorialPage(formHistorialPage - 1)" :disabled="formHistorialPage === 1"
-                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--paper-shadow)] text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors"
-                    :class="formHistorialPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
-                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                  </button>
-                  <span>Página <strong class="text-[var(--paper-ink)]" x-text="formHistorialPage"></strong> de <span x-text="totalPaginasFormHistorial"></span></span>
-                  <button type="button" @click="goToFormHistorialPage(formHistorialPage + 1)" :disabled="formHistorialPage === totalPaginasFormHistorial"
-                    class="action-icon-btn p-1.5 rounded-lg border border-[var(--paper-shadow)] text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors"
-                    :class="formHistorialPage === totalPaginasFormHistorial ? 'opacity-40 cursor-not-allowed' : ''">
-                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-
+            <!-- Anotaciones / Notas -->
+            <div>
+              <label class="block font-semibold text-[var(--paper-ink)] dark:text-zinc-200 mb-1">Anotaciones / Observaciones</label>
+              <textarea x-model="formInduccion.anotaciones" rows="3" placeholder="Ej: Aprobó inducción general y de seguridad en planta..."
+                class="input-field w-full rounded-xl py-2 px-3 custom-scroll resize-none text-xs border border-[var(--paper-shadow)]"></textarea>
             </div>
 
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-dashed border-[var(--paper-shadow)] mt-4">
+              <button type="button" @click="cerrarFormModal()" class="modal-btn-cancel px-5 py-2 cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" :disabled="guardandoInduccion"
+                class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fa-solid" :class="guardandoInduccion ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+                <span x-text="guardandoInduccion ? 'Guardando...' : 'Guardar y Renovar (+1 Año)'"></span>
+              </button>
+            </div>
+
+          </form>
+
+          <!-- Borde dentado decorativo ticket -->
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL 3: CONFIRMAR RENOVACIÓN RÁPIDA (Estilo Ticket Oficial)
+      ============================================================= -->
+      <div x-show="showConfirmModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarConfirmModal()">
+
+        <!-- Panel del Modal Ticket -->
+        <div x-show="showConfirmModal"
+          @click.outside="cerrarConfirmModal()"
+          class="modal-panel w-full max-w-md p-6 sm:p-7 relative text-center"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4">
+
+          <!-- Botón cerrar superior derecho -->
+          <button type="button" @click="cerrarConfirmModal()"
+            class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all z-20 cursor-pointer">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Estampa / Sello Circular Ticket -->
+          <div class="modal-stamp success mb-3">
+            <i class="fa-solid fa-arrows-rotate text-2xl text-[var(--paper-ok)]"></i>
           </div>
 
-          <!-- Pie del modal -->
-          <div class="flex items-center justify-center gap-3 pt-3">
-            <button type="button" @click="cerrarFormularioAntecedentes()"
-              class="modal-btn-cancel px-7 py-2.5 text-sm font-semibold">
-              Cerrar
+          <!-- Título y Subtítulo -->
+          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] dark:text-white tracking-tight">
+            ¿Renovar Inducción?
+          </h3>
+          <p class="text-xs text-[var(--paper-muted)] mt-1 max-w-xs mx-auto leading-relaxed">
+            Se renovará la vigencia por <strong class="text-[var(--paper-ink)] dark:text-zinc-200 font-semibold">1 año adicional desde hoy</strong> para el siguiente titular:
+          </p>
+
+          <!-- Voucher Informativo de la Persona -->
+          <div class="my-4 p-4 rounded-xl bg-[#efe9dc]/40 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-left space-y-2.5">
+            <div class="flex items-center justify-between gap-2 border-b border-dashed border-[var(--paper-shadow)] pb-2.5">
+              <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider">Titular</span>
+              <span class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate" x-text="personaARenovar ? (personaARenovar.nombre_completo || personaARenovar.persona_nombre) : ''"></span>
+            </div>
+            
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="text-[var(--paper-muted)] flex items-center gap-1.5">
+                <i class="fa-regular fa-id-card text-xs"></i> Documento:
+              </span>
+              <span class="font-mono font-semibold text-[var(--paper-ink)] dark:text-zinc-300" x-text="personaARenovar ? ((personaARenovar.tipo_doc || 'CC') + ' ' + personaARenovar.identificacion) : ''"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="text-[var(--paper-muted)] flex items-center gap-1.5">
+                <i class="fa-solid fa-briefcase text-xs text-cyan-500"></i> Empresa:
+              </span>
+              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-300 truncate max-w-[190px]" x-text="personaARenovar ? (personaARenovar.nombre_empresa || 'Sin asignar') : ''"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 text-xs pt-1 border-t border-dashed border-[var(--paper-shadow)]">
+              <span class="text-[var(--paper-muted)] flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-check text-xs text-emerald-500"></i> Nueva Vigencia:
+              </span>
+              <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-500/30" x-text="personaARenovar ? personaARenovar.fecha_vigencia_nueva : ''"></span>
+            </div>
+          </div>
+
+          <!-- Botones de Acción Estilo Ticket -->
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button type="button" @click="cerrarConfirmModal()" class="modal-btn-cancel flex-1 cursor-pointer">
+              Cancelar
             </button>
-            <button type="button" @click="cerrarFormularioAntecedentes()"
-              class="btn-signal rounded-lg px-7 py-2.5 text-sm font-semibold shadow-sm">
-              <span>Listo</span>
+            <button type="button" @click="confirmarRenovacionRapida()" :disabled="renovandoRapido"
+              class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fa-solid" :class="renovandoRapido ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'"></i>
+              <span x-text="renovandoRapido ? 'Renovando...' : 'Sí, Renovar (+1 Año)'"></span>
             </button>
           </div>
 
+          <!-- Borde dentado decorativo ticket -->
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL 4: ÉXITO DE RENOVACIÓN (Ticket Oficial de Vigencia)
+      ============================================================= -->
+      <div x-show="showSuccessModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarSuccessModal()">
+
+        <!-- Panel del Modal Ticket -->
+        <div x-show="showSuccessModal"
+          @click.outside="cerrarSuccessModal()"
+          class="modal-panel w-full max-w-md p-6 sm:p-7 relative text-center"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4">
+
+          <!-- Sello / Estampa de Aprobación Verde -->
+          <div class="modal-stamp success mb-3">
+            <i class="fa-solid fa-circle-check text-3xl text-[var(--paper-ok)]"></i>
+          </div>
+
+          <!-- Encabezado de Ticket -->
+          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] dark:text-white tracking-tight">
+            ¡Inducción Renovada!
+          </h3>
+          
+          <div class="mt-1 mb-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <i class="fa-solid fa-shield-halved text-[11px]"></i>
+              <span>Vigente (+1 Año)</span>
+              <span class="opacity-60 font-normal">· 365 días</span>
+            </span>
+          </div>
+
+          <p class="text-xs text-[var(--paper-muted)] max-w-xs mx-auto leading-relaxed">
+            La inducción ha sido extendida exitosamente en el sistema para <strong class="text-[var(--paper-ink)] dark:text-zinc-200" x-text="datosExitoRenovacion.nombre_completo"></strong>.
+          </p>
+
+          <!-- Recibo / Comprobante de Vigencia -->
+          <div class="my-4 p-4 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-left space-y-2 text-xs">
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <span class="text-[var(--paper-muted)] font-medium">Identificación:</span>
+              <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-zinc-200" x-text="(datosExitoRenovacion.tipo_doc || 'CC') + ' ' + (datosExitoRenovacion.identificacion || '')"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <span class="text-[var(--paper-muted)] font-medium">Empresa:</span>
+              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-200 truncate max-w-[200px]" x-text="datosExitoRenovacion.nombre_empresa || 'Sin asignar'"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-dashed border-[var(--paper-shadow)]">
+              <span class="text-[var(--paper-muted)] font-medium">Fecha Inducción (Hoy):</span>
+              <span class="font-mono font-semibold text-[var(--paper-ink)] dark:text-zinc-200" x-text="datosExitoRenovacion.fecha_induccion"></span>
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[var(--paper-muted)] font-medium">Nueva Vigencia:</span>
+              <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400" x-text="datosExitoRenovacion.fecha_vigencia"></span>
+            </div>
+          </div>
+
+          <!-- Botón de Cierre Ticket -->
+          <div class="pt-1">
+            <button type="button" @click="cerrarSuccessModal()"
+              class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer">
+              <span>Aceptar y Continuar</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Borde dentado decorativo ticket -->
           <div class="modal-serrated"></div>
         </div>
       </div>
@@ -857,8 +733,4 @@
     </div>
   </div>
 
-  <!-- Modal Component: Plantas -->
-  <div x-data="plantasManager()" x-cloak>
-    <!-- Componente de gestión de plantas -->
-  </div>
 {% endblock %}

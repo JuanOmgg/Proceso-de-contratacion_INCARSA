@@ -165,9 +165,7 @@
                       <!-- Persona -->
                       <td class="px-4 py-3.5">
                         <div class="flex items-center gap-3">
-                          <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs flex-shrink-0 border border-slate-200">
-                            <span x-text="obtenerIniciales(item)"></span>
-                          </div>
+                        
                           <div>
                             <p class="font-semibold text-[var(--text-primary)] text-sm"
                               x-text="obtenerNombreCompleto(item)"></p>
@@ -219,16 +217,18 @@
                         <div class="flex items-center justify-center gap-1.5">
                           <!-- Botón 1: Ver Historial (Solo lectura) -->
                           <button type="button" @click="abrirHistorialModal(item)"
-                            class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                            data-tooltip="Ver historial de solicitudes">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            class="action-icon-btn action-btn-historial text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            data-tooltip="Ver historial de solicitudes"
+                            title="Ver historial de solicitudes">
+                            <i class="fa-solid fa-clock-rotate-left text-xs"></i>
                           </button>
 
                           <!-- Botón 2: Actualizar Vigencia y Formulario -->
                           <button type="button" @click="abrirFormularioAntecedentes(item)"
-                            class="action-icon-btn action-btn-vigencia text-[var(--signal-500)] hover:text-red-700 hover:bg-red-50 transition-colors"
-                            data-tooltip="Actualizar vigencia y notas">
-                            <i class="fa-solid fa-calendar-check"></i>
+                            class="action-icon-btn action-btn-vigencia text-[var(--signal-500)] hover:text-red-700 hover:bg-red-50 dark:hover:bg-rose-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            data-tooltip="Actualizar vigencia y notas"
+                            title="Actualizar vigencia y notas">
+                            <i class="fa-solid fa-calendar-check text-xs"></i>
                           </button>
                         </div>
                       </td>
@@ -639,46 +639,30 @@
 
             </div>
 
-            <!-- SECCIÓN 1: FORMULARIO MANUAL (Responsable y Anotaciones) -->
+            <!-- SECCIÓN 1: ANOTACIONES Y HALLAZGOS -->
             <div class="p-4 sm:p-5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-4">
               <div class="flex items-center justify-between border-b border-dashed border-[var(--paper-shadow)] pb-3">
                 <h4 class="font-display font-semibold text-sm text-[var(--paper-ink)] flex items-center gap-2">
-                  <i class="fa-solid fa-user-pen text-[var(--signal-500)]"></i>
-                  <span>Responsable y Anotaciones de Seguridad</span>
+                  <i class="fa-solid fa-notes-medical text-[var(--signal-500)]"></i>
+                  <span>Anotaciones y Hallazgos del Antecedente</span>
                 </h4>
                 <span class="subtitles-modal text-xs">Ingreso manual</span>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                
-                <!-- Responsable (Manual) -->
-                <div class="sm:col-span-5">
-                  <label class="subtitles-modal text-xs font-semibold block mb-1">
-                    Responsable solicitud <span class="text-red-500">*</span>
-                  </label>
-                  <div class="relative">
-                    <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] text-xs"></i>
-                    <input type="text" x-model="formAntecedente.responsable" placeholder="Ej: Dr. Andrea Pérez / SST..."
-                      class="input-field w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--paper-shadow)]">
-                  </div>
-                </div>
-
-                <!-- Anotaciones (Detalle del seguimiento) -->
-                <div class="sm:col-span-7">
-                  <label class="subtitles-modal text-xs font-semibold block mb-1">
-                    Anotaciones / Hallazgos del Antecedente
-                  </label>
-                  <textarea x-model="formAntecedente.anotaciones" rows="2" placeholder="Observaciones de antecedentes, certificados judiciales, notas especiales..."
-                    class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--paper-shadow)] resize-none"></textarea>
-                </div>
-
+              <!-- Anotaciones (Detalle del seguimiento a ancho completo) -->
+              <div>
+                <label class="subtitles-modal text-xs font-semibold block mb-1">
+                  Anotaciones / Hallazgos del Antecedente
+                </label>
+                <textarea x-model="formAntecedente.anotaciones" rows="3" placeholder="Observaciones de antecedentes, certificados judiciales, notas especiales..."
+                  class="input-field w-full p-2.5 text-sm rounded-xl border border-[var(--paper-shadow)] resize-none"></textarea>
               </div>
 
               <div class="flex justify-end pt-1">
                 <button type="button" @click="guardarAntecedente()" :disabled="guardando"
                   class="btn-signal px-5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm">
                   <i class="fa-solid" :class="guardando ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
-                  <span x-text="guardando ? 'Guardando...' : 'Guardar Responsable y Anotaciones'"></span>
+                  <span x-text="guardando ? 'Guardando...' : 'Guardar Anotaciones'"></span>
                 </button>
               </div>
             </div>

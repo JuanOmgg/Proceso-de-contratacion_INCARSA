@@ -9,11 +9,17 @@ def CREATE_person_db(person: dict) -> dict:
         with GET_conexion() as conexion:
 
             with conexion.cursor() as cursor:
+                correo = str(person.get("correo") or "").strip().lower()
+                if not correo:
+                    return {
+                        "exito": False,
+                        "mensaje": "El correo electrónico es obligatorio.",
+                    }
 
                 sql_person = """
                     INSERT INTO personas (
-                        nombre, apellido, tipo_doc, identificacion, cargo, observacion
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                        nombre, apellido, tipo_doc, identificacion, cargo, observacion, correo
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """
                 valores_person = (
                     person.get("nombre", ""),
@@ -21,7 +27,8 @@ def CREATE_person_db(person: dict) -> dict:
                     person.get("tipo_doc", ""),
                     person.get("identificacion", ""),
                     person.get("cargo", ""),
-                    person.get("observacion", "")
+                    person.get("observacion", ""),
+                    correo
                 )
 
                 cursor.execute(sql_person, valores_person)
@@ -30,11 +37,11 @@ def CREATE_person_db(person: dict) -> dict:
                 documentos = person.get("documentos_ids", [])
                 if documentos:
                     sql_docs = """
-                        INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo)
-                        VALUES (%s, %s, %s)
+                        INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo, vigencia)
+                        VALUES (%s, %s, %s, %s)
                     """
                     valores_docs = [
-                        (person_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""))
+                        (person_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""), doc.get("vigencia") or None)
                         for doc in documentos if isinstance(doc, dict) and doc.get("nombre_archivo")
                     ]
                     if valores_docs:
@@ -71,6 +78,7 @@ def GET_ALL_person_db() -> dict:
                         p.tipo_doc,
                         p.identificacion,
                         p.cargo,
+                        p.correo,
                         p.observacion,
                         p.fecha_creacion
                     FROM personas p
@@ -80,7 +88,7 @@ def GET_ALL_person_db() -> dict:
                 datos_person = cursor.fetchall()
 
                 # Obtener documentos de cada persona si existen
-                cursor.execute("SELECT id, persona_id, tipo_doc, nombre_archivo FROM documentos_persona")
+                cursor.execute("SELECT id, persona_id, tipo_doc, nombre_archivo, vigencia FROM documentos_persona")
                 docs_db = cursor.fetchall()
                 docs_por_persona = {}
                 for doc in docs_db:
@@ -91,6 +99,7 @@ def GET_ALL_person_db() -> dict:
                         "id": doc.get("id"),
                         "tipo_doc": doc["tipo_doc"],
                         "nombre_archivo": doc["nombre_archivo"],
+                        "vigencia": doc.get("vigencia").isoformat() if hasattr(doc.get("vigencia"), "isoformat") else (str(doc.get("vigencia")) if doc.get("vigencia") else None),
                         "url_acceso": f"/uploads/documentos/{doc['nombre_archivo']}"
                     })
 
@@ -126,6 +135,7 @@ def GET_person_by_id_db(persona_id: int) -> dict:
                         p.tipo_doc,
                         p.identificacion,
                         p.cargo,
+                        p.correo,
                         p.observacion,
                         p.fecha_creacion
                     FROM personas p
@@ -135,10 +145,12 @@ def GET_person_by_id_db(persona_id: int) -> dict:
                 if not p:
                     return {"exito": False, "mensaje": f"Persona con ID {persona_id} no encontrada."}
 
-                cursor.execute("SELECT id, tipo_doc, nombre_archivo FROM documentos_persona WHERE persona_id = %s", (persona_id,))
+                cursor.execute("SELECT id, tipo_doc, nombre_archivo, vigencia FROM documentos_persona WHERE persona_id = %s", (persona_id,))
                 docs = cursor.fetchall() or []
                 for d in docs:
                     d["url_acceso"] = f"/uploads/documentos/{d['nombre_archivo']}"
+                    if d.get("vigencia"):
+                        d["vigencia"] = d["vigencia"].isoformat() if hasattr(d["vigencia"], "isoformat") else str(d["vigencia"])
                 p["documentos"] = docs
                 if p.get("fecha_creacion"):
                     p["fecha_creacion"] = p["fecha_creacion"].isoformat() if hasattr(p["fecha_creacion"], "isoformat") else str(p["fecha_creacion"])
@@ -151,6 +163,11 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
+                if "correo" in person and not str(person.get("correo") or "").strip():
+                    return {
+                        "exito": False,
+                        "mensaje": "El correo electrónico es obligatorio.",
+                    }
                 sql_update = """
                     UPDATE personas SET
                         nombre = %s,
@@ -158,6 +175,7 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
                         tipo_doc = %s,
                         identificacion = %s,
                         cargo = %s,
+                        correo = %s,
                         observacion = %s
                     WHERE id = %s
                 """
@@ -167,6 +185,7 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
                     person.get("tipo_doc", ""),
                     person.get("identificacion", ""),
                     person.get("cargo", ""),
+                    person.get("correo") or None,
                     person.get("observacion", ""),
                     persona_id
                 )
@@ -193,12 +212,12 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
                     # 4. Actualizar tabla documentos_persona
                     cursor.execute("DELETE FROM documentos_persona WHERE persona_id = %s", (persona_id,))
                     valores_docs = [
-                        (persona_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""))
+                        (persona_id, doc.get("tipo_doc", ""), doc.get("nombre_archivo", ""), doc.get("vigencia") or None)
                         for doc in documentos if isinstance(doc, dict) and doc.get("nombre_archivo")
                     ]
                     if valores_docs:
                         cursor.executemany(
-                            "INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo) VALUES (%s, %s, %s)",
+                            "INSERT INTO documentos_persona (persona_id, tipo_doc, nombre_archivo, vigencia) VALUES (%s, %s, %s, %s)",
                             valores_docs
                         )
 

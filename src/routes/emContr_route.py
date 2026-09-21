@@ -13,6 +13,7 @@ from src.loaders.emp_contratista_loader import (
 router = APIRouter(prefix = "/emp_contratista", tags = ["Empresas Contratistas"])
 
 @router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def CREATE_empContratista_rt(payload: EmpContratistaInput, current_user: dict = Depends(require_permission("contratistas", "crear"))):
 
     resultado = CREATE_emp_contratista(payload)
@@ -31,13 +32,13 @@ def CREATE_empContratista_rt(payload: EmpContratistaInput, current_user: dict = 
 @router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 def GET_ALL_empCont_rt(current_user: dict = Depends(get_current_user)):
 
-    print("🔍 [GET] Consultando todas las empresas contratistas en la base de datos...")
+    print("[GET] Consultando todas las empresas contratistas en la base de datos...")
 
     resultado = GET_ALL_empCont_db()
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de empresas contratistas.")
-        print(f"❌ Error interno en GET_ALL_empCont_db: {error_msg}")
+        print(f"[ERROR] Error interno en GET_ALL_empCont_db: {error_msg}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje", "Error al obtener las emrpesas contratistas.")
@@ -49,33 +50,33 @@ def GET_ALL_empCont_rt(current_user: dict = Depends(get_current_user)):
 @router.get("/{empcont_id}", status_code=status.HTTP_200_OK)
 def GET_empContratista_rt(empcont_id: int, current_user: dict = Depends(get_current_user)):
 
-    print(f"🔍 [GET] Buscando empresa contratista con ID #{empcont_id} en la base de datos")
+    print(f"[GET] Buscando empresa contratista con ID #{empcont_id} en la base de datos")
     resultado = GET_empCont_db(empcont_id)
 
     if not resultado.get("exito", False):
-        raise   HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=resultado.get("mensaje"),
         )
     
-    print(f"📦 [GET] Datos de la empresa #{empcont_id} recuperados con éxito.")
+    print(f"[GET] Datos de la empresa #{empcont_id} recuperados con exito.")
     return resultado
+
 @router.patch("/{empcont_id}", status_code=status.HTTP_200_OK)
 def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput, current_user: dict = Depends(require_permission("contratistas", "editar"))):
 
-    print(f"🔄 [PATCH] Actualizando empresa contratista con ID #{empcont_id} en la base de datos... ")
+    print(f"[PATCH] Actualizando empresa contratista con ID #{empcont_id} en la base de datos... ")
     data_raw = payload.model_dump(exclude_unset=True) 
 
     data_updates = TRANSFORM_EMPCONTRATISTA(data_raw)
 
     if not data_updates:
-        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="❌❌ No se proporcionaron datos para actualizar la empresa contratista ❌❌"
+            detail="No se proporcionaron datos para actualizar la empresa contratista"
         )
     
-    print(f"⚙️ [LOADER] Aplicando cambios en MySQL para la empresa #{empcont_id}...")
+    print(f"[LOADER] Aplicando cambios en MySQL para la empresa #{empcont_id}...")
     resultado = UPDATE_empCont_db(empcont_id, data_updates)
 
     if not resultado.get("exito", False):
@@ -83,13 +84,13 @@ def UPDATE_empContratista_rt(empcont_id: int, payload: UpdateEmpContratistainput
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=resultado.get("mensaje"),
         )
-    print(f"✅ [PUT] Empresa contratista con ID #{empcont_id} actualizada con éxito.")
+    print(f"[PUT] Empresa contratista con ID #{empcont_id} actualizada con exito.")
     return resultado
 
 @router.delete("/{empcont_id}", status_code=status.HTTP_200_OK)
 def DELETE_empContratista_rt(empcont_id: int, current_user: dict = Depends(require_permission("contratistas", "eliminar"))):
 
-    print(f"🗑️ [DELETE] Eliminando empresa contratista con ID #{empcont_id} de la base de datos...")
+    print(f"[DELETE] Eliminando empresa contratista con ID #{empcont_id} de la base de datos...")
     resultado = DELETE_empCont_db(empcont_id)
 
     if resultado.get("exito", False) is False:

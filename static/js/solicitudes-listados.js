@@ -362,6 +362,10 @@ function solicitudesTable() {
         viewModalOpen: false,
         selected: null,
 
+        // Modal QR de Acceso
+        qrModalOpen: false,
+        selectedQr: null,
+
         // Modal Observaciones
         observacionesModalOpen: false,
         solicitudObservacion: null,
@@ -684,6 +688,48 @@ function solicitudesTable() {
         closeView() {
             this.viewModalOpen = false;
             this.selected = null;
+        },
+
+        openQrModal(solicitud) {
+            if (!solicitud) return;
+            this.selectedQr = solicitud;
+            this.qrModalOpen = true;
+        },
+
+        cerrarQrModal() {
+            this.qrModalOpen = false;
+            this.selectedQr = null;
+        },
+
+        descargarQr() {
+            if (!this.selectedQr) return;
+            const codigo = this.selectedQr.codigo || ('RAD-' + this.selectedQr.id);
+            const a = document.createElement('a');
+            a.href = `/api/v1/solicitudes/${encodeURIComponent(codigo)}/qr`;
+            a.download = `QR-${codigo}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        },
+
+        async copiarEnlaceQr() {
+            if (!this.selectedQr) return;
+            const codigo = this.selectedQr.codigo || ('RAD-' + this.selectedQr.id);
+            const url = `${window.location.origin}/verificar/${encodeURIComponent(codigo)}`;
+            try {
+                await navigator.clipboard.writeText(url);
+                this.copiadoToast = true;
+                setTimeout(() => (this.copiadoToast = false), 2500);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = url;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                this.copiadoToast = true;
+                setTimeout(() => (this.copiadoToast = false), 2500);
+            }
         },
 
         estadoClass(estado) {

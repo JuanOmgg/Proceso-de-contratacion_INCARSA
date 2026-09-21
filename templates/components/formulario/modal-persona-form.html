@@ -9,7 +9,7 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0">
             <div x-show="showPersonaModal"
-              @click.outside="closePersonaModal()"
+              @click.outside="if (!$event.target.closest('.flatpickr-calendar')) closePersonaModal()"
               x-transition:enter="transition ease-out duration-300"
               x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -77,6 +77,13 @@
                   <p class="form-error" x-show="personaModalErrors.cargo" x-text="personaModalErrors.cargo"></p>
                 </div>
                 <div>
+                  <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Correo electrónico <span class="text-red-500">*</span></label>
+                  <input type="email" x-model="nuevaPersona.correo" placeholder="Ej: persona@ejemplo.com" required
+                    class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                    :class="personaModalErrors.correo ? 'has-error' : ''">
+                  <p class="form-error" x-show="personaModalErrors.correo" x-text="personaModalErrors.correo"></p>
+                </div>
+                <div class="sm:col-span-2">
                   <label class="form-label text-xs font-semibold text-[var(--paper-ink)] mb-1 block">Observación (Opcional)</label>
                   <input type="text" x-model="nuevaPersona.observacion" placeholder="Detalle o nota adicional"
                     class="input-field w-full rounded-lg px-3 py-2 text-sm bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
@@ -90,43 +97,105 @@
                       <p class="text-[11px] text-[var(--paper-muted)]">Adjunta los certificados y documentos necesarios (PDF/Imágenes)</p>
                     </div>
                     <button type="button" @click="addDocumentoPersona()"
-                      class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#1c2033] text-white hover:bg-black transition shadow-sm">
-                      <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
+                      class="btn-adjuntar-otro">
+                      <i class="fa-solid fa-plus"></i> Adjuntar otro
                     </button>
                   </div>
 
                   <div class="space-y-2.5 mt-2">
                     <template x-for="(doc, dIdx) in nuevaPersona.documentos" :key="dIdx">
                       <div
-                        class="p-3 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        <!-- Tipo de documento -->
-                        <div class="w-full sm:w-1/2">
-                          <select x-model="doc.tipo_doc"
-                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)]">
-                            <template x-for="t in tiposDocAdjuntoPersona" :key="t">
-                              <option :value="t" x-text="t"></option>
-                            </template>
-                          </select>
+                        class="p-3 rounded-xl border border-[var(--paper-shadow)] bg-[#efe9dc]/50 dark:bg-white/[0.04] flex flex-col gap-2">
+                        <!-- Fila principal de campos -->
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <!-- Tipo de documento -->
+                          <div class="w-full sm:w-1/2">
+                            <label x-show="doc.tipo_doc === 'Planilla seguridad social'"
+                              class="form-label text-[11px] font-semibold text-[var(--paper-ink)] mb-1 block">
+                              Tipo de documento
+                            </label>
+                            <select x-model="doc.tipo_doc"
+                              @change="if (doc.tipo_doc !== 'Planilla seguridad social') doc.vigencia = ''"
+                              class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)]">
+                              <template x-for="t in tiposDocAdjuntoPersona" :key="t">
+                                <option :value="t" x-text="t"></option>
+                              </template>
+                            </select>
+                          </div>
+
+                          <!-- Vigencia de la planilla (posicionada al lado del tipo de documento si es Planilla) -->
+                          <div x-show="doc.tipo_doc === 'Planilla seguridad social'"
+                            class="w-full sm:w-1/2">
+                            <label class="form-label text-[11px] font-semibold text-[var(--paper-ink)] mb-1 flex items-center gap-1.5">
+                              <i class="fa-regular fa-calendar-check text-[var(--signal-500)]"></i>
+                              <span>Vigencia de la planilla</span>
+                            </label>
+                            <div class="relative flatpickr-vigencia-wrapper">
+                              <i class="fa-regular fa-calendar text-[var(--signal-500)]"></i>
+                              <input type="text"
+                                placeholder="dd/mm/aaaa"
+                                x-model="doc.vigencia"
+                                x-init="initFlatpickrDoc($el, doc)"
+                                class="input-field w-full rounded-lg text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20 cursor-pointer"
+                                readonly>
+                            </div>
+                          </div>
+
+                          <!-- Subir Archivo (cuando NO es planilla, comparte la fila 1) -->
+                          <div x-show="doc.tipo_doc !== 'Planilla seguridad social'"
+                            class="flex-1 relative flex items-center min-w-0">
+                            <label
+                              class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                              <span class="truncate text-[var(--paper-ink)]"
+                                x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
+                              <i
+                                class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
+                              <input type="file" accept="application/pdf,.pdf,image/*"
+                                @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
+                            </label>
+                          </div>
+
+                          <!-- Botón eliminar fila (cuando NO es planilla) -->
+                          <button x-show="doc.tipo_doc !== 'Planilla seguridad social'"
+                            type="button" @click="removeDocumentoPersona(dIdx)"
+                            class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                          </button>
                         </div>
 
-                        <!-- Subir Archivo -->
-                        <div class="flex-1 relative flex items-center min-w-0">
-                          <label
-                            class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
-                            <span class="truncate text-[var(--paper-ink)]"
-                              x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
-                            <i
-                              class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
-                            <input type="file" accept="application/pdf,.pdf,image/*"
-                              @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
-                          </label>
+                        <!-- Fila 2 para Planilla de seguridad social: Subir Archivo + Eliminar -->
+                        <div x-show="doc.tipo_doc === 'Planilla seguridad social'"
+                          x-transition:enter="transition ease-out duration-200"
+                          x-transition:enter-start="opacity-0 -translate-y-1"
+                          x-transition:enter-end="opacity-100 translate-y-0"
+                          class="flex items-center gap-2 pt-0.5">
+                          <div class="flex-1 relative flex items-center min-w-0">
+                            <label
+                              class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
+                              <span class="truncate text-[var(--paper-ink)]"
+                                x-text="doc.nombre_archivo || 'Seleccionar archivo de planilla (PDF)...'"></span>
+                              <i
+                                class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
+                              <input type="file" accept="application/pdf,.pdf,image/*"
+                                @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
+                            </label>
+                          </div>
+                          <button type="button" @click="removeDocumentoPersona(dIdx)"
+                            class="action-icon-btn danger flex-shrink-0" title="Eliminar fila">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                          </button>
                         </div>
 
-                        <!-- Botón eliminar fila -->
-                        <button type="button" @click="removeDocumentoPersona(dIdx)"
-                          class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
-                          <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        <!-- Input condicional para especificar 'Otro documento' -->
+                        <div x-show="doc.tipo_doc === 'Otro documento' || doc.tipo_doc === 'Otro'"
+                          x-transition:enter="transition ease-out duration-200"
+                          x-transition:enter-start="opacity-0 -translate-y-1"
+                          x-transition:enter-end="opacity-100 translate-y-0"
+                          class="pt-1">
+                          <input type="text" x-model="doc.tipo_doc_otro"
+                            placeholder="Especifica qué tipo de documento es (ej: Inducción, Certificado OIT...)"
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20">
+                        </div>
                       </div>
                     </template>
                   </div>

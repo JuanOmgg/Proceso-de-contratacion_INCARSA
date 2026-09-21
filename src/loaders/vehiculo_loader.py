@@ -1,3 +1,4 @@
+import re
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
 from src.utils.file_manager import eliminar_documento_fisico
@@ -9,7 +10,8 @@ def CREATE_vehiculo_db(vehiculo: dict) -> dict:
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                placa = vehiculo.get("placa")
+                placa_raw = vehiculo.get("placa")
+                placa = re.sub(r"[^A-Z0-9]", "", str(placa_raw).strip().upper()) if placa_raw else None
                 # 0. Verificar si la placa ya existe en la base de datos
                 cursor.execute("SELECT id, tipo, placa FROM vehiculos WHERE placa = %s", (placa,))
                 vehi_existente = cursor.fetchone()
@@ -259,6 +261,7 @@ def UPDATE_vehiculo_db(vehiculo_id: int, campos: dict) -> dict:
 
                 # Validar duplicidad de placa
                 if "placa" in campos and campos["placa"]:
+                    campos["placa"] = re.sub(r"[^A-Z0-9]", "", str(campos["placa"]).strip().upper())
                     cursor.execute("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (campos["placa"], vehiculo_id))
                     dup = cursor.fetchone()
                     if dup:

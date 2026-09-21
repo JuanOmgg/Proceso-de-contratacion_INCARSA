@@ -467,6 +467,11 @@ async def get_splash_loading(request: Request):
 async def get_antecedentes(request: Request):
     return templates.TemplateResponse(name="antecedentes.html", request=request)
 
+@app.get("/inducciones")
+async def get_inducciones(request: Request):
+    return templates.TemplateResponse(name="inducciones.html", request=request)
+
+
 @app.get("/procesamiento")
 async def get_procesamiento(request: Request):
     return templates.TemplateResponse(name="procesamiento.html", request=request)
@@ -512,6 +517,18 @@ async def get_editar_solicitud(request: Request, codigo: str):
 @app.get("/revision-solicitud.html")
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
+
+
+@app.get("/verificar/{codigo}")
+@app.get("/verificar")
+@app.get("/porteria/verificar/{codigo}")
+@app.get("/porteria/verificar")
+async def get_verificar_solicitud(request: Request, codigo: str = ""):
+    return templates.TemplateResponse(
+        name="verificar-solicitud.html",
+        request=request,
+        context={"codigo_solicitud": codigo.strip().upper()}
+    )
 
 
 @app.get("/formulario-correspondencia")

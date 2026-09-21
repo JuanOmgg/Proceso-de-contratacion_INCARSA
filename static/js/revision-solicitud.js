@@ -97,6 +97,11 @@ function revisionSolicitudApp() {
       return rol === "SUPERADMIN" || idRol === 2;
     },
 
+    get esRolDictamenSCR() {
+      const rol = this.editandoRevision ? this.editandoRevision.rol : this.rolActual;
+      return String(rol || "").trim().toUpperCase() === "SCR";
+    },
+
     /**
      * Determina si el usuario actual tiene permisos para ver y auditar antecedentes en revisión.
      * Habilitado exclusivamente para SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
@@ -142,6 +147,11 @@ function revisionSolicitudApp() {
       const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
       const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
       const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      // Si el rol activo (simulado o real) es SST, no audita vigencia de inducciones
+      if (rolActualNorm === "SST") {
+        return false;
+      }
 
       if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN" || rolActualNorm === "SUPERADMIN") {
         return true;
@@ -581,8 +591,9 @@ function revisionSolicitudApp() {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
         }
 
-        // Si es SCR o SuperAdmin y la solicitud está en estados previos a 'POR APROBAR', preseleccionar 'preaprobar'
-        if ((this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud.estado !== "POR APROBAR") {
+        // Si el rol activo para dictamen es SCR y la solicitud está en estados previos a 'POR APROBAR', preseleccionar 'preaprobar'
+        const rolDictamenInit = String(this.editandoRevision ? this.editandoRevision.rol : this.rolActual).trim().toUpperCase();
+        if (rolDictamenInit === "SCR" && this.solicitud.estado !== "POR APROBAR") {
           this.dictamenForm.decision = "preaprobar";
         } else {
           this.dictamenForm.decision = "aprobar";
@@ -1200,6 +1211,17 @@ function revisionSolicitudApp() {
       this.rolNombre = nuevoRol;
       this.dictamenForm.observaciones = "";
       this.dictamenForm.motivoRechazo = "";
+      this.dictamenForm.motivoDevolucion = "";
+
+      const rolUpper = String(nuevoRol || "").trim().toUpperCase();
+      if (rolUpper === "SST" || rolUpper === "GESCO") {
+        this.dictamenForm.decision = "aprobar";
+      } else if (rolUpper === "SCR") {
+        this.dictamenForm.decision = (this.solicitud?.estado !== "POR APROBAR") ? "preaprobar" : "aprobar";
+      } else {
+        this.dictamenForm.decision = "aprobar";
+      }
+
       if (this.misPlantasDictaminables.length > 0) {
         this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
       }
@@ -1449,8 +1471,9 @@ function revisionSolicitudApp() {
 
     async cancelarEdicionRevision() {
       this.editandoRevision = null;
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
       this.dictamenForm = {
-        decision: (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.estado !== "POR APROBAR" ? "preaprobar" : "aprobar",
+        decision: (rolActualNorm === "SCR" && this.solicitud?.estado !== "POR APROBAR") ? "preaprobar" : "aprobar",
         motivoRechazo: "",
         motivoDevolucion: "",
         observaciones: ""
@@ -1486,6 +1509,13 @@ function revisionSolicitudApp() {
       }
 
       const decision = this.dictamenForm.decision;
+      const rolDictamenNorm = String(rolDictamen || "").trim().toUpperCase();
+
+      if ((rolDictamenNorm === "SST" || rolDictamenNorm === "GESCO") && (decision === "preaprobar" || decision === "devolver")) {
+        this.mostrarToast(`El rol ${rolDictamenNorm} solo puede emitir dictamen de Aprobar o Rechazar.`, "error");
+        return;
+      }
+
       const motivo = this.dictamenForm.motivoRechazo.trim();
       const motivoDev = (this.dictamenForm.motivoDevolucion || "").trim();
       const obs = this.dictamenForm.observaciones.trim();
@@ -1630,7 +1660,7 @@ function revisionSolicitudApp() {
 
         const payload = {
           id_planta: null,
-          rol: this.rolActual || "SCR",
+          rol: "SCR",
           decision: "APROBADO",
           observacion: "Aprobación definitiva confirmada por SCR tras superar revisiones de SST y GESCO.",
           id_usuario: this.usuarioSesion?.id || null,
@@ -1731,7 +1761,9 @@ function revisionSolicitudApp() {
         url: url,
         esPdf: !!esPdf,
         esImagen: !!esImagen,
-        nombreArchivo: nom
+        nombreArchivo: nom,
+        vigencia: doc.vigencia || null,
+        estadoVigencia: this.getEstadoVigenciaDoc(doc)
       };
 
       this.docModalOpen = true;
@@ -1860,6 +1892,12 @@ function revisionSolicitudApp() {
       if (!fechaStr || fechaStr === "None" || fechaStr === "null" || fechaStr === "Pendiente" || fechaStr === "No registrada") return null;
       if (fechaStr instanceof Date) return fechaStr;
       const str = String(fechaStr).trim();
+      // Formato DD/MM/YYYY o DD-MM-YYYY
+      if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(str)) {
+        const sep = str.includes('/') ? '/' : '-';
+        const [d, m, y] = str.split(sep).map(Number);
+        return new Date(y, m - 1, d, 12, 0, 0);
+      }
       // Formato YYYY-MM-DD (solo fecha)
       if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
         const [y, m, d] = str.split('-').map(Number);
@@ -2041,6 +2079,96 @@ function revisionSolicitudApp() {
           estado: 'vigente',
           etiqueta: `Vigente (${diffDias}d)`,
           textoDias: `${diffDias} días restantes de vigencia`,
+          icono: 'fa-solid fa-circle-check',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
+          dotClass: 'bg-emerald-500',
+          dias: diffDias
+        };
+      }
+    },
+
+    esDocPlanilla(doc) {
+      if (!doc) return false;
+      const t = String(doc.tipo_doc || doc.tipo || doc.titulo || '').toLowerCase();
+      return t.includes('planilla');
+    },
+
+    obtenerPlanillaPersona(persona) {
+      if (!persona || !persona.documentos) return null;
+      return persona.documentos.find(d => this.esDocPlanilla(d)) || null;
+    },
+
+    getEstadoVigenciaDoc(doc) {
+      if (!doc) return null;
+      const fechaVigenciaStr = doc.vigencia;
+      if (!fechaVigenciaStr) {
+        return {
+          estado: 'sin_vigencia',
+          etiqueta: 'Sin vigencia',
+          textoDias: 'Sin fecha de vigencia registrada',
+          icono: 'fa-solid fa-clock-rotate-left',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaLimite = this.parsearFechaLocal(fechaVigenciaStr);
+      if (!fechaLimite || isNaN(fechaLimite.getTime())) {
+        return {
+          estado: 'sin_vigencia',
+          etiqueta: 'Fecha inválida',
+          textoDias: 'Fecha inválida',
+          icono: 'fa-solid fa-circle-question',
+          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+      fechaLimite.setHours(0, 0, 0, 0);
+
+      const diffMs = fechaLimite.getTime() - hoy.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDias < 0) {
+        const diasVencidos = Math.abs(diffDias);
+        return {
+          estado: 'vencido',
+          etiqueta: `Vencida (${diasVencidos}d)`,
+          textoDias: `Planilla vencida hace ${diasVencidos} ${diasVencidos === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-circle-xmark',
+          badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60',
+          dotClass: 'bg-red-500',
+          dias: diffDias
+        };
+      } else if (diffDias === 0) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: 'Vence hoy',
+          textoDias: 'La planilla vence hoy',
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: 0
+        };
+      } else if (diffDias <= 15) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: `Por vencer (${diffDias}d)`,
+          textoDias: `Planilla por vencer en ${diffDias} ${diffDias === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
+          dotClass: 'bg-amber-500',
+          dias: diffDias
+        };
+      } else {
+        return {
+          estado: 'vigente',
+          etiqueta: `Vigente (${diffDias}d)`,
+          textoDias: `Planilla vigente por ${diffDias} días`,
           icono: 'fa-solid fa-circle-check',
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
           dotClass: 'bg-emerald-500',
