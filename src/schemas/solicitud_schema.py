@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class VehiculoSchema(BaseModel):
@@ -58,21 +58,37 @@ class BaseSolicitudSchema(BaseModel):
 class SolicitudInput(BaseSolicitudSchema):
     codigo: Optional[str] = None
     codigo_radicado: Optional[str] = None
-    empresa_origen: Union[int, str]
+    empresa_origen: Optional[Union[int, str]] = 1
     diligenciado_por: Optional[Union[int, str]] = 1
     nivel_de_riesgo: Optional[str] = "Bajo"
     tipo_personal: Optional[str] = "Contratista"
-    empresa_contratista: Union[int, str]
+    empresa_contratista: Optional[Union[int, str]] = None
     plantas_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
     personas_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
     vehiculos_ids: Optional[List[Union[int, str]]] = Field(default_factory=list)
-    fecha_inicio: Union[str, date]
-    fecha_fin: Union[str, date]
+    fecha_inicio: Optional[Union[str, date]] = None
+    fecha_fin: Optional[Union[str, date]] = None
     actividad: str
     observaciones: Optional[str] = None
     observacion: Optional[str] = None
     estado: Optional[str] = "ENVIADO"
     is_active: Optional[bool] = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def preparar_datos_solicitud(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("empresa_origen"):
+                data["empresa_origen"] = 1
+            if not data.get("fecha_inicio") and data.get("fecha_ingreso"):
+                data["fecha_inicio"] = data["fecha_ingreso"]
+            if not data.get("fecha_fin") and data.get("fecha_salida"):
+                data["fecha_fin"] = data["fecha_salida"]
+            if not data.get("nivel_de_riesgo") and data.get("nivel_riesgo"):
+                data["nivel_de_riesgo"] = data["nivel_riesgo"]
+            if not data.get("plantas_ids") and data.get("sub_plantas"):
+                data["plantas_ids"] = data["sub_plantas"]
+        return data
 
     personas: Optional[List[Any]] = None
     ingresantes: Optional[List[Any]] = None
@@ -131,3 +147,16 @@ class DictamenInput(BaseModel):
     nombre_revisor: Optional[str] = None
     personas: Optional[List[Dict[str, Any]]] = None
     vehiculos: Optional[List[Dict[str, Any]]] = None
+
+
+class RespuestaAutorizacionInput(BaseModel):
+    acepto: bool
+    motivo_rechazo: Optional[str] = None
+
+
+class CrearTokenFormularioInput(BaseModel):
+    duracion_horas: Optional[float] = 24.0
+    destinatario_nombre: Optional[str] = None
+    destinatario_email: Optional[str] = None
+    fecha_expiracion_personalizada: Optional[str] = None
+    id_empresa_contratista: Optional[int] = None

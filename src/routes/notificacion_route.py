@@ -7,8 +7,12 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query, status, Depends, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from typing import Optional, List
-from pydantic import BaseModel
-
+from src.schemas.notificacion_schema import (
+    NotificacionCreate,
+    MarcarTodasRequest,
+    MarcarPorSolicitudRequest,
+    DifusionSuperadminRequest,
+)
 from src.loaders.notificacion_loader import (
     crear_notificacion_db,
     obtener_notificaciones_db,
@@ -23,28 +27,6 @@ from src.utils.security import get_current_user, require_role, decode_access_tok
 from src.utils.broadcaster import notification_broadcaster
 
 router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
-
-
-class NotificacionCreate(BaseModel):
-    titulo: str
-    mensaje: str
-    tipo: Optional[str] = "info"
-    enlace: Optional[str] = None
-    archivo_url: Optional[str] = None
-    archivo_nombre: Optional[str] = None
-    id_usuario: Optional[int] = None
-    rol_destino: Optional[int] = None
-
-
-class MarcarTodasRequest(BaseModel):
-    id_usuario: Optional[int] = None
-    id_rol: Optional[int] = None
-
-
-class MarcarPorSolicitudRequest(BaseModel):
-    id_o_codigo: str
-    id_usuario: Optional[int] = None
-    id_rol: Optional[int] = None
 
 
 @router.get("/stream")
@@ -329,17 +311,6 @@ async def subir_adjunto_notificacion(
         "mensaje": "Documento subido correctamente."
     }
 
-
-class DifusionSuperadminRequest(BaseModel):
-    titulo: str
-    mensaje: str
-    tipo: Optional[str] = "info"
-    enlace: Optional[str] = None
-    archivo_url: Optional[str] = None
-    archivo_nombre: Optional[str] = None
-    destinatario_tipo: str = "rol"  # "rol", "usuarios", "todos"
-    roles_ids: Optional[List[int]] = None
-    usuarios_ids: Optional[List[int]] = None
 
 
 @router.post("/difusion", status_code=status.HTTP_201_CREATED)

@@ -35,7 +35,7 @@ def upgrade() -> None:
     
     op.execute("""
         INSERT INTO correspondencia (radicado, tipo_correspondencia, asunto, procedencia,destino,fecha_envio) VALUES
-        ('RAD-469', '-', '-', '-', '-', NOW())
+        ('RAD-500', '-', '-', '-', '-', NOW())
         ON DUPLICATE KEY UPDATE radicado = VALUES(radicado);
     """)
 

@@ -2326,6 +2326,19 @@ table td .inline-flex {
   color: var(--paper-info);
 }
 
+.modal-stamp.signal {
+  background: rgba(250, 5, 26, 0.12) !important;
+  color: var(--signal-500) !important;
+}
+
+.modal-stamp.signal::before {
+  border-color: var(--signal-500) !important;
+}
+
+.modal-stamp.signal i {
+  color: var(--signal-500) !important;
+}
+
 /* Botones en modales ticket */
 .modal-btn-confirm,
 .al-btn-confirm {
@@ -3427,6 +3440,222 @@ table td .inline-flex {
   color: var(--paper-ink) !important;
   border: 1px solid var(--paper-shadow) !important;
   font-weight: 700 !important;
+}
+
+/* =========================================================
+   PASE DE DILIGENCIAMIENTO (MODAL TICKET & CONTROLES)
+   ========================================================= */
+/* 1. Pastillas de Duración de Horas */
+.tkt-duration-pill {
+  padding: 10px 4px !important;
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  display: block !important;
+  width: 100% !important;
+  user-select: none !important;
+}
+/* Modo Claro: Inactivo */
+.tkt-duration-pill.is-idle {
+  background: #ffffff !important;
+  border: 1.5px solid var(--paper-shadow, #e8e2d3) !important;
+  color: #1c2033 !important;
+}
+.tkt-duration-pill.is-idle:hover {
+  border-color: var(--signal-500) !important;
+  color: var(--signal-500) !important;
+  background: rgba(250, 5, 26, 0.05) !important;
+}
+/* Modo Claro: Activo (Fondo corporativo signal-500 y texto blanco nítido) */
+.tkt-duration-pill.is-active {
+  background: var(--signal-500) !important;
+  border: 1.5px solid var(--signal-500) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.35) !important;
+}
+
+/* 2. Pestañas Superiores del Ticket (Emitir / Historial) */
+.tkt-tab-btn {
+  padding: 6px 16px !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  user-select: none !important;
+}
+/* Modo Claro: Pestaña Inactiva */
+.tkt-tab-btn.is-idle {
+  background: #ebe4d5 !important;
+  color: #4b5563 !important;
+  border: 1.5px solid #dcd4c0 !important;
+}
+.tkt-tab-btn.is-idle:hover {
+  background: #dfd6c4 !important;
+  color: #1c2033 !important;
+  border-color: #cfc4ad !important;
+}
+/* Modo Claro: Pestaña Activa */
+.tkt-tab-btn.is-active {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+  border: 1.5px solid var(--signal-500) !important;
+  box-shadow: 0 2px 8px rgba(250, 5, 26, 0.35) !important;
+}
+
+/* 3. Conmutador Rápida vs Fecha Exacta */
+.tkt-toggle-container {
+  display: inline-flex !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  background: #ede6d7 !important;
+  border: 1.5px solid #ded5c2 !important;
+}
+.tkt-toggle-btn {
+  padding: 5px 12px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  border: 1px solid transparent !important;
+}
+.tkt-toggle-btn.is-idle {
+  background: transparent !important;
+  color: #6b7280 !important;
+}
+.tkt-toggle-btn.is-idle:hover {
+  color: #1c2033 !important;
+}
+.tkt-toggle-btn.is-active {
+  background: #ffffff !important;
+  color: var(--signal-500) !important;
+  font-weight: 800 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 4. Botones de Acción al Pie del Ticket */
+.tkt-btn-submit {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+  border: 1.5px solid var(--signal-500) !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  padding: 10px 22px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.35) !important;
+  transition: all 0.18s ease !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  user-select: none !important;
+}
+.tkt-btn-submit:hover:not(:disabled) {
+  background: var(--signal-600, #df5050) !important;
+  border-color: var(--signal-600, #df5050) !important;
+  box-shadow: 0 6px 18px rgba(250, 5, 26, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+.tkt-btn-submit:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
+.tkt-btn-cancel {
+  background: #ffffff !important;
+  color: #4b5563 !important;
+  border: 1.5px solid #d8cfbe !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+  border-radius: 12px !important;
+  transition: all 0.18s ease !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  user-select: none !important;
+}
+.tkt-btn-cancel:hover {
+  background: #f4f0e6 !important;
+  color: #1c2033 !important;
+  border-color: #c9bfab !important;
+}
+
+/* =========================================================
+   FLATPICKR TIME & DATETIME SELECTOR (ESTILO TICKET INCARSA)
+   ========================================================= */
+.flatpickr-calendar.hasTime {
+  width: 320px !important;
+}
+
+/* Modo Claro: Base de Tiempo */
+.flatpickr-calendar.hasTime .flatpickr-time {
+  height: 48px !important;
+  line-height: 48px !important;
+  max-height: 48px !important;
+  border-top: 1px dashed #d8cfbe !important;
+  background: #fbf9f4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0 0 14px 14px !important;
+  padding: 4px 12px !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time input {
+  font-family: var(--font-mono, monospace) !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  color: #1c2033 !important;
+  background: transparent !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator {
+  color: #555048 !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm {
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  color: var(--signal-500) !important;
+  border-radius: 8px !important;
+  background: rgba(250, 5, 26, 0.1) !important;
+  padding: 4px 12px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  border: 1px solid rgba(250, 5, 26, 0.25) !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+}
+
+.flatpickr-input-custom:focus {
+  border-color: var(--signal-500) !important;
+  box-shadow: 0 0 0 3px rgba(250, 5, 26, 0.15) !important;
+}
+
+.text-incarsa-petroleo {
+  color: var(--signal-500) !important;
+}
+.bg-incarsa-petroleo {
+  background-color: var(--signal-500) !important;
 }
 
 /* =========================================================

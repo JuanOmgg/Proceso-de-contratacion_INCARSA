@@ -531,6 +531,27 @@ async def get_verificar_solicitud(request: Request, codigo: str = ""):
     )
 
 
+@app.get("/autorizacion-datos/{token}")
+@app.get("/autorizacion-datos")
+async def get_autorizacion_datos_page(request: Request, token: str = ""):
+    return templates.TemplateResponse(
+        name="autorizacion-datos.html",
+        request=request,
+        context={"token": token.strip()}
+    )
+
+
+@app.get("/formulario-temporal/{token}")
+@app.get("/formulario-temporal")
+async def get_formulario_temporal_page(request: Request, token: str = ""):
+    return templates.TemplateResponse(
+        name="formulario-temporal.html",
+        request=request,
+        context={"token": token.strip()}
+    )
+
+
+
 @app.get("/formulario-correspondencia")
 async def get_formulario_correspondencia_publico(request: Request):
     return templates.TemplateResponse(name="correspondencia-form.html", request=request)

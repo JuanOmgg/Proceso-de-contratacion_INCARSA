@@ -2,11 +2,14 @@ import re
 import json
 import secrets
 import string
-from datetime import datetime
+import threading
+from datetime import datetime, timedelta
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
 from src.utils.broadcaster import notification_broadcaster
 from src.transformers.vehiculo_transformer import FORMATEAR_PLACA
+from src.utils.email_service import enviar_correo_autorizacion_datos
+
 
 def Generate_unique_code(cursor) -> str:
     """
@@ -59,6 +62,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
                 ids_generados = []
                 codigos_generados = []
+                personas_para_notificar = []
 
                 # 2. Crear una solicitud independiente por cada empresa_origen
                 for emp_origen, sub_plantas in empresa_plantas_map.items():
@@ -194,8 +198,8 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         str_plantas_ids,
                         str_personas_ids,
                         str_vehiculos_ids,
-                        solicitud.get("fecha_inicio", ""),
-                        solicitud.get("fecha_fin", ""),
+                        solicitud.get("fecha_inicio") or solicitud.get("fecha_ingreso") or datetime.now().strftime("%Y-%m-%d"),
+                        solicitud.get("fecha_fin") or solicitud.get("fecha_salida") or datetime.now().strftime("%Y-%m-%d"),
                         solicitud.get("actividad", ""),
                         solicitud.get("estado", "ENVIADO"),
                         solicitud.get("is_active", True),
@@ -219,19 +223,40 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         except Exception as e_vis:
                             print(f"⚠️ Aviso al registrar en visita: {e_vis}")
 
-                    # Registrar relaciones en tabla intermedia 'ingresantes' validando FKs existentes
+                    # Registrar relaciones en tabla intermedia 'ingresantes' con token de autorización de datos
                     if personas_ids:
                         try:
                             format_p = ",".join(["%s"] * len(personas_ids))
-                            cursor.execute(f"SELECT id FROM personas WHERE id IN ({format_p})", tuple(personas_ids))
-                            valid_personas = [r["id"] for r in cursor.fetchall()]
+                            cursor.execute(f"SELECT id, nombre, apellido, correo FROM personas WHERE id IN ({format_p})", tuple(personas_ids))
+                            valid_personas = cursor.fetchall()
                             if valid_personas:
-                                sql_ingresantes = "INSERT INTO ingresantes (id_solicitud, id_persona) VALUES (%s, %s)"
-                                valores_ingresantes = [(solicitud_id, p_id) for p_id in valid_personas]
-                                cursor.executemany(sql_ingresantes, valores_ingresantes)
+                                cursor.execute("SELECT nombre FROM emp_contratista WHERE id = %s", (id_contratista,))
+                                row_ec = cursor.fetchone()
+                                nom_contratista_email = (row_ec.get("nombre") if row_ec else "") or "Empresa Contratista"
+
+                                sql_ingresantes = """
+                                    INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo, token_autorizacion, estado_datos)
+                                    VALUES (%s, %s, 1, NULL, %s, 'PENDIENTE')
+                                """
+                                for p_row in valid_personas:
+                                    p_id = p_row["id"]
+                                    tok = secrets.token_urlsafe(32)
+                                    cursor.execute(sql_ingresantes, (solicitud_id, p_id, tok))
+
+                                    c_email = str(p_row.get("correo") or "").strip()
+                                    if c_email and "@" in c_email:
+                                        p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
+                                        personas_para_notificar.append({
+                                            "destinatario": c_email,
+                                            "nombre": p_nom,
+                                            "radicado": cod_val,
+                                            "contratista": nom_contratista_email,
+                                            "token": tok
+                                        })
 
                                 # Sincronizar automáticamente antecedentes y antecedentes_historial_solicitudes
-                                for p_id in valid_personas:
+                                for p_row in valid_personas:
+                                    p_id = p_row["id"]
                                     try:
                                         cursor.execute("SELECT id FROM antecedentes WHERE id_persona = %s", (p_id,))
                                         ant_row = cursor.fetchone()
@@ -319,54 +344,126 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         except Exception as e_eq:
                             print(f"⚠️ Aviso al registrar equipos: {e_eq}")
 
-                    # Notificar a los roles revisores (SST y GESCO) sobre la nueva solicitud
-                    try:
-                        cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
-                        roles_revisores = cursor.fetchall() or []
-                        for r_rev in roles_revisores:
-                            if cod_val:
-                                tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
-                                msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
-                                cursor.execute(
-                                    """
-                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                                    VALUES (%s, %s, %s, %s, %s)
-                                    """,
-                                    (
-                                        r_rev["id"],
-                                        tit_notif,
-                                        msg_notif,
-                                        "info",
-                                        f"/solicitudes/revision/{cod_val}"
-                                    )
-                                )
-                                # Notificar en caliente a cada rol revisor
-                                notification_broadcaster.notificar_nueva(
-                                    {
-                                        "titulo": tit_notif,
-                                        "mensaje": msg_notif,
-                                        "tipo": "info",
-                                        "enlace": f"/solicitudes/revision/{cod_val}",
-                                        "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                        "leido": False,
-                                        "rol_destino": r_rev["id"]
-                                    },
-                                    target_role_id=r_rev["id"]
-                                )
+                    # Si el estado es PRE-ENVIADO, no notificamos aún a los revisores ni enviamos correos a ingresantes
+                    es_pre_envio = (str(solicitud.get("estado", "ENVIADO")).strip().upper() == "PRE-ENVIADO")
 
-                        # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
-                        if cod_val:
+                    if es_pre_envio:
+                        # Notificar al usuario Solicitante creador
+                        try:
+                            # Obtener nombre de la empresa contratista
+                            nom_contratista_txt = "Empresa Contratista"
+                            if id_contratista:
+                                cursor.execute("SELECT nombre FROM emp_contratista WHERE id = %s", (id_contratista,))
+                                r_c = cursor.fetchone()
+                                if r_c and r_c.get("nombre"):
+                                    nom_contratista_txt = r_c["nombre"]
+
+                            cant_personas = len(personas_ids) if personas_ids else 0
+                            tit_notif = "Nueva solicitud externa recibida"
+                            msg_notif = f"La empresa {nom_contratista_txt} diligenció la solicitud {cod_val} ({cant_personas} persona(s)). Se encuentra PRE-ENVIADA pendiente de tu revisión y aprobación."
+                            enlace_notif = f"/solicitudes?estado=pre-enviado&codigo={cod_val}"
+                            now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                            # 1. Guardar en base de datos para que aparezca en el menú de notificaciones y conteo
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
+                                VALUES (%s, %s, %s, %s, %s, FALSE, NOW())
+                                """,
+                                (id_diligenciado, tit_notif, msg_notif, "info", enlace_notif)
+                            )
+                            notif_id = cursor.lastrowid
+
+                            # 2. Emitir evento en vivo por SSE (campana, toast flotante y sonido)
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "id": notif_id,
+                                    "titulo": tit_notif,
+                                    "mensaje": msg_notif,
+                                    "tipo": "info",
+                                    "enlace": enlace_notif,
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "id_usuario": id_diligenciado
+                                },
+                                target_user_id=id_diligenciado
+                            )
+
+                            # 3. Notificar a las tablas para recargar automáticamente sin refrescar la página
                             notification_broadcaster.notificar_cambio_solicitud(
                                 codigo_solicitud=cod_val,
-                                nuevo_estado="ENVIADO",
-                                detalle="Nueva solicitud radicada en el sistema"
+                                nuevo_estado="PRE-ENVIADO",
+                                detalle=f"Solicitud externa {cod_val} radicada como PRE-ENVIADO por {nom_contratista_txt}"
                             )
-                    except Exception as e_notif:
-                        print(f"⚠️ Aviso al generar notificación de nueva solicitud: {e_notif}")
+                            print(f"🔔 [NOTIFICACIÓN ENVIADA] Solicitud externa {cod_val} (PRE-ENVIADO) notificada al Solicitante #{id_diligenciado}.")
+                        except Exception as e_notif:
+                            print(f"[WARN] Aviso al generar notificación interna de pre-envío: {e_notif}")
+                    else:
+                        # Notificar a los roles revisores (SST y GESCO) sobre la nueva solicitud
+                        try:
+                            cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
+                            roles_revisores = cursor.fetchall() or []
+                            for r_rev in roles_revisores:
+                                if cod_val:
+                                    tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
+                                    msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
+                                    cursor.execute(
+                                        """
+                                        INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                        VALUES (%s, %s, %s, %s, %s)
+                                        """,
+                                        (
+                                            r_rev["id"],
+                                            tit_notif,
+                                            msg_notif,
+                                            "info",
+                                            f"/solicitudes/revision/{cod_val}"
+                                        )
+                                    )
+                                    # Notificar en caliente a cada rol revisor
+                                    notification_broadcaster.notificar_nueva(
+                                        {
+                                            "titulo": tit_notif,
+                                            "mensaje": msg_notif,
+                                            "tipo": "info",
+                                            "enlace": f"/solicitudes/revision/{cod_val}",
+                                            "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "leido": False,
+                                            "rol_destino": r_rev["id"]
+                                        },
+                                        target_role_id=r_rev["id"]
+                                    )
+
+                            # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
+                            if cod_val:
+                                notification_broadcaster.notificar_cambio_solicitud(
+                                    codigo_solicitud=cod_val,
+                                    nuevo_estado="ENVIADO",
+                                    detalle="Nueva solicitud radicada en el sistema"
+                                )
+                        except Exception as e_notif:
+                            print(f"[WARN] Aviso al generar notificación de nueva solicitud: {e_notif}")
 
                 conexion.commit()
 
-        print(f"✅ Se registraron {len(ids_generados)} solicitud(es) con éxito: IDs {ids_generados}")
+                # Despachar correos automáticos de autorización de datos en segundo plano (solo si no es PRE-ENVIADO)
+                if personas_para_notificar and not es_pre_envio:
+                    def _despachar_correos_creacion(lista):
+                        for item in lista:
+                            try:
+                                enviar_correo_autorizacion_datos(
+                                    destinatario=item["destinatario"],
+                                    nombre_persona=item["nombre"],
+                                    radicado=item["radicado"],
+                                    empresa_contratista=item["contratista"],
+                                    token_autorizacion=item["token"]
+                                )
+                            except Exception as e_m:
+                                print(f"[WARN] Error despachando correo de autorización a {item.get('destinatario')}: {e_m}")
+
+                    threading.Thread(target=_despachar_correos_creacion, args=(personas_para_notificar,), daemon=True).start()
+
+        print(f"[OK] Se registraron {len(ids_generados)} solicitud(es) con exito: IDs {ids_generados}")
         return {
             "exito": True,
             "mensaje": f"Se registraron {len(ids_generados)} solicitud(es) exitosamente.",
@@ -377,7 +474,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
         }
 
     except Exception as e:
-        print(f"❌ Error al intentar guardar en MySQL: {e}")
+        print(f"[ERROR] Error al intentar guardar en MySQL: {e}")
         return {"exito": False, "mensaje": f"Error en la base de datos: {e}"}
 
 
@@ -498,8 +595,11 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 # 5. Obtener ingresantes (personas) via tabla intermedia 'ingresantes'
                 cursor.execute(
                     """
-                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, p.correo,
                            COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
+                           i.token_autorizacion,
+                           COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
+                           i.fecha_respuesta_datos,
                            a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
                            ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
                            ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
@@ -1959,27 +2059,99 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                             lista_p = [{"id": int(x.strip()), "autorizado": True, "motivo": None} for x in raw_personas_ids.split(",") if x.strip().isdigit()]
 
                     if isinstance(lista_p, list):
-                        # Actualizar tabla ingresantes sin importar el estado
+                        # 1. Preservar estado y token de ingresantes previos
+                        cursor.execute("""
+                            SELECT id_persona, token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, motivo_rechazo_datos
+                            FROM ingresantes
+                            WHERE id_solicitud = %s
+                        """, (real_id,))
+                        ing_previos = {r["id_persona"]: r for r in cursor.fetchall() or []}
+
+                        # Obtener datos de la solicitud y contratista por si hay personas nuevas a notificar
+                        cursor.execute("""
+                            SELECT s.codigo, ec.nombre AS contratista_nom
+                            FROM solicitudes s
+                            LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                            WHERE s.id = %s
+                        """, (real_id,))
+                        sol_info = cursor.fetchone() or {}
+                        rad_update = sol_info.get("codigo") or f"RAD-{real_id}"
+                        nom_cont_update = sol_info.get("contratista_nom") or "Empresa Contratista"
+
                         cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
                         valores_ing = []
+                        personas_nuevas_update = []
+
                         for item_p in lista_p:
+                            p_id = None
+                            aut_val = True
+                            mot = None
                             if isinstance(item_p, dict):
                                 p_id = item_p.get("id") or item_p.get("id_persona")
                                 aut = item_p.get("autorizado", True)
                                 aut_val = False if aut in (False, 0, "0", "false") else True
                                 mot = item_p.get("motivo") or item_p.get("motivo_rechazo") or None
-                                if p_id and str(p_id).isdigit():
-                                    valores_ing.append((real_id, int(p_id), aut_val, mot))
-                                    resolved_personas_ids.append(int(p_id))
                             elif isinstance(item_p, (int, str)) and str(item_p).isdigit():
-                                valores_ing.append((real_id, int(item_p), True, None))
-                                resolved_personas_ids.append(int(item_p))
+                                p_id = int(item_p)
+
+                            if p_id and str(p_id).isdigit():
+                                p_id_int = int(p_id)
+                                resolved_personas_ids.append(p_id_int)
+                                prev = ing_previos.get(p_id_int)
+                                if prev and prev.get("token_autorizacion"):
+                                    # Preservar su consentimiento previo
+                                    tok_p = prev["token_autorizacion"]
+                                    est_d = prev.get("estado_datos") or "PENDIENTE"
+                                    f_resp = prev.get("fecha_respuesta_datos")
+                                    ip_d = prev.get("ip_datos")
+                                    m_rec = prev.get("motivo_rechazo_datos")
+                                else:
+                                    # Nueva persona agregada a la solicitud
+                                    tok_p = secrets.token_urlsafe(32)
+                                    est_d = "PENDIENTE"
+                                    f_resp = None
+                                    ip_d = None
+                                    m_rec = None
+                                    cursor.execute("SELECT nombre, apellido, correo FROM personas WHERE id = %s", (p_id_int,))
+                                    row_pn = cursor.fetchone()
+                                    if row_pn and row_pn.get("correo") and "@" in str(row_pn.get("correo")):
+                                        nom_pn = f"{row_pn.get('nombre') or ''} {row_pn.get('apellido') or ''}".strip()
+                                        personas_nuevas_update.append({
+                                            "destinatario": str(row_pn["correo"]).strip(),
+                                            "nombre": nom_pn,
+                                            "radicado": rad_update,
+                                            "contratista": nom_cont_update,
+                                            "token": tok_p
+                                        })
+
+                                valores_ing.append((real_id, p_id_int, aut_val, mot, tok_p, est_d, f_resp, ip_d, m_rec))
 
                         if valores_ing:
                             cursor.executemany(
-                                "INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo) VALUES (%s, %s, %s, %s)",
+                                """
+                                INSERT INTO ingresantes (
+                                    id_solicitud, id_persona, autorizado, motivo,
+                                    token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, motivo_rechazo_datos
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                """,
                                 valores_ing,
                             )
+
+                        if personas_nuevas_update:
+                            def _notificar_nuevas_async(lista):
+                                for item in lista:
+                                    try:
+                                        enviar_correo_autorizacion_datos(
+                                            destinatario=item["destinatario"],
+                                            nombre_persona=item["nombre"],
+                                            radicado=item["radicado"],
+                                            empresa_contratista=item["contratista"],
+                                            token_autorizacion=item["token"]
+                                        )
+                                    except Exception as e_nu:
+                                        print(f"⚠️ Error enviando correo de autorización a {item.get('destinatario')}: {e_nu}")
+
+                            threading.Thread(target=_notificar_nuevas_async, args=(personas_nuevas_update,), daemon=True).start()
 
                         if resolved_personas_ids:
                             campos["personas_ids"] = ",".join(map(str, resolved_personas_ids))
@@ -2351,9 +2523,12 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
                     })
 
                 # 3.3 Consultar integrantes (personas) con cargo y verificación de si es conductor
+                # 3.3 Consultar integrantes (personas) con cargo, verificación de conductor y estado Ley 1581
                 cursor.execute("""
                     SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
-                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo
+                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
+                           COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
+                           i.fecha_respuesta_datos
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
                     WHERE i.id_solicitud = %s
@@ -2370,7 +2545,8 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
                             fmt = ",".join(["%s"] * len(p_ids))
                             cursor.execute(f"""
                                 SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
-                                       1 AS autorizado, NULL AS motivo
+                                       1 AS autorizado, NULL AS motivo,
+                                       'PENDIENTE' AS estado_datos, NULL AS fecha_respuesta_datos
                                 FROM personas p
                                 WHERE p.id IN ({fmt})
                                 ORDER BY p.apellido ASC, p.nombre ASC
@@ -2382,9 +2558,25 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
                 integrantes = []
                 total_autorizados = 0
                 for p in filas_personas:
-                    es_aut = bool(p.get("autorizado", True))
+                    es_aut_admin = bool(p.get("autorizado", True))
+                    motivo_admin = (p.get("motivo") or "").strip()
+                    estado_datos = str(p.get("estado_datos") or "PENDIENTE").upper()
+
+                    # Regla Estricta Ley 1581 de 2012 (Habeas Data):
+                    # Si no ha autorizado el tratamiento de datos personales, NO PUEDE INGRESAR
+                    if estado_datos != "AUTORIZADO":
+                        es_aut = False
+                        if estado_datos == "RECHAZADO":
+                            motivo_final = "No autorizado: Rechazó el tratamiento de datos personales (Ley 1581 de 2012)"
+                        else:
+                            motivo_final = "No autorizado: Pendiente autorización de tratamiento de datos personales (Ley 1581 de 2012)"
+                    else:
+                        es_aut = es_aut_admin
+                        motivo_final = motivo_admin if not es_aut else ""
+
                     if es_aut:
                         total_autorizados += 1
+
                     p_id = p.get("id")
                     nombres = str(p.get("nombre") or "").strip()
                     apellidos = str(p.get("apellido") or "").strip()
@@ -2405,8 +2597,10 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
                         "cargo": cargo_str,
                         "es_conductor": es_cond,
                         "vehiculo_asignado": veh_asig,
+                        "estado_datos": estado_datos,
+                        "fecha_respuesta_datos": str(p.get("fecha_respuesta_datos") or ""),
                         "autorizado": es_aut,
-                        "motivo": (p.get("motivo") or "").strip() if not es_aut else "",
+                        "motivo": motivo_final,
                     })
 
                 # 4. Cálculo de vigencia temporal
@@ -2527,3 +2721,650 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
             "exito": False,
             "mensaje": f"Error al consultar datos de portería: {str(e)}",
         }
+
+
+# ==============================================================================
+# AUTORIZACIÓN DE TRATAMIENTO DE DATOS PERSONALES (LEY 1581 DE 2012)
+# ==============================================================================
+
+def GET_detalle_autorizacion_datos_db(token: str) -> dict:
+    """
+    Consulta los datos del integrante y la solicitud asociada a un token de autorización.
+    Permite renderizar la pantalla pública donde el trabajador autoriza o rechaza.
+    """
+    tok_clean = str(token or "").strip()
+    if not tok_clean:
+        return {"exito": False, "mensaje": "Token no proporcionado."}
+
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("""
+                    SELECT 
+                        i.token_autorizacion,
+                        COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
+                        i.fecha_respuesta_datos,
+                        i.motivo_rechazo_datos,
+                        p.id AS persona_id,
+                        p.nombre,
+                        p.apellido,
+                        p.tipo_doc,
+                        p.identificacion,
+                        p.cargo,
+                        p.correo,
+                        s.id AS solicitud_id,
+                        s.codigo AS codigo_radicado,
+                        s.fecha_inicio,
+                        s.fecha_fin,
+                        s.actividad,
+                        ec.nombre AS empresa_contratista,
+                        ec.nit AS empresa_contratista_nit,
+                        e.nombre_empresa AS empresa_origen
+                    FROM ingresantes i
+                    INNER JOIN personas p ON i.id_persona = p.id
+                    INNER JOIN solicitudes s ON i.id_solicitud = s.id
+                    LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                    LEFT JOIN empresa e ON s.empresa_origen = e.id
+                    WHERE i.token_autorizacion = %s
+                    LIMIT 1
+                """, (tok_clean,))
+                row = cursor.fetchone()
+                if not row:
+                    return {
+                        "exito": False,
+                        "mensaje": "El enlace de autorización no es válido o ha expirado."
+                    }
+
+                nombre_completo = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
+                return {
+                    "exito": True,
+                    "datos": {
+                        "token": row["token_autorizacion"],
+                        "estado_datos": row["estado_datos"],
+                        "fecha_respuesta_datos": str(row["fecha_respuesta_datos"]) if row["fecha_respuesta_datos"] else "",
+                        "motivo_rechazo_datos": row.get("motivo_rechazo_datos") or "",
+                        "persona_id": row["persona_id"],
+                        "nombre_completo": nombre_completo,
+                        "tipo_doc": row.get("tipo_doc") or "CC",
+                        "identificacion": str(row.get("identificacion") or ""),
+                        "cargo": row.get("cargo") or "",
+                        "correo": row.get("correo") or "",
+                        "solicitud_id": row["solicitud_id"],
+                        "codigo_radicado": row.get("codigo_radicado") or "",
+                        "empresa_contratista": row.get("empresa_contratista") or "Empresa Contratista",
+                        "empresa_contratista_nit": row.get("empresa_contratista_nit") or "",
+                        "empresa_origen": row.get("empresa_origen") or "INCARSA",
+                        "fecha_inicio": str(row.get("fecha_inicio") or ""),
+                        "fecha_fin": str(row.get("fecha_fin") or ""),
+                        "actividad": row.get("actividad") or "",
+                    }
+                }
+    except Exception as e:
+        print(f"❌ Error en GET_detalle_autorizacion_datos_db: {e}")
+        return {
+            "exito": False,
+            "mensaje": f"Error al consultar autorización: {str(e)}"
+        }
+
+
+def REGISTRAR_respuesta_autorizacion_datos_db(token: str, acepto: bool, ip: str = None, motivo_rechazo: str = None) -> dict:
+    """
+    Registra de manera formal e inmutable la aceptación o rechazo
+    de la autorización de datos personales bajo la Ley 1581 de 2012.
+    """
+    tok_clean = str(token or "").strip()
+    if not tok_clean:
+        return {"exito": False, "mensaje": "Token no válido."}
+
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("""
+                    SELECT id_solicitud, id_persona, estado_datos
+                    FROM ingresantes
+                    WHERE token_autorizacion = %s
+                    LIMIT 1
+                """, (tok_clean,))
+                row = cursor.fetchone()
+                if not row:
+                    return {
+                        "exito": False,
+                        "mensaje": "Enlace de autorización no encontrado o no válido."
+                    }
+
+                nuevo_estado = "AUTORIZADO" if acepto else "RECHAZADO"
+                cursor.execute("""
+                    UPDATE ingresantes
+                    SET estado_datos = %s,
+                        fecha_respuesta_datos = NOW(),
+                        ip_datos = %s,
+                        motivo_rechazo_datos = %s
+                    WHERE token_autorizacion = %s
+                """, (nuevo_estado, ip or "", motivo_rechazo or None, tok_clean))
+                conexion.commit()
+
+                ahora_fmt = datetime.now().strftime("%d/%m/%Y %I:%M:%S %p")
+                return {
+                    "exito": True,
+                    "mensaje": "Respuesta de tratamiento de datos personales registrada con éxito.",
+                    "nuevo_estado": nuevo_estado,
+                    "fecha": ahora_fmt
+                }
+    except Exception as e:
+        print(f"❌ Error en REGISTRAR_respuesta_autorizacion_datos_db: {e}")
+        return {
+            "exito": False,
+            "mensaje": f"Error al registrar la respuesta: {str(e)}"
+        }
+
+
+def REENVIAR_correo_autorizacion_datos_db(solicitud_id: int, persona_id: int) -> dict:
+    """
+    Reenvía el correo de autorización de datos personales a una persona específica de una solicitud.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("""
+                    SELECT i.token_autorizacion, i.estado_datos,
+                           p.nombre, p.apellido, p.correo,
+                           s.codigo AS radicado,
+                           ec.nombre AS empresa_contratista
+                    FROM ingresantes i
+                    INNER JOIN personas p ON i.id_persona = p.id
+                    INNER JOIN solicitudes s ON i.id_solicitud = s.id
+                    LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                    WHERE i.id_solicitud = %s AND i.id_persona = %s
+                    LIMIT 1
+                """, (solicitud_id, persona_id))
+                row = cursor.fetchone()
+                if not row:
+                    return {
+                        "exito": False,
+                        "mensaje": "No se encontró el registro de la persona en la solicitud."
+                    }
+
+                correo = str(row.get("correo") or "").strip()
+                if not correo or "@" not in correo:
+                    return {
+                        "exito": False,
+                        "mensaje": "La persona no tiene un correo electrónico válido registrado."
+                    }
+
+                tok = row.get("token_autorizacion")
+                if not tok:
+                    tok = secrets.token_urlsafe(32)
+                    cursor.execute("""
+                        UPDATE ingresantes 
+                        SET token_autorizacion = %s 
+                        WHERE id_solicitud = %s AND id_persona = %s
+                    """, (tok, solicitud_id, persona_id))
+                    conexion.commit()
+
+                nom = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
+                rad = row.get("radicado") or f"RAD-{solicitud_id}"
+                emp_c = row.get("empresa_contratista") or "Empresa Contratista"
+
+                enviado = enviar_correo_autorizacion_datos(
+                    destinatario=correo,
+                    nombre_persona=nom,
+                    radicado=rad,
+                    empresa_contratista=emp_c,
+                    token_autorizacion=tok
+                )
+
+                if enviado:
+                    return {
+                        "exito": True,
+                        "mensaje": f"Correo de autorización reenviado exitosamente a {correo}."
+                    }
+                else:
+                    return {
+                        "exito": False,
+                        "mensaje": f"No se pudo despachar el correo a {correo}. Verifique la configuración de correo SMTP/Resend."
+                    }
+    except Exception as e:
+        print(f"[ERROR] Error en REENVIAR_correo_autorizacion_datos_db: {e}")
+        return {
+            "exito": False,
+            "mensaje": f"Error al reenviar correo: {str(e)}"
+        }
+
+
+# =========================================================================
+# FUNCIONES PARA FORMULARIOS TEMPORALES CON TOKEN (SOLICITANTE Y PÚBLICO)
+# =========================================================================
+
+def CREAR_token_formulario_db(
+    id_usuario: int,
+    duracion_horas: float = 24.0,
+    destinatario_nombre: Optional[str] = None,
+    destinatario_email: Optional[str] = None,
+    fecha_expiracion_personalizada: Optional[str] = None,
+    id_empresa_contratista: Optional[int] = None
+) -> dict:
+    """
+    Genera un token criptográficamente seguro para un formulario temporal
+    y lo almacena con su fecha de vencimiento, empresa contratista asignada y el usuario creador.
+    """
+    import secrets
+    try:
+        token = secrets.token_urlsafe(32)
+        ahora = datetime.now()
+
+        if fecha_expiracion_personalizada and str(fecha_expiracion_personalizada).strip():
+            try:
+                clean_dt = str(fecha_expiracion_personalizada).strip().replace("T", " ")
+                if len(clean_dt) == 16:
+                    clean_dt += ":00"
+                fecha_expiracion = datetime.strptime(clean_dt, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                fecha_expiracion = ahora + timedelta(hours=max(1.0, float(duracion_horas)))
+        else:
+            fecha_expiracion = ahora + timedelta(hours=max(1.0, float(duracion_horas)))
+
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # Asegurar que la columna id_empresa_contratista exista
+                try:
+                    cursor.execute("SHOW COLUMNS FROM tokens_formulario_temporal LIKE 'id_empresa_contratista'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE tokens_formulario_temporal ADD COLUMN id_empresa_contratista INT NULL")
+                except Exception:
+                    pass
+
+                contratista_nit = ""
+                # Resolver contratista e id si se envió uno u otro
+                if id_empresa_contratista and str(id_empresa_contratista).isdigit() and int(id_empresa_contratista) > 0:
+                    id_empresa_contratista = int(id_empresa_contratista)
+                    try:
+                        cursor.execute("SELECT nombre, nit FROM emp_contratista WHERE id = %s", (id_empresa_contratista,))
+                        ec_row = cursor.fetchone()
+                        if ec_row and ec_row.get("nombre"):
+                            destinatario_nombre = ec_row["nombre"]
+                            contratista_nit = ec_row.get("nit") or ""
+                    except Exception:
+                        pass
+                elif not id_empresa_contratista and destinatario_nombre:
+                    try:
+                        cursor.execute("SELECT id, nombre, nit FROM emp_contratista WHERE LOWER(TRIM(nombre)) = %s LIMIT 1", (str(destinatario_nombre).strip().lower(),))
+                        ec_row = cursor.fetchone()
+                        if ec_row:
+                            id_empresa_contratista = ec_row["id"]
+                            destinatario_nombre = ec_row["nombre"]
+                            contratista_nit = ec_row.get("nit") or ""
+                    except Exception:
+                        pass
+
+                cursor.execute("""
+                    INSERT INTO tokens_formulario_temporal (
+                        token, id_usuario_creador, destinatario_nombre, destinatario_email,
+                        id_empresa_contratista, fecha_creacion, fecha_expiracion, usado, revocado
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, 0, 0)
+                """, (
+                    token,
+                    id_usuario,
+                    (destinatario_nombre or "").strip() or None,
+                    (destinatario_email or "").strip() or None,
+                    id_empresa_contratista,
+                    ahora,
+                    fecha_expiracion
+                ))
+                nuevo_id = cursor.lastrowid
+                conexion.commit()
+
+        return {
+            "exito": True,
+            "mensaje": "Enlace de formulario temporal generado exitosamente.",
+            "datos": {
+                "id": nuevo_id,
+                "token": token,
+                "destinatario_nombre": destinatario_nombre or "",
+                "destinatario_email": destinatario_email or "",
+                "id_empresa_contratista": id_empresa_contratista,
+                "contratista_nombre": destinatario_nombre or "",
+                "contratista_nit": contratista_nit or "",
+                "fecha_creacion": ahora.strftime("%Y-%m-%d %H:%M:%S"),
+                "fecha_expiracion": fecha_expiracion.strftime("%Y-%m-%d %H:%M:%S"),
+                "estado": "ACTIVO"
+            }
+        }
+    except Exception as e:
+        print(f"[ERROR] Error en CREAR_token_formulario_db: {e}")
+        return {"exito": False, "mensaje": f"Error al generar token: {str(e)}"}
+
+
+def OBTENER_token_formulario_db(token: str) -> dict:
+    """
+    Valida un token de formulario temporal y retorna su estado, creador, contratista asignado
+    y los catálogos públicos de empresas y contratistas necesarios para el formulario.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("""
+                    SELECT t.*, 
+                           CONCAT(u.nombres, ' ', u.apellidos) AS solicitante_nombre,
+                           u.correo AS solicitante_correo,
+                           ec.nombre AS contratista_nombre,
+                           ec.nit AS contratista_nit
+                    FROM tokens_formulario_temporal t
+                    LEFT JOIN usuarios u ON t.id_usuario_creador = u.id
+                    LEFT JOIN emp_contratista ec ON t.id_empresa_contratista = ec.id
+                    WHERE t.token = %s
+                """, (token.strip(),))
+                tok_row = cursor.fetchone()
+                if not tok_row:
+                    return {"valido": False, "mensaje": "El enlace del formulario no existe o no es válido."}
+
+                if tok_row["revocado"]:
+                    return {"valido": False, "mensaje": "Este formulario temporal ha sido cancelado o revocado por el solicitante."}
+
+                if tok_row["usado"]:
+                    return {"valido": False, "mensaje": "Este formulario temporal ya fue diligenciado y enviado previamente."}
+
+                if tok_row["fecha_expiracion"] < datetime.now():
+                    return {"valido": False, "mensaje": "Este formulario temporal ha expirado. Por favor solicite un nuevo enlace al solicitante."}
+
+                # Catálogo de empresas activas con sus plantas
+                cursor.execute("SELECT id, nombre_empresa AS nombre FROM empresa ORDER BY nombre_empresa ASC")
+                empresas_raw = cursor.fetchall() or []
+                cursor.execute("SELECT id, id_empresa, nombre FROM planta ORDER BY nombre ASC")
+                plantas_raw = cursor.fetchall() or []
+
+                empresas_lista = []
+                for emp in empresas_raw:
+                    e_id = emp["id"]
+                    sub_plantas = [{"id": p["id"], "nombre": p["nombre"]} for p in plantas_raw if p["id_empresa"] == e_id]
+                    empresas_lista.append({
+                        "id": e_id,
+                        "nombre": emp["nombre"],
+                        "plantas": sub_plantas
+                    })
+
+                # Catálogo de contratistas
+                cursor.execute("SELECT id, nombre, nit FROM emp_contratista ORDER BY nombre ASC")
+                contratistas = cursor.fetchall() or []
+
+                # Catálogo de personas registradas
+                from src.loaders.personas_loader import GET_ALL_person_db
+                personas_res = GET_ALL_person_db()
+                personas_lista = personas_res.get("datos", []) if personas_res.get("exito") else []
+
+                # Catálogo de vehículos registrados
+                from src.loaders.vehiculo_loader import GET_all_vehiculos_db
+                vehiculos_res = GET_all_vehiculos_db()
+                vehiculos_lista = vehiculos_res.get("datos", []) if vehiculos_res.get("exito") else []
+
+                c_nombre = tok_row.get("contratista_nombre") or tok_row.get("destinatario_nombre") or ""
+                c_id = tok_row.get("id_empresa_contratista")
+                c_nit = tok_row.get("contratista_nit") or ""
+
+                if not c_id and c_nombre:
+                    for ec in contratistas:
+                        if str(ec.get("nombre", "")).strip().lower() == str(c_nombre).strip().lower():
+                            c_id = ec["id"]
+                            if not c_nit:
+                                c_nit = ec.get("nit") or ""
+                            break
+
+                return {
+                    "valido": True,
+                    "token": tok_row["token"],
+                    "destinatario_nombre": tok_row["destinatario_nombre"] or "",
+                    "destinatario_email": tok_row["destinatario_email"] or "",
+                    "id_empresa_contratista": c_id,
+                    "contratista_nombre": c_nombre,
+                    "contratista_nit": c_nit,
+                    "fecha_creacion": tok_row["fecha_creacion"].strftime("%Y-%m-%d %H:%M:%S") if tok_row["fecha_creacion"] else "",
+                    "fecha_expiracion": tok_row["fecha_expiracion"].strftime("%Y-%m-%d %H:%M:%S") if tok_row["fecha_expiracion"] else "",
+                    "solicitante_nombre": (tok_row.get("solicitante_nombre") or "").strip() or "Solicitante INCARSA",
+                    "solicitante_id": tok_row["id_usuario_creador"],
+                    "catalogos": {
+                        "empresas": empresas_lista,
+                        "contratistas": contratistas,
+                        "personas": personas_lista,
+                        "vehiculos": vehiculos_lista
+                    }
+                }
+    except Exception as e:
+        print(f"[ERROR] Error al consultar token de formulario temporal: {e}")
+        return {"valido": False, "mensaje": f"Error interno al validar token: {e}"}
+
+
+def LISTAR_tokens_formulario_db(id_usuario: int, es_admin: bool = False) -> dict:
+    """
+    Lista los enlaces temporales generados por el usuario solicitante (o todos si es administrador).
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = """
+                    SELECT t.id, t.token, t.id_usuario_creador, t.destinatario_nombre, t.destinatario_email,
+                           t.id_empresa_contratista,
+                           ec.nombre AS contratista_nombre, ec.nit AS contratista_nit,
+                           t.fecha_creacion, t.fecha_expiracion, t.usado, t.revocado, t.id_solicitud_creada, t.fecha_uso,
+                           s.codigo AS solicitud_codigo, s.estado AS solicitud_estado,
+                           CONCAT(u.nombres, ' ', u.apellidos) AS creador_nombre
+                    FROM tokens_formulario_temporal t
+                    LEFT JOIN usuarios u ON t.id_usuario_creador = u.id
+                    LEFT JOIN solicitudes s ON t.id_solicitud_creada = s.id
+                    LEFT JOIN emp_contratista ec ON t.id_empresa_contratista = ec.id
+                """
+                params = []
+                if not es_admin:
+                    sql += " WHERE t.id_usuario_creador = %s"
+                    params.append(id_usuario)
+
+                sql += " ORDER BY t.id DESC LIMIT 100"
+                cursor.execute(sql, tuple(params))
+                filas = cursor.fetchall() or []
+
+                ahora = datetime.now()
+                resultado = []
+                for f in filas:
+                    f_exp = f["fecha_expiracion"]
+                    if f["revocado"]:
+                        estado_token = "REVOCADO"
+                    elif f["usado"]:
+                        estado_token = "USADO"
+                    elif f_exp and f_exp < ahora:
+                        estado_token = "EXPIRADO"
+                    else:
+                        estado_token = "ACTIVO"
+
+                    resultado.append({
+                        "id": f["id"],
+                        "token": f["token"],
+                        "destinatario_nombre": f.get("contratista_nombre") or f["destinatario_nombre"] or "—",
+                        "destinatario_email": f["destinatario_email"] or "",
+                        "id_empresa_contratista": f.get("id_empresa_contratista"),
+                        "contratista_nombre": f.get("contratista_nombre") or "",
+                        "contratista_nit": f.get("contratista_nit") or "",
+                        "fecha_creacion": f["fecha_creacion"].strftime("%Y-%m-%d %H:%M:%S") if f["fecha_creacion"] else "",
+                        "fecha_expiracion": f_exp.strftime("%Y-%m-%d %H:%M:%S") if f_exp else "",
+                        "estado": estado_token,
+                        "usado": bool(f["usado"]),
+                        "revocado": bool(f["revocado"]),
+                        "id_solicitud_creada": f["id_solicitud_creada"],
+                        "solicitud_codigo": f["solicitud_codigo"] or "",
+                        "solicitud_estado": f["solicitud_estado"] or "",
+                        "creador_nombre": f["creador_nombre"] or ""
+                    })
+
+                return {"exito": True, "datos": resultado}
+    except Exception as e:
+        print(f"[ERROR] Error al listar tokens de formulario temporal: {e}")
+        return {"exito": False, "mensaje": str(e), "datos": []}
+
+
+def REVOCAR_token_formulario_db(token_id: int, id_usuario: int, es_admin: bool = False) -> dict:
+    """
+    Revoca un enlace temporal activo para que no pueda ser utilizado.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                if es_admin:
+                    cursor.execute("SELECT id, usado, revocado FROM tokens_formulario_temporal WHERE id = %s", (token_id,))
+                else:
+                    cursor.execute("SELECT id, usado, revocado FROM tokens_formulario_temporal WHERE id = %s AND id_usuario_creador = %s", (token_id, id_usuario))
+                
+                tok = cursor.fetchone()
+                if not tok:
+                    return {"exito": False, "mensaje": "Enlace no encontrado o no tienes permiso para revocarlo."}
+                if tok["usado"]:
+                    return {"exito": False, "mensaje": "No se puede revocar un formulario que ya fue completado y enviado."}
+                if tok["revocado"]:
+                    return {"exito": True, "mensaje": "El enlace ya se encontraba revocado."}
+
+                cursor.execute("UPDATE tokens_formulario_temporal SET revocado = 1 WHERE id = %s", (token_id,))
+                conexion.commit()
+                return {"exito": True, "mensaje": "Enlace temporal revocado exitosamente."}
+    except Exception as e:
+        print(f"[ERROR] Error en REVOCAR_token_formulario_db: {e}")
+        return {"exito": False, "mensaje": str(e)}
+
+
+def MARCAR_token_usado_db(token: str, id_solicitud: int) -> bool:
+    """
+    Marca un token como usado y lo asocia a la solicitud generada.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE tokens_formulario_temporal 
+                    SET usado = 1, id_solicitud_creada = %s, fecha_uso = NOW() 
+                    WHERE token = %s
+                """, (id_solicitud, token.strip()))
+                conexion.commit()
+                return True
+    except Exception as e:
+        print(f"[WARN] Error al marcar token usado: {e}")
+        return False
+
+
+def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: bool = False) -> dict:
+    """
+    Permite al solicitante responsable (o Superadmin/Admin) aprobar una solicitud en estado
+    PRE-ENVIADO para que pase oficialmente a ENVIADO y se notifique a los revisores.
+    """
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                # 1. Buscar solicitud por ID numérico o código
+                id_num = int(solicitud_id) if str(solicitud_id).strip().isdigit() else None
+                cod_str = str(solicitud_id).strip().upper()
+                if id_num:
+                    cursor.execute("SELECT * FROM solicitudes WHERE id = %s OR codigo = %s", (id_num, cod_str))
+                else:
+                    cursor.execute("SELECT * FROM solicitudes WHERE codigo = %s", (cod_str,))
+                sol = cursor.fetchone()
+                if not sol:
+                    return {"exito": False, "mensaje": f"Solicitud #{solicitud_id} no encontrada."}
+
+                real_id = int(sol["id"])
+                cod_val = sol["codigo"] or f"RAD-{real_id}"
+                estado_actual = str(sol["estado"] or "").strip().upper()
+                diligenciado_por = int(sol["diligenciado_por"]) if sol.get("diligenciado_por") else None
+
+                # 2. Validaciones de estado y permisos
+                if estado_actual != "PRE-ENVIADO":
+                    return {
+                        "exito": False, 
+                        "mensaje": f"La solicitud no se encuentra en estado 'PRE-ENVIADO' (estado actual: '{estado_actual}')."
+                    }
+
+                if not es_admin and diligenciado_por != id_usuario:
+                    return {
+                        "exito": False,
+                        "mensaje": "Solo el solicitante responsable asignado (o un Administrador) puede aprobar el envío de esta solicitud."
+                    }
+
+                # 3. Transicionar a ENVIADO
+                cursor.execute("UPDATE solicitudes SET estado = 'ENVIADO' WHERE id = %s", (real_id,))
+
+                # 4. Generar notificaciones oficiales para SST y GESCO
+                cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
+                roles_revisores = cursor.fetchall() or []
+                for r_rev in roles_revisores:
+                    tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
+                    msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
+                    cursor.execute("""
+                        INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (r_rev["id"], tit_notif, msg_notif, "info", f"/solicitudes/revision/{cod_val}"))
+
+                    notification_broadcaster.notificar_nueva(
+                        {
+                            "titulo": tit_notif,
+                            "mensaje": msg_notif,
+                            "tipo": "info",
+                            "enlace": f"/solicitudes/revision/{cod_val}",
+                            "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "leido": False,
+                            "rol_destino": r_rev["id"]
+                        },
+                        target_role_id=r_rev["id"]
+                    )
+
+                # Notificar en caliente cambio general a ENVIADO
+                notification_broadcaster.notificar_cambio_solicitud(
+                    codigo_solicitud=cod_val,
+                    nuevo_estado="ENVIADO",
+                    detalle="Solicitud aprobada por el solicitante y enviada al proceso de revisión"
+                )
+
+                # 5. Despachar correos de autorización de datos a las personas asociadas
+                cursor.execute("""
+                    SELECT p.id, p.nombre, p.apellido, p.correo, i.token_autorizacion, ec.nombre AS contratista_nom
+                    FROM ingresantes i
+                    JOIN personas p ON i.id_persona = p.id
+                    LEFT JOIN solicitudes s ON i.id_solicitud = s.id
+                    LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                    WHERE i.id_solicitud = %s
+                """, (real_id,))
+                personas_ingresantes = cursor.fetchall() or []
+
+                personas_para_notificar = []
+                for p_row in personas_ingresantes:
+                    c_email = str(p_row.get("correo") or "").strip()
+                    if c_email and "@" in c_email:
+                        p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
+                        tok_aut = p_row.get("token_autorizacion")
+                        personas_para_notificar.append({
+                            "destinatario": c_email,
+                            "nombre": p_nom,
+                            "radicado": cod_val,
+                            "contratista": p_row.get("contratista_nom") or "Empresa Contratista",
+                            "token": tok_aut
+                        })
+
+                conexion.commit()
+
+                if personas_para_notificar:
+                    def _despachar_correos_aprobacion(lista):
+                        for item in lista:
+                            try:
+                                enviar_correo_autorizacion_datos(
+                                    destinatario=item["destinatario"],
+                                    nombre_persona=item["nombre"],
+                                    radicado=item["radicado"],
+                                    empresa_contratista=item["contratista"],
+                                    token_autorizacion=item["token"]
+                                )
+                            except Exception as e_m:
+                                print(f"[WARN] Error despachando correo de autorización tras aprobación: {e_m}")
+
+                    threading.Thread(target=_despachar_correos_aprobacion, args=(personas_para_notificar,), daemon=True).start()
+
+                return {
+                    "exito": True,
+                    "mensaje": f"Solicitud {cod_val} aprobada exitosamente y enviada al proceso de revisión.",
+                    "nuevo_estado": "ENVIADO",
+                    "codigo": cod_val
+                }
+    except Exception as e:
+        print(f"[ERROR] Error en APROBAR_envio_solicitud_db: {e}")
+        return {"exito": False, "mensaje": f"Error interno al aprobar envío: {str(e)}"}

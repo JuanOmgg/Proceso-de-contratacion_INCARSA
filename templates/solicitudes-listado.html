@@ -151,16 +151,24 @@
                   :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
                   <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
                 </button>
+                <button type="button" @click="filtroEstado = 'pre-enviado'" 
+                  class="filter-status-chip relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer border border-purple-500/40 text-purple-300 bg-purple-900/20"
+                  :class="filtroEstado === 'pre-enviado' ? 'is-active scale-105 ring-2 ring-purple-500' : 'is-idle'">
+                  <i class="fa-solid fa-clock-rotate-left text-xs mr-1"></i> Pre-enviados
+                </button>
               </div>
               <button type="button" @click="limpiarFiltros()" class="action-icon-btn flex-shrink-0" data-tooltip="Limpiar filtros">
                 <i class="fa-solid fa-filter-circle-xmark"></i>
               </button>
             </div>
-            <a href="/solicitudes/nueva"
+
+            <!-- Botón Nueva Solicitud (Abre selector modal si es Solicitante/Admin, o va directo a /solicitudes/nueva) -->
+            <button type="button"
               x-show="puedeAccion('solicitudes', 'crear') && puedeModulo('nueva_solicitud')"
-              class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 w-full lg:w-auto flex-shrink-0">
+              @click="puedeGenerarFormularioTemporal ? (modalTipoSolicitudOpen = true) : (window.location.href = '/solicitudes/nueva')"
+              class="btn-signal rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 w-full lg:w-auto flex-shrink-0 cursor-pointer shadow-md">
               <i class="fa fa-plus text-xs"></i> Nueva solicitud
-            </a>
+            </button>
           </div>
 
           <!-- ===== Tabla ===== -->
@@ -195,6 +203,7 @@
                           <span class="status-pill select-none whitespace-nowrap"
                             :class="{
                               'status-enviado': (s.estado || '').toUpperCase() === 'ENVIADO',
+                              'status-pre-enviado bg-purple-900/40 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-900/30': (s.estado || '').toUpperCase() === 'PRE-ENVIADO',
                               'status-revision': (s.estado || '').toUpperCase().includes('REVISI'),
                               'status-aprobar': (s.estado || '').toUpperCase() === 'POR APROBAR',
                               'status-aprobado': (s.estado || '').toUpperCase() === 'APROBADO',
@@ -274,6 +283,14 @@
                             class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
                             data-tooltip="Ver">
                             <i class="fa-solid fa-eye"></i>
+                          </button>
+                          <!-- Botón Aprobar y Enviar (Para solicitudes en estado PRE-ENVIADO) -->
+                          <button type="button" 
+                            x-show="(s.estado || '').toUpperCase() === 'PRE-ENVIADO' && puedeAprobarPreEnvio(s)"
+                            @click="aprobarPreEnvio(s)" 
+                            class="action-icon-btn text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30 transition-colors"
+                            data-tooltip="Aprobar y Enviar formalmente">
+                            <i class="fa-solid fa-paper-plane text-emerald-400"></i>
                           </button>
                           <a :href="'/solicitudes/editar/' + (s.codigo || s.id)" 
                             x-show="puedeEditarSolicitud(s)"
@@ -828,17 +845,96 @@
       </div>
     </div>
 
-    <!-- Toast de Copiado al Portapapeles -->
-    <div x-show="copiadoToast" x-cloak
-      x-transition:enter="transition ease-out duration-200"
-      x-transition:enter-start="opacity-0 translate-y-2 scale-95"
-      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-      x-transition:leave="transition ease-in duration-150"
-      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-      x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-      class="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white shadow-2xl text-xs font-semibold border border-slate-700 pointer-events-none">
-      <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
-      <span>Código copiado al portapapeles</span>
+    <!-- ============================================================
+       MODAL: Selector de Tipo de Formulario (Interno vs Tercero)
+    ============================================================= -->
+    <div x-show="modalTipoSolicitudOpen" x-cloak
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      @keydown.escape.window="modalTipoSolicitudOpen = false">
+      <div class="modal-panel w-full max-w-xl my-auto p-6 sm:p-7 relative text-left bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100 border-2 border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl" @click.outside="modalTipoSolicitudOpen = false">
+        
+        <!-- Botón cerrar -->
+        <button type="button" @click="modalTipoSolicitudOpen = false"
+          class="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all z-20 cursor-pointer">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <!-- Cabecera -->
+        <div class="flex items-center gap-3.5 mb-6">
+          <div class="w-11 h-11 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-sm">
+            <i class="fa-solid fa-layer-group text-lg"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-black text-xl text-slate-900 dark:text-white">¿Cómo deseas radicar la solicitud?</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona el método de diligenciamiento que prefieras:</p>
+          </div>
+        </div>
+
+        <!-- Opciones (Cards Interactivas) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          
+          <!-- Opción 1: Solicitud Interna Directa -->
+          <div @click="modalTipoSolicitudOpen = false; window.location.href = '/solicitudes/nueva'"
+            class="group p-5 rounded-2xl bg-slate-50 hover:bg-orange-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-orange-500/80 dark:border-slate-700 dark:hover:border-orange-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-orange-500/15 hover:scale-[1.02]">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-all">
+                  <i class="fa-solid fa-file-pen text-base"></i>
+                </div>
+                <span class="text-[10px] uppercase tracking-wider font-black px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-slate-800 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-slate-700">Interno</span>
+              </div>
+              <h4 class="font-black text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors mb-1.5">
+                Diligenciar Solicitud
+              </h4>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Llenar el formulario tú mismo directamente en el sistema para radicar la solicitud de ingreso de inmediato.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-orange-600 dark:text-orange-400 group-hover:translate-x-1 transition-transform">
+              <span>Continuar al formulario</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Opción 2: Formulario Temporal a Terceros -->
+          <div @click="modalTipoSolicitudOpen = false; $dispatch('open-token-formulario-modal', { tab: 'crear' })"
+            class="group p-5 rounded-2xl bg-slate-50 hover:bg-cyan-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-[#0C767D]/80 dark:border-slate-700 dark:hover:border-cyan-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-cyan-500/15 hover:scale-[1.02]">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-xl bg-[#0C767D]/15 dark:bg-cyan-500/20 border border-[#0C767D]/30 dark:border-cyan-500/40 flex items-center justify-center text-[#0C767D] dark:text-cyan-400 group-hover:bg-[#0C767D] group-hover:text-white transition-all">
+                  <i class="fa-solid fa-ticket-simple text-base"></i>
+                </div>
+                <span class="text-[10px] uppercase tracking-wider font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">Con Pase</span>
+              </div>
+              <h4 class="font-black text-sm text-slate-900 dark:text-white group-hover:text-[#0C767D] dark:group-hover:text-cyan-300 transition-colors mb-1.5">
+                Pase para Terceros
+              </h4>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Generar un enlace público tipo pase con tiempo límite para que la empresa contratista llene la información externamente.
+              </p>
+              <div class="mt-2.5 text-[11px] font-medium text-cyan-900 dark:text-cyan-300 bg-cyan-100/70 dark:bg-cyan-950/40 p-2 rounded-lg border border-cyan-200 dark:border-cyan-900/50">
+                Llegará como <strong class="text-[#0C767D] dark:text-cyan-200 font-bold">PRE-ENVIADO</strong> para tu revisión previa.
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#0C767D] dark:text-cyan-400 group-hover:translate-x-1 transition-transform">
+              <span>Configurar pase</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Enlace rápido a historial -->
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+          <span>¿Ya emitiste un pase anteriormente?</span>
+          <button type="button" @click="modalTipoSolicitudOpen = false; $dispatch('open-token-formulario-modal', { tab: 'historial' })"
+            class="text-[#0C767D] dark:text-cyan-400 hover:text-cyan-500 font-bold flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Ver historial de pases</span>
+          </button>
+        </div>
+
+      </div>
     </div>
   </div>
 

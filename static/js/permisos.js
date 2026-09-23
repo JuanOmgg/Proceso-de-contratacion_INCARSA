@@ -175,8 +175,28 @@
     }
 
     const est = String(solicitud.estado || '').trim().toUpperCase();
-    return est === 'ENVIADO';
+    return est === 'ENVIADO' || est === 'PRE-ENVIADO';
   }
+
+  function puedeGenerarFormularioTemporal() {
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+    if (!sesion) return true;
+    const idRol = parseInt(sesion.id_rol || sesion.rol_id, 10);
+    const rolNom = String(sesion.rol || sesion.nombre_rol || '').toUpperCase();
+    return idRol === 5 || idRol === 1 || idRol === 2 ||
+           rolNom.includes('SOLICITANTE') ||
+           rolNom.includes('GESTION DOCUMENTAL') ||
+           rolNom.includes('GESTIÓN DOCUMENTAL') ||
+           rolNom.includes('ADMIN');
+  }
+  window.puedeGenerarFormularioTemporal = puedeGenerarFormularioTemporal;
   window.puedeEditarSolicitud = puedeEditarSolicitud;
 
   /**
@@ -203,7 +223,9 @@
         path.includes('/500') ||
         path.includes('/503') ||
         path.includes('/splash-loading') ||
-        path.includes('/cargando')
+        path.includes('/cargando') ||
+        path.includes('/formulario-temporal') ||
+        path.includes('/autorizacion-datos')
       ) {
         return true;
       }

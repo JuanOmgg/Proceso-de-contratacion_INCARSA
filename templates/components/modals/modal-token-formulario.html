@@ -1,0 +1,346 @@
+<!-- ============================================================
+     MODAL GLOBAL: PASE DE DILIGENCIAMIENTO (TOKEN PARA TERCEROS)
+     Estilo Ticket Corporativo INCARSA - Desplegable desde el Sidebar
+============================================================= -->
+<div x-data="tokenFormularioManager()" x-cloak>
+  
+  <!-- Backdrop del Modal -->
+  <div x-show="isOpen" x-cloak
+    class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 overflow-y-auto modal-backdrop"
+    @keydown.escape.window="cerrarModal()"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+    x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+    x-transition:leave-end="opacity-0 scale-95 -translate-y-2">
+    
+    <!-- Contenedor Ticket Nativo INCARSA -->
+    <div class="modal-panel modal-ticket w-full max-w-xl pt-7 px-6 sm:px-8 pb-7 relative text-left"
+      @click.outside="if (!$event.target.closest('.flatpickr-calendar')) cerrarModal()" x-cloak>
+      
+      <!-- Botón Cerrar Superior Derecho -->
+      <button type="button" @click="cerrarModal()"
+        class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
+        title="Cerrar modal">
+        <i class="fa-solid fa-xmark text-base"></i>
+      </button>
+
+      <!-- Encabezado Estilo Ticket -->
+      <div class="text-center mb-4">
+        <!-- Ícono del título acorde a signal-500 de cada modo -->
+        <div class="modal-stamp signal mb-2.5 shadow-md">
+          <i class="fa-solid fa-ticket-simple text-2xl drop-shadow-sm"></i>
+        </div>
+        <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+          Pase de Diligenciamiento
+        </h2>
+
+        <!-- Pestañas del Ticket (Emitir / Historial) -->
+        <div class="flex items-center justify-center gap-2 mt-3">
+          <button type="button" @click="modalTokenTab = 'crear'"
+            class="tkt-tab-btn"
+            :class="modalTokenTab === 'crear' ? 'is-active' : 'is-idle'">
+            <i class="fa-solid fa-plus-circle text-xs"></i>
+            <span>Emitir pase</span>
+          </button>
+          <button type="button" @click="modalTokenTab = 'historial'; cargarHistorialTokens()"
+            class="tkt-tab-btn"
+            :class="modalTokenTab === 'historial' ? 'is-active' : 'is-idle'">
+            <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+            <span>Historial</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-black/10 dark:bg-white/20" x-text="tokensHistorial.length"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: EMISIÓN DEL PASE -->
+      <div x-show="modalTokenTab === 'crear'">
+        
+        <!-- CASO ÉXITO: PASE EMITIDO -->
+        <div x-show="tokenGeneradoUrl" class="border-y border-dashed border-[var(--paper-shadow)] py-4 my-4 space-y-4">
+          <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 font-bold text-sm">
+                <i class="fa-solid fa-circle-check text-base text-emerald-600 dark:text-emerald-400"></i>
+                <span>Pase emitido exitosamente</span>
+              </div>
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30">
+                ACTIVO
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="text" readonly :value="tokenGeneradoUrl" 
+                class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs font-mono bg-white dark:bg-[#1a1a1a] border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-white select-all shadow-inner focus:outline-none" />
+              <button type="button" @click="copiarUrlToken(tokenGeneradoUrl)"
+                class="px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--signal-500)] text-white hover:opacity-90 transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm">
+                <i class="fa-regular fa-copy"></i>
+                <span x-text="tokenCopiado ? '¡Copiado!' : 'Copiar'"></span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-dashed border-emerald-500/30 text-xs">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block">Contratista Asignada</span>
+                <strong class="text-[var(--paper-ink)] dark:text-white truncate block text-xs" x-text="tokenInfoGenerado?.contratista_nombre || tokenInfoGenerado?.destinatario_nombre || 'Asignada'"></strong>
+                <span class="text-[10.5px] text-[var(--paper-muted)] font-mono" x-show="tokenInfoGenerado?.contratista_nit" x-text="'NIT: ' + tokenInfoGenerado?.contratista_nit"></span>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--paper-muted)] block">Vigencia hasta</span>
+                <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-white text-xs" x-text="tokenInfoGenerado?.fecha_expiracion || '24 horas'"></span>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-1">
+              <button type="button" @click="resetFormulario()" 
+                class="text-xs font-bold text-[var(--signal-500)] hover:underline cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Emitir otro pase</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORMULARIO DE EMISIÓN -->
+        <div x-show="!tokenGeneradoUrl">
+          <!-- Cuerpo con líneas punteadas del Ticket -->
+          <div class="border-y border-dashed border-[var(--paper-shadow)] py-4 my-4 space-y-4">
+            
+            <!-- 1. Empresa Contratista: Buscador Dinámico de Opciones -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-[var(--paper-muted)] mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-building text-xs"></i>
+                <span>Empresa Contratista *</span>
+              </label>
+              
+              <!-- Buscador activo cuando NO hay empresa seleccionada -->
+              <div class="relative" x-show="!tokenContratistaId">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)]"></i>
+                <input type="search" x-model="tokenContratistaSearch"
+                  @focus="tokenBuscadorAbierto = true"
+                  @input="tokenBuscadorAbierto = true"
+                  placeholder="Buscar empresa contratista por nombre o NIT..."
+                  class="input-field w-full rounded-xl pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--signal-500)]/20 focus:border-[var(--signal-500)] shadow-xs">
+                
+                <!-- Lista flotante de coincidencias -->
+                <div class="absolute left-0 right-0 top-full mt-1.5 max-h-52 overflow-y-auto custom-scroll rounded-xl border border-[var(--paper-shadow)] dark:border-white/10 bg-white dark:bg-[#222226] shadow-xl z-50 divide-y divide-[var(--paper-shadow)] dark:divide-white/5"
+                  x-show="tokenBuscadorAbierto"
+                  @click.outside="tokenBuscadorAbierto = false" x-cloak>
+                  
+                  <template x-for="empresa in contratistasFiltrados()" :key="empresa.id">
+                    <button type="button" @click="seleccionarContratista(empresa)"
+                      class="w-full p-2.5 flex items-center justify-between gap-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer select-none group">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-7 h-7 rounded-lg bg-[var(--signal-500)]/10 text-[var(--signal-500)] flex items-center justify-center flex-shrink-0 text-xs font-bold border border-[var(--signal-500)]/20">
+                          <i class="fa-solid fa-building"></i>
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate" x-text="empresa.nombre || empresa.N_empresa"></p>
+                          <p class="text-[10.5px] text-[var(--paper-muted)] font-mono" x-show="empresa.nit || empresa.NIT" x-text="'NIT: ' + (empresa.nit || empresa.NIT)"></p>
+                        </div>
+                      </div>
+                      <span class="text-[11px] font-semibold text-[var(--signal-500)] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        Seleccionar <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                      </span>
+                    </button>
+                  </template>
+
+                  <div x-show="contratistasFiltrados().length === 0" class="p-4 text-center text-xs text-[var(--paper-muted)]">
+                    No se encontraron empresas contratistas registradas.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tarjeta de Empresa Seleccionada con Botón para Cambiar -->
+              <div x-show="tokenContratistaId" class="p-3 rounded-xl bg-[var(--signal-500)]/10 border border-[var(--signal-500)]/30 flex items-center justify-between gap-3 shadow-xs" x-cloak>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-lg bg-[var(--signal-500)]/20 text-[var(--signal-500)] flex items-center justify-center flex-shrink-0 text-sm font-bold border border-[var(--signal-500)]/30">
+                    <i class="fa-solid fa-building-circle-check"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <strong class="block text-xs text-[var(--paper-ink)] dark:text-white font-bold truncate" x-text="getContratistaSeleccionada()?.nombre || getContratistaSeleccionada()?.N_empresa || 'Empresa seleccionada'"></strong>
+                    <span class="text-[10.5px] text-[var(--paper-muted)] font-mono" x-show="getContratistaSeleccionada()?.nit || getContratistaSeleccionada()?.NIT" x-text="'NIT: ' + (getContratistaSeleccionada()?.nit || getContratistaSeleccionada()?.NIT)"></span>
+                  </div>
+                </div>
+                <button type="button" @click="quitarContratista()"
+                  class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors flex items-center justify-center cursor-pointer flex-shrink-0"
+                  title="Cambiar empresa">
+                  <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Vigencia del Pase -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-[var(--paper-muted)] flex items-center gap-1.5">
+                  <i class="fa-solid fa-stopwatch text-xs"></i>
+                  <span>Vigencia del Pase *</span>
+                </label>
+
+                <!-- Conmutador Rápida vs Exacta con Alto Contraste -->
+                <div class="tkt-toggle-container">
+                  <button type="button" @click="tokenModoTiempo = 'rapido'; tokenFechaPersonalizada = ''"
+                    class="tkt-toggle-btn"
+                    :class="tokenModoTiempo === 'rapido' ? 'is-active' : 'is-idle'">
+                    <i class="fa-solid fa-stopwatch-20 text-[11px]"></i>
+                    <span>Rápida</span>
+                  </button>
+                  <button type="button" @click="tokenModoTiempo = 'exacto'; setFechaMinima()"
+                    class="tkt-toggle-btn"
+                    :class="tokenModoTiempo === 'exacto' ? 'is-active' : 'is-idle'">
+                    <i class="fa-solid fa-calendar-day text-[11px]"></i>
+                    <span>Fecha exacta</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modo Rápido: Pastillas de Horas (Visibles con alto contraste en claro y oscuro) -->
+              <div x-show="tokenModoTiempo === 'rapido'" x-transition class="pt-1">
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <template x-for="d in [
+                    { val: '4', label: '4 horas' },
+                    { val: '12', label: '12 horas' },
+                    { val: '24', label: '24 horas' },
+                    { val: '48', label: '48 horas' },
+                    { val: '72', label: '3 días' },
+                    { val: '168', label: '7 días' }
+                  ]" :key="d.val">
+                    <button type="button" @click="tokenDuracion = d.val"
+                      class="tkt-duration-pill"
+                      :class="tokenDuracion === d.val ? 'is-active' : 'is-idle'">
+                      <span x-text="d.label"></span>
+                    </button>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Modo Exacto: Selector de Fecha y Hora Estilizado con Flatpickr -->
+              <div x-show="tokenModoTiempo === 'exacto'" x-transition class="pt-1">
+                <div class="relative">
+                  <i class="fa-solid fa-calendar-day absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)] pointer-events-none z-10"></i>
+                  <input type="text" x-ref="inputFechaExacta"
+                    x-init="$watch('tokenModoTiempo', val => { if (val === 'exacto') setFechaMinima(); })"
+                    @click="abrirPickerFechaExacta()"
+                    placeholder="Seleccionar fecha y hora..."
+                    readonly
+                    class="input-field flatpickr-input-custom w-full rounded-xl pl-9 pr-10 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-white focus:border-[var(--signal-500)] focus:ring-1 focus:ring-[var(--signal-500)]/20 shadow-xs cursor-pointer font-medium" />
+                  <button type="button" @click="abrirPickerFechaExacta()"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-500)] hover:opacity-80 p-1 cursor-pointer"
+                    title="Seleccionar fecha y hora">
+                    <i class="fa-regular fa-clock text-sm"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detalle Tipográfico de Ticket -->
+            <div class="flex items-center justify-between text-[11px] font-mono text-[var(--paper-muted)] pt-1 opacity-70">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-barcode text-base"></i> PSI-TKT // INCARSA</span>
+              <span>NO TRANSFERIBLE</span>
+            </div>
+
+          </div>
+
+          <!-- Botones de Acción Acomodados y Equilibrados con Estilos Garantizados -->
+          <div class="flex items-center justify-end gap-3 mt-5 pt-1 pb-3">
+            <button type="button" @click="cerrarModal()" class="tkt-btn-cancel">
+              Cancelar
+            </button>
+            <button type="button" @click="generarTokenFormulario()" :disabled="cargandoTokens" class="tkt-btn-submit">
+              <i class="fa-solid fa-ticket-simple text-xs" x-show="!cargandoTokens"></i>
+              <i class="fa-solid fa-spinner fa-spin text-xs" x-show="cargandoTokens"></i>
+              <span x-text="cargandoTokens ? 'Emitiendo...' : 'Emitir pase'"></span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: HISTORIAL DE PASES -->
+      <div x-show="modalTokenTab === 'historial'" class="space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-[var(--paper-muted)]">Historial de pases emitidos:</span>
+          <button type="button" @click="cargarHistorialTokens()" 
+            class="text-[var(--signal-500)] hover:underline font-semibold flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-arrows-rotate text-xs" :class="cargandoTokens ? 'fa-spin' : ''"></i>
+            <span>Actualizar</span>
+          </button>
+        </div>
+
+        <div class="max-h-[320px] overflow-y-auto custom-scroll rounded-xl border border-[var(--paper-shadow)] dark:border-white/10">
+          <table class="w-full text-xs text-left ticket-table">
+            <thead class="bg-[#efe9dc]/70 dark:bg-white/[0.04] text-[var(--paper-muted)] uppercase text-[10px] font-bold border-b border-[var(--paper-shadow)] dark:border-white/10 sticky top-0">
+              <tr>
+                <th class="px-3 py-2.5">Contratista</th>
+                <th class="px-2.5 py-2.5">Vigencia</th>
+                <th class="px-2 py-2.5 text-center">Estado</th>
+                <th class="px-2.5 py-2.5">Solicitud</th>
+                <th class="px-3 py-2.5 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-dashed divide-[var(--paper-shadow)] dark:divide-white/10 bg-white/40 dark:bg-transparent">
+              <template x-for="item in tokensHistorial" :key="item.id">
+                <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <td class="px-3 py-2.5">
+                    <div class="font-bold text-[var(--paper-ink)]" x-text="item.contratista_nombre || item.destinatario_nombre || '—'"></div>
+                    <div class="text-[10px] text-[var(--paper-muted)] font-mono" x-show="item.contratista_nit" x-text="'NIT: ' + item.contratista_nit"></div>
+                  </td>
+                  <td class="px-2.5 py-2.5 font-mono text-[11px] text-[var(--paper-muted)]" x-text="item.fecha_expiracion"></td>
+                  <td class="px-2 py-2.5 text-center">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold inline-block"
+                      :class="{
+                        'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800': item.estado === 'ACTIVO',
+                        'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800': item.estado === 'USADO',
+                        'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700': item.estado === 'EXPIRADO',
+                        'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800': item.estado === 'REVOCADO'
+                      }"
+                      x-text="item.estado"></span>
+                  </td>
+                  <td class="px-2.5 py-2.5">
+                    <span class="font-mono text-[var(--signal-500)] font-bold" x-text="item.solicitud_codigo || (item.id_solicitud_creada ? '#' + item.id_solicitud_creada : '—')"></span>
+                  </td>
+                  <td class="px-3 py-2.5 text-right space-x-1 whitespace-nowrap">
+                    <button type="button" x-show="item.estado === 'ACTIVO'" @click="copiarUrlToken(item.url_formulario)"
+                      class="px-2 py-1 rounded-lg bg-[var(--signal-500)]/10 hover:bg-[var(--signal-500)]/20 text-[var(--signal-500)] text-xs font-semibold transition-all cursor-pointer border border-[var(--signal-500)]/30"
+                      title="Copiar enlace">
+                      <i class="fa-regular fa-copy mr-1"></i> Copiar
+                    </button>
+                    <button type="button" x-show="item.estado === 'ACTIVO'" @click="revocarToken(item.id)"
+                      class="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-semibold transition-all cursor-pointer border border-rose-200 dark:border-rose-800"
+                      title="Revocar enlace">
+                      <i class="fa-solid fa-ban mr-1"></i> Revocar
+                    </button>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="tokensHistorial.length === 0 && !cargandoTokens">
+                <td colspan="5" class="px-4 py-8 text-center text-[var(--paper-muted)] text-xs italic">
+                  No hay pases emitidos aún.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Dientes Serrados Inferiores de Ticket INCARSA -->
+      <div class="modal-serrated -mx-6 sm:-mx-8 h-4 mt-6"></div>
+
+    </div>
+  </div>
+
+  <!-- Toast de Copiado -->
+  <div x-show="copiadoToast" x-cloak
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+    x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+    class="fixed bottom-6 right-6 z-[110] flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white shadow-2xl text-xs font-semibold border border-slate-700 pointer-events-none">
+    <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+    <span>Enlace copiado al portapapeles</span>
+  </div>
+</div>

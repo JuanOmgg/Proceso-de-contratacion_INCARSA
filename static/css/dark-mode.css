@@ -910,10 +910,16 @@ html.dark select option:checked {
     background-position: 0% 50%;
     box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2);
   }
-  33% {
+  25% {
+    background-position: 50% 50%;
     box-shadow: 0 0 16px -2px rgba(234, 88, 12, 0.4), 0 0 32px rgba(249, 115, 22, 0.2);
   }
-  66% {
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 0 0 18px -2px rgba(249, 115, 22, 0.45), 0 0 34px rgba(220, 38, 38, 0.25);
+  }
+  75% {
+    background-position: 150% 50%;
     box-shadow: 0 0 16px -2px rgba(255, 107, 53, 0.42), 0 0 32px rgba(220, 38, 38, 0.22);
   }
   100% {
@@ -942,11 +948,13 @@ html.dark select option:checked {
     #dc2626 100%
   ) !important;
   background-size: 200% 100% !important;
+  background-repeat: repeat !important;
   animation: flameGradientShift 6s linear infinite !important;
   color: #ffffff !important;
   font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
   text-shadow: none !important;
-  border: none !important;
 }
 
 :root.dark .btn-signal:not(.login-page *) *,
@@ -960,6 +968,8 @@ html.dark select option:checked {
 :root.dark .sidebar div:has(> .fa-shield-halved) i,
 :root.dark .sidebar .bg-\[var\(--signal-500\)\] i {
   color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
 }
 
 /* 1. Botones principales (.btn-signal) con hover interactivo (excepto login) */
@@ -969,14 +979,14 @@ html.dark select option:checked {
 }
 
 :root.dark .btn-signal:not(.login-page *):hover {
-  animation: flameGradientShift 1.2s linear infinite !important;
-  filter: brightness(1.15);
-  transform: translateY(-2px);
-  box-shadow: 0 0 28px 2px rgba(249, 115, 22, 0.75), 0 0 54px 6px rgba(220, 38, 38, 0.5) !important;
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
 :root.dark .btn-signal:not(.login-page *):active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.97) !important;
 }
 
 /* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con efecto neón */
@@ -985,7 +995,7 @@ html.dark select option:checked {
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7) !important;
+  text-shadow: none !important;
 }
 
 :root.dark .sidebar-link.is-active:hover {
@@ -1229,6 +1239,235 @@ html.dark select option:checked {
     linear-gradient(135deg, #242424 50%, transparent 50%) 0 0/16px 16px,
     linear-gradient(-135deg, #242424 50%, transparent 50%) 0 0/16px 16px !important;
   background-repeat: repeat-x !important;
+}
+
+/* Pastillas de vigencia del ticket en modo oscuro - Estilo Aurora Flama */
+.dark .tkt-duration-pill.is-idle,
+:root.dark .tkt-duration-pill.is-idle {
+  background: #181c24 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
+}
+.dark .tkt-duration-pill.is-idle:hover,
+:root.dark .tkt-duration-pill.is-idle:hover {
+  border-color: #f77920 !important;
+  color: #ffffff !important;
+  background: rgba(247, 121, 32, 0.14) !important;
+  box-shadow: 0 0 12px rgba(247, 121, 32, 0.3) !important;
+}
+.dark .tkt-duration-pill.is-active,
+:root.dark .tkt-duration-pill.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+.dark .tkt-duration-pill.is-active:hover,
+:root.dark .tkt-duration-pill.is-active:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+}
+
+/* Pestañas del Ticket en Modo Oscuro - Estilo Aurora Flama */
+:root.dark .tkt-tab-btn,
+.dark .tkt-tab-btn {
+  text-shadow: none !important;
+}
+:root.dark .tkt-tab-btn i,
+.dark .tkt-tab-btn i {
+  color: inherit !important;
+  filter: none !important;
+}
+:root.dark .tkt-tab-btn.is-active,
+.dark .tkt-tab-btn.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+:root.dark .tkt-tab-btn.is-active *,
+:root.dark .tkt-tab-btn.is-active i,
+.dark .tkt-tab-btn.is-active i,
+:root.dark .tkt-tab-btn.is-active .fa-plus-circle,
+:root.dark .tkt-tab-btn.is-active .fa-circle-plus {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+:root.dark .tkt-tab-btn.is-active:hover,
+.dark .tkt-tab-btn.is-active:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+}
+
+:root.dark .tkt-tab-btn.is-idle,
+.dark .tkt-tab-btn.is-idle {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+:root.dark .tkt-tab-btn.is-idle *,
+:root.dark .tkt-tab-btn.is-idle i,
+.dark .tkt-tab-btn.is-idle i {
+  color: #94a3b8 !important;
+  filter: none !important;
+}
+:root.dark .tkt-tab-btn.is-idle:hover,
+.dark .tkt-tab-btn.is-idle:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: none !important;
+}
+:root.dark .tkt-tab-btn.is-idle:hover *,
+:root.dark .tkt-tab-btn.is-idle:hover i,
+.dark .tkt-tab-btn.is-idle:hover i {
+  color: #ffffff !important;
+}
+
+/* Conmutador Rápida vs Fecha Exacta en Modo Oscuro */
+:root.dark .tkt-toggle-container,
+.dark .tkt-toggle-container {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+}
+:root.dark .tkt-toggle-btn.is-idle,
+.dark .tkt-toggle-btn.is-idle {
+  color: #94a3b8 !important;
+}
+:root.dark .tkt-toggle-btn.is-idle:hover,
+.dark .tkt-toggle-btn.is-idle:hover {
+  color: #ffffff !important;
+}
+:root.dark .tkt-toggle-btn.is-active,
+.dark .tkt-toggle-btn.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.6), 0 0 28px rgba(220, 38, 38, 0.4) !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+:root.dark .tkt-toggle-btn.is-active *,
+:root.dark .tkt-toggle-btn.is-active i,
+.dark .tkt-toggle-btn.is-active i {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+:root.dark .tkt-toggle-btn.is-active:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+}
+
+/* Botones de Pie de Ticket en Modo Oscuro - Estilo Aurora Flama */
+:root.dark .tkt-btn-submit,
+.dark .tkt-btn-submit,
+:root.dark button[class*="bg-[var(--signal-500)]"],
+.dark button[class*="bg-[var(--signal-500)]"] {
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
+}
+:root.dark .tkt-btn-submit *,
+:root.dark .tkt-btn-submit i,
+.dark .tkt-btn-submit i,
+:root.dark button[class*="bg-[var(--signal-500)]"] *,
+:root.dark button[class*="bg-[var(--signal-500)]"] i {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+:root.dark .tkt-btn-submit:hover:not(:disabled),
+.dark .tkt-btn-submit:hover:not(:disabled),
+:root.dark button[class*="bg-[var(--signal-500)]"]:hover,
+.dark button[class*="bg-[var(--signal-500)]"]:hover {
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+}
+
+:root.dark .tkt-btn-cancel,
+.dark .tkt-btn-cancel {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #cbd5e1 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
+}
+:root.dark .tkt-btn-cancel:hover,
+.dark .tkt-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+
+:root.dark .text-incarsa-petroleo,
+.dark .text-incarsa-petroleo {
+  color: var(--signal-500) !important;
+}
+:root.dark .bg-incarsa-petroleo,
+.dark .bg-incarsa-petroleo {
+  background-color: var(--signal-500) !important;
 }
 
 /* 5. Títulos y textos del modal */
@@ -1555,27 +1794,35 @@ body.dark .input-field.has-error:focus {
   color: #ffffff !important;
 }
 
-/* Botón de confirmación interactivo en el modal */
+/* Botón de confirmación interactivo en el modal - Estilo Aurora Flama */
 :root.dark .modal-btn-confirm,
 :root.dark .al-btn-confirm {
   border-radius: 10px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
-  opacity: 1 !important;
-  box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: none !important;
+}
+:root.dark .modal-btn-confirm i,
+:root.dark .al-btn-confirm i,
+:root.dark .modal-btn-confirm span,
+:root.dark .al-btn-confirm span {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
 }
 
 :root.dark .modal-btn-confirm:hover,
 :root.dark .al-btn-confirm:hover {
   animation: flameGradientShift 1.5s linear infinite !important;
-  filter: brightness(1.12) !important;
-  transform: translateX(4px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.65), 0 0 44px 4px rgba(220, 38, 38, 0.4) !important;
-  opacity: 1 !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
 :root.dark .modal-btn-confirm:active,
 :root.dark .al-btn-confirm:active {
-  transform: translateX(2px) scale(0.98) !important;
+  transform: translateY(0) scale(0.97) !important;
 }
 
 /* Botón de cancelar en modales (modo oscuro) */
@@ -1617,6 +1864,36 @@ body.dark .input-field.has-error:focus {
 }
 
 /* Estampas de Modal en modo oscuro (Estilo Ticket auténtico) */
+:root.dark .modal-stamp.signal,
+.dark .modal-stamp.signal,
+:root.dark .al-stamp.signal {
+  background-image: linear-gradient(
+    135deg,
+    #dc2626 0%,
+    #f77920 40%,
+    #ef4444 70%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 200% !important;
+  animation: flameGradientShift 6s linear infinite !important;
+  border: 2px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(247, 121, 32, 0.55), 0 0 50px rgba(220, 38, 38, 0.35) !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+:root.dark .modal-stamp.signal::before,
+.dark .modal-stamp.signal::before {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+:root.dark .modal-stamp.signal *,
+:root.dark .modal-stamp.signal i,
+.dark .modal-stamp.signal i {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
 :root.dark .modal-stamp.info,
 :root.dark .al-stamp.info {
   background: rgba(0, 240, 255, 0.12) !important;
@@ -3724,38 +4001,86 @@ html.dark .flatpickr-day.disabled:hover {
   box-shadow: none !important;
 }
 
-/* Selector de tiempo de Flatpickr */
+/* Selector de tiempo de Flatpickr (Máxima especificidad para evitar fondo blanco en modo oscuro) */
 :root.dark .flatpickr-time,
-html.dark .flatpickr-time {
-  background: rgba(18, 18, 20, 0.85) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+html.dark .flatpickr-time,
+.dark .flatpickr-time,
+:root.dark .flatpickr-calendar.hasTime .flatpickr-time,
+html.dark .flatpickr-calendar.hasTime .flatpickr-time,
+.dark .flatpickr-calendar.hasTime .flatpickr-time {
+  background: #181c24 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 0 0 14px 14px !important;
 }
 
 :root.dark .flatpickr-time input,
-html.dark .flatpickr-time input {
+html.dark .flatpickr-time input,
+.dark .flatpickr-time input,
+:root.dark .flatpickr-calendar.hasTime .flatpickr-time input,
+html.dark .flatpickr-calendar.hasTime .flatpickr-time input,
+.dark .flatpickr-calendar.hasTime .flatpickr-time input {
   color: #ffffff !important;
-  font-weight: 700 !important;
+  background: transparent !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  font-family: monospace, sans-serif !important;
 }
 
 :root.dark .flatpickr-time .flatpickr-time-separator,
-html.dark .flatpickr-time .flatpickr-time-separator {
+html.dark .flatpickr-time .flatpickr-time-separator,
+.dark .flatpickr-time .flatpickr-time-separator,
+:root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator,
+html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator,
+.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator {
   color: #94a3b8 !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
 }
 
 :root.dark .flatpickr-time .numInputWrapper span:hover,
-html.dark .flatpickr-time .numInputWrapper span:hover {
+html.dark .flatpickr-time .numInputWrapper span:hover,
+.dark .flatpickr-time .numInputWrapper span:hover {
   background: rgba(0, 240, 255, 0.2) !important;
 }
 
 :root.dark .flatpickr-time .numInputWrapper span.arrowUp:after,
-html.dark .flatpickr-time .numInputWrapper span.arrowUp:after {
+html.dark .flatpickr-time .numInputWrapper span.arrowUp:after,
+.dark .flatpickr-time .numInputWrapper span.arrowUp:after {
   border-bottom-color: #00f0ff !important;
 }
 
 :root.dark .flatpickr-time .numInputWrapper span.arrowDown:after,
-html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
+html.dark .flatpickr-time .numInputWrapper span.arrowDown:after,
+.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   border-top-color: #00f0ff !important;
+}
+
+:root.dark .flatpickr-time .flatpickr-am-pm,
+html.dark .flatpickr-time .flatpickr-am-pm,
+.dark .flatpickr-time .flatpickr-am-pm,
+:root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm,
+html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm,
+.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm {
+  color: #00f0ff !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  background: rgba(0, 240, 255, 0.15) !important;
+  padding: 4px 12px !important;
+  border: 1px solid rgba(0, 240, 255, 0.35) !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+  cursor: pointer !important;
+}
+
+:root.dark .flatpickr-time .flatpickr-am-pm:hover,
+html.dark .flatpickr-time .flatpickr-am-pm:hover,
+.dark .flatpickr-time .flatpickr-am-pm:hover,
+:root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
+html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
+.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover {
+  background: rgba(0, 240, 255, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
 }
 
 /* =========================================================
@@ -4372,19 +4697,19 @@ html.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
   filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.8)) !important;
 }
 
-:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip) {
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip):not(.tkt-tab-btn) {
   background: rgba(14, 165, 233, 0.20) !important;
   border: 1.5px solid #38bdf8 !important;
   color: #ffffff !important;
   box-shadow: 0 0 12px rgba(14, 165, 233, 0.55), inset 0 0 6px rgba(14, 165, 233, 0.2) !important;
   text-shadow: none !important;
 }
-:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip):hover {
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip):not(.tkt-tab-btn):hover {
   background: rgba(14, 165, 233, 0.32) !important;
   border-color: #7dd3fc !important;
   box-shadow: 0 0 16px rgba(14, 165, 233, 0.8), inset 0 0 8px rgba(14, 165, 233, 0.3) !important;
 }
-:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip) i {
+:root.dark button:has(> .fa-clock-rotate-left):not(.action-icon-btn):not(.btn-antecedente-chip):not(.tkt-tab-btn) i {
   color: #38bdf8 !important;
   filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)) !important;
 }
@@ -5066,21 +5391,35 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-html-container {
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm {
-  background: linear-gradient(135deg, #fa051a, #dc2626) !important;
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f77920 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: flameGradientShift 6s linear infinite !important;
   color: #ffffff !important;
-  border: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 10px !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   padding: 10px 24px !important;
-  box-shadow: 0 4px 16px rgba(250, 5, 26, 0.45) !important;
-  transition: all 0.2s ease !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 20px rgba(250, 5, 26, 0.6) !important;
+  animation: flameGradientShift 1.5s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-cancel,

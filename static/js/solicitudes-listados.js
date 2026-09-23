@@ -375,6 +375,27 @@ function solicitudesTable() {
         // Toast de copiado
         copiadoToast: false,
 
+        // Catálogos
+        contratistas: [],
+
+        // Modal Selector de Tipo de Formulario (Directo vs Externo)
+        modalTipoSolicitudOpen: false,
+
+        // Modal Formulario Temporal para Terceros (Estilo Ticket)
+        modalTokenOpen: false,
+        modalTokenTab: "crear",
+        tokenModoTiempo: "rapido", // 'rapido' o 'exacto'
+        tokenDuracion: "24",
+        tokenFechaPersonalizada: "",
+        tokenContratistaId: "",
+        tokenContratistaSearch: "",
+        tokenBuscadorAbierto: false,
+        tokenGeneradoUrl: "",
+        tokenInfoGenerado: null,
+        tokenCopiado: false,
+        tokensHistorial: [],
+        cargandoTokens: false,
+
         // Modal eliminación
         showDeleteModal: false,
         solicitudAEliminar: null,
@@ -401,7 +422,7 @@ function solicitudesTable() {
 
             if (!this.puedeAccion("solicitudes", "editar")) return false;
             const est = String(s.estado || "").trim().toUpperCase();
-            return est === "ENVIADO";
+            return est === "ENVIADO" || est === "PRE-ENVIADO";
         },
 
         async init() {
@@ -413,8 +434,36 @@ function solicitudesTable() {
             window.addEventListener("solicitudes-recargar", () => this.getSolicitudes());
             window.addEventListener("solicitud-actualizada-en-caliente", () => this.getSolicitudes());
 
+            // Abrir modal de token si es disparado por un evento personalizado (ej: sidebar)
+            window.addEventListener("abrir-modal-token-formulario", () => {
+                this.abrirModalToken();
+            });
+
+            // Abrir modal selector o token si viene en los query params de URL (?modal=token-terceros o ?modal=selector)
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get("modal") === "token-terceros") {
+                    this.abrirModalToken();
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else if (params.get("modal") === "selector") {
+                    this.modalTipoSolicitudOpen = true;
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
+                // Filtrar automáticamente si viene desde una notificación de solicitud PRE-ENVIADA
+                const estParam = params.get("estado") || params.get("filtro");
+                if (estParam && (estParam.toLowerCase() === "pre-enviado" || estParam.toLowerCase() === "pre_enviado")) {
+                    this.filtroEstado = "pre-enviado";
+                }
+                const codParam = params.get("codigo") || params.get("search");
+                if (codParam) {
+                    this.search = codParam.trim();
+                }
+            } catch (e) {}
+
             await Promise.allSettled([
                 this.getEmpresas(),
+                this.getContratistas(),
                 this.getSolicitudes()
             ]);
 
@@ -442,7 +491,7 @@ function solicitudesTable() {
                 if (sesion && sesion.id && esSstGesco) {
                     url += `?id_usuario=${sesion.id}`;
                 }
-                const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolId === 5;
+                const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolTexto.includes("SOLICITANTE") || rolId === 5;
                 if (sesion && sesion.id && esGestionDoc) {
                     url += `${url.includes('?') ? '&' : '?'}diligenciado_por=${sesion.id}`;
                 }
@@ -470,6 +519,24 @@ function solicitudesTable() {
             } catch (error) {
                 console.error("Error al cargar empresas:", error);
                 this.empresas = [];
+            }
+        },
+
+        async getContratistas() {
+            try {
+                const token = (typeof getAuthToken === "function") ? getAuthToken() : null;
+                const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+                let response = await fetch(`${API.contratistas}/getall`, { headers });
+                if (!response.ok) {
+                    response = await fetch(`${API.contratistas}/`, { headers });
+                }
+                if (response.ok) {
+                    const data = await response.json();
+                    this.contratistas = Array.isArray(data) ? data : (data.data || data.datos || []);
+                }
+            } catch (error) {
+                console.warn("Error al cargar empresas contratistas:", error);
+                this.contratistas = [];
             }
         },
 
@@ -505,12 +572,13 @@ function solicitudesTable() {
                 const matchEmpresa = !this.filtroEmpresa || 
                     (s.nombre_empresa || "").toLowerCase() === this.filtroEmpresa.toLowerCase();
 
-                // Filtro por estado activo/inactivo
+                // Filtro por estado activo/inactivo/pre-enviado
                 const esActivo = (s.is_active === 1 || s.is_active === true || s.is_active === "1");
                 const matchEstado =
                     this.filtroEstado === "todos" ||
                     (this.filtroEstado === "activos" && esActivo) ||
-                    (this.filtroEstado === "inactivos" && !esActivo);
+                    (this.filtroEstado === "inactivos" && !esActivo) ||
+                    (this.filtroEstado === "pre-enviado" && (s.estado || "").toUpperCase() === "PRE-ENVIADO");
 
                 // Filtro estricto de plantas para SST / GESCO: solo ver solicitudes con plantas relacionadas
                 if (this.esRolConPlantas) {
@@ -523,6 +591,28 @@ function solicitudesTable() {
 
                 return matchTexto && matchEmpresa && matchEstado;
             });
+        },
+
+        get puedeGenerarFormularioTemporal() {
+            const u = this.sesionUsuario;
+            if (!u) return true;
+            const idRol = parseInt(u.id_rol || u.rol_id, 10);
+            const rolNom = String(u.rol || u.nombre_rol || "").toUpperCase();
+            return idRol === 5 || idRol === 1 || idRol === 2 ||
+                   rolNom.includes("SOLICITANTE") ||
+                   rolNom.includes("GESTION DOCUMENTAL") ||
+                   rolNom.includes("GESTIÓN DOCUMENTAL") ||
+                   rolNom.includes("ADMIN");
+        },
+
+        puedeAprobarPreEnvio(s) {
+            if (!s || (s.estado || "").toUpperCase() !== "PRE-ENVIADO") return false;
+            const u = this.sesionUsuario;
+            if (!u) return true;
+            const idRol = parseInt(u.id_rol || u.rol_id, 10);
+            const rolNom = String(u.rol || u.nombre_rol || "").toUpperCase();
+            if (idRol === 1 || idRol === 2 || rolNom.includes("ADMIN")) return true;
+            return (idRol === 5 || rolNom.includes("SOLICITANTE") || rolNom.includes("GESTION DOCUMENTAL") || rolNom.includes("GESTIÓN DOCUMENTAL"));
         },
 
         get sesionUsuario() {
@@ -729,6 +819,65 @@ function solicitudesTable() {
                 document.body.removeChild(ta);
                 this.copiadoToast = true;
                 setTimeout(() => (this.copiadoToast = false), 2500);
+            }
+        },
+
+        // ============================================================
+        // MÉTODOS PARA FORMULARIOS TEMPORALES CON TOKEN (DELEGA A MODAL GLOBAL)
+        // ============================================================
+        abrirModalToken(tab = "crear") {
+            window.dispatchEvent(new CustomEvent("open-token-formulario-modal", { detail: { tab } }));
+        },
+
+        async aprobarPreEnvio(solicitud) {
+            const cod = solicitud.codigo || ("RAD-" + solicitud.id);
+            let confirmacion = false;
+            if (typeof Swal !== "undefined") {
+                const res = await Swal.fire({
+                    title: "¿Aprobar y Enviar solicitud?",
+                    html: `La solicitud <strong>${cod}</strong> pasará de <span class="text-purple-400 font-bold">PRE-ENVIADO</span> a <span class="text-emerald-400 font-bold">ENVIADO</span> y se notificará a los evaluadores (SST, GESCO, SCR) para iniciar la revisión.`,
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonColor: "#10b981",
+                    cancelButtonColor: "#64748b",
+                    confirmButtonText: "Sí, Aprobar y Enviar",
+                    cancelButtonText: "Cancelar"
+                });
+                confirmacion = res.isConfirmed;
+            } else {
+                confirmacion = confirm(`¿Deseas autorizar y enviar la solicitud ${cod} para su revisión oficial?`);
+            }
+
+            if (!confirmacion) return;
+
+            try {
+                const res = await fetch(`${API.solicitudes}/${solicitud.id}/aprobar-envio`, {
+                    method: "POST"
+                });
+                const data = await res.json();
+                if (!res.ok || !data.exito) {
+                    throw new Error(data.detail || data.mensaje || "Error al aprobar el envío");
+                }
+
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "¡Solicitud Enviada!",
+                        text: `La solicitud ${cod} ha sido aprobada y enviada exitosamente al proceso de revisión.`,
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    alert(`¡Solicitud ${cod} enviada exitosamente!`);
+                }
+
+                await this.getSolicitudes();
+            } catch (e) {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({ icon: "error", title: "Error al aprobar", text: e.message });
+                } else {
+                    alert("Error: " + e.message);
+                }
             }
         },
 
