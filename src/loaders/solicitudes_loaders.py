@@ -1007,18 +1007,78 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         (obs_rechazo, real_id)
                     )
                 elif decision == "PREAPROBADO":
-                    # SCR o SuperAdmin pre-aprueba la solicitud en etapas previas
-                    nuevo_estado = sol.get("estado", "EN REVISIÓN")
-                    obs_pre = f"[PRE-APROBADO por {rol}]: {observacion}".strip()
+                    # SCR o SuperAdmin pre-aprueba la solicitud
+                    # Verificar si SST y GESCO ya completaron todas las plantas
                     cursor.execute(
                         """
-                        UPDATE solicitudes 
-                        SET pre_aprobado = 1,
-                            observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
-                        WHERE id = %s
+                        SELECT id_planta, rol 
+                        FROM solicitud_revisiones 
+                        WHERE id_solicitud = %s AND decision = 'APROBADO'
                         """,
-                        (obs_pre, real_id)
+                        (real_id,)
                     )
+                    revs_aprobadas = cursor.fetchall() or []
+                    mapa_aprobaciones = {pid: {"SST": False, "GESCO": False} for pid in plantas_sol}
+                    for ra in revs_aprobadas:
+                        pid = ra.get("id_planta")
+                        r_rol = ra.get("rol")
+                        if pid in mapa_aprobaciones and r_rol in ("SST", "GESCO"):
+                            mapa_aprobaciones[pid][r_rol] = True
+
+                    todas_listas = False
+                    if plantas_sol:
+                        todas_listas = all(
+                            mapa_aprobaciones[pid]["SST"] and mapa_aprobaciones[pid]["GESCO"]
+                            for pid in plantas_sol
+                        )
+
+                    if todas_listas or sol.get("estado") == "POR APROBAR":
+                        # Ya superó todas las revisiones técnicas: pasa automáticamente a APROBADO
+                        nuevo_estado = "APROBADO"
+                        obs_aprob_auto = f"[APROBADO AUTOMÁTICAMENTE por PRE-APROBACIÓN de {rol}]: {observacion}".strip()
+                        cursor.execute(
+                            """
+                            UPDATE solicitudes 
+                            SET estado = 'APROBADO',
+                                pre_aprobado = 1,
+                                observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                            WHERE id = %s
+                            """,
+                            (obs_aprob_auto, real_id)
+                        )
+                        # Actualizar la revisión de SCR para reflejar APROBADO
+                        cursor.execute(
+                            """
+                            UPDATE solicitud_revisiones
+                            SET decision = 'APROBADO',
+                                observacion = CONCAT(IFNULL(observacion, ''), ' [Aprobación definitiva automática tras pre-aprobación]')
+                            WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s
+                            """,
+                            (real_id, rol)
+                        )
+                        # Desactivar posibles botones viejos de confirmación
+                        cod_sol_clean = sol.get("codigo") or f"RAD-{real_id:04d}"
+                        cursor.execute(
+                            """
+                            UPDATE notificaciones
+                            SET leido = TRUE,
+                                enlace = REPLACE(enlace, '?confirmar=true', '')
+                            WHERE enlace LIKE %s
+                            """,
+                            (f"%{cod_sol_clean}%",)
+                        )
+                    else:
+                        nuevo_estado = sol.get("estado", "EN REVISIÓN")
+                        obs_pre = f"[PRE-APROBADO por {rol}]: {observacion}".strip()
+                        cursor.execute(
+                            """
+                            UPDATE solicitudes 
+                            SET pre_aprobado = 1,
+                                observaciones = CONCAT(IFNULL(observaciones, ''), '\n', %s)
+                            WHERE id = %s
+                            """,
+                            (obs_pre, real_id)
+                        )
                 elif rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN") or (id_planta is None and decision == "APROBADO"):
                     nuevo_estado = "APROBADO"
                     cursor.execute(
@@ -1063,14 +1123,72 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         )
 
                     if todas_listas:
-                        nuevo_estado = "POR APROBAR"
+                        # Si SCR ya emitió pre-aprobación previa, pasa AUTOMÁTICAMENTE a APROBADO
+                        cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                        sol_pre_check = cursor.fetchone()
+                        esta_preaprobada = bool(sol_pre_check.get("pre_aprobado")) if sol_pre_check else False
+
+                        if esta_preaprobada:
+                            nuevo_estado = "APROBADO"
+                            cursor.execute(
+                                "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
+                                (real_id,)
+                            )
+                            # Registrar o actualizar la aprobación definitiva de SCR en solicitud_revisiones
+                            cursor.execute(
+                                """
+                                SELECT id FROM solicitud_revisiones 
+                                WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = 'SCR'
+                                LIMIT 1
+                                """,
+                                (real_id,)
+                            )
+                            rev_scr_exist = cursor.fetchone()
+                            obs_auto = "Aprobación definitiva automática ejecutada al completarse las revisiones técnicas de SST y GESCO conforme a la pre-aprobación previa de SCR."
+                            if rev_scr_exist:
+                                cursor.execute(
+                                    """
+                                    UPDATE solicitud_revisiones
+                                    SET decision = 'APROBADO',
+                                        observacion = CONCAT(IFNULL(observacion, ''), '\n', %s),
+                                        fecha_revision = NOW()
+                                    WHERE id = %s
+                                    """,
+                                    (f"[{obs_auto}]", rev_scr_exist["id"])
+                                )
+                            else:
+                                cursor.execute(
+                                    """
+                                    INSERT INTO solicitud_revisiones (
+                                        id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                                        decision, observacion, fecha_revision
+                                    ) VALUES (%s, NULL, 'SCR', NULL, 'Sistema (Pre-aprobación SCR)', 'APROBADO', %s, NOW())
+                                    """,
+                                    (real_id, obs_auto)
+                                )
+                            # Limpiar enlaces de confirmación en notificaciones
+                            cod_sol_clean = sol.get("codigo") or f"RAD-{real_id:04d}"
+                            cursor.execute(
+                                """
+                                UPDATE notificaciones
+                                SET leido = TRUE,
+                                    enlace = REPLACE(enlace, '?confirmar=true', '')
+                                WHERE enlace LIKE %s
+                                """,
+                                (f"%{cod_sol_clean}%",)
+                            )
+                        else:
+                            nuevo_estado = "POR APROBAR"
+                            cursor.execute(
+                                "UPDATE solicitudes SET estado = 'POR APROBAR' WHERE id = %s",
+                                (real_id,)
+                            )
                     else:
                         nuevo_estado = "EN REVISIÓN"
-
-                    cursor.execute(
-                        "UPDATE solicitudes SET estado = %s WHERE id = %s",
-                        (nuevo_estado, real_id)
-                    )
+                        cursor.execute(
+                            "UPDATE solicitudes SET estado = %s WHERE id = %s",
+                            (nuevo_estado, real_id)
+                        )
 
                 # Notificaciones automáticas basadas en el dictamen emitido
                 try:
@@ -1130,9 +1248,14 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 target_role_id=r_gd["id"]
                             )
                     elif decision == "PREAPROBADO":
-                        tit = f"Solicitud {cod_sol} Pre-aprobada por SCR"
-                        msg = f"SCR ha emitido visto bueno preliminar (Pre-aprobación) para {cod_sol}. Continuará con las revisiones técnicas de SST y GESCO."
-                        tipo_notif = "info"
+                        if nuevo_estado == "APROBADO":
+                            tit = f"¡Solicitud {cod_sol} Aprobada!"
+                            msg = f"Tu solicitud {cod_sol} completó todas las revisiones y fue Aprobada para ingreso."
+                            tipo_notif = "success"
+                        else:
+                            tit = f"Solicitud {cod_sol} Pre-aprobada por SCR"
+                            msg = f"SCR ha emitido visto bueno preliminar (Pre-aprobación) para {cod_sol}. Continuará con las revisiones técnicas de SST y GESCO."
+                            tipo_notif = "info"
                         if id_creador:
                             cursor.execute(
                                 """
@@ -1187,76 +1310,49 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             target_user_id=id_creador
                         )
 
-                    # Si pasó a POR APROBAR, alertar al rol SCR para el visto bueno final
+                    # Si pasó a POR APROBAR (sin pre-aprobación previa), alertar a SCR para el visto bueno final
                     if nuevo_estado == "POR APROBAR":
                         cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
                         r_scr = cursor.fetchone()
                         if r_scr:
-                            cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
-                            sol_pre = cursor.fetchone()
-                            esta_preaprobada = bool(sol_pre.get("pre_aprobado")) if sol_pre else False
-
-                            if esta_preaprobada:
-                                # Notificación especializada con observaciones de SST y GESCO
-                                cursor.execute(
-                                    """
-                                    SELECT sr.rol, p.nombre AS planta_nombre, sr.nombre_revisor, sr.decision, sr.observacion
-                                    FROM solicitud_revisiones sr
-                                    LEFT JOIN planta p ON sr.id_planta = p.id
-                                    WHERE sr.id_solicitud = %s AND UPPER(sr.rol) IN ('SST', 'GESCO')
-                                    ORDER BY sr.fecha_revision ASC
-                                    """,
-                                    (real_id,)
+                            tit_conv = f"Solicitud {cod_sol} lista para visto bueno final"
+                            msg_conv = f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR."
+                            cursor.execute(
+                                """
+                                INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    r_scr["id"],
+                                    tit_conv,
+                                    msg_conv,
+                                    "warning",
+                                    f"/solicitudes/revision/{cod_sol}"
                                 )
-                                revs_tecnicas = cursor.fetchall() or []
-                                items_obs = []
-                                for rt in revs_tecnicas:
-                                    r_rol = rt.get("rol", "")
-                                    r_pl = f" ({rt.get('planta_nombre')})" if rt.get("planta_nombre") else ""
-                                    r_obs = (rt.get("observacion") or "").strip()
-                                    if r_obs:
-                                        items_obs.append(f"• {r_rol}{r_pl}: {r_obs}")
-
-                                if items_obs:
-                                    bloque_obs = "\nObservaciones remitidas por SST / GESCO:\n" + "\n".join(items_obs)
-                                else:
-                                    bloque_obs = "\nSin observaciones adicionales de SST ni GESCO."
-
-                                tit_scr = f"⚡ Solicitud Preaprobada {cod_sol} en 'Por Aprobar'"
-                                msg_scr = (
-                                    f"La solicitud {cod_sol} que dejaste PREAPROBADA completó las revisiones de SST y GESCO y ya está en 'Por Aprobar'.\n"
-                                    f"{bloque_obs}\n"
-                                    f"Haz clic aquí para confirmar la aprobación definitiva o ingresar a revisarla."
-                                )
-                                cursor.execute(
-                                    """
-                                    INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                                    VALUES (%s, %s, %s, %s, %s)
-                                    """,
-                                    (
-                                        r_scr["id"],
-                                        tit_scr,
-                                        msg_scr,
-                                        "info",
-                                        f"/solicitudes/revision/{cod_sol}?confirmar=true"
-                                    )
-                                )
-                                notification_broadcaster.notificar_nueva(
-                                    {
-                                        "titulo": tit_scr,
-                                        "mensaje": msg_scr,
-                                        "tipo": "info",
-                                        "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
-                                        "fecha_creacion": now_notif_str,
-                                        "leido": False,
-                                        "rol_destino": r_scr["id"]
-                                    },
-                                    target_role_id=r_scr["id"]
-                                )
-                            else:
-                                # Notificación convencional
-                                tit_conv = f"Solicitud {cod_sol} lista para visto bueno final"
-                                msg_conv = f"La solicitud {cod_sol} completó revisiones de SST y GESCO. Requiere aprobación final de SCR."
+                            )
+                            notification_broadcaster.notificar_nueva(
+                                {
+                                    "titulo": tit_conv,
+                                    "mensaje": msg_conv,
+                                    "tipo": "warning",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
+                                    "fecha_creacion": now_notif_str,
+                                    "leido": False,
+                                    "rol_destino": r_scr["id"]
+                                },
+                                target_role_id=r_scr["id"]
+                            )
+                    elif nuevo_estado == "APROBADO" and decision != "PREAPROBADO":
+                        # Si fue aprobada automáticamente al completar SST/GESCO por pre-aprobación previa,
+                        # enviar notificación informativa a SCR (sin confirmación, ya quedó aprobada)
+                        cursor.execute("SELECT pre_aprobado FROM solicitudes WHERE id = %s", (real_id,))
+                        sol_p_check = cursor.fetchone()
+                        if sol_p_check and sol_p_check.get("pre_aprobado"):
+                            cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) = 'SCR' LIMIT 1")
+                            r_scr = cursor.fetchone()
+                            if r_scr:
+                                tit_scr_auto = f"✅ Solicitud Pre-aprobada {cod_sol} Aprobada"
+                                msg_scr_auto = f"La solicitud {cod_sol} completó favorablemente las revisiones de SST y GESCO y quedó aprobada automáticamente."
                                 cursor.execute(
                                     """
                                     INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -1264,17 +1360,17 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                     """,
                                     (
                                         r_scr["id"],
-                                        tit_conv,
-                                        msg_conv,
-                                        "warning",
+                                        tit_scr_auto,
+                                        msg_scr_auto,
+                                        "success",
                                         f"/solicitudes/revision/{cod_sol}"
                                     )
                                 )
                                 notification_broadcaster.notificar_nueva(
                                     {
-                                        "titulo": tit_conv,
-                                        "mensaje": msg_conv,
-                                        "tipo": "warning",
+                                        "titulo": tit_scr_auto,
+                                        "mensaje": msg_scr_auto,
+                                        "tipo": "success",
                                         "enlace": f"/solicitudes/revision/{cod_sol}",
                                         "fecha_creacion": now_notif_str,
                                         "leido": False,
@@ -1580,8 +1676,8 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
 
                             bloque_obs = ("\nObservaciones previas SST / GESCO:\n" + "\n".join(items_obs)) if items_obs else "\nSin observaciones adicionales de SST ni GESCO."
 
-                            tit_corregida = f"⚡ Solicitud Preaprobada {cod_sol} corregida - En 'Por Aprobar'"
-                            msg_corregida = f"Gestión Documental corrigió {cod_sol}. Como fue preaprobada, puedes confirmar la aprobación definitiva o revisarla.\n{bloque_obs}"
+                            tit_corregida = f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR"
+                            msg_corregida = f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra en 'Por Aprobar' lista para tu dictamen final.\n{bloque_obs}"
                             cursor.execute(
                                 """
                                 INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -1591,16 +1687,16 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                                     r_scr["id"],
                                     tit_corregida,
                                     msg_corregida,
-                                    "info",
-                                    f"/solicitudes/revision/{cod_sol}?confirmar=true"
+                                    "warning",
+                                    f"/solicitudes/revision/{cod_sol}"
                                 )
                             )
                             notification_broadcaster.notificar_nueva(
                                 {
                                     "titulo": tit_corregida,
                                     "mensaje": msg_corregida,
-                                    "tipo": "info",
-                                    "enlace": f"/solicitudes/revision/{cod_sol}?confirmar=true",
+                                    "tipo": "warning",
+                                    "enlace": f"/solicitudes/revision/{cod_sol}",
                                     "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "leido": False,
                                     "rol_destino": r_scr["id"]
