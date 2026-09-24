@@ -11,7 +11,7 @@
   <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
 
-  <!-- Inicialización inmediata de Modo Oscuro para evitar parpadeos y sincronizar entre pantallas -->
+  <!-- Inicialización inmediata de Modo Oscuro y Rol SuperAdmin para sincronización temprana sin FOUC -->
   <script>
     (function () {
       try {
@@ -19,6 +19,21 @@
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+
+      try {
+        var raw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+        if (raw) {
+          var ses = JSON.parse(raw);
+          var rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
+          if (rol === 'SUPERADMIN') {
+            document.documentElement.setAttribute('data-role', 'SUPERADMIN');
+            document.documentElement.classList.add('role-superadmin');
+          } else {
+            document.documentElement.removeAttribute('data-role');
+            document.documentElement.classList.remove('role-superadmin');
+          }
         }
       } catch (e) {}
     })();
@@ -55,7 +70,7 @@
   <!-- Estilos globales compartidos -->
   <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.6">
   <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.9">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=4.5">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=5.0">
 
   <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
   {% block extra_head %}{% endblock %}

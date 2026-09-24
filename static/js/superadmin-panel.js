@@ -155,7 +155,7 @@ function superAdminPanel() {
     colorIconoRol(nombreRol, esActivo) {
       if (esActivo) return 'text-slate-950';
       const n = (nombreRol || '').trim().toUpperCase();
-      if (n === 'SUPERADMIN') return 'text-amber-400';
+      if (n === 'SUPERADMIN') return 'text-fuchsia-400';
       if (n === 'ADMINISTRADOR') return 'text-sky-400';
       if (n === 'VIGILANTE') return 'text-emerald-400';
       if (n.includes('DOCUMENTAL')) return 'text-purple-400';

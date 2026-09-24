@@ -39,7 +39,8 @@
             <div class="relative flex-1 min-w-[160px] sm:max-w-xs">
               <i
                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
-              <input type="text" x-model.debounce.250ms="search" @input.debounce.250ms="resetPage()" placeholder="Buscar..."
+              <input type="search" x-model.debounce.250ms="search" @input.debounce.250ms="resetPage()" placeholder="Buscar..."
+                name="busqueda_procesamiento" id="busqueda_procesamiento" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
                 class="input-field w-full rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm">
             </div>
 

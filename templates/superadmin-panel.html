@@ -3,7 +3,7 @@
 {% block title %}Panel SuperAdmin & Mantenimiento · PSI{% endblock %}
 
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', path='css/superadmin-panel.css') }}?v=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/superadmin-panel.css') }}?v=2.0">
 {% endblock %}
 
 {% block extra_js %}
@@ -33,9 +33,9 @@
       <div class="max-w-7xl mx-auto space-y-8">
 
         <!-- ===== HEADER DEL PANEL MAESTRO ===== -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-purple-500/10 border border-amber-500/20 backdrop-blur-sm">
+        <div class="superadmin-header-card flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-2xl backdrop-blur-sm">
           <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/30 flex-shrink-0">
+            <div class="w-14 h-14 rounded-2xl superadmin-shield-icon flex items-center justify-center text-white text-2xl flex-shrink-0">
               <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div>
@@ -43,7 +43,7 @@
                 <h1 class="text-xl sm:text-2xl font-bold font-display text-[var(--text-primary)]">
                   Panel Maestro SuperAdmin
                 </h1>
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold superadmin-badge-maestro">
                   Nivel 6 • Maestro
                 </span>
               </div>
@@ -81,18 +81,18 @@
             <div class="space-y-2 max-w-2xl">
               <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shadow-md"
-                  :class="mantenimiento.activo ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'">
+                  :class="mantenimiento.activo ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30'">
                   <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
                   <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
                     Control de Emergencia: Modo Mantenimiento (HTTP 503)
                   </h2>
-                  <span class="text-xs text-amber-400 font-semibold" x-text="mantenimiento.tipo === 'general' ? '• Alcance: Todo el Sistema' : `• Alcance: Selectivo (${totalModulosMantenimiento} módulos)`"></span>
+                  <span class="text-xs font-semibold" :class="mantenimiento.activo ? 'text-rose-400' : 'text-fuchsia-400'" x-text="mantenimiento.tipo === 'general' ? '• Alcance: Todo el Sistema' : `• Alcance: Selectivo (${totalModulosMantenimiento} módulos)`"></span>
                 </div>
               </div>
               <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-                Define el alcance del mantenimiento: suspende el acceso a <strong>todo el sistema</strong> o únicamente a <strong>módulos específicos</strong>. Como <strong class="text-amber-400">SUPERADMIN</strong>, mantendrás acceso irrestricto sin interrupciones para realizar pruebas y cambios.
+                Define el alcance del mantenimiento: suspende el acceso a <strong>todo el sistema</strong> o únicamente a <strong>módulos específicos</strong>. Como <strong class="text-fuchsia-400">SUPERADMIN</strong>, mantendrás acceso irrestricto sin interrupciones para realizar pruebas y cambios.
               </p>
             </div>
 
@@ -132,16 +132,16 @@
                 @click="mantenimiento.tipo = 'general'"
                 class="p-4 rounded-xl border cursor-pointer transition-all duration-200 flex items-start gap-3.5 relative"
                 :class="mantenimiento.tipo === 'general' 
-                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/10' 
+                  ? 'superadmin-scope-card-active' 
                   : 'bg-[var(--table-header,#0f172a)]/50 border-[var(--border-color,#334155)] text-[var(--text-muted)] hover:border-slate-500 hover:text-[var(--text-primary)]'">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                  :class="mantenimiento.tipo === 'general' ? 'bg-amber-500 text-slate-900 shadow-md' : 'bg-slate-800 text-slate-400'">
+                  :class="mantenimiento.tipo === 'general' ? 'superadmin-scope-icon-active shadow-md' : 'bg-slate-800 text-slate-400'">
                   <i class="fa-solid fa-globe text-base"></i>
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm text-[var(--text-primary)]">🌐 Todo el Sistema (Mantenimiento General)</h3>
-                    <i class="fa-solid" :class="mantenimiento.tipo === 'general' ? 'fa-circle-dot text-amber-400' : 'fa-circle text-slate-600'"></i>
+                    <i class="fa-solid" :class="mantenimiento.tipo === 'general' ? 'fa-circle-dot text-cyan-400' : 'fa-circle text-slate-600'"></i>
                   </div>
                   <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                     Bloquear todo el sistema para ejecución de mantenimiento general</p>
@@ -153,16 +153,16 @@
                 @click="mantenimiento.tipo = 'modulos'"
                 class="p-4 rounded-xl border cursor-pointer transition-all duration-200 flex items-start gap-3.5 relative"
                 :class="mantenimiento.tipo === 'modulos' 
-                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/10' 
+                  ? 'superadmin-scope-card-active' 
                   : 'bg-[var(--table-header,#0f172a)]/50 border-[var(--border-color,#334155)] text-[var(--text-muted)] hover:border-slate-500 hover:text-[var(--text-primary)]'">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                  :class="mantenimiento.tipo === 'modulos' ? 'bg-amber-500 text-slate-900 shadow-md' : 'bg-slate-800 text-slate-400'">
+                  :class="mantenimiento.tipo === 'modulos' ? 'superadmin-scope-icon-active shadow-md' : 'bg-slate-800 text-slate-400'">
                   <i class="fa-solid fa-layer-group text-base"></i>
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm text-[var(--text-primary)]">🧩 Por Módulos Seleccionados</h3>
-                    <i class="fa-solid" :class="mantenimiento.tipo === 'modulos' ? 'fa-circle-dot text-amber-400' : 'fa-circle text-slate-600'"></i>
+                    <i class="fa-solid" :class="mantenimiento.tipo === 'modulos' ? 'fa-circle-dot text-cyan-400' : 'fa-circle text-slate-600'"></i>
                   </div>
                   <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                     Pone en mantenimiento solo los módulos específicos elegidos. El resto de módulos continúa funcionando al 100% con normalidad.
@@ -188,7 +188,7 @@
                   x-text="`${totalModulosMantenimiento} de ${listaModulosSistema.length} en mantenimiento`"></span>
 
                 <button type="button" @click="seleccionarTodosModulosMantenimiento(true)"
-                  class="px-2.5 py-1 text-xs rounded-lg font-medium text-amber-400 hover:bg-amber-500/10 border border-amber-500/30 transition-colors">
+                  class="px-2.5 py-1 text-xs rounded-lg font-medium text-cyan-400 hover:bg-cyan-500/10 border border-cyan-500/30 transition-colors">
                   Marcar Todos
                 </button>
                 <button type="button" @click="seleccionarTodosModulosMantenimiento(false)"
@@ -238,23 +238,23 @@
             <div class="lg:col-span-6 space-y-3">
               <div>
                 <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
-                  <i class="fa-regular fa-comment-dots text-amber-400"></i> Mensaje que verán los usuarios en la pantalla 503
+                  <i class="fa-regular fa-comment-dots text-fuchsia-400"></i> Mensaje que verán los usuarios en la pantalla 503
                 </label>
                 <textarea
                   x-model="mantenimiento.mensaje"
                   rows="3"
-                  class="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                  class="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500/30 transition-colors resize-none"
                   placeholder="Indica el motivo del mantenimiento..."></textarea>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
-                  <i class="fa-regular fa-clock text-amber-400"></i> Texto descriptivo del tiempo de espera
+                  <i class="fa-regular fa-clock text-cyan-400"></i> Texto descriptivo del tiempo de espera
                 </label>
                 <input
                   type="text"
                   x-model="mantenimiento.tiempo"
-                  class="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-amber-500 transition-colors"
+                  class="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm bg-[var(--input-bg,#0f172a)] border border-[var(--border-color,#334155)] text-[var(--text-primary)] focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-colors"
                   placeholder="Ej: Disponible en aproximadamente 30 minutos">
               </div>
             </div>
@@ -264,9 +264,9 @@
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <label class="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-                    <i class="fa-solid fa-stopwatch text-amber-400"></i> Cronómetro Visual de Cuenta Regresiva
+                    <i class="fa-solid fa-stopwatch text-fuchsia-400"></i> Cronómetro Visual de Cuenta Regresiva
                   </label>
-                  <span class="text-[10px] text-amber-400/90 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  <span class="text-[10px] text-cyan-400/90 font-mono font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
                     Solo Visual (Desactivación Manual)
                   </span>
                 </div>
@@ -275,27 +275,27 @@
                 <div class="flex flex-wrap items-center gap-1.5 mb-3">
                   <button type="button" @click="setTemporizadorPreset(15)"
                     class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
-                    :class="mantenimiento.temporizador_minutos === 15 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    :class="mantenimiento.temporizador_minutos === 15 ? 'superadmin-preset-active' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
                     15 min
                   </button>
                   <button type="button" @click="setTemporizadorPreset(30)"
                     class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
-                    :class="mantenimiento.temporizador_minutos === 30 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    :class="mantenimiento.temporizador_minutos === 30 ? 'superadmin-preset-active' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
                     30 min
                   </button>
                   <button type="button" @click="setTemporizadorPreset(45)"
                     class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
-                    :class="mantenimiento.temporizador_minutos === 45 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    :class="mantenimiento.temporizador_minutos === 45 ? 'superadmin-preset-active' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
                     45 min
                   </button>
                   <button type="button" @click="setTemporizadorPreset(60)"
                     class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
-                    :class="mantenimiento.temporizador_minutos === 60 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    :class="mantenimiento.temporizador_minutos === 60 ? 'superadmin-preset-active' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
                     1 hora
                   </button>
                   <button type="button" @click="setTemporizadorPreset(120)"
                     class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border"
-                    :class="mantenimiento.temporizador_minutos === 120 ? 'bg-amber-500 text-slate-900 border-amber-500 font-bold' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
+                    :class="mantenimiento.temporizador_minutos === 120 ? 'superadmin-preset-active' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500'">
                     2 horas
                   </button>
                   <div class="flex items-center gap-1 text-xs">
@@ -306,14 +306,14 @@
                 </div>
 
                 <!-- Preview Digital del Cronómetro para SuperAdmin -->
-                <div class="p-3 rounded-xl bg-black/40 border border-amber-500/20 flex items-center justify-between">
+                <div class="p-3 rounded-xl bg-black/40 border border-fuchsia-500/30 flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                    <div class="w-8 h-8 rounded-lg bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400">
                       <i class="fa-regular fa-clock text-xs"></i>
                     </div>
                     <div>
                       <span class="block text-[10px] uppercase font-bold text-slate-400">Previsualización de contador</span>
-                      <span class="text-xs font-mono font-bold text-amber-400">
+                      <span class="text-xs font-mono font-bold text-cyan-400">
                         <span x-text="String(Math.floor((mantenimiento.temporizador_minutos || 30) / 60)).padStart(2, '0')"></span> : 
                         <span x-text="String((mantenimiento.temporizador_minutos || 30) % 60).padStart(2, '0')"></span> : 00
                       </span>
@@ -331,7 +331,7 @@
                   type="button"
                   @click="guardarConfiguracionMantenimiento()"
                   :disabled="guardandoMantenimiento"
-                  class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all shadow-lg shadow-amber-600/20 inline-flex items-center gap-2">
+                  class="btn-superadmin-action px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white inline-flex items-center gap-2 cursor-pointer shadow-lg">
                   <i class="fa-solid fa-floppy-disk text-xs"></i>
                   <span x-text="guardandoMantenimiento ? 'Guardando...' : 'Guardar Configuración'"></span>
                 </button>
@@ -342,7 +342,7 @@
                     type="button"
                     @click="menuErroresAbierto = !menuErroresAbierto"
                     class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-[var(--text-primary)] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all inline-flex items-center gap-2.5 shadow-sm">
-                    <i class="fa-solid fa-eye text-xs text-amber-400"></i>
+                    <i class="fa-solid fa-eye text-xs text-fuchsia-400"></i>
                     <span>Previsualizar Errores</span>
                     <i class="fa-solid fa-chevron-down text-[10px] text-[var(--text-muted)] transition-transform duration-200" :class="{ 'rotate-180': menuErroresAbierto }"></i>
                   </button>
@@ -499,15 +499,15 @@
                   :class="[
                     rolSeleccionadoId === rol.id 
                       ? ((rol.nombre_rol === 'SUPERADMIN') 
-                          ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/60 scale-[1.01]' 
+                          ? 'superadmin-role-tab-active scale-[1.01]' 
                           : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/50 scale-[1.01]')
                       : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-slate-700/70 hover:border-slate-500/80'
                   ]">
                   <i class="fa-solid text-[11px] sm:text-xs transition-transform group-hover:scale-110" 
-                     :class="[iconoRol(rol.nombre_rol), colorIconoRol(rol.nombre_rol, rolSeleccionadoId === rol.id)]"></i>
+                     :class="[iconoRol(rol.nombre_rol), (rol.nombre_rol === 'SUPERADMIN' && rolSeleccionadoId === rol.id) ? 'text-white' : colorIconoRol(rol.nombre_rol, rolSeleccionadoId === rol.id)]"></i>
                   <span x-text="rol.nombre_rol"></span>
                   <span x-show="rol.nombre_rol === 'SUPERADMIN'" class="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
-                    :class="rolSeleccionadoId === rol.id ? 'bg-black/20 text-slate-950' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'">
+                    :class="rolSeleccionadoId === rol.id ? 'bg-white/20 text-white' : 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30'">
                     Maestro
                   </span>
                 </button>
@@ -517,30 +517,30 @@
 
           <!-- Banner Informativo para SUPERADMIN -->
           <template x-if="esRolSuperAdmin">
-            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3.5 shadow-inner">
-              <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0 text-amber-400 text-base shadow-sm">
+            <div class="superadmin-info-banner p-4 rounded-2xl text-xs flex items-center gap-3.5 shadow-inner">
+              <div class="w-9 h-9 rounded-xl banner-crown flex items-center justify-center flex-shrink-0 text-base shadow-sm">
                 <i class="fa-solid fa-crown"></i>
               </div>
               <div class="leading-relaxed">
-                <p class="font-bold text-amber-400 text-sm">Rol Maestro SUPERADMIN (Acceso Total Permanente)</p>
-                <p class="text-amber-200/80 mt-0.5">Este rol posee acceso irrestricto en todas las vistas y acciones del sistema a nivel arquitectónico. Los permisos permanecen activos y bloqueados por seguridad.</p>
+                <p class="font-bold text-fuchsia-300 text-sm">Rol Maestro SUPERADMIN (Acceso Total Permanente)</p>
+                <p class="text-fuchsia-200/90 mt-0.5">Este rol posee acceso irrestricto en todas las vistas y acciones del sistema a nivel arquitectónico. Los permisos permanecen activos y bloqueados por seguridad.</p>
               </div>
             </div>
           </template>
 
           <!-- Barra de Alerta: Cambios Pendientes de Guardar -->
           <template x-if="hayCambiosPendientes && !esRolSuperAdmin">
-            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xl shadow-amber-500/10">
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-cyan-500/20 border border-fuchsia-500/40 text-fuchsia-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xl shadow-fuchsia-500/10">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-amber-500/30 border border-amber-500/50 flex items-center justify-center text-amber-300 flex-shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-fuchsia-500/30 border border-fuchsia-500/50 flex items-center justify-center text-cyan-300 flex-shrink-0">
                   <i class="fa-solid fa-triangle-exclamation text-sm"></i>
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-bold text-white">Tienes cambios sin guardar para el rol:</span>
-                    <span class="px-2 py-0.5 rounded-md bg-amber-500/30 border border-amber-500/40 text-amber-200 font-bold" x-text="rolActual?.nombre_rol"></span>
+                    <span class="px-2 py-0.5 rounded-md bg-fuchsia-500/30 border border-fuchsia-500/40 text-fuchsia-200 font-bold" x-text="rolActual?.nombre_rol"></span>
                   </div>
-                  <p class="text-xs text-amber-200/80 mt-0.5">Pulsa "Guardar Permisos" para aplicar esta configuración permanentemente en base de datos.</p>
+                  <p class="text-xs text-fuchsia-200/80 mt-0.5">Pulsa "Guardar Permisos" para aplicar esta configuración permanentemente en base de datos.</p>
                 </div>
               </div>
 
@@ -555,7 +555,7 @@
                   type="button"
                   @click="guardarPermisosRol()"
                   :disabled="guardandoPermisos"
-                  class="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 transition-all shadow-lg shadow-amber-500/25 inline-flex items-center gap-2 active:scale-95">
+                  class="btn-superadmin-action px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-lg inline-flex items-center gap-2 active:scale-95">
                   <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
                   <span x-text="guardandoPermisos ? 'Guardando...' : 'Guardar Ahora'"></span>
                 </button>
@@ -586,7 +586,8 @@
             <div class="flex flex-wrap items-center gap-2 text-xs">
               <div class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center gap-2 text-slate-300">
                 <span class="text-slate-400 text-[11px]">Rol activo:</span>
-                <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                <span class="font-bold flex items-center gap-1.5"
+                  :class="rolActual?.nombre_rol === 'SUPERADMIN' ? 'text-fuchsia-400' : 'text-amber-400'">
                   <i class="fa-solid text-xs" :class="iconoRol(rolActual?.nombre_rol)"></i>
                   <span x-text="rolActual ? rolActual.nombre_rol : ''"></span>
                 </span>
@@ -823,7 +824,7 @@
                   esRolSuperAdmin 
                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
                     : (hayCambiosPendientes 
-                        ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-500/25 scale-[1.02] active:scale-95' 
+                        ? 'btn-superadmin-action scale-[1.02] active:scale-95' 
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700')
                 ]">
                 <i class="fa-solid" :class="guardandoPermisos ? 'fa-spinner fa-spin' : (hayCambiosPendientes ? 'fa-floppy-disk' : 'fa-check')"></i>

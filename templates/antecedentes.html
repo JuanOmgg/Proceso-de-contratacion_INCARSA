@@ -97,7 +97,8 @@
             <!-- Buscador general -->
             <div class="search-input-wrapper flex-1 min-w-[240px]">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar persona por nombre, cargo o documento..."
+              <input type="search" x-model.debounce.250ms="search" placeholder="Buscar persona por nombre, cargo o documento..."
+                name="busqueda_antecedentes" id="busqueda_antecedentes" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
                 class="input-field w-full rounded-lg py-2 text-xs sm:text-sm">
             </div>
 
@@ -342,8 +343,8 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Responsable de Solicitud</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultimo_usuario_solicitud || detalleHistorial.responsable || 'Sin responsable asignado'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Usuario que registró solicitud</span>
+                  <p class="text-sm font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultimo_usuario_solicitud || detalleHistorial.responsable || 'Sin responsable asignado'"></p>
+                  <span class="text-[11px] font-medium text-indigo-950/70 dark:text-indigo-200">Usuario que registró solicitud</span>
                 </div>
               </div>
 
@@ -354,20 +355,40 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Última Empresa</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_contratista || detalleHistorial.nombre_contratista || detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
-                  <span class="text-[11px] text-[var(--paper-muted)]">Empresa contratista</span>
+                  <p class="text-sm font-bold text-cyan-700 dark:text-white truncate mt-0.5" x-text="detalleHistorial.ultima_empresa_contratista || detalleHistorial.nombre_contratista || detalleHistorial.ultima_empresa_solicitante || 'Sin registro previo'"></p>
+                  <span class="text-[11px] font-medium text-cyan-950/70 dark:text-cyan-200">Empresa contratista</span>
                 </div>
               </div>
 
-              <!-- 3. Vigencia Actual (Sin alterar) -->
-              <div class="historial-summary-card card-vigencia p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300">
-                <div class="summary-icon-box w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border border-emerald-500/30">
-                  <i class="fa-solid fa-calendar-check"></i>
+              <!-- 3. Vigencia Actual -->
+              <div class="historial-summary-card card-vigencia p-4 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-start gap-3 transition-all duration-300"
+                :class="{
+                  'is-sin-revision': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'sin_revision',
+                  'is-vigente': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'vigente',
+                  'is-por-vencer': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'por_vencer',
+                  'is-vencido': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'vencido'
+                }">
+                <div class="summary-icon-box w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-base font-bold mt-0.5 border transition-all"
+                  :class="{
+                    'bg-slate-500/15 text-slate-500 dark:text-slate-400 border-slate-500/30': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'sin_revision',
+                    'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'vigente',
+                    'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'por_vencer',
+                    'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30': getEstadoVigencia(detalleHistorial.fecha_consulta).estado === 'vencido'
+                  }">
+                  <i :class="getEstadoVigencia(detalleHistorial.fecha_consulta).icono"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Vigencia Actual</span>
-                  <p class="text-sm font-semibold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formatearFecha(detalleHistorial.fecha_consulta, false)"></p>
-                  <span class="text-[11px] font-medium" :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass" x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
+                  <p class="text-sm font-bold text-emerald-800 dark:text-[#ecfdf5] truncate mt-0.5" 
+                    x-text="formatearFechaVigencia(detalleHistorial.fecha_consulta)"></p>
+                  <div class="mt-1.5">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10.5px] font-bold border transition-all"
+                      :class="getEstadoVigencia(detalleHistorial.fecha_consulta).badgeClass">
+                      <span class="w-1.5 h-1.5 rounded-full"
+                        :class="getEstadoVigencia(detalleHistorial.fecha_consulta).dotClass"></span>
+                      <span x-text="getEstadoVigencia(detalleHistorial.fecha_consulta).etiqueta"></span>
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -456,16 +477,15 @@
                     <template x-for="(h, hIndex) in historialPagina" :key="h.id || hIndex">
                       <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                         <td class="px-3 py-2.5 text-center text-[var(--paper-muted)] font-mono" x-text="(historialPage - 1) * historialPageSize + hIndex + 1"></td>
-                        <td class="px-3 py-2.5">
+                        <td class="px-3 py-2.5 whitespace-nowrap">
                           <template x-if="h.codigo_radicado">
-                            <div class="inline-flex items-center gap-1.5 bg-[#efe9dc]/70 dark:bg-white/10 px-2 py-1 rounded-md border border-[var(--paper-shadow)]">
-                              <span class="font-mono font-bold text-[var(--paper-ink)] text-[11px]" x-text="h.codigo_radicado"></span>
-                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
-                                class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors p-0.5"
-                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
-                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-500' : 'fa-copy'"></i>
-                              </button>
-                            </div>
+                            <button type="button" @click="copiarCodigo(h.codigo_radicado)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/30 dark:border-sky-400/40 shadow-xs hover:border-sky-400/70 transition-all radicado-pill-custom group cursor-pointer select-none"
+                              :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
+                              <span class="font-mono font-bold text-[11.5px] text-sky-700 dark:text-sky-300 tracking-wide select-none" x-text="h.codigo_radicado"></span>
+                              <i class="fa-solid text-[10px] text-sky-600/70 group-hover:text-sky-700 dark:text-sky-300/80 dark:group-hover:text-white transition-all"
+                                :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-400' : 'fa-copy'"></i>
+                            </button>
                           </template>
                           <template x-if="!h.codigo_radicado">
                             <span class="text-[var(--paper-muted)] italic text-[11px]">Directo</span>
@@ -477,17 +497,17 @@
                             <span x-text="h.nombre_empresa || 'Empresa asignada'"></span>
                           </span>
                         </td>
-                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)]">
+                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)] dark:text-slate-200">
                           <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
                         </td>
-                        <td class="px-3 py-2.5 text-[var(--paper-ink)]">
-                          <div class="flex items-center gap-1.5">
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
-                            <i class="fa-solid fa-arrow-right text-[10px] text-[var(--paper-muted)]"></i>
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_fin)"></span>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                          <div class="inline-flex items-center gap-1.5 font-mono text-[11px] px-2.5 py-1 rounded-lg bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-slate-100 shadow-2xs">
+                            <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
+                            <i class="fa-solid fa-arrow-right text-[9px] text-[var(--signal-500)] dark:text-cyan-400"></i>
+                            <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="formatearSoloFecha(h.fecha_fin)"></span>
                           </div>
                         </td>
-                        <td class="px-3 py-2.5 text-[var(--paper-muted)] font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
+                        <td class="px-3 py-2.5 text-[var(--paper-muted)] dark:text-slate-300 font-mono text-[11px] whitespace-nowrap" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
                       </tr>
                     </template>
                     <tr x-show="historialFiltrado.length === 0">
@@ -746,16 +766,15 @@
                         <td class="px-3 py-2.5 text-center text-[var(--paper-muted)] font-mono" x-text="(formHistorialPage - 1) * formHistorialPageSize + hIndex + 1"></td>
                         
                         <!-- Código / Radicado con botón de copiar -->
-                        <td class="px-3 py-2.5">
+                        <td class="px-3 py-2.5 whitespace-nowrap">
                           <template x-if="h.codigo_radicado">
-                            <div class="inline-flex items-center gap-1.5 bg-[#efe9dc]/70 dark:bg-white/10 px-2 py-1 rounded-md border border-[var(--paper-shadow)]">
-                              <span class="font-mono font-bold text-[var(--paper-ink)] text-[11px]" x-text="h.codigo_radicado"></span>
-                              <button type="button" @click="copiarCodigo(h.codigo_radicado)"
-                                class="text-[var(--paper-muted)] hover:text-[var(--paper-ink)] transition-colors p-0.5"
-                                :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
-                                <i class="fa-solid text-[10px]" :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-600' : 'fa-copy'"></i>
-                              </button>
-                            </div>
+                            <button type="button" @click="copiarCodigo(h.codigo_radicado)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/30 dark:border-sky-400/40 shadow-xs hover:border-sky-400/70 transition-all radicado-pill-custom group cursor-pointer select-none"
+                              :title="copiadoFeedback === h.codigo_radicado ? '¡Copiado!' : 'Copiar código'">
+                              <span class="font-mono font-bold text-[11.5px] text-sky-700 dark:text-sky-300 tracking-wide select-none" x-text="h.codigo_radicado"></span>
+                              <i class="fa-solid text-[10px] text-sky-600/70 group-hover:text-sky-700 dark:text-sky-300/80 dark:group-hover:text-white transition-all"
+                                :class="copiadoFeedback === h.codigo_radicado ? 'fa-check text-emerald-400' : 'fa-copy'"></i>
+                            </button>
                           </template>
                           <template x-if="!h.codigo_radicado">
                             <span class="text-[var(--paper-muted)] italic text-[11px]">Directo</span>
@@ -771,21 +790,21 @@
                         </td>
 
                         <!-- Empresa Contratista -->
-                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)]">
+                        <td class="px-3 py-2.5 font-medium text-[var(--paper-ink)] dark:text-slate-200">
                           <span x-text="h.nombre_contratista || 'Personal Directo / Sin contratista'"></span>
                         </td>
 
                         <!-- Fechas Inicio y Fin -->
-                        <td class="px-3 py-2.5 text-[var(--paper-ink)]">
-                          <div class="flex items-center gap-1.5">
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
-                            <i class="fa-solid fa-arrow-right text-[10px] text-[var(--paper-muted)]"></i>
-                            <span class="font-medium" x-text="formatearSoloFecha(h.fecha_fin)"></span>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                          <div class="inline-flex items-center gap-1.5 font-mono text-[11px] px-2.5 py-1 rounded-lg bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-slate-100 shadow-2xs">
+                            <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="formatearSoloFecha(h.fecha_inicio)"></span>
+                            <i class="fa-solid fa-arrow-right text-[9px] text-[var(--signal-500)] dark:text-cyan-400"></i>
+                            <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="formatearSoloFecha(h.fecha_fin)"></span>
                           </div>
                         </td>
 
                         <!-- Fecha de Registro del Historial -->
-                        <td class="px-3 py-2.5 text-[var(--paper-muted)] font-mono text-[11px]" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
+                        <td class="px-3 py-2.5 text-[var(--paper-muted)] dark:text-slate-300 font-mono text-[11px] whitespace-nowrap" x-text="formatearFecha(h.fecha_solicitud, false)"></td>
 
                       </tr>
                     </template>

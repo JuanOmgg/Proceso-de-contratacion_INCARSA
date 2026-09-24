@@ -75,7 +75,8 @@
           <div class="filter-bar p-4 flex flex-wrap items-center gap-3">
             <div class="search-input-wrapper" style="flex: 1 1 260px; min-width: 220px;">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar correspondencia..."
+              <input type="search" x-model.debounce.250ms="search" placeholder="Buscar correspondencia..."
+                name="busqueda_correspondencia" id="busqueda_correspondencia" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
                 class="input-field w-full rounded-lg py-2.5 text-sm">
             </div>
 

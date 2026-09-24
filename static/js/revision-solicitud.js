@@ -1940,7 +1940,7 @@ function revisionSolicitudApp() {
           etiqueta: 'Sin revisión',
           textoDias: 'Sin revisión',
           icono: 'fa-solid fa-circle-question',
-          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+          badgeClass: 'bg-slate-500/20 text-slate-700 dark:text-slate-100 border-slate-400/40 vigencia-badge-neon is-sin-revision',
           dotClass: 'bg-slate-400',
           dias: null
         };
@@ -1956,7 +1956,7 @@ function revisionSolicitudApp() {
           etiqueta: 'Fecha inválida',
           textoDias: 'Fecha inválida',
           icono: 'fa-solid fa-circle-question',
-          badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+          badgeClass: 'bg-slate-500/20 text-slate-700 dark:text-slate-100 border-slate-400/40 vigencia-badge-neon is-sin-revision',
           dotClass: 'bg-slate-400',
           dias: null
         };
@@ -1973,7 +1973,7 @@ function revisionSolicitudApp() {
           etiqueta: `Vencido (${diasVencidos}d)`,
           textoDias: `Vencido hace ${diasVencidos} ${diasVencidos === 1 ? 'día' : 'días'}`,
           icono: 'fa-solid fa-circle-xmark',
-          badgeClass: 'bg-red-50 text-red-700 border-red-200',
+          badgeClass: 'bg-red-500/20 text-red-700 dark:text-red-200 border-red-400/40 vigencia-badge-neon is-vencido',
           dotClass: 'bg-red-500',
           dias: diffDias
         };
@@ -1983,7 +1983,7 @@ function revisionSolicitudApp() {
           etiqueta: 'Vence hoy',
           textoDias: 'Vence hoy',
           icono: 'fa-solid fa-triangle-exclamation',
-          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+          badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-400/40 vigencia-badge-neon is-por-vencer',
           dotClass: 'bg-amber-500',
           dias: 0
         };
@@ -1993,7 +1993,7 @@ function revisionSolicitudApp() {
           etiqueta: `Por vencer (${diffDias}d)`,
           textoDias: `${diffDias} ${diffDias === 1 ? 'día restante' : 'días restantes'}`,
           icono: 'fa-solid fa-triangle-exclamation',
-          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+          badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-400/40 vigencia-badge-neon is-por-vencer',
           dotClass: 'bg-amber-500',
           dias: diffDias
         };
@@ -2003,7 +2003,7 @@ function revisionSolicitudApp() {
           etiqueta: `Vigente (${diffDias}d)`,
           textoDias: `${diffDias} días restantes`,
           icono: 'fa-solid fa-circle-check',
-          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 border-emerald-400/40 vigencia-badge-neon is-vigente',
           dotClass: 'bg-emerald-500',
           dias: diffDias
         };
@@ -2236,6 +2236,23 @@ function revisionSolicitudApp() {
           return `${dia} ${mesNombre} ${anio}`;
         }
         return this.formatearSoloFecha(fechaStr);
+      } catch {
+        return fechaStr;
+      }
+    },
+
+    formatearFechaVigencia(fechaStr) {
+      if (!fechaStr || fechaStr === "None" || fechaStr === "null" || fechaStr === "Pendiente" || fechaStr === "No registrada" || fechaStr === "—") {
+        return "Pendiente de consulta";
+      }
+      try {
+        const fecha = this.parsearFechaLocal(fechaStr);
+        if (!fecha || isNaN(fecha.getTime())) return fechaStr;
+        const dia = fecha.getDate();
+        const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+        const mes = meses[fecha.getMonth()];
+        const anio = fecha.getFullYear();
+        return `${dia} de ${mes} de ${anio}`;
       } catch {
         return fechaStr;
       }

@@ -196,6 +196,13 @@
           </span>
           <span x-show="isModuloMantenimiento('inducciones')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
+        <a href="/estadisticas" class="sidebar-link flex items-center justify-between px-3 py-2.5"
+          :class="isActive('/estadisticas') ? 'is-active' : ''">
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-chart-line w-4 text-center"></i>
+            <span class="sidebar-label">Estadísticas</span>
+          </span>
+        </a>
 
 
         <!-- Módulo Exclusivo SuperAdmin -->

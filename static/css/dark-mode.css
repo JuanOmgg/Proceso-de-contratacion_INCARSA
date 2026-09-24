@@ -933,15 +933,15 @@ html.dark select option:checked {
    Botones principales (.btn-signal), enlace activo del sidebar,
    logo de la empresa y chip de rol (.role-chip)
    ========================================================= */
-:root.dark .btn-signal:not(.login-page *),
-:root.dark .sidebar-link.is-active,
-:root.dark .role-chip,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *),
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip,
 :root.dark .sidebar div:has(> .fa-shield-halved),
 :root.dark .sidebar .bg-\[var\(--signal-500\)\] {
   background-image: linear-gradient(
     90deg,
     #dc2626 0%,
-    #f77920 20%,
+    #f75d20 20%,
     #ef4444 40%,
     #dc2626 60%,
     #f3561d 80%,
@@ -957,14 +957,14 @@ html.dark select option:checked {
   text-shadow: none !important;
 }
 
-:root.dark .btn-signal:not(.login-page *) *,
-:root.dark .btn-signal:not(.login-page *) i,
-:root.dark .btn-signal:not(.login-page *) span,
-:root.dark .sidebar-link.is-active *,
-:root.dark .sidebar-link.is-active i,
-:root.dark .sidebar-link.is-active span,
-:root.dark .role-chip *,
-:root.dark .role-chip span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *) *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *) i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *) span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip span,
 :root.dark .sidebar div:has(> .fa-shield-halved) i,
 :root.dark .sidebar .bg-\[var\(--signal-500\)\] i {
   color: #ffffff !important;
@@ -973,19 +973,19 @@ html.dark select option:checked {
 }
 
 /* 1. Botones principales (.btn-signal) con hover interactivo (excepto login) */
-:root.dark .btn-signal:not(.login-page *) {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *) {
   border-radius: 12px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
 
-:root.dark .btn-signal:not(.login-page *):hover {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *):hover {
   animation: flameGradientShift 1.5s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
-:root.dark .btn-signal:not(.login-page *):active {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *):active {
   transform: translateY(0) scale(0.97) !important;
 }
 
@@ -1036,18 +1036,18 @@ html.dark select option:checked {
 }
 
 /* Módulo padre en el sidebar cuando contiene la sección activa */
-:root.dark .sidebar-link.is-module-active {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active {
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.06) !important;
   border: 1px solid rgba(249, 115, 22, 0.45) !important;
   box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 0 0 6px rgba(249, 115, 22, 0.15) !important;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
 }
-:root.dark .sidebar-link.is-module-active i.fa-solid {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active i.fa-solid {
   color: #f97316 !important;
   filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85));
 }
-:root.dark .sidebar-link.is-module-active:hover {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active:hover {
   box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 35px rgba(220, 38, 38, 0.4) !important;
 }
 
@@ -1755,8 +1755,8 @@ body.dark .input-field.has-error:focus {
    ESTILO AURORA FLAMA EN MODALES (DANGER / ERROR / RECHAZADO)
    Botón de confirmación (.modal-btn-confirm) y estampa (.modal-stamp)
    ========================================================= */
-:root.dark .modal-btn-confirm,
-:root.dark .al-btn-confirm,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm,
 :root.dark .modal-stamp.danger,
 :root.dark .modal-stamp.error,
 :root.dark .modal-stamp.rechazado,
@@ -1779,8 +1779,8 @@ body.dark .input-field.has-error:focus {
   border: none !important;
 }
 
-:root.dark .modal-btn-confirm *,
-:root.dark .al-btn-confirm *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm *,
 :root.dark .modal-stamp.danger *,
 :root.dark .modal-stamp.danger i,
 :root.dark .modal-stamp.error *,
@@ -1795,33 +1795,33 @@ body.dark .input-field.has-error:focus {
 }
 
 /* Botón de confirmación interactivo en el modal - Estilo Aurora Flama */
-:root.dark .modal-btn-confirm,
-:root.dark .al-btn-confirm {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm {
   border-radius: 10px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
   text-shadow: none !important;
 }
-:root.dark .modal-btn-confirm i,
-:root.dark .al-btn-confirm i,
-:root.dark .modal-btn-confirm span,
-:root.dark .al-btn-confirm span {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm span {
   color: #ffffff !important;
   text-shadow: none !important;
   filter: none !important;
 }
 
-:root.dark .modal-btn-confirm:hover,
-:root.dark .al-btn-confirm:hover {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm:hover,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm:hover {
   animation: flameGradientShift 1.5s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
-:root.dark .modal-btn-confirm:active,
-:root.dark .al-btn-confirm:active {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm:active,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm:active {
   transform: translateY(0) scale(0.97) !important;
 }
 
@@ -2215,6 +2215,16 @@ body.dark .input-field.has-error:focus {
   transform: translateY(-2px);
 }
 
+/* Permitir que el resplandor neón irradie libremente sin encasillarse ni cortarse */
+.neon-stat-card .neon-value,
+.gauge-card .neon-value,
+.neon-stat-card .neon-label,
+.gauge-card .neon-label {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  background: transparent !important;
+}
+
 /* Estilos por defecto (Modo Claro) */
 .neon-card-incarsa {
   background: #ecfeff !important;
@@ -2305,6 +2315,7 @@ body.dark .input-field.has-error:focus {
 
 /* 1. INCARSA - Cyan Eléctrico Fosforescente */
 :root.dark .neon-card-incarsa {
+  --shimmer-color: rgba(0, 240, 255, 0.3);
   background: rgba(0, 240, 255, 0.08) !important;
   border: 1.5px solid rgba(0, 240, 255, 0.65) !important;
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.28), inset 0 0 10px rgba(0, 240, 255, 0.12) !important;
@@ -2325,6 +2336,7 @@ body.dark .input-field.has-error:focus {
 
 /* 2. UNIMINAS - Verde Neón Fosforescente */
 :root.dark .neon-card-uniminas {
+  --shimmer-color: rgba(0, 255, 136, 0.3);
   background: rgba(0, 255, 136, 0.08) !important;
   border: 1.5px solid rgba(0, 255, 136, 0.65) !important;
   box-shadow: 0 0 16px rgba(0, 255, 136, 0.28), inset 0 0 10px rgba(0, 255, 136, 0.12) !important;
@@ -2345,6 +2357,7 @@ body.dark .input-field.has-error:focus {
 
 /* 3. CARBOINSA - Ámbar / Oro Eléctrico Fosforescente */
 :root.dark .neon-card-carboinsa {
+  --shimmer-color: rgba(255, 183, 0, 0.3);
   background: rgba(255, 183, 0, 0.08) !important;
   border: 1.5px solid rgba(255, 183, 0, 0.65) !important;
   box-shadow: 0 0 16px rgba(255, 183, 0, 0.28), inset 0 0 10px rgba(255, 183, 0, 0.12) !important;
@@ -2365,6 +2378,7 @@ body.dark .input-field.has-error:focus {
 
 /* 4. MILPA - Púrpura / Amatista Neón Fosforescente */
 :root.dark .neon-card-milpa {
+  --shimmer-color: rgba(192, 132, 252, 0.3);
   background: rgba(192, 132, 252, 0.08) !important;
   border: 1.5px solid rgba(192, 132, 252, 0.65) !important;
   box-shadow: 0 0 16px rgba(192, 132, 252, 0.28), inset 0 0 10px rgba(192, 132, 252, 0.12) !important;
@@ -2385,6 +2399,7 @@ body.dark .input-field.has-error:focus {
 
 /* 5. TOTAL - Magenta / Rosa Neón Fosforescente */
 :root.dark .neon-card-total {
+  --shimmer-color: rgba(255, 42, 133, 0.3);
   background: rgba(255, 42, 133, 0.09) !important;
   border: 1.5px solid rgba(255, 42, 133, 0.7) !important;
   box-shadow: 0 0 18px rgba(255, 42, 133, 0.32), inset 0 0 12px rgba(255, 42, 133, 0.15) !important;
@@ -3277,8 +3292,8 @@ body.dark .input-field.has-error:focus {
 }
 
 /* 2. Botón 'Actualizar Vigencia' y 'Revisar Expediente' tipo píldora (btn-signal) */
-:root.dark .btn-signal,
-:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) button:has(> .fa-calendar-check):not(.action-icon-btn) {
   background: linear-gradient(135deg, #e11d48 0%, #ea580c 100%) !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
@@ -3287,14 +3302,14 @@ body.dark .input-field.has-error:focus {
   transition: all 0.2s ease !important;
 }
 
-:root.dark .btn-signal i,
-:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn) i {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) button:has(> .fa-calendar-check):not(.action-icon-btn) i {
   color: #ffffff !important;
   filter: none !important;
 }
 
-:root.dark .btn-signal:hover,
-:root.dark button:has(> .fa-calendar-check):not(.action-icon-btn):hover {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:hover,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) button:has(> .fa-calendar-check):not(.action-icon-btn):hover {
   background: linear-gradient(135deg, #f43f5e 0%, #f97316 100%) !important;
   box-shadow: 0 4px 14px rgba(244, 63, 94, 0.5), 0 0 16px rgba(249, 115, 22, 0.3) !important;
   transform: translateY(-1.5px) !important;
@@ -4807,13 +4822,18 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   filter: drop-shadow(0 0 6px #818cf8) !important;
 }
 :root.dark .historial-summary-card.card-responsable .subtitles-modal {
-  color: #a5b4fc !important;
+  color: #c7d2fe !important;
   text-shadow: 0 0 8px rgba(165, 180, 252, 0.45) !important;
 }
 :root.dark .historial-summary-card.card-responsable p {
   color: #ffffff !important;
   font-weight: 700 !important;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
+}
+:root.dark .historial-summary-card.card-responsable span:not(.subtitles-modal) {
+  color: #e0e7ff !important;
+  font-weight: 500 !important;
+  opacity: 0.95;
 }
 
 /* 2. Card Última Empresa (Cian Eléctrico Neón) */
@@ -4839,37 +4859,147 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   text-shadow: 0 0 8px rgba(103, 232, 249, 0.45) !important;
 }
 :root.dark .historial-summary-card.card-empresa p {
-  color: #38bdf8 !important;
+  color: #ffffff !important;
   font-weight: 700 !important;
   text-shadow: 0 0 12px rgba(56, 189, 248, 0.55) !important;
 }
+:root.dark .historial-summary-card.card-empresa span:not(.subtitles-modal) {
+  color: #cffafe !important;
+  font-weight: 500 !important;
+  opacity: 0.95;
+}
 
-/* 3. Card Vigencia Actual (Esmeralda Neón) */
+/* 3. Card Vigencia Actual (Esmeralda Neón reactivo) */
 :root.dark .historial-summary-card.card-vigencia {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(34, 197, 94, 0.05) 100%) !important;
   border: 1.5px solid rgba(52, 211, 153, 0.45) !important;
   box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.3), inset 0 0 14px rgba(16, 185, 129, 0.08) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-sin-revision {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.14) 0%, rgba(71, 85, 105, 0.05) 100%) !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  box-shadow: 0 0 16px -3px rgba(100, 116, 139, 0.25) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-vencido {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(185, 28, 28, 0.05) 100%) !important;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+  box-shadow: 0 0 20px -3px rgba(239, 68, 68, 0.3) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-por-vencer {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(180, 83, 9, 0.05) 100%) !important;
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.3) !important;
 }
 :root.dark .historial-summary-card.card-vigencia:hover {
   border-color: rgba(110, 231, 183, 0.75) !important;
   box-shadow: 0 0 28px rgba(16, 185, 129, 0.5), inset 0 0 20px rgba(16, 185, 129, 0.15) !important;
   transform: translateY(-2px);
 }
-:root.dark .historial-summary-card.card-vigencia .summary-icon-box {
-  background: rgba(16, 185, 129, 0.28) !important;
-  border: 1.5px solid rgba(52, 211, 153, 0.65) !important;
-  color: #6ee7b7 !important;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.55) !important;
-  filter: drop-shadow(0 0 6px #34d399) !important;
-}
 :root.dark .historial-summary-card.card-vigencia .subtitles-modal {
   color: #6ee7b7 !important;
   text-shadow: 0 0 8px rgba(110, 231, 183, 0.45) !important;
 }
+:root.dark .historial-summary-card.card-vigencia.is-sin-revision .subtitles-modal {
+  color: #94a3b8 !important;
+  text-shadow: 0 0 8px rgba(148, 163, 184, 0.45) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-vencido .subtitles-modal {
+  color: #f87171 !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.45) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-por-vencer .subtitles-modal {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.45) !important;
+}
 :root.dark .historial-summary-card.card-vigencia p {
-  color: #4ade80 !important;
+  color: #ecfdf5 !important; /* Blanco verdoso nítido y elegante */
   font-weight: 700 !important;
-  text-shadow: 0 0 12px rgba(74, 222, 128, 0.55) !important;
+  text-shadow: 0 0 10px rgba(110, 231, 183, 0.4) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-sin-revision p {
+  color: #f1f5f9 !important;
+  text-shadow: 0 0 8px rgba(148, 163, 184, 0.35) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-por-vencer p {
+  color: #fffbeb !important;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.35) !important;
+}
+:root.dark .historial-summary-card.card-vigencia.is-vencido p {
+  color: #fef2f2 !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.35) !important;
+}
+
+/* 4. Radicado Pills en Tablas de Historial */
+:root.dark .radicado-pill-custom {
+  background: rgba(14, 165, 233, 0.15) !important;
+  border: 1.2px solid rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 12px -2px rgba(14, 165, 233, 0.35) !important;
+  outline: none !important;
+  user-select: none !important;
+}
+:root.dark .radicado-pill-custom span {
+  background: transparent !important;
+  color: #7dd3fc !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5) !important;
+  user-select: none !important;
+}
+:root.dark .radicado-pill-custom i,
+:root.dark .radicado-pill-custom button {
+  color: #bae6fd !important;
+}
+:root.dark .radicado-pill-custom:hover {
+  border-color: rgba(56, 189, 248, 0.8) !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.55) !important;
+  background: rgba(14, 165, 233, 0.22) !important;
+}
+:root.dark .radicado-pill-custom *::selection,
+:root.dark .radicado-pill-custom::selection {
+  background: transparent !important;
+}
+
+/* 5. Insignias Neón de Vigencia en Tablas y Modales (Borde verde y estilo neón) */
+.vigencia-badge-neon {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+:root.dark .vigencia-badge-neon.is-vigente {
+  border: 1.5px solid rgba(52, 211, 153, 0.75) !important;
+  box-shadow: 0 0 14px -1px rgba(16, 185, 129, 0.45) !important;
+  color: #6ee7b7 !important;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.5) !important;
+}
+:root.dark .vigencia-badge-neon.is-vigente i {
+  color: #34d399 !important;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6)) !important;
+}
+
+:root.dark .vigencia-badge-neon.is-por-vencer {
+  border: 1.5px solid rgba(251, 191, 36, 0.75) !important;
+  box-shadow: 0 0 14px -1px rgba(245, 158, 11, 0.45) !important;
+  color: #fde047 !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important;
+}
+:root.dark .vigencia-badge-neon.is-por-vencer i {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6)) !important;
+}
+
+:root.dark .vigencia-badge-neon.is-vencido {
+  border: 1.5px solid rgba(248, 113, 113, 0.75) !important;
+  box-shadow: 0 0 14px -1px rgba(239, 68, 68, 0.45) !important;
+  color: #fca5a5 !important;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
+}
+:root.dark .vigencia-badge-neon.is-vencido i {
+  color: #f87171 !important;
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.6)) !important;
+}
+
+:root.dark .vigencia-badge-neon.is-sin-revision {
+  border: 1.5px solid rgba(148, 163, 184, 0.6) !important;
+  box-shadow: 0 0 10px -2px rgba(100, 116, 139, 0.3) !important;
+  color: #cbd5e1 !important;
 }
 
 /* =========================================================
@@ -5792,6 +5922,265 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   border: 1.5px solid rgba(203, 213, 225, 0.6) !important;
   box-shadow: 0 0 10px rgba(148, 163, 184, 0.4), inset 0 0 6px rgba(148, 163, 184, 0.15) !important;
   text-shadow: none !important;
+}
+
+/* ==========================================================================
+   ESTILO MULTICOLOR EXCLUSIVO PARA ROL SUPERADMIN
+   Inspirado en el gradiente Neón Fluyente (Magenta -> Violeta -> Cian)
+   Flujo continuo lineal y unidireccional hacia la izquierda
+   Aplica a botones, seccionadores, sidebar y stepper cuando el usuario es SUPERADMIN
+   ========================================================================== */
+@keyframes superadminFlowLeft {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* 1. Botones principales, Botones de formularios, Botones de modales, Enlace activo del sidebar, Seccionadores (Módulos padre) y Chip de rol */
+:root[data-role="SUPERADMIN"] .btn-signal,
+:root.role-superadmin .btn-signal,
+:root.dark[data-role="SUPERADMIN"] .btn-signal,
+:root.dark.role-superadmin .btn-signal,
+:root[data-role="SUPERADMIN"] form button.btn-signal,
+:root.role-superadmin form button.btn-signal,
+:root.dark[data-role="SUPERADMIN"] form button.btn-signal,
+:root.dark.role-superadmin form button.btn-signal,
+:root[data-role="SUPERADMIN"] form button[type="submit"],
+:root.role-superadmin form button[type="submit"],
+:root.dark[data-role="SUPERADMIN"] form button[type="submit"],
+:root.dark.role-superadmin form button[type="submit"],
+:root[data-role="SUPERADMIN"] .modal-btn-confirm,
+:root.role-superadmin .modal-btn-confirm,
+:root.dark[data-role="SUPERADMIN"] .modal-btn-confirm,
+:root.dark.role-superadmin .modal-btn-confirm,
+:root[data-role="SUPERADMIN"] .al-btn-confirm,
+:root.role-superadmin .al-btn-confirm,
+:root.dark[data-role="SUPERADMIN"] .al-btn-confirm,
+:root.dark.role-superadmin .al-btn-confirm,
+:root[data-role="SUPERADMIN"] .modal-panel .modal-btn-confirm,
+:root.role-superadmin .modal-panel .modal-btn-confirm,
+:root.dark[data-role="SUPERADMIN"] .modal-panel .modal-btn-confirm,
+:root.dark.role-superadmin .modal-panel .modal-btn-confirm,
+:root[data-role="SUPERADMIN"] .btn-action-detalle,
+:root.role-superadmin .btn-action-detalle,
+:root[data-role="SUPERADMIN"] .btn-superadmin-multicolor,
+:root.role-superadmin .btn-superadmin-multicolor,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-active,
+:root.role-superadmin .sidebar-link.is-active,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-active,
+:root.dark.role-superadmin .sidebar-link.is-active,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active,
+:root.role-superadmin .sidebar-link.is-module-active,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active,
+:root.dark.role-superadmin .sidebar-link.is-module-active,
+:root[data-role="SUPERADMIN"] .role-chip,
+:root.role-superadmin .role-chip,
+:root.dark[data-role="SUPERADMIN"] .role-chip,
+:root.dark.role-superadmin .role-chip {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 18px rgba(217, 70, 239, 0.45), 0 0 26px rgba(6, 182, 212, 0.35) !important;
+  transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.3s ease !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+}
+
+/* Forzar texto e íconos en blanco puro y sin sombras ni filtros que alteren el color */
+:root[data-role="SUPERADMIN"] .btn-signal *,
+:root.role-superadmin .btn-signal *,
+:root.dark[data-role="SUPERADMIN"] .btn-signal *,
+:root.dark.role-superadmin .btn-signal *,
+:root[data-role="SUPERADMIN"] form button.btn-signal *,
+:root.role-superadmin form button.btn-signal *,
+:root.dark[data-role="SUPERADMIN"] form button.btn-signal *,
+:root.dark.role-superadmin form button.btn-signal *,
+:root[data-role="SUPERADMIN"] form button[type="submit"] *,
+:root.role-superadmin form button[type="submit"] *,
+:root.dark[data-role="SUPERADMIN"] form button[type="submit"] *,
+:root.dark.role-superadmin form button[type="submit"] *,
+:root[data-role="SUPERADMIN"] .modal-btn-confirm *,
+:root.role-superadmin .modal-btn-confirm *,
+:root.dark[data-role="SUPERADMIN"] .modal-btn-confirm *,
+:root.dark.role-superadmin .modal-btn-confirm *,
+:root[data-role="SUPERADMIN"] .al-btn-confirm *,
+:root.role-superadmin .al-btn-confirm *,
+:root.dark[data-role="SUPERADMIN"] .al-btn-confirm *,
+:root.dark.role-superadmin .al-btn-confirm *,
+:root[data-role="SUPERADMIN"] .btn-action-detalle *,
+:root.role-superadmin .btn-action-detalle *,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-active *,
+:root.role-superadmin .sidebar-link.is-active *,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-active *,
+:root.dark.role-superadmin .sidebar-link.is-active *,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-active i,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-active i.fa-solid,
+:root.role-superadmin .sidebar-link.is-active i,
+:root.role-superadmin .sidebar-link.is-active i.fa-solid,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-active i,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-active i.fa-solid,
+:root.dark.role-superadmin .sidebar-link.is-active i,
+:root.dark.role-superadmin .sidebar-link.is-active i.fa-solid,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active *,
+:root.role-superadmin .sidebar-link.is-module-active *,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active *,
+:root.dark.role-superadmin .sidebar-link.is-module-active *,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active i,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active i.fa-solid,
+:root.role-superadmin .sidebar-link.is-module-active i,
+:root.role-superadmin .sidebar-link.is-module-active i.fa-solid,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active i,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active i.fa-solid,
+:root.dark.role-superadmin .sidebar-link.is-module-active i,
+:root.dark.role-superadmin .sidebar-link.is-module-active i.fa-solid,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active span,
+:root.role-superadmin .sidebar-link.is-module-active span,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active span,
+:root.dark.role-superadmin .sidebar-link.is-module-active span,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active .sidebar-chevron,
+:root.role-superadmin .sidebar-link.is-module-active .sidebar-chevron,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active .sidebar-chevron,
+:root.dark.role-superadmin .sidebar-link.is-module-active .sidebar-chevron,
+:root[data-role="SUPERADMIN"] .role-chip *,
+:root.role-superadmin .role-chip *,
+:root.dark[data-role="SUPERADMIN"] .role-chip *,
+:root.dark.role-superadmin .role-chip * {
+  color: #ffffff !important;
+  filter: none !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Efectos Hover */
+:root[data-role="SUPERADMIN"] .btn-signal:hover,
+:root.role-superadmin .btn-signal:hover,
+:root.dark[data-role="SUPERADMIN"] .btn-signal:hover,
+:root.dark.role-superadmin .btn-signal:hover,
+:root[data-role="SUPERADMIN"] form button.btn-signal:hover,
+:root.role-superadmin form button.btn-signal:hover,
+:root.dark[data-role="SUPERADMIN"] form button.btn-signal:hover,
+:root.dark.role-superadmin form button.btn-signal:hover,
+:root[data-role="SUPERADMIN"] form button[type="submit"]:hover,
+:root.role-superadmin form button[type="submit"]:hover,
+:root.dark[data-role="SUPERADMIN"] form button[type="submit"]:hover,
+:root.dark.role-superadmin form button[type="submit"]:hover,
+:root[data-role="SUPERADMIN"] .modal-btn-confirm:hover,
+:root.role-superadmin .modal-btn-confirm:hover,
+:root.dark[data-role="SUPERADMIN"] .modal-btn-confirm:hover,
+:root.dark.role-superadmin .modal-btn-confirm:hover,
+:root[data-role="SUPERADMIN"] .al-btn-confirm:hover,
+:root.role-superadmin .al-btn-confirm:hover,
+:root.dark[data-role="SUPERADMIN"] .al-btn-confirm:hover,
+:root.dark.role-superadmin .al-btn-confirm:hover,
+:root[data-role="SUPERADMIN"] .btn-action-detalle:hover,
+:root.role-superadmin .btn-action-detalle:hover,
+:root[data-role="SUPERADMIN"] .btn-superadmin-multicolor:hover,
+:root.role-superadmin .btn-superadmin-multicolor:hover,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-active:hover,
+:root.role-superadmin .sidebar-link.is-active:hover,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-active:hover,
+:root.dark.role-superadmin .sidebar-link.is-active:hover,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active:hover,
+:root.role-superadmin .sidebar-link.is-module-active:hover,
+:root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active:hover,
+:root.dark.role-superadmin .sidebar-link.is-module-active:hover {
+  animation: superadminFlowLeft 3s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 26px rgba(217, 70, 239, 0.75), 0 0 42px rgba(6, 182, 212, 0.55) !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-signal:active,
+:root.role-superadmin .btn-signal:active,
+:root.dark[data-role="SUPERADMIN"] .btn-signal:active,
+:root.dark.role-superadmin .btn-signal:active,
+:root[data-role="SUPERADMIN"] form button.btn-signal:active,
+:root.role-superadmin form button.btn-signal:active,
+:root.dark[data-role="SUPERADMIN"] form button.btn-signal:active,
+:root.dark.role-superadmin form button.btn-signal:active,
+:root[data-role="SUPERADMIN"] form button[type="submit"]:active,
+:root.role-superadmin form button[type="submit"]:active,
+:root.dark[data-role="SUPERADMIN"] form button[type="submit"]:active,
+:root.dark.role-superadmin form button[type="submit"]:active,
+:root[data-role="SUPERADMIN"] .modal-btn-confirm:active,
+:root.role-superadmin .modal-btn-confirm:active,
+:root.dark[data-role="SUPERADMIN"] .modal-btn-confirm:active,
+:root.dark.role-superadmin .modal-btn-confirm:active,
+:root[data-role="SUPERADMIN"] .btn-action-detalle:active,
+:root.role-superadmin .btn-action-detalle:active,
+:root[data-role="SUPERADMIN"] .sidebar-link.is-module-active:active,
+:root.role-superadmin .sidebar-link.is-module-active:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* 2. Círculo activo del Stepper (ej: Paso 1 "Datos generales") con flujo a la izquierda */
+:root[data-role="SUPERADMIN"] .step-circle.is-current,
+:root.role-superadmin .step-circle.is-current,
+:root.dark[data-role="SUPERADMIN"] .step-circle.is-current,
+:root.dark.role-superadmin .step-circle.is-current {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 18px 2px rgba(217, 70, 239, 0.65), 0 0 0 3px rgba(6, 182, 212, 0.3) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  transform: scale(1.18) !important;
+}
+
+:root[data-role="SUPERADMIN"] .step-label.is-current,
+:root.role-superadmin .step-label.is-current,
+:root.dark[data-role="SUPERADMIN"] .step-label.is-current,
+:root.dark.role-superadmin .step-label.is-current {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 10px rgba(217, 70, 239, 0.6) !important;
+}
+
+/* 3. Sub-enlace activo del Sidebar (ej: "Nueva solicitud") con flujo a la izquierda */
+:root[data-role="SUPERADMIN"] .sidebar-sublink.is-active,
+:root.role-superadmin .sidebar-sublink.is-active,
+:root.dark[data-role="SUPERADMIN"] .sidebar-sublink.is-active,
+:root.dark.role-superadmin .sidebar-sublink.is-active {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-left: 3.5px solid #d946ef !important;
+  background-image: linear-gradient(
+    90deg,
+    rgba(217, 70, 239, 0.32) 0%,
+    rgba(168, 85, 247, 0.20) 25%,
+    rgba(6, 182, 212, 0.15) 50%,
+    rgba(56, 189, 248, 0.10) 75%,
+    rgba(217, 70, 239, 0.32) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  border-radius: 0 8px 8px 0 !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.35), inset 2px 0 8px rgba(6, 182, 212, 0.2) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 14px rgba(217, 70, 239, 0.6) !important;
+  transform: translateX(2px) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
 }
 
 

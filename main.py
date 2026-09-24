@@ -34,6 +34,7 @@ from src.routes.notificacion_route import router as notificacion_router
 from src.routes.superadmin_router import router as superadmin_router
 from src.routes.correspondencia_route import router as correspondencia_router
 from src.routes.dispositivo_router import router as dispositivo_router
+from src.routes.estadisticas_route import router as estadisticas_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.utils.security import decode_access_token
 
@@ -419,6 +420,8 @@ app.include_router(correspondencia_router, prefix="/api/v1")
 app.include_router(correspondencia_router)
 app.include_router(dispositivo_router, prefix="/api/v1")
 app.include_router(dispositivo_router)
+app.include_router(estadisticas_router, prefix="/api/v1")
+app.include_router(estadisticas_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -470,6 +473,10 @@ async def get_antecedentes(request: Request):
 @app.get("/inducciones")
 async def get_inducciones(request: Request):
     return templates.TemplateResponse(name="inducciones.html", request=request)
+
+@app.get("/estadisticas")
+async def get_estadisticas(request: Request):
+    return templates.TemplateResponse(name="Estadisticas.html", request=request)
 
 
 @app.get("/procesamiento")

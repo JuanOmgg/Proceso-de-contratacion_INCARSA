@@ -139,6 +139,14 @@
             </div>
           </div>
 
+          <button
+            @click="toggleDarkMode()"
+            class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10"
+            :title="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+            <i class="fa-solid text-sm sm:text-base transition-all duration-300"
+               :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon'"></i>
+          </button>
+          
           <!-- Perfil -->
           <div class="relative" x-data="{ open: false }" @click.outside="open = false">
             <button @click="open = !open"
@@ -147,7 +155,7 @@
               <div class="relative flex-shrink-0">
                 <div
                   class="w-7 h-7 sm:w-8 sm:h-8 rounded-full inicialesUser flex items-center justify-center text-[11px] sm:text-xs font-bold flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
-                  x-text="userInitials"><b>LG</b></div>
+                  x-text="userInitials"></div>
                 <span class="navbar-user-status-dot"></span>
               </div>
               <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName"></span>

@@ -3061,7 +3061,7 @@ def OBTENER_token_formulario_db(token: str) -> dict:
                     return {"valido": False, "mensaje": "Este formulario temporal ha sido cancelado o revocado por el solicitante."}
 
                 if tok_row["usado"]:
-                    return {"valido": False, "mensaje": "Este formulario temporal ya fue diligenciado y enviado previamente."}
+                    return {"valido": False, "mensaje": "Este formulario ya fue diligenciado.."}
 
                 if tok_row["fecha_expiracion"] < datetime.now():
                     return {"valido": False, "mensaje": "Este formulario temporal ha expirado. Por favor solicite un nuevo enlace al solicitante."}

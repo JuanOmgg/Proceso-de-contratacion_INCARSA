@@ -1,0 +1,627 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Estadísticas · PSI{% endblock %}
+
+{% block extra_head %}
+  <!-- Chart.js para gráficos de estadísticas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* Estilos Neón y Adaptaciones Estéticas para el Módulo de Estadísticas */
+    .stat-filter-pill {
+      transition: all 0.2s ease-in-out;
+    }
+    .stat-filter-pill.active {
+      background: rgba(16, 185, 129, 0.15) !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      color: #10b981 !important;
+      box-shadow: 0 0 12px -2px rgba(16, 185, 129, 0.35);
+    }
+    :root.dark .stat-filter-pill.active {
+      color: #34d399 !important;
+      border-color: rgba(52, 211, 153, 0.7) !important;
+      box-shadow: 0 0 14px -2px rgba(16, 185, 129, 0.45);
+    }
+
+    /* Tarjetas Neón */
+    .stat-neon-box {
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all 0.25s ease;
+    }
+    :root.dark .stat-neon-box {
+      background: rgba(24, 24, 27, 0.85);
+      border-color: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+    }
+    :root.dark .stat-neon-box:hover {
+      border-color: rgba(16, 185, 129, 0.35);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 15px -3px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Badge de radicado */
+    .radicado-tag {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: 0.04em;
+    }
+
+    /* Estilos personalizados para los inputs de filtro, Flatpickr y selects */
+    .stat-filter-input-wrap {
+      position: relative;
+    }
+    .stat-filter-input-wrap .input-field {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stat-filter-input-wrap .input-field:hover {
+      border-color: rgba(16, 185, 129, 0.5) !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.15) !important;
+    }
+    .stat-filter-input-wrap .input-field:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+      outline: none !important;
+    }
+    :root.dark .stat-filter-input-wrap .input-field:hover {
+      border-color: rgba(52, 211, 153, 0.6) !important;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+    }
+    :root.dark .stat-filter-input-wrap .input-field:focus {
+      border-color: #34d399 !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.35), 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+      outline: none !important;
+    }
+  </style>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/estadisticas.js') }}?v=1.2"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- SIDEBAR -->
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="estadisticasApp()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      {% set page_title = "Estadísticas de Ingreso a Plantas" %}
+      {% include 'pages/navbar.html' %}
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-3 sm:p-6 space-y-6 max-w-full">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+          <!-- ============================================================
+             1. HEADER CON FILTROS INTELIGENTES
+          ============================================================= -->
+          <div class="stat-neon-box rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+            
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h1 class="text-lg sm:text-xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+                  <i class="fa-solid fa-chart-line text-emerald-500"></i>
+                  <span>Afluencia Diaria a Plantas</span>
+                </h1>
+                <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+                  Conteo diario deduplicado: personas en múltiples solicitudes se contabilizan una sola vez.
+                </p>
+              </div>
+
+              <!-- Atajos Rápidos de Rango -->
+              <div class="flex flex-wrap items-center gap-1.5 bg-[var(--bg-subtle)] p-1 rounded-xl border border-[var(--border-subtle)]">
+                <button type="button" @click="aplicarRangoRapido('hoy')"
+                  class="stat-filter-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                  :class="filtroRapido === 'hoy' ? 'active' : ''">
+                  Hoy
+                </button>
+                <button type="button" @click="aplicarRangoRapido('7dias')"
+                  class="stat-filter-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                  :class="filtroRapido === '7dias' ? 'active' : ''">
+                  Últimos 7 días
+                </button>
+                <button type="button" @click="aplicarRangoRapido('mes_actual')"
+                  class="stat-filter-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                  :class="filtroRapido === 'mes_actual' ? 'active' : ''">
+                  Este mes
+                </button>
+                <button type="button" @click="aplicarRangoRapido('mes_anterior')"
+                  class="stat-filter-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                  :class="filtroRapido === 'mes_anterior' ? 'active' : ''">
+                  Mes anterior
+                </button>
+                <button type="button" @click="aplicarRangoRapido('ano_actual')"
+                  class="stat-filter-pill px-3 py-1.5 text-xs font-semibold rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                  :class="filtroRapido === 'ano_actual' ? 'active' : ''">
+                  Año actual
+                </button>
+              </div>
+            </div>
+
+            <!-- Controles de Filtro Personalizado -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-3 border-t border-[var(--border-subtle)]">
+              
+              <!-- Fecha Inicio con Flatpickr -->
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-[11px] text-emerald-500"></i>
+                  <span>Fecha desde:</span>
+                </label>
+                <div class="stat-filter-input-wrap" @click="$refs.fechaInicioInput && $refs.fechaInicioInput._flatpickr && $refs.fechaInicioInput._flatpickr.open()">
+                  <input type="text" x-ref="fechaInicioInput" x-init="initFlatpickrInicio($el)"
+                    placeholder="dd/mm/aaaa"
+                    class="input-field w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg cursor-pointer font-medium text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)]" />
+                  <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-xs text-emerald-500 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <!-- Fecha Fin con Flatpickr -->
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar-check text-[11px] text-emerald-500"></i>
+                  <span>Fecha hasta:</span>
+                </label>
+                <div class="stat-filter-input-wrap" @click="$refs.fechaFinInput && $refs.fechaFinInput._flatpickr && $refs.fechaFinInput._flatpickr.open()">
+                  <input type="text" x-ref="fechaFinInput" x-init="initFlatpickrFin($el)"
+                    placeholder="dd/mm/aaaa"
+                    class="input-field w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg cursor-pointer font-medium text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)]" />
+                  <i class="fa-regular fa-calendar-check absolute left-3 top-1/2 -translate-y-1/2 text-xs text-emerald-500 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <!-- Selector de Planta -->
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-solid fa-industry text-[11px] text-cyan-500"></i>
+                  <span>Planta de destino:</span>
+                </label>
+                <div class="stat-filter-input-wrap">
+                  <select x-model="filtros.id_planta" @change="cargarEstadisticas()"
+                    class="input-field w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-lg font-medium cursor-pointer text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                    <option value="">Todas las plantas</option>
+                    <template x-for="p in plantas" :key="p.id">
+                      <option :value="p.id" x-text="p.nombre + (p.empresa ? ' (' + p.empresa + ')' : '')"></option>
+                    </template>
+                  </select>
+                  <i class="fa-solid fa-industry absolute left-3 top-1/2 -translate-y-1/2 text-xs text-cyan-500 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <!-- Estado de Solicitudes -->
+              <div>
+                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center gap-1.5">
+                  <i class="fa-solid fa-filter text-[11px] text-amber-500"></i>
+                  <span>Estado de solicitud:</span>
+                </label>
+                <div class="stat-filter-input-wrap">
+                  <select x-model="filtros.estado" @change="cargarEstadisticas()"
+                    class="input-field w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-lg font-medium cursor-pointer text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                    <option value="APROBADO">Solo Aprobadas (Acceso efectivo)</option>
+                    <option value="TODOS">Todas las solicitudes</option>
+                    <option value="EN REVISION">En revisión</option>
+                    <option value="POR APROBAR">Por aprobar</option>
+                    <option value="ENVIADO">Enviadas</option>
+                  </select>
+                  <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-xs text-amber-500 pointer-events-none"></i>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ============================================================
+             2. CARDS DE INDICADORES NEÓN (KPIS)
+          ============================================================= -->
+          <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            
+            <!-- KPI 1: Personas Únicas Globales (Verde Esmeralda Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-users text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Personas</p>
+                <p class="gauge-value text-2xl font-semibold neon-value"
+                  x-text="cargando ? '...' : (kpis.total_personas_unicas_periodo || 0)">
+                </p>
+              </div>
+            </div>
+
+            <!-- KPI 2: Total Ingresos Acumulados (Cian Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-id-card-clip text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Ingresos Programados</p>
+                <p class="gauge-value text-2xl font-semibold neon-value"
+                  x-text="cargando ? '...' : (kpis.total_ingresos_acumulados || 0)">
+                </p>
+              </div>
+            </div>
+
+            <!-- KPI 3: Promedio Diario (Violeta Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-milpa rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-chart-simple text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Promedio Diario</p>
+                <p class="gauge-value text-2xl font-semibold neon-value"
+                  x-text="cargando ? '...' : ((kpis.promedio_diario || 0) + ' /día')">
+                </p>
+              </div>
+            </div>
+
+            <!-- KPI 4: Planta con Mayor Afluencia (Ámbar Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-fire text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Mayor Afluencia</p>
+                <p class="gauge-value text-sm sm:text-base font-semibold neon-value leading-tight"
+                  :title="kpis.planta_mayor_afluencia ? kpis.planta_mayor_afluencia.planta : ''"
+                  x-text="cargando ? '...' : (kpis.planta_mayor_afluencia ? kpis.planta_mayor_afluencia.planta : 'Ninguna')">
+                </p>
+                <span class="text-[11px] text-[var(--text-muted)] block mt-0.5"
+                  x-show="kpis.planta_mayor_afluencia && kpis.planta_mayor_afluencia.total > 0"
+                  x-text="kpis.planta_mayor_afluencia.total + ' personas'"></span>
+              </div>
+            </div>
+
+            <!-- KPI 5: Día Pico de Ingreso (Rosa / Carmesí Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 col-span-2 lg:col-span-1 neon-stat-card neon-card-total rounded-xl">
+              <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-day text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Día Pico</p>
+                <p class="gauge-value text-sm sm:text-base font-semibold neon-value leading-tight"
+                  :title="kpis.dia_pico?.fecha || ''"
+                  x-text="cargando ? '...' : (kpis.dia_pico?.fecha_formateada || (kpis.dia_pico?.fecha ? formatearFecha(kpis.dia_pico.fecha) : 'Sin registros'))">
+                </p>
+                <span class="text-[11px] text-[var(--text-muted)] block mt-0.5"
+                  x-show="kpis.dia_pico && kpis.dia_pico.total > 0"
+                  x-text="kpis.dia_pico.total + ' personas'"></span>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ============================================================
+             3. VISUALIZACIÓN GRÁFICA (CHART.JS)
+          ============================================================= -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Gráfico de Línea: Tendencia diaria -->
+            <div class="stat-neon-box rounded-2xl p-5 lg:col-span-2 shadow-sm flex flex-col">
+              <div class="flex items-center justify-between pb-3 mb-2 border-b border-[var(--border-subtle)]">
+                <div>
+                  <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <i class="fa-solid fa-wave-square text-emerald-500"></i>
+                    <span>Tendencia diaria de personas</span>
+                  </h3>
+                  <p class="text-xs text-[var(--text-muted)]">Evolución de afluencia día a día en el período seleccionado</p>
+                </div>
+                <span class="text-[11px] px-2.5 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  x-text="(kpis.dias_consultados || 0) + ' días'"></span>
+              </div>
+              <div class="h-64 sm:h-72 w-full relative">
+                <canvas id="chartTendenciaDiaria"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfico de Barras: Distribución por Planta -->
+            <div class="stat-neon-box rounded-2xl p-5 shadow-sm flex flex-col">
+              <div class="flex items-center justify-between pb-3 mb-2 border-b border-[var(--border-subtle)]">
+                <div>
+                  <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-cyan-500"></i>
+                    <span>Top Plantas con Más Ingresos</span>
+                  </h3>
+                  <p class="text-xs text-[var(--text-muted)]">Personas acumuladas por sede</p>
+                </div>
+              </div>
+              <div class="h-64 sm:h-72 w-full relative">
+                <canvas id="chartDistribucionPlantas"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============================================================
+             4. TABLA DETALLADA DE AFLUENCIA POR DÍA Y PLANTA
+          ============================================================= -->
+          <div class="stat-neon-box rounded-2xl shadow-sm overflow-hidden">
+            
+            <!-- Barra Superior de la Tabla -->
+            <div class="p-4 sm:p-5 border-b border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <i class="fa-solid fa-table-list text-emerald-500"></i>
+                  <span>Detalle de Afluencia por Día y Planta</span>
+                </h3>
+                <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                  Haz clic en <span class="font-semibold text-emerald-400">"Ver personas"</span> para inspeccionar los trabajadores autorizados y sus radicados asociados.
+                </p>
+              </div>
+
+              <!-- Buscador en tabla -->
+              <div class="relative w-full sm:w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+                <input type="search" x-model="search" name="search_estadisticas_tbl" id="search_estadisticas_tbl"
+                  placeholder="Buscar fecha, planta o empresa..."
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+              </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-[var(--bg-subtle)] text-[var(--text-muted)] text-[11px] uppercase tracking-wider font-semibold border-b border-[var(--border-subtle)]">
+                  <tr>
+                    <th class="py-3 px-4">Fecha</th>
+                    <th class="py-3 px-4">Planta de Destino</th>
+                    <th class="py-3 px-4 hidden md:table-cell">Empresa</th>
+                    <th class="py-3 px-4 text-center">Personas</th>
+                    <th class="py-3 px-4 text-center hidden sm:table-cell">Solicitudes</th>
+                    <th class="py-3 px-4 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)] text-[var(--text-primary)]">
+                  
+                  <template x-if="cargando">
+                    <tr>
+                      <td colspan="6" class="py-12 text-center text-[var(--text-muted)]">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500 mb-2"></i>
+                        <p class="text-xs">Calculando afluencia y deduplicando personas...</p>
+                      </td>
+                    </tr>
+                  </template>
+
+                  <template x-if="!cargando && registrosPaginados.length === 0">
+                    <tr>
+                      <td colspan="6" class="py-12 text-center text-[var(--text-muted)]">
+                        <i class="fa-regular fa-calendar-xmark text-3xl mb-2 text-slate-500"></i>
+                        <p class="text-sm font-medium">No se encontraron registros de ingresos para los filtros seleccionados.</p>
+                        <p class="text-xs text-slate-500 mt-1">Prueba ampliando el rango de fechas o cambiando el estado a "Todas las solicitudes".</p>
+                      </td>
+                    </tr>
+                  </template>
+
+                  <template x-for="(reg, idx) in registrosPaginados" :key="reg.fecha + '-' + reg.id_planta">
+                    <tr class="hover:bg-[var(--bg-subtle)]/60 transition-colors">
+                      
+                      <!-- Fecha -->
+                      <td class="py-3.5 px-4 font-semibold whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          <i class="fa-regular fa-calendar text-xs text-emerald-500"></i>
+                          <span x-text="reg.fecha_formateada || reg.fecha"></span>
+                        </div>
+                      </td>
+
+                      <!-- Planta -->
+                      <td class="py-3.5 px-4 font-medium whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                          <span x-text="reg.planta"></span>
+                        </div>
+                      </td>
+
+                      <!-- Empresa -->
+                      <td class="py-3.5 px-4 text-[var(--text-muted)] hidden md:table-cell whitespace-nowrap"
+                        x-text="reg.empresa || '—'">
+                      </td>
+
+                      <!-- Personas Únicas (Neón Badge) -->
+                      <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_-2px_rgba(16,185,129,0.3)]">
+                          <i class="fa-solid fa-user-check text-[10px] mr-1.5"></i>
+                          <span x-text="reg.total_personas_unicas + ' personas'"></span>
+                        </span>
+                      </td>
+
+                      <!-- Solicitudes -->
+                      <td class="py-3.5 px-4 text-center hidden sm:table-cell text-[var(--text-muted)] whitespace-nowrap"
+                        x-text="reg.total_solicitudes + ' solicitudes'">
+                      </td>
+
+                      <!-- Botón Ver Personas -->
+                      <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button type="button" @click="abrirDetalle(reg)"
+                          class="btn-action-detalle inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer">
+                          <i class="fa-solid fa-users-viewfinder text-xs"></i>
+                          <span>Ver personas</span>
+                        </button>
+                      </td>
+
+                    </tr>
+                  </template>
+
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="p-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]"
+              x-show="!cargando && totalPaginas > 1">
+              <div>
+                Mostrando <span class="font-semibold text-[var(--text-primary)]" x-text="registrosPaginados.length"></span> de 
+                <span class="font-semibold text-[var(--text-primary)]" x-text="registrosFiltrados.length"></span> registros diarios
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="paginaAnterior()" :disabled="paginaActual === 1"
+                  class="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i> Anterior
+                </button>
+                <span class="font-medium text-[var(--text-primary)]" x-text="paginaActual + ' / ' + totalPaginas"></span>
+                <button type="button" @click="paginaSiguiente()" :disabled="paginaActual === totalPaginas"
+                  class="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  Siguiente <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </main>
+
+      <!-- ============================================================
+         5. MODAL DE INSPECCIÓN DETALLADA DE PERSONAS POR DÍA
+      ============================================================= -->
+      <div x-show="modalDetalleAbierto" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarDetalle()">
+
+        <div class="stat-neon-box rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-emerald-500/30"
+          @click.outside="cerrarDetalle()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95"
+          x-transition:enter-end="opacity-100 scale-100">
+
+          <!-- Header del Modal -->
+          <div class="p-4 sm:p-5 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)]/70 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <i class="fa-solid fa-users-line text-lg"></i>
+              </div>
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <span>Personas Autorizadas</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold"
+                    x-text="detalleHeader.total_personas + ' únicas'"></span>
+                </h3>
+                <p class="text-xs text-[var(--text-muted)] flex items-center gap-2 mt-0.5">
+                  <span class="font-medium text-emerald-400" x-text="detalleHeader.fecha_formateada"></span>
+                  <span>•</span>
+                  <span class="font-medium text-cyan-400" x-text="detalleHeader.planta"></span>
+                </p>
+              </div>
+            </div>
+
+            <button type="button" @click="cerrarDetalle()"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
+              title="Cerrar ventana">
+              <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+          </div>
+
+          <!-- Buscador y Nota Informativa -->
+          <div class="p-4 border-b border-[var(--border-subtle)] space-y-3 flex-shrink-0">
+            <div class="flex items-center justify-between text-xs text-[var(--text-muted)] bg-emerald-500/5 p-2.5 rounded-xl border border-emerald-500/15">
+              <span class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-emerald-400"></i>
+                <span>Cada persona figura una sola vez en este reporte, aunque esté asignada en múltiples solicitudes.</span>
+              </span>
+            </div>
+
+            <div class="relative w-full">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+              <input type="search" x-model="searchPersonaModal" name="search_personas_modal" id="search_personas_modal"
+                placeholder="Filtrar por nombre, identificación, cargo o radicado..."
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
+                class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+            </div>
+          </div>
+
+          <!-- Contenido: Lista de Personas -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-3">
+            
+            <template x-if="cargandoDetalle">
+              <div class="py-12 text-center text-[var(--text-muted)]">
+                <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500 mb-2"></i>
+                <p class="text-xs">Cargando personal autorizado...</p>
+              </div>
+            </template>
+
+            <template x-if="!cargandoDetalle && personasDetalleFiltradas.length === 0">
+              <div class="py-10 text-center text-[var(--text-muted)]">
+                <i class="fa-solid fa-user-slash text-2xl mb-2 text-slate-500"></i>
+                <p class="text-xs">No se encontraron personas con el término de búsqueda.</p>
+              </div>
+            </template>
+
+            <template x-for="p in personasDetalleFiltradas" :key="p.id_persona">
+              <div class="p-3.5 rounded-xl bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] hover:border-emerald-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                
+                <!-- Datos Personales -->
+                <div class="flex items-start gap-3 min-w-0">
+                  <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 font-bold text-xs flex-shrink-0">
+                    <span x-text="p.nombre_completo.charAt(0)"></span>
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="text-sm font-bold text-[var(--text-primary)] truncate" x-text="p.nombre_completo"></h4>
+                    <p class="text-xs text-[var(--text-muted)]">
+                      <span x-text="p.tipo_doc + ': ' + p.identificacion"></span>
+                      <span class="mx-1">•</span>
+                      <span class="text-slate-300" x-text="p.cargo"></span>
+                    </p>
+                    <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
+                      <i class="fa-regular fa-building text-[10px] mr-1 text-cyan-400"></i>
+                      <span x-text="p.empresa_contratista"></span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Solicitudes / Radicados en los que participa -->
+                <div class="flex flex-col sm:items-end gap-1 flex-shrink-0">
+                  <div class="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted)] flex items-center gap-1">
+                    <i class="fa-solid fa-file-signature text-emerald-400"></i>
+                    <span>Radicados (<span x-text="p.total_solicitudes"></span>):</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1 sm:justify-end">
+                    <template x-for="rad in p.radicados" :key="rad">
+                      <span class="radicado-tag px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                        x-text="rad"></span>
+                    </template>
+                  </div>
+                </div>
+
+              </div>
+            </template>
+
+          </div>
+
+          <!-- Footer del Modal -->
+          <div class="p-3 sm:p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-subtle)]/70 flex items-center justify-between text-xs text-[var(--text-muted)] flex-shrink-0">
+            <span>Total consultado: <strong class="text-[var(--text-primary)]" x-text="personasDetalleFiltradas.length"></strong> personas</span>
+            <button type="button" @click="cerrarDetalle()"
+              class="btn-action-detalle px-4 py-2 rounded-lg font-semibold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-colors cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}
