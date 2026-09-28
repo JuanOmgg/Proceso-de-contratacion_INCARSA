@@ -355,7 +355,14 @@ def REGISTRAR_dictamen_rt(
     current_user: dict = Depends(require_permission("solicitudes", "aprobar"))
 ):
     print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
-    resultado = REGISTRAR_dictamen_db(solicitud_id, payload.model_dump())
+    dict_payload = payload.model_dump()
+    if not dict_payload.get("id_usuario"):
+        dict_payload["id_usuario"] = current_user.get("id")
+    nombre_autenticado = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
+    if not dict_payload.get("nombre_revisor") or str(dict_payload.get("nombre_revisor", "")).startswith("Auditor ("):
+        if nombre_autenticado:
+            dict_payload["nombre_revisor"] = nombre_autenticado
+    resultado = REGISTRAR_dictamen_db(solicitud_id, dict_payload)
     if not resultado.get("exito"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

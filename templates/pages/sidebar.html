@@ -188,6 +188,14 @@
           </span>
           <span x-show="isModuloMantenimiento('antecedentes')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
+        <a href="/seguridadsocial" x-show="puedeModulo('seguridad_social')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
+          :class="isActive('/seguridad-social') || isActive('/seguridadsocial') ? 'is-active' : ''">
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-shield-heart w-4 text-center"></i>
+            <span class="sidebar-label">Seguridad social</span>
+          </span>
+          <span x-show="isModuloMantenimiento('seguridad_social')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
+        </a>
         <a href="/inducciones" x-show="puedeModulo('inducciones')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/inducciones') ? 'is-active' : ''">
           <span class="flex items-center gap-3">

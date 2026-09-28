@@ -18,6 +18,8 @@ document.addEventListener('alpine:init', () => {
     
     // Filtros
     filtroRapido: 'mes_actual',
+    dropdownPlantasOpen: false,
+    inputPlantaTexto: '',
     filtros: {
       fecha_inicio: '',
       fecha_fin: '',
@@ -42,6 +44,7 @@ document.addEventListener('alpine:init', () => {
 
     // Búsqueda y Paginación en tabla
     search: '',
+    filtroFechaTabla: '',
     paginaActual: 1,
     porPagina: 12,
 
@@ -62,6 +65,7 @@ document.addEventListener('alpine:init', () => {
     chartPlantas: null,
     fpInicio: null,
     fpFin: null,
+    fpTablaInstance: null,
 
     async init() {
       this.aplicarRangoRapido('mes_actual', false);
@@ -110,6 +114,38 @@ document.addEventListener('alpine:init', () => {
           this.onFechaManual();
         }
       });
+    },
+
+    initFlatpickrTabla(el) {
+      if (typeof flatpickr === "undefined" || !el) return;
+      this.fpTablaInstance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium placeholder:text-[var(--text-muted)]",
+        disableMobile: "true",
+        allowInput: true,
+        placeholder: "Filtrar por fecha...",
+        onChange: (selectedDates, dateStr) => {
+          this.filtroFechaTabla = dateStr || '';
+          this.paginaActual = 1;
+        }
+      });
+      if (this.filtros.fecha_inicio && this.fpTablaInstance) {
+        this.fpTablaInstance.set("minDate", this.filtros.fecha_inicio);
+      }
+      if (this.filtros.fecha_fin && this.fpTablaInstance) {
+        this.fpTablaInstance.set("maxDate", this.filtros.fecha_fin);
+      }
+    },
+
+    limpiarFiltroFechaTabla() {
+      this.filtroFechaTabla = '';
+      if (this.fpTablaInstance) {
+        this.fpTablaInstance.clear();
+      }
+      this.paginaActual = 1;
     },
 
     formatearFecha(fechaStr) {
@@ -196,10 +232,78 @@ document.addEventListener('alpine:init', () => {
         const res = await fetch('/api/v1/estadisticas/plantas');
         if (res.ok) {
           this.plantas = await res.json();
+          if (this.filtros.id_planta) {
+            this.inputPlantaTexto = this.nombrePlantaSeleccionada;
+          }
         }
       } catch (err) {
         console.error('Error cargando lista de plantas:', err);
       }
+    },
+
+    get plantasDropdownFiltradas() {
+      if (!this.inputPlantaTexto || !this.inputPlantaTexto.trim()) {
+        return this.plantas || [];
+      }
+      if (this.filtros.id_planta && this.inputPlantaTexto.trim().toLowerCase() === this.nombrePlantaSeleccionada.trim().toLowerCase()) {
+        return this.plantas || [];
+      }
+      const q = this.inputPlantaTexto.toLowerCase().trim();
+      return (this.plantas || []).filter(p => 
+        (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+        (p.empresa && p.empresa.toLowerCase().includes(q))
+      );
+    },
+
+    get nombrePlantaSeleccionada() {
+      if (!this.filtros.id_planta) return 'Todas las plantas';
+      const p = (this.plantas || []).find(x => String(x.id) === String(this.filtros.id_planta));
+      if (!p) return 'Todas las plantas';
+      return p.empresa ? `${p.nombre} (${p.empresa})` : p.nombre;
+    },
+
+    abrirDropdownPlanta(inputEl) {
+      this.dropdownPlantasOpen = true;
+      if (inputEl && typeof inputEl.select === 'function') {
+        inputEl.select();
+      }
+    },
+
+    toggleDropdownPlanta(inputEl) {
+      this.dropdownPlantasOpen = !this.dropdownPlantasOpen;
+      if (this.dropdownPlantasOpen && inputEl) {
+        this.$nextTick(() => {
+          inputEl.focus();
+          if (typeof inputEl.select === 'function') inputEl.select();
+        });
+      }
+    },
+
+    cerrarDropdownPlanta() {
+      this.dropdownPlantasOpen = false;
+      if (this.filtros.id_planta) {
+        this.inputPlantaTexto = this.nombrePlantaSeleccionada;
+      } else {
+        this.inputPlantaTexto = '';
+      }
+    },
+
+    seleccionarPlanta(id) {
+      this.filtros.id_planta = id ? String(id) : '';
+      this.dropdownPlantasOpen = false;
+      if (this.filtros.id_planta) {
+        this.inputPlantaTexto = this.nombrePlantaSeleccionada;
+      } else {
+        this.inputPlantaTexto = '';
+      }
+      this.cargarEstadisticas();
+    },
+
+    limpiarPlanta() {
+      this.filtros.id_planta = '';
+      this.inputPlantaTexto = '';
+      this.dropdownPlantasOpen = false;
+      this.cargarEstadisticas();
     },
 
     async cargarEstadisticas() {
@@ -225,6 +329,11 @@ document.addEventListener('alpine:init', () => {
           this.registros = data.registros || [];
           this.paginaActual = 1;
 
+          if (this.fpTablaInstance) {
+            if (this.filtros.fecha_inicio) this.fpTablaInstance.set("minDate", this.filtros.fecha_inicio);
+            if (this.filtros.fecha_fin) this.fpTablaInstance.set("maxDate", this.filtros.fecha_fin);
+          }
+
           this.$nextTick(() => {
             this.renderizarGraficos();
           });
@@ -249,13 +358,32 @@ document.addEventListener('alpine:init', () => {
     // ----------------------------------------------------
     get registrosFiltrados() {
       let lista = this.registros;
+
+      // 1. Filtro exacto por fecha del selector de la tabla
+      if (this.filtroFechaTabla) {
+        lista = lista.filter(r => r.fecha === this.filtroFechaTabla);
+      }
+
+      // 2. Buscador de texto libre (planta, empresa o fecha en texto)
       if (this.search && this.search.trim()) {
         const q = this.search.toLowerCase().trim();
+
+        // Convertir formato dd/mm o dd/mm/yyyy si el usuario busca por fecha escrita
+        let qIso = "";
+        if (/^\d{1,2}\/\d{1,2}(\/\d{2,4})?$/.test(q)) {
+          const parts = q.split('/');
+          const d = parts[0].padStart(2, '0');
+          const m = parts[1].padStart(2, '0');
+          const y = parts[2] ? (parts[2].length === 2 ? '20' + parts[2] : parts[2]) : '';
+          qIso = y ? `${y}-${m}-${d}` : `-${m}-${d}`;
+        }
+
         lista = lista.filter(r => 
           (r.planta && r.planta.toLowerCase().includes(q)) ||
           (r.fecha && r.fecha.toLowerCase().includes(q)) ||
           (r.empresa && r.empresa.toLowerCase().includes(q)) ||
-          (r.fecha_formateada && r.fecha_formateada.toLowerCase().includes(q))
+          (r.fecha_formateada && r.fecha_formateada.toLowerCase().includes(q)) ||
+          (qIso && r.fecha && r.fecha.includes(qIso))
         );
       }
       return lista;
@@ -338,11 +466,11 @@ document.addEventListener('alpine:init', () => {
       const isDark = document.documentElement.classList.contains('dark') || localStorage.getItem('darkMode') === 'true';
       return {
         isDark,
-        text: isDark ? '#94a3b8' : '#475569',
+        text: isDark ? '#cbd5e1' : '#475569',
         grid: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-        tooltipBg: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+        tooltipBg: isDark ? 'rgba(18, 18, 22, 0.96)' : 'rgba(255, 255, 255, 0.98)',
         tooltipText: isDark ? '#f8fafc' : '#0f172a',
-        tooltipBorder: isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)'
+        tooltipBorder: isDark ? 'rgba(0, 255, 136, 0.45)' : 'rgba(16, 185, 129, 0.2)'
       };
     },
 
@@ -351,7 +479,7 @@ document.addEventListener('alpine:init', () => {
 
       const theme = this.getThemeColors();
 
-      // 1. Gráfico de Tendencia Diaria
+      // 1. Gráfico de Tendencia Diaria (Línea Neón Fosforescente en Modo Oscuro)
       const ctxTendencia = document.getElementById('chartTendenciaDiaria');
       if (ctxTendencia) {
         if (this.chartTendencia) {
@@ -361,28 +489,45 @@ document.addEventListener('alpine:init', () => {
         const labels = this.serie_tiempo.map(d => d.fecha_corta);
         const dataPersonas = this.serie_tiempo.map(d => d.total_personas);
 
-        // Crear gradiente suave
+        // Crear gradiente suave con brillo fosforescente
         const ctx2d = ctxTendencia.getContext('2d');
         const gradient = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, theme.isDark ? 'rgba(16, 185, 129, 0.45)' : 'rgba(16, 185, 129, 0.35)');
-        gradient.addColorStop(1, theme.isDark ? 'rgba(16, 185, 129, 0.01)' : 'rgba(16, 185, 129, 0.01)');
+        gradient.addColorStop(0, theme.isDark ? 'rgba(0, 255, 136, 0.45)' : 'rgba(16, 185, 129, 0.35)');
+        gradient.addColorStop(1, 'rgba(0, 255, 136, 0.00)');
+
+        const lineGlowPlugin = {
+          id: 'linePhosphorGlow',
+          beforeDatasetDraw: (chart) => {
+            if (!theme.isDark) return;
+            chart.ctx.save();
+            chart.ctx.shadowColor = 'rgba(0, 255, 136, 0.75)';
+            chart.ctx.shadowBlur = 14;
+            chart.ctx.shadowOffsetX = 0;
+            chart.ctx.shadowOffsetY = 0;
+          },
+          afterDatasetDraw: (chart) => {
+            if (!theme.isDark) return;
+            chart.ctx.restore();
+          }
+        };
 
         this.chartTendencia = new Chart(ctxTendencia, {
           type: 'line',
+          plugins: [lineGlowPlugin],
           data: {
             labels: labels,
             datasets: [
               {
                 label: 'Personas',
                 data: dataPersonas,
-                borderColor: '#10b981',
+                borderColor: theme.isDark ? '#00ff88' : '#10b981',
                 backgroundColor: gradient,
-                borderWidth: 2.5,
+                borderWidth: theme.isDark ? 3 : 2.5,
                 fill: true,
                 tension: 0.35,
                 pointRadius: labels.length > 20 ? 2 : 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#10b981',
+                pointBackgroundColor: theme.isDark ? '#00ff88' : '#10b981',
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 1.5
               }
@@ -422,7 +567,7 @@ document.addEventListener('alpine:init', () => {
                 },
                 ticks: {
                   color: theme.text,
-                  font: { size: 11 },
+                  font: { size: 11, weight: '500' },
                   maxRotation: 45
                 }
               },
@@ -442,7 +587,7 @@ document.addEventListener('alpine:init', () => {
         });
       }
 
-      // 2. Gráfico de Distribución por Planta
+      // 2. Gráfico de Distribución por Planta (Barras Fosforescentes con Halo Neón en Modo Oscuro)
       const ctxPlantas = document.getElementById('chartDistribucionPlantas');
       if (ctxPlantas) {
         if (this.chartPlantas) {
@@ -453,24 +598,91 @@ document.addEventListener('alpine:init', () => {
         const labelsPlantas = topPlantas.map(p => p.planta);
         const dataConteo = topPlantas.map(p => p.total_personas_unicas);
 
-        const neonPalette = [
-          '#10b981', // Esmeralda
-          '#06b6d4', // Cian
-          '#8b5cf6', // Violeta
-          '#f59e0b', // Ámbar
-          '#ec4899', // Rosa
-          '#3b82f6'  // Azul
+        const ctx2d = ctxPlantas.getContext('2d');
+        const chartH = ctxPlantas.clientHeight || 260;
+
+        // Paleta Neón Fosforescente vibrante para Modo Oscuro y Clásica para Modo Claro
+        const fosforescentePalette = [
+          { top: '#00ff88', mid: 'rgba(0, 255, 136, 0.90)', bottom: 'rgba(0, 255, 136, 0.30)', border: '#00ff88', glow: 'rgba(0, 255, 136, 0.85)' }, // Verde radiactivo / fosforescente
+          { top: '#00f0ff', mid: 'rgba(0, 240, 255, 0.90)', bottom: 'rgba(0, 240, 255, 0.30)', border: '#00f0ff', glow: 'rgba(0, 240, 255, 0.85)' }, // Cian eléctrico
+          { top: '#d946ef', mid: 'rgba(217, 70, 239, 0.90)', bottom: 'rgba(217, 70, 239, 0.30)', border: '#e879f9', glow: 'rgba(217, 70, 239, 0.85)' }, // Violeta / Magenta neón
+          { top: '#ffee00', mid: 'rgba(255, 238, 0, 0.90)', bottom: 'rgba(255, 238, 0, 0.30)', border: '#ffee00', glow: 'rgba(255, 238, 0, 0.85)' }, // Amarillo resaltador neón
+          { top: '#ff007f', mid: 'rgba(255, 0, 127, 0.90)', bottom: 'rgba(255, 0, 127, 0.30)', border: '#ff2a85', glow: 'rgba(255, 0, 127, 0.85)' }, // Rosa eléctrico
+          { top: '#38bdf8', mid: 'rgba(56, 189, 248, 0.90)', bottom: 'rgba(56, 189, 248, 0.30)', border: '#38bdf8', glow: 'rgba(56, 189, 248, 0.85)' }  // Azul eléctrico
         ];
+
+        const lightPalette = [
+          { top: '#10b981', border: '#059669' },
+          { top: '#06b6d4', border: '#0891b2' },
+          { top: '#8b5cf6', border: '#7c3aed' },
+          { top: '#f59e0b', border: '#d97706' },
+          { top: '#ec4899', border: '#db2777' },
+          { top: '#3b82f6', border: '#2563eb' }
+        ];
+
+        const backgroundColors = labelsPlantas.map((_, i) => {
+          if (theme.isDark) {
+            const c = fosforescentePalette[i % fosforescentePalette.length];
+            const g = ctx2d.createLinearGradient(0, 0, 0, chartH);
+            g.addColorStop(0, c.top);
+            g.addColorStop(0.35, c.mid);
+            g.addColorStop(1, c.bottom);
+            return g;
+          }
+          return lightPalette[i % lightPalette.length].top;
+        });
+
+        const borderColors = labelsPlantas.map((_, i) => {
+          return theme.isDark 
+            ? fosforescentePalette[i % fosforescentePalette.length].border 
+            : lightPalette[i % lightPalette.length].border;
+        });
+
+        const glowColors = labelsPlantas.map((_, i) => {
+          return fosforescentePalette[i % fosforescentePalette.length].glow;
+        });
+
+        // Plugin para emitir halo fosforescente brillante alrededor de cada barra
+        const barPhosphorGlowPlugin = {
+          id: 'barPhosphorGlow',
+          beforeDatasetsDraw: (chart) => {
+            if (!theme.isDark) return;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+            meta.data.forEach((bar, idx) => {
+              if (!bar._phosphorGlowAttached) {
+                const origDraw = bar.draw;
+                bar.draw = function(ctx) {
+                  if (theme.isDark) {
+                    ctx.save();
+                    ctx.shadowColor = glowColors[idx % glowColors.length] || 'rgba(0, 255, 136, 0.85)';
+                    ctx.shadowBlur = 18;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    origDraw.apply(this, arguments);
+                    ctx.restore();
+                  } else {
+                    origDraw.apply(this, arguments);
+                  }
+                };
+                bar._phosphorGlowAttached = true;
+              }
+            });
+          }
+        };
 
         this.chartPlantas = new Chart(ctxPlantas, {
           type: 'bar',
+          plugins: [barPhosphorGlowPlugin],
           data: {
             labels: labelsPlantas,
             datasets: [
               {
                 label: 'Personas acumuladas',
                 data: dataConteo,
-                backgroundColor: neonPalette.slice(0, labelsPlantas.length),
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: theme.isDark ? 2 : 1.5,
                 borderRadius: 8,
                 borderSkipped: false
               }
@@ -504,7 +716,7 @@ document.addEventListener('alpine:init', () => {
                 },
                 ticks: {
                   color: theme.text,
-                  font: { size: 11 },
+                  font: { size: 11, weight: '500' },
                   callback: function(val) {
                     const label = this.getLabelForValue(val);
                     return label.length > 14 ? label.substring(0, 12) + '...' : label;

@@ -711,7 +711,7 @@ html.dark select option:checked {
 } */
 
 
-:root.dark .inicialesUser {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser {
   background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
@@ -723,8 +723,8 @@ html.dark select option:checked {
   transition: all 0.25s ease;
 }
 
-:root.dark .inicialesUser:hover,
-:root.dark .navbar-user-btn:hover .inicialesUser {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser:hover,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn:hover .inicialesUser {
   background: linear-gradient(135deg, #0d828a 0%, #1aebeb 100%) !important;
   color: #ffffff !important;
   box-shadow: 0 0 16px rgba(3, 191, 191, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
@@ -823,7 +823,7 @@ html.dark select option:checked {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.45) !important;
 }
 
-:root.dark .user-role-tab.is-active {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .user-role-tab.is-active {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   border: 1px solid rgba(239, 68, 68, 0.6) !important;
   color: #ffffff !important;
@@ -979,7 +979,7 @@ html.dark select option:checked {
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *):hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -999,7 +999,7 @@ html.dark select option:checked {
 }
 
 :root.dark .sidebar-link.is-active:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15);
   transform: translateX(4px);
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -1278,7 +1278,7 @@ html.dark select option:checked {
 }
 .dark .tkt-duration-pill.is-active:hover,
 :root.dark .tkt-duration-pill.is-active:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -1326,7 +1326,7 @@ html.dark select option:checked {
 }
 :root.dark .tkt-tab-btn.is-active:hover,
 .dark .tkt-tab-btn.is-active:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
@@ -1400,7 +1400,7 @@ html.dark select option:checked {
   filter: none !important;
 }
 :root.dark .tkt-toggle-btn.is-active:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
 }
 
@@ -1441,7 +1441,7 @@ html.dark select option:checked {
 .dark .tkt-btn-submit:hover:not(:disabled),
 :root.dark button[class*="bg-[var(--signal-500)]"]:hover,
 .dark button[class*="bg-[var(--signal-500)]"]:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -1814,7 +1814,7 @@ body.dark .input-field.has-error:focus {
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm:hover,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -4399,26 +4399,39 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   color: #ffffff !important;
 }
 
-:root.dark .dictamen-subitem.is-aprobado {
-  background: rgba(16, 185, 129, 0.06) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+:root.dark .dictamen-subitem.subitem-sst.is-aprobado,
+:root.dark .dictamen-subitem.is-aprobado:not(.subitem-gesco) {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 32, 20, 0.92) 100%) !important;
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35), inset 0 0 8px rgba(16, 185, 129, 0.12) !important;
 }
 
-:root.dark .dictamen-subitem.is-aprobado .subitem-status {
+:root.dark .dictamen-subitem.subitem-sst.is-aprobado .subitem-status,
+:root.dark .dictamen-subitem.is-aprobado:not(.subitem-gesco) .subitem-status {
   color: #34d399 !important;
-  text-shadow: none !important;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.75) !important;
+}
+
+:root.dark .dictamen-subitem.subitem-gesco.is-aprobado {
+  background: linear-gradient(145deg, rgba(168, 85, 247, 0.14) 0%, rgba(32, 10, 48, 0.92) 100%) !important;
+  border: 1.5px solid #a855f7 !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35), inset 0 0 8px rgba(168, 85, 247, 0.12) !important;
+}
+
+:root.dark .dictamen-subitem.subitem-gesco.is-aprobado .subitem-status {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.75) !important;
 }
 
 :root.dark .dictamen-subitem.is-rechazado {
-  background: rgba(239, 68, 68, 0.06) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.14) 0%, rgba(42, 10, 16, 0.92) 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35), inset 0 0 8px rgba(239, 68, 68, 0.12) !important;
 }
 
 :root.dark .dictamen-subitem.is-rechazado .subitem-status {
   color: #f87171 !important;
-  text-shadow: none !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.75) !important;
 }
 
 :root.dark .dictamen-subitem.is-pendiente .subitem-status {
@@ -4694,6 +4707,23 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)) !important;
 }
 
+:root.dark .btn-seguridad-social-chip {
+  background: rgba(16, 185, 129, 0.20) !important;
+  border: 1.5px solid #34d399 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5), inset 0 0 6px rgba(16, 185, 129, 0.2) !important;
+  text-shadow: none !important;
+}
+:root.dark .btn-seguridad-social-chip:hover {
+  background: rgba(16, 185, 129, 0.32) !important;
+  border-color: #a7f3d0 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.8), inset 0 0 8px rgba(16, 185, 129, 0.3) !important;
+}
+:root.dark .btn-seguridad-social-chip i {
+  color: #34d399 !important;
+  filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.8)) !important;
+}
+
 /* Enlaces directos a Vigencia de Inducción e Historial en Expediente */
 :root.dark button:has(> .fa-graduation-cap):not(.action-icon-btn):not(.btn-induccion-chip) {
   background: rgba(168, 85, 247, 0.20) !important;
@@ -4964,42 +4994,46 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
 }
 
 :root.dark .vigencia-badge-neon.is-vigente {
-  border: 1.5px solid rgba(52, 211, 153, 0.75) !important;
-  box-shadow: 0 0 14px -1px rgba(16, 185, 129, 0.45) !important;
-  color: #6ee7b7 !important;
-  text-shadow: 0 0 8px rgba(52, 211, 153, 0.5) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.85) !important;
+  background: rgba(16, 185, 129, 0.18) !important;
+  box-shadow: 0 0 12px -1px rgba(16, 185, 129, 0.4) !important;
+  color: #f1f5f9 !important;
 }
 :root.dark .vigencia-badge-neon.is-vigente i {
-  color: #34d399 !important;
-  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6)) !important;
+  color: #10b981 !important;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.8)) !important;
 }
 
 :root.dark .vigencia-badge-neon.is-por-vencer {
-  border: 1.5px solid rgba(251, 191, 36, 0.75) !important;
-  box-shadow: 0 0 14px -1px rgba(245, 158, 11, 0.45) !important;
-  color: #fde047 !important;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.85) !important;
+  background: rgba(245, 158, 11, 0.18) !important;
+  box-shadow: 0 0 12px -1px rgba(245, 158, 11, 0.4) !important;
+  color: #f1f5f9 !important;
 }
 :root.dark .vigencia-badge-neon.is-por-vencer i {
-  color: #fbbf24 !important;
-  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6)) !important;
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.8)) !important;
 }
 
 :root.dark .vigencia-badge-neon.is-vencido {
-  border: 1.5px solid rgba(248, 113, 113, 0.75) !important;
-  box-shadow: 0 0 14px -1px rgba(239, 68, 68, 0.45) !important;
-  color: #fca5a5 !important;
-  text-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.85) !important;
+  background: rgba(239, 68, 68, 0.18) !important;
+  box-shadow: 0 0 12px -1px rgba(239, 68, 68, 0.4) !important;
+  color: #f1f5f9 !important;
 }
 :root.dark .vigencia-badge-neon.is-vencido i {
-  color: #f87171 !important;
-  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.6)) !important;
+  color: #ef4444 !important;
+  filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8)) !important;
 }
 
 :root.dark .vigencia-badge-neon.is-sin-revision {
   border: 1.5px solid rgba(148, 163, 184, 0.6) !important;
-  box-shadow: 0 0 10px -2px rgba(100, 116, 139, 0.3) !important;
+  background: rgba(100, 116, 139, 0.15) !important;
+  box-shadow: 0 0 8px -2px rgba(100, 116, 139, 0.25) !important;
   color: #cbd5e1 !important;
+}
+:root.dark .vigencia-badge-neon.is-sin-revision i {
+  color: #94a3b8 !important;
 }
 
 /* =========================================================
@@ -5546,7 +5580,7 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm {
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
-  animation: flameGradientShift 1.5s linear infinite !important;
+  animation: flameGradientShift 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
@@ -5979,7 +6013,27 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root[data-role="SUPERADMIN"] .role-chip,
 :root.role-superadmin .role-chip,
 :root.dark[data-role="SUPERADMIN"] .role-chip,
-:root.dark.role-superadmin .role-chip {
+:root.dark.role-superadmin .role-chip,
+:root[data-role="SUPERADMIN"] .inicialesUser,
+:root.role-superadmin .inicialesUser,
+:root.dark[data-role="SUPERADMIN"] .inicialesUser,
+:root.dark.role-superadmin .inicialesUser,
+:root[data-role="SUPERADMIN"] .topbar .inicialesUser,
+:root.role-superadmin .topbar .inicialesUser,
+:root.dark[data-role="SUPERADMIN"] .topbar .inicialesUser,
+:root.dark.role-superadmin .topbar .inicialesUser,
+:root[data-role="SUPERADMIN"] .modal-profile-avatar,
+:root.role-superadmin .modal-profile-avatar,
+:root.dark[data-role="SUPERADMIN"] .modal-profile-avatar,
+:root.dark.role-superadmin .modal-profile-avatar,
+:root[data-role="SUPERADMIN"] .user-role-tab.is-active,
+:root.role-superadmin .user-role-tab.is-active,
+:root.dark[data-role="SUPERADMIN"] .user-role-tab.is-active,
+:root.dark.role-superadmin .user-role-tab.is-active,
+:root[data-role="SUPERADMIN"] .user-roles-tabs .user-role-tab.is-active,
+:root.role-superadmin .user-roles-tabs .user-role-tab.is-active,
+:root.dark[data-role="SUPERADMIN"] .user-roles-tabs .user-role-tab.is-active,
+:root.dark.role-superadmin .user-roles-tabs .user-role-tab.is-active {
   background-image: linear-gradient(
     90deg,
     #d946ef 0%,
@@ -6057,7 +6111,19 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root[data-role="SUPERADMIN"] .role-chip *,
 :root.role-superadmin .role-chip *,
 :root.dark[data-role="SUPERADMIN"] .role-chip *,
-:root.dark.role-superadmin .role-chip * {
+:root.dark.role-superadmin .role-chip *,
+:root[data-role="SUPERADMIN"] .inicialesUser *,
+:root.role-superadmin .inicialesUser *,
+:root.dark[data-role="SUPERADMIN"] .inicialesUser *,
+:root.dark.role-superadmin .inicialesUser *,
+:root[data-role="SUPERADMIN"] .modal-profile-avatar *,
+:root.role-superadmin .modal-profile-avatar *,
+:root.dark[data-role="SUPERADMIN"] .modal-profile-avatar *,
+:root.dark.role-superadmin .modal-profile-avatar *,
+:root[data-role="SUPERADMIN"] .user-role-tab.is-active *,
+:root.role-superadmin .user-role-tab.is-active *,
+:root.dark[data-role="SUPERADMIN"] .user-role-tab.is-active *,
+:root.dark.role-superadmin .user-role-tab.is-active * {
   color: #ffffff !important;
   filter: none !important;
   text-shadow: none !important;
@@ -6097,7 +6163,7 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root.role-superadmin .sidebar-link.is-module-active:hover,
 :root.dark[data-role="SUPERADMIN"] .sidebar-link.is-module-active:hover,
 :root.dark.role-superadmin .sidebar-link.is-module-active:hover {
-  animation: superadminFlowLeft 3s linear infinite !important;
+  animation: superadminFlowLeft 0.8s linear infinite !important;
   filter: brightness(1.15) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 26px rgba(217, 70, 239, 0.75), 0 0 42px rgba(6, 182, 212, 0.55) !important;
@@ -6183,8 +6249,352 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   animation: superadminFlowLeft 3s linear infinite !important;
 }
 
+:root[data-role="SUPERADMIN"] .sidebar-sublink.is-active:hover,
+:root.role-superadmin .sidebar-sublink.is-active:hover,
+:root.dark[data-role="SUPERADMIN"] .sidebar-sublink.is-active:hover,
+:root.dark.role-superadmin .sidebar-sublink.is-active:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.2) !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.55), inset 2px 0 10px rgba(6, 182, 212, 0.35) !important;
+}
 
+/* 4. Avatar de Iniciales y Perfil de Usuario en Topbar para SuperAdmin (Imagen 1) */
+:root[data-role="SUPERADMIN"] .inicialesUser,
+:root.role-superadmin .inicialesUser,
+:root.dark[data-role="SUPERADMIN"] .inicialesUser,
+:root.dark.role-superadmin .inicialesUser,
+:root[data-role="SUPERADMIN"] .topbar .inicialesUser,
+:root.role-superadmin .topbar .inicialesUser,
+:root.dark[data-role="SUPERADMIN"] .topbar .inicialesUser,
+:root.dark.role-superadmin .topbar .inicialesUser,
+:root[data-role="SUPERADMIN"] .modal-profile-avatar,
+:root.role-superadmin .modal-profile-avatar,
+:root.dark[data-role="SUPERADMIN"] .modal-profile-avatar,
+:root.dark.role-superadmin .modal-profile-avatar {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.65), 0 0 10px rgba(6, 182, 212, 0.45) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+}
 
+:root[data-role="SUPERADMIN"] .inicialesUser *,
+:root.role-superadmin .inicialesUser *,
+:root.dark[data-role="SUPERADMIN"] .inicialesUser *,
+:root.dark.role-superadmin .inicialesUser * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
 
+:root[data-role="SUPERADMIN"] .navbar-user-btn:hover .inicialesUser,
+:root.role-superadmin .navbar-user-btn:hover .inicialesUser,
+:root.dark[data-role="SUPERADMIN"] .navbar-user-btn:hover .inicialesUser,
+:root.dark.role-superadmin .navbar-user-btn:hover .inicialesUser {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.2) !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.85), 0 0 14px rgba(6, 182, 212, 0.65) !important;
+  border-color: #ffffff !important;
+}
 
+:root[data-role="SUPERADMIN"] .navbar-user-btn:hover,
+:root[data-role="SUPERADMIN"] .navbar-user-btn.navbar-user-btn-open,
+:root.role-superadmin .navbar-user-btn:hover,
+:root.role-superadmin .navbar-user-btn.navbar-user-btn-open,
+:root.dark[data-role="SUPERADMIN"] .navbar-user-btn:hover,
+:root.dark[data-role="SUPERADMIN"] .navbar-user-btn.navbar-user-btn-open,
+:root.dark.role-superadmin .navbar-user-btn:hover,
+:root.dark.role-superadmin .navbar-user-btn.navbar-user-btn-open {
+  border-color: rgba(217, 70, 239, 0.65) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 18px rgba(217, 70, 239, 0.4) !important;
+}
 
+:root[data-role="SUPERADMIN"] .navbar-user-btn .fa-chevron-down.rotate-180,
+:root.role-superadmin .navbar-user-btn .fa-chevron-down.rotate-180,
+:root.dark[data-role="SUPERADMIN"] .navbar-user-btn .fa-chevron-down.rotate-180,
+:root.dark.role-superadmin .navbar-user-btn .fa-chevron-down.rotate-180 {
+  color: #d946ef !important;
+  filter: drop-shadow(0 0 6px rgba(217, 70, 239, 0.8)) !important;
+}
+
+:root[data-role="SUPERADMIN"] .navbar-user-status-dot,
+:root.role-superadmin .navbar-user-status-dot,
+:root.dark[data-role="SUPERADMIN"] .navbar-user-status-dot,
+:root.dark.role-superadmin .navbar-user-status-dot {
+  background-color: #06b6d4 !important;
+  border-color: #1c1c1c !important;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.9) !important;
+}
+
+/* 5. Selector de Rol Activo en Dashboard (Usuarios del Sistema) para SuperAdmin (Imagen 2) */
+:root[data-role="SUPERADMIN"] .user-role-tab.is-active,
+:root.role-superadmin .user-role-tab.is-active,
+:root.dark[data-role="SUPERADMIN"] .user-role-tab.is-active,
+:root.dark.role-superadmin .user-role-tab.is-active,
+:root[data-role="SUPERADMIN"] .user-roles-tabs .user-role-tab.is-active,
+:root.role-superadmin .user-roles-tabs .user-role-tab.is-active,
+:root.dark[data-role="SUPERADMIN"] .user-roles-tabs .user-role-tab.is-active,
+:root.dark.role-superadmin .user-roles-tabs .user-role-tab.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 18px 2px rgba(217, 70, 239, 0.65), 0 0 24px rgba(6, 182, 212, 0.45) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6) !important;
+}
+
+:root[data-role="SUPERADMIN"] .user-role-tab.is-active:hover,
+:root.role-superadmin .user-role-tab.is-active:hover,
+:root.dark[data-role="SUPERADMIN"] .user-role-tab.is-active:hover,
+:root.dark.role-superadmin .user-role-tab.is-active:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 22px rgba(217, 70, 239, 0.8), 0 0 30px rgba(6, 182, 212, 0.55) !important;
+}
+
+/* ==========================================================================
+   6. NOTIFICACIONES PARA MODO OSCURO Y ROL SUPERADMIN
+   Estilo multicolor animado para SuperAdmin y refinamiento neón
+   ========================================================================== */
+
+/* 6.1. Badge de conteo de notificaciones en campana */
+:root[data-role="SUPERADMIN"] .badge-count,
+:root.role-superadmin .badge-count,
+:root.dark[data-role="SUPERADMIN"] .badge-count,
+:root.dark.role-superadmin .badge-count {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.8), 0 0 6px rgba(6, 182, 212, 0.6) !important;
+}
+
+/* 6.2. Botón 'Ver todas' en dropdown de notificaciones */
+:root[data-role="SUPERADMIN"] .btn-notif-ver-todas,
+:root.role-superadmin .btn-notif-ver-todas,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-todas,
+:root.dark.role-superadmin .btn-notif-ver-todas,
+:root[data-role="SUPERADMIN"] .notifications-panel button:has(> .fa-arrow-right),
+:root.role-superadmin .notifications-panel button:has(> .fa-arrow-right),
+:root.dark[data-role="SUPERADMIN"] .notifications-panel button:has(> .fa-arrow-right),
+:root.dark.role-superadmin .notifications-panel button:has(> .fa-arrow-right) {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.6), 0 0 10px rgba(6, 182, 212, 0.4) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border-radius: 8px !important;
+  padding: 5px 12px !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-notif-ver-todas *,
+:root.role-superadmin .btn-notif-ver-todas *,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-todas *,
+:root.dark.role-superadmin .btn-notif-ver-todas *,
+:root[data-role="SUPERADMIN"] .notifications-panel button:has(> .fa-arrow-right) *,
+:root.role-superadmin .notifications-panel button:has(> .fa-arrow-right) * {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-notif-ver-todas:hover,
+:root.role-superadmin .btn-notif-ver-todas:hover,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-todas:hover,
+:root.dark.role-superadmin .btn-notif-ver-todas:hover,
+:root[data-role="SUPERADMIN"] .notifications-panel button:has(> .fa-arrow-right):hover,
+:root.role-superadmin .notifications-panel button:has(> .fa-arrow-right):hover,
+:root.dark[data-role="SUPERADMIN"] .notifications-panel button:has(> .fa-arrow-right):hover,
+:root.dark.role-superadmin .notifications-panel button:has(> .fa-arrow-right):hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.85), 0 0 14px rgba(6, 182, 212, 0.65) !important;
+}
+
+/* 6.3. Botón 'Ver detalle' en las notificaciones del modal */
+:root[data-role="SUPERADMIN"] .btn-notif-ver-detalle,
+:root.role-superadmin .btn-notif-ver-detalle,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-detalle,
+:root.dark.role-superadmin .btn-notif-ver-detalle,
+:root[data-role="SUPERADMIN"] .modal-panel a:has(> .fa-arrow-up-right-from-square),
+:root.role-superadmin .modal-panel a:has(> .fa-arrow-up-right-from-square),
+:root.dark[data-role="SUPERADMIN"] .modal-panel a:has(> .fa-arrow-up-right-from-square),
+:root.dark.role-superadmin .modal-panel a:has(> .fa-arrow-up-right-from-square) {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.6), 0 0 10px rgba(6, 182, 212, 0.4) !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-notif-ver-detalle *,
+:root.role-superadmin .btn-notif-ver-detalle *,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-detalle *,
+:root.dark.role-superadmin .btn-notif-ver-detalle *,
+:root[data-role="SUPERADMIN"] .modal-panel a:has(> .fa-arrow-up-right-from-square) *,
+:root.role-superadmin .modal-panel a:has(> .fa-arrow-up-right-from-square) * {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-notif-ver-detalle:hover,
+:root.role-superadmin .btn-notif-ver-detalle:hover,
+:root.dark[data-role="SUPERADMIN"] .btn-notif-ver-detalle:hover,
+:root.dark.role-superadmin .btn-notif-ver-detalle:hover,
+:root[data-role="SUPERADMIN"] .modal-panel a:has(> .fa-arrow-up-right-from-square):hover,
+:root.role-superadmin .modal-panel a:has(> .fa-arrow-up-right-from-square):hover,
+:root.dark[data-role="SUPERADMIN"] .modal-panel a:has(> .fa-arrow-up-right-from-square):hover,
+:root.dark.role-superadmin .modal-panel a:has(> .fa-arrow-up-right-from-square):hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.18) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.85), 0 0 14px rgba(6, 182, 212, 0.65) !important;
+}
+
+/* 6.4. Botón 'Marcar todas' en dropdown y modal */
+:root[data-role="SUPERADMIN"] .btn-mark-all,
+:root.role-superadmin .btn-mark-all,
+:root.dark[data-role="SUPERADMIN"] .btn-mark-all,
+:root.dark.role-superadmin .btn-mark-all {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.6) !important;
+}
+
+:root[data-role="SUPERADMIN"] .btn-mark-all:hover,
+:root.role-superadmin .btn-mark-all:hover,
+:root.dark[data-role="SUPERADMIN"] .btn-mark-all:hover,
+:root.dark.role-superadmin .btn-mark-all:hover {
+  background: rgba(6, 182, 212, 0.15) !important;
+  color: #67e8f9 !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4) !important;
+}
+
+/* 6.5. Resplandor neón en el panel de notificaciones y modal */
+:root[data-role="SUPERADMIN"] .notifications-panel,
+:root.role-superadmin .notifications-panel,
+:root.dark[data-role="SUPERADMIN"] .notifications-panel,
+:root.dark.role-superadmin .notifications-panel {
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  box-shadow: 0 20px 50px -8px rgba(0, 0, 0, 0.8), 0 0 24px rgba(217, 70, 239, 0.3), 0 0 14px rgba(6, 182, 212, 0.25) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-panel:has(.fa-bell),
+:root.role-superadmin .modal-panel:has(.fa-bell),
+:root.dark[data-role="SUPERADMIN"] .modal-panel:has(.fa-bell),
+:root.dark.role-superadmin .modal-panel:has(.fa-bell) {
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(217, 70, 239, 0.25), 0 0 16px rgba(6, 182, 212, 0.2) !important;
+}
+
+/* 6.6. Pestañas activas en el modal de notificaciones */
+:root[data-role="SUPERADMIN"] .modal-panel button[class*="text-[var(--signal-500)]"],
+:root.role-superadmin .modal-panel button[class*="text-[var(--signal-500)]"],
+:root.dark[data-role="SUPERADMIN"] .modal-panel button[class*="text-[var(--signal-500)]"],
+:root.dark.role-superadmin .modal-panel button[class*="text-[var(--signal-500)]"] {
+  border: 1px solid rgba(6, 182, 212, 0.6) !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.35) !important;
+  color: #38bdf8 !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-panel button[class*="text-[var(--signal-500)]"] i,
+:root.role-superadmin .modal-panel button[class*="text-[var(--signal-500)]"] i,
+:root.dark[data-role="SUPERADMIN"] .modal-panel button[class*="text-[var(--signal-500)]"] i,
+:root.dark.role-superadmin .modal-panel button[class*="text-[var(--signal-500)]"] i {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.7)) !important;
+}
+
+/* 6.7. Badge 'Historial Completo' en modal */
+:root[data-role="SUPERADMIN"] .modal-panel .status-revision,
+:root.role-superadmin .modal-panel .status-revision,
+:root.dark[data-role="SUPERADMIN"] .modal-panel .status-revision,
+:root.dark.role-superadmin .modal-panel .status-revision {
+  border-color: rgba(217, 70, 239, 0.7) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.5), inset 0 0 8px rgba(6, 182, 212, 0.2) !important;
+  color: #f0abfc !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-panel .status-revision i,
+:root.role-superadmin .modal-panel .status-revision i {
+  color: #f0abfc !important;
+  filter: drop-shadow(0 0 4px rgba(217, 70, 239, 0.8)) !important;
+}
+
+/* 6.8. Botón 'Cerrar' del modal para SuperAdmin */
+:root[data-role="SUPERADMIN"] .modal-panel .modal-btn-cancel:hover,
+:root.role-superadmin .modal-panel .modal-btn-cancel:hover,
+:root.dark[data-role="SUPERADMIN"] .modal-panel .modal-btn-cancel:hover,
+:root.dark.role-superadmin .modal-panel .modal-btn-cancel:hover {
+  border-color: rgba(217, 70, 239, 0.6) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.4) !important;
+  color: #fdf4ff !important;
+}
+
+/* 6.9. MODO OSCURO GENERAL (Para roles que no son SuperAdmin) */
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-detalle,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-panel a[class*="bg-[var(--signal-500)]"] {
+  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(3, 191, 191, 0.5) !important;
+  box-shadow: 0 0 12px rgba(3, 191, 191, 0.35) !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas {
+  color: #03bfbf !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas:hover {
+  background: rgba(3, 191, 191, 0.15) !important;
+  color: #38bdf8 !important;
+}

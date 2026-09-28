@@ -40,7 +40,8 @@
   </script>
 
   <!-- Núcleo de Configuración y Guardián de Rutas RBAC Temprano (previene acceso indebido y FOUC) -->
-  <script src="{{ url_for('static', path='js/config.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/config.js') }}?v=3.6"></script>
+  <script src="{{ url_for('static', path='js/fechas.js') }}?v=1.0"></script>
   <script src="{{ url_for('static', path='js/permisos.js') }}?v=3.6"></script>
 
   <!-- Ocultar de inmediato modales y elementos condicionales antes de que Alpine inicialice (FOUC) -->
@@ -68,9 +69,9 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Estilos globales compartidos -->
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.6">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.9">
   <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.9">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=5.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=5.5">
 
   <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
   {% block extra_head %}{% endblock %}
@@ -79,7 +80,7 @@
   <script src="{{ url_for('static', path='js/alertas.js') }}?v=3.5"></script>
   <script src="{{ url_for('static', path='js/tooltips.js') }}?v=3.5"></script>
   <script src="{{ url_for('static', path='js/mantenimiento.js') }}?v=3.5"></script>
-  <script src="{{ url_for('static', path='js/app-shell.js') }}?v=3.6"></script>
+  <script src="{{ url_for('static', path='js/app-shell.js') }}?v=3.7"></script>
   <script src="{{ url_for('static', path='js/notificaciones.js') }}?v=3.6"></script>
   <script src="{{ url_for('static', path='js/plantas.js') }}?v=3.5"></script>
   <script src="{{ url_for('static', path='js/contratistas.js') }}?v=4.1"></script>

@@ -686,10 +686,22 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 cursor.execute(
                     """
                     SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
-                           sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                           sr.rol, sr.id_usuario,
+                           COALESCE(
+                               NULLIF(TRIM(CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, ''))), ''),
+                               CASE 
+                                   WHEN sr.nombre_revisor IS NOT NULL AND sr.nombre_revisor NOT LIKE 'Auditor (%%' AND sr.nombre_revisor NOT LIKE 'Sistema (%%'
+                                   THEN TRIM(sr.nombre_revisor)
+                                   ELSE NULL 
+                               END,
+                               NULLIF(TRIM(sr.nombre_revisor), ''),
+                               CONCAT('Revisor ', sr.rol)
+                           ) AS nombre_revisor,
+                           sr.decision,
                            sr.motivo_rechazo, sr.observacion, sr.fecha_revision
                     FROM solicitud_revisiones sr
                     LEFT JOIN planta p ON sr.id_planta = p.id
+                    LEFT JOIN usuarios u ON sr.id_usuario = u.id
                     WHERE sr.id_solicitud = %s
                     ORDER BY sr.fecha_revision ASC
                     """,
@@ -723,15 +735,15 @@ def NOTIFICAR_edicion_sst_gesco_db(
         cod_sol_clean = codigo_sol or f"RAD-{real_id:04d}"
         revisor_txt = f" ({nombre_revisor})" if nombre_revisor else ""
         tit_notif = f"⚠️ Edición de personal en {cod_sol_clean} ({rol})"
-        msg_notif = f"{rol}{revisor_txt} ha modificado la autorización de personas en la solicitud {cod_sol_clean} tras haber emitido visto bueno previo."
+        msg_notif = f"{rol}{revisor_txt} ha modificado la autorización de personal en la solicitud {cod_sol_clean}."
         if detalle:
-            msg_notif += f" ({detalle})"
+            msg_notif += f" {detalle}."
         msg_notif += " Haz clic para revisar el expediente."
 
         enlace_notif = f"/solicitudes/revision/{cod_sol_clean}"
         now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Roles destinatarios: SCR y roles superiores
+        # Roles destinatarios: SCR (8, 4) y roles superiores (1: Administrador, 2: Superadmin)
         cursor.execute(
             """
             SELECT id FROM roles 
@@ -739,9 +751,8 @@ def NOTIFICAR_edicion_sst_gesco_db(
                OR UPPER(nombre_rol) IN ('ADMINISTRADOR', 'ADMIN', 'SUPERADMIN')
             """
         )
-        roles_dest = [r["id"] for r in (cursor.fetchall() or []) if r.get("id")]
-        if not roles_dest:
-            roles_dest = [8, 1, 2]
+        roles_dest_db = [int(r["id"]) for r in (cursor.fetchall() or []) if r.get("id")]
+        roles_dest = list(set(roles_dest_db + [8, 4, 1, 2]))
 
         for r_id in roles_dest:
             cursor.execute(
@@ -763,9 +774,14 @@ def NOTIFICAR_edicion_sst_gesco_db(
             },
             target_roles_ids=roles_dest
         )
-        print(f"🔔 [NOTIFICACIÓN ENVIADA] Edición de {rol} en solicitud #{cod_sol_clean} notificada a roles {roles_dest}.")
+        notification_broadcaster.notificar_cambio_solicitud(
+            codigo_solicitud=cod_sol_clean,
+            nuevo_estado="EN REVISIÓN",
+            detalle=f"Autorizaciones de personal actualizadas por {rol}"
+        )
+        print(f"[NOTIFICACION ENVIADA] Edicion de personal en #{cod_sol_clean} por {rol} notificada a SCR y superiores ({roles_dest}).")
     except Exception as e:
-        print(f"⚠️ Error al notificar edición de SST/GESCO: {e}")
+        print(f"[AVISO] Error al notificar edicion a SCR/superiores: {e}")
 
 def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
     try:
@@ -801,12 +817,14 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
 
                 real_id = int(sol["id"])
 
-                # Si no viene nombre_revisor pero viene id_usuario, resolverlo
-                if not nombre_revisor and id_usuario:
+                # Si no viene nombre_revisor o viene genérico tipo "Auditor (...)" pero viene id_usuario, resolverlo
+                if (not nombre_revisor or str(nombre_revisor).startswith("Auditor (")) and id_usuario:
                     cursor.execute("SELECT nombres, apellidos FROM usuarios WHERE id = %s", (id_usuario,))
                     u = cursor.fetchone()
                     if u:
-                        nombre_revisor = f"{u.get('nombres', '')} {u.get('apellidos', '')}".strip()
+                        nombre_real = f"{u.get('nombres', '')} {u.get('apellidos', '')}".strip()
+                        if nombre_real:
+                            nombre_revisor = nombre_real
 
                 # Si no viene id_planta y es SST o GESCO, resolver de visita o plantas_ids
                 if (not id_planta or id_planta == 0) and rol in ("SST", "GESCO"):
@@ -1144,7 +1162,7 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 (real_id,)
                             )
                             rev_scr_exist = cursor.fetchone()
-                            obs_auto = "Aprobación definitiva automática ejecutada al completarse las revisiones técnicas de SST y GESCO conforme a la pre-aprobación previa de SCR."
+                            obs_auto = "Aprobación definitiva automática por SCR a través del PRE-APROBADO."
                             if rev_scr_exist:
                                 cursor.execute(
                                     """
@@ -1406,10 +1424,22 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 cursor.execute(
                     """
                     SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
-                           sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                           sr.rol, sr.id_usuario,
+                           COALESCE(
+                               NULLIF(TRIM(CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, ''))), ''),
+                               CASE 
+                                   WHEN sr.nombre_revisor IS NOT NULL AND sr.nombre_revisor NOT LIKE 'Auditor (%%' AND sr.nombre_revisor NOT LIKE 'Sistema (%%'
+                                   THEN TRIM(sr.nombre_revisor)
+                                   ELSE NULL 
+                               END,
+                               NULLIF(TRIM(sr.nombre_revisor), ''),
+                               CONCAT('Revisor ', sr.rol)
+                           ) AS nombre_revisor,
+                           sr.decision,
                            sr.motivo_rechazo, sr.observacion, sr.fecha_revision
                     FROM solicitud_revisiones sr
                     LEFT JOIN planta p ON sr.id_planta = p.id
+                    LEFT JOIN usuarios u ON sr.id_usuario = u.id
                     WHERE sr.id_solicitud = %s
                     ORDER BY sr.fecha_revision ASC
                     """,
@@ -1517,17 +1547,23 @@ def ACTUALIZAR_autorizacion_personas_db(solicitud_id: Any, payload: dict) -> dic
                         (real_id, p_id, 1 if p_aut else 0, p_motivo)
                     )
 
-                # 3. Si el rol es SST o GESCO, notificar a SCR y roles superiores
-                if rol in ("SST", "GESCO"):
-                    detalle_txt = f"{len(nombres_modificados)} ingresante(s) actualizados: {', '.join(nombres_modificados[:3])}" if nombres_modificados else "Actualización individual de autorizaciones"
-                    NOTIFICAR_edicion_sst_gesco_db(
-                        cursor=cursor,
-                        real_id=real_id,
-                        codigo_sol=cod_sol,
-                        rol=rol,
-                        nombre_revisor=nombre_revisor,
-                        detalle=detalle_txt
-                    )
+                # 3. Notificar a SCR y roles superiores (ADMINISTRADOR, SUPERADMIN)
+                if nombres_modificados:
+                    detalle_txt = f"{len(nombres_modificados)} ingresante(s) modificado(s): {', '.join(nombres_modificados[:3])}"
+                else:
+                    total_aut = sum(1 for p in personas_input if bool(p.get("autorizado", True)))
+                    total_den = len(personas_input) - total_aut
+                    detalle_txt = f"{total_aut} autorizado(s), {total_den} no autorizado(s)"
+
+                rol_emisor = rol if rol and rol not in ("NONE", "NULL", "") else "Revisor"
+                NOTIFICAR_edicion_sst_gesco_db(
+                    cursor=cursor,
+                    real_id=real_id,
+                    codigo_sol=cod_sol,
+                    rol=rol_emisor,
+                    nombre_revisor=nombre_revisor,
+                    detalle=detalle_txt
+                )
 
                 conexion.commit()
 
@@ -1540,7 +1576,7 @@ def ACTUALIZAR_autorizacion_personas_db(solicitud_id: Any, payload: dict) -> dic
                 }
 
     except Exception as e:
-        print(f"❌ Error en ACTUALIZAR_autorizacion_personas_db #{solicitud_id}: {e}")
+        print(f"[ERROR] Error en ACTUALIZAR_autorizacion_personas_db #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al actualizar personas: {e}"}
 
 
@@ -2013,10 +2049,22 @@ def GET_ALL_solicitudes_bd(
                 try:
                     cursor.execute("""
                         SELECT sr.id, sr.id_solicitud, sr.id_planta, p.nombre AS nombre_planta,
-                               sr.rol, sr.id_usuario, sr.nombre_revisor, sr.decision,
+                               sr.rol, sr.id_usuario,
+                               COALESCE(
+                                   NULLIF(TRIM(CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, ''))), ''),
+                                   CASE 
+                                       WHEN sr.nombre_revisor IS NOT NULL AND sr.nombre_revisor NOT LIKE 'Auditor (%%' AND sr.nombre_revisor NOT LIKE 'Sistema (%%'
+                                       THEN TRIM(sr.nombre_revisor)
+                                       ELSE NULL 
+                                   END,
+                                   NULLIF(TRIM(sr.nombre_revisor), ''),
+                                   CONCAT('Revisor ', sr.rol)
+                               ) AS nombre_revisor,
+                               sr.decision,
                                sr.motivo_rechazo, sr.observacion, sr.fecha_revision
                         FROM solicitud_revisiones sr
                         LEFT JOIN planta p ON sr.id_planta = p.id
+                        LEFT JOIN usuarios u ON sr.id_usuario = u.id
                         ORDER BY sr.fecha_revision ASC
                     """)
                     revs_db = cursor.fetchall() or []

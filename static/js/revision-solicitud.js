@@ -4,53 +4,17 @@
  */
 
 function formatearFechaHoraEspanol(fechaStr) {
-  if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
-  try {
-    const str = String(fechaStr).trim();
-    const partes = str.replace('T', ' ').split(' ');
-    const fPartes = partes[0].split('-');
-    if (fPartes.length === 3) {
-      const anio = fPartes[0];
-      const mesIdx = parseInt(fPartes[1], 10) - 1;
-      const dia = fPartes[2].padStart(2, '0');
-      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const mesNombre = meses[mesIdx] || fPartes[1];
-
-      if (partes[1]) {
-        const hPartes = partes[1].split(':');
-        let h = parseInt(hPartes[0], 10);
-        const m = (hPartes[1] || '00').padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12;
-        h = h ? h : 12;
-        const horaFinal = `${String(h).padStart(2, '0')}:${m} ${ampm}`;
-        return `${dia} ${mesNombre} ${anio}, ${horaFinal}`;
-      }
-      return `${dia} ${mesNombre} ${anio}`;
-    }
-    return fechaStr;
-  } catch (e) {
-    return fechaStr;
+  if (window.Fechas && typeof window.Fechas.formatearFechaHora === 'function') {
+    return window.Fechas.formatearFechaHora(fechaStr);
   }
+  return fechaStr || '—';
 }
 
 function formatearFechaCorta(fechaStr) {
-  if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
-  try {
-    const str = String(fechaStr).trim().split('T')[0].split(' ')[0];
-    const fPartes = str.split('-');
-    if (fPartes.length === 3) {
-      const anio = fPartes[0];
-      const mesIdx = parseInt(fPartes[1], 10) - 1;
-      const dia = fPartes[2].padStart(2, '0');
-      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const mesNombre = meses[mesIdx] || fPartes[1];
-      return `${dia} ${mesNombre} ${anio}`;
-    }
-    return fechaStr;
-  } catch (e) {
-    return fechaStr;
+  if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
+    return window.Fechas.formatearCorta(fechaStr);
   }
+  return fechaStr || '—';
 }
 
 function revisionSolicitudApp() {
@@ -80,6 +44,168 @@ function revisionSolicitudApp() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
       localStorage.setItem('darkMode', this.darkMode);
+    },
+
+    // Notificaciones y Centro de Notificaciones (Integración con Sidebar y SSE)
+    notificationsOpen: false,
+    modalTodasNotificacionesOpen: false,
+    filtroNotifTab: 'todas',
+    busquedaNotif: '',
+    notifPage: 1,
+    notifPageSize: 8,
+    notifications: [],
+    unreadNotificationsCount: 0,
+
+    get notificacionesFiltradas() {
+      let lista = this.notifications || [];
+      if (this.filtroNotifTab === 'no_leidas') {
+        lista = lista.filter(n => !n.leido);
+      } else if (this.filtroNotifTab === 'info') {
+        lista = lista.filter(n => !n.tipo || n.tipo === 'info');
+      } else if (this.filtroNotifTab === 'alertas') {
+        lista = lista.filter(n => ['warning', 'error', 'danger'].includes(n.tipo));
+      }
+
+      if (this.busquedaNotif && this.busquedaNotif.trim()) {
+        const q = this.busquedaNotif.toLowerCase().trim();
+        lista = lista.filter(n =>
+          (n.titulo && n.titulo.toLowerCase().includes(q)) ||
+          (n.mensaje && n.mensaje.toLowerCase().includes(q))
+        );
+      }
+      return lista;
+    },
+
+    get notificacionesModalPagina() {
+      const filtradas = this.notificacionesFiltradas;
+      const start = (this.notifPage - 1) * this.notifPageSize;
+      return filtradas.slice(start, start + this.notifPageSize);
+    },
+
+    get notifTotalPaginas() {
+      return Math.ceil(this.notificacionesFiltradas.length / this.notifPageSize) || 1;
+    },
+
+    abrirModalTodasNotificaciones() {
+      this.modalTodasNotificacionesOpen = true;
+      this.notificationsOpen = false;
+      this.sidebarOpenMobile = false;
+      this.filtroNotifTab = 'todas';
+      this.busquedaNotif = '';
+      this.notifPage = 1;
+      this.cargarNotificaciones(100);
+    },
+
+    cerrarModalTodasNotificaciones() {
+      this.modalTodasNotificacionesOpen = false;
+    },
+
+    async cargarNotificaciones(limit = 50) {
+      try {
+        const notifUrl = (typeof API !== 'undefined' && API.notificaciones)
+          ? API.notificaciones
+          : `${window.location.origin}/api/v1/notificaciones`;
+        const params = new URLSearchParams();
+        const uId = this.usuarioSesion?.id || this.usuarioSesion?.id_usuario;
+        const rId = this.usuarioSesion?.id_rol;
+        if (uId) params.append('id_usuario', uId);
+        if (rId) params.append('id_rol', rId);
+        if (limit) params.append('limit', limit);
+
+        const res = await fetch(`${notifUrl}?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          this.notifications = data.notificaciones || [];
+          this.unreadNotificationsCount = data.no_leidas || 0;
+        }
+      } catch (err) {
+        console.warn('Aviso al cargar notificaciones en vista revisión:', err);
+      }
+    },
+
+    async marcarNotificacionLeida(n) {
+      if (!n.leido) {
+        try {
+          const notifUrl = (typeof API !== 'undefined' && API.notificaciones)
+            ? API.notificaciones
+            : `${window.location.origin}/api/v1/notificaciones`;
+          await fetch(`${notifUrl}/${n.id}/leer`, { method: 'PATCH' });
+          n.leido = true;
+          if (this.unreadNotificationsCount > 0) {
+            this.unreadNotificationsCount--;
+          }
+        } catch (e) {
+          console.warn('Aviso al marcar notificación como leída:', e);
+        }
+      }
+      if (n.enlace) {
+        window.location.href = n.enlace;
+      }
+    },
+
+    async marcarTodasNotificacionesLeidas() {
+      try {
+        const notifUrl = (typeof API !== 'undefined' && API.notificaciones)
+          ? API.notificaciones
+          : `${window.location.origin}/api/v1/notificaciones`;
+        const uId = this.usuarioSesion?.id || this.usuarioSesion?.id_usuario;
+        const rId = this.usuarioSesion?.id_rol;
+        await fetch(`${notifUrl}/marcar-todas-leidas`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_usuario: uId, id_rol: rId })
+        });
+        (this.notifications || []).forEach(n => n.leido = true);
+        this.unreadNotificationsCount = 0;
+      } catch (e) {
+        console.warn('Aviso al marcar todas las notificaciones:', e);
+      }
+    },
+
+    formatearTiempoRelativo(fechaStr) {
+      if (typeof window.formatearTiempoRelativo === 'function') {
+        return window.formatearTiempoRelativo(fechaStr);
+      }
+      return fechaStr || '';
+    },
+
+    formatearFechaHora(fechaStr) {
+      if (typeof formatearFechaHoraEspanol === 'function') {
+        return formatearFechaHoraEspanol(fechaStr);
+      }
+      if (typeof window.formatearFechaHoraEspanol === 'function') {
+        return window.formatearFechaHoraEspanol(fechaStr);
+      }
+      return fechaStr || '';
+    },
+
+    formatearTextoEnlace(url) {
+      if (typeof window.formatearTextoEnlace === 'function') {
+        return window.formatearTextoEnlace(url);
+      }
+      return url || '';
+    },
+
+    esNotifPreaprobada(n) {
+      return window.esNotifPreaprobada ? window.esNotifPreaprobada(n) : false;
+    },
+
+    obtenerCodigoSolicitudDeNotif(n) {
+      return window.obtenerCodigoSolicitudDeNotif ? window.obtenerCodigoSolicitudDeNotif(n) : null;
+    },
+
+    async revisarSolicitudNotif(n) {
+      if (window.revisarSolicitudNotif) {
+        await window.revisarSolicitudNotif(n);
+        if (this.unreadNotificationsCount > 0 && n.leido) this.unreadNotificationsCount--;
+      }
+    },
+
+    async confirmarAprobacionDirectaNotif(n) {
+      if (window.confirmarAprobacionDirectaNotif) {
+        await window.confirmarAprobacionDirectaNotif(n);
+        if (this.unreadNotificationsCount > 0 && n.aprobadoExitoso) this.unreadNotificationsCount--;
+      }
     },
 
     // Sesión y Rol actual
@@ -163,6 +289,35 @@ function revisionSolicitudApp() {
       }
 
       if ([1, 2, 4, 8].includes(idRol)) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
+     * Determina si el usuario actual tiene permisos para ver y dictaminar Seguridad Social.
+     * Habilitado para SST, SCR y roles superiores (ADMINISTRADOR y SUPERADMIN).
+     */
+    get puedeVerSeguridadSocial() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN" || rolActualNorm === "SUPERADMIN") {
+        return true;
+      }
+
+      const rolesPermitidos = ["SST", "SCR", "ADMINISTRADOR", "ADMIN", "SUPERADMIN"];
+      if (rolesPermitidos.includes(rolActualNorm) || rolesPermitidos.includes(rolSesionNorm)) {
+        return true;
+      }
+
+      if ([1, 2, 7, 8].includes(idRol)) {
+        return true;
+      }
+
+      if (typeof window.puedeModulo === "function" && window.puedeModulo("seguridad_social")) {
         return true;
       }
 
@@ -295,6 +450,61 @@ function revisionSolicitudApp() {
       fecha_vigencia: ""
     },
 
+    // Modal de Seguridad Social (SST)
+    showSeguridadSocialModal: false,
+    cargandoSeguridadSocial: false,
+    guardandoSeguridadSocial: false,
+    mensajeExitoSS: "",
+    mensajeErrorSS: "",
+    personaSeleccionadaSS: null,
+    formSeguridadSocial: {
+      id: null,
+      id_persona: null,
+      persona_nombre: "",
+      persona_apellido: "",
+      persona_identificacion: "",
+      persona_tipo_doc: "CC",
+      persona_cargo: "",
+      responsable: "",
+      anotaciones: "",
+      ultima_empresa_contratista: "",
+      ultima_revision: null,
+      fecha_vigencia: null,
+      historial: []
+    },
+    detalleSeguridadSocial: {
+      id: null,
+      id_persona: null,
+      persona_nombre: "",
+      persona_apellido: "",
+      persona_identificacion: "",
+      persona_tipo_doc: "CC",
+      persona_cargo: "",
+      responsable: "",
+      anotaciones: "",
+      fecha_vigencia: null,
+      ultima_revision: null,
+      ultima_empresa_contratista: "",
+      historial: []
+    },
+    formSeguridadSocialRevision: {
+      id_persona: null,
+      persona_identificacion: "",
+      responsable: "",
+      fecha_vigencia: null,
+      anotaciones: ""
+    },
+    fpVigenciaSSRevisionInstance: null,
+
+    // Filtros de historial SS en modal
+    searchHistorialSS: "",
+    fechaDesdeHistorialSS: "",
+    fechaHastaHistorialSS: "",
+    historialSSPage: 1,
+    historialSSPageSize: 5,
+    fpDesdeHistorialSSInstance: null,
+    fpHastaHistorialSSInstance: null,
+
     // Filtros del historial
     searchHistorial: "",
     fechaDesdeHistorial: "",
@@ -396,8 +606,14 @@ function revisionSolicitudApp() {
     personaSeleccionadaAntecedente: null,
 
     get historialFiltrado() {
-      if (!this.detalleHistorial || !Array.isArray(this.detalleHistorial.historial)) return [];
-      let list = [...this.detalleHistorial.historial];
+      let srcList = [];
+      if (this.showSeguridadSocialModal) {
+        srcList = this.formSeguridadSocial?.historial || this.detalleSeguridadSocial?.historial || [];
+      } else {
+        srcList = this.detalleHistorial?.historial || [];
+      }
+      if (!Array.isArray(srcList)) return [];
+      let list = [...srcList];
 
       if (this.searchHistorial && this.searchHistorial.trim() !== '') {
         const q = this.searchHistorial.toLowerCase().trim();
@@ -441,6 +657,111 @@ function revisionSolicitudApp() {
       const start = (this.historialPage - 1) * this.historialPageSize + 1;
       const end = Math.min(start + this.historialPageSize - 1, total);
       return `${start} - ${end} de ${total}`;
+    },
+
+    // Paginación y filtros del historial de Seguridad Social
+    get historialSSFiltrado() {
+      if (!this.detalleSeguridadSocial || !Array.isArray(this.detalleSeguridadSocial.historial)) return [];
+      let list = [...this.detalleSeguridadSocial.historial];
+
+      if (this.searchHistorialSS && this.searchHistorialSS.trim() !== '') {
+        const q = this.searchHistorialSS.toLowerCase().trim();
+        list = list.filter(h =>
+          (h.codigo_radicado && h.codigo_radicado.toLowerCase().includes(q)) ||
+          (h.nombre_empresa && h.nombre_empresa.toLowerCase().includes(q)) ||
+          (h.nombre_contratista && h.nombre_contratista.toLowerCase().includes(q))
+        );
+      }
+
+      if (this.fechaDesdeHistorialSS) {
+        list = list.filter(h => {
+          const f = (h.fecha_inicio || h.fecha_solicitud || "").split('T')[0];
+          return f >= this.fechaDesdeHistorialSS;
+        });
+      }
+
+      if (this.fechaHastaHistorialSS) {
+        list = list.filter(h => {
+          const f = (h.fecha_fin || h.fecha_solicitud || "").split('T')[0];
+          return f <= this.fechaHastaHistorialSS;
+        });
+      }
+
+      return list;
+    },
+
+    get totalPaginasHistorialSS() {
+      const total = this.historialSSFiltrado.length;
+      return Math.max(1, Math.ceil(total / this.historialSSPageSize));
+    },
+
+    get historialSSPagina() {
+      const start = (this.historialSSPage - 1) * this.historialSSPageSize;
+      return this.historialSSFiltrado.slice(start, start + this.historialSSPageSize);
+    },
+
+    get rangoHistorialSSMostrado() {
+      const total = this.historialSSFiltrado.length;
+      if (total === 0) return '0 de 0';
+      const start = (this.historialSSPage - 1) * this.historialSSPageSize + 1;
+      const end = Math.min(this.historialSSPage * this.historialSSPageSize, total);
+      return `${start}-${end} de ${total}`;
+    },
+
+    goToHistorialSSPage(num) {
+      if (num >= 1 && num <= this.totalPaginasHistorialSS) {
+        this.historialSSPage = num;
+      }
+    },
+
+    initFlatpickrHistorialSS(el, tipo) {
+      if (typeof flatpickr === "undefined") return;
+      const isDesde = tipo === "desde";
+      const instance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "text-xs bg-transparent border-0 p-0 text-[var(--paper-ink)] dark:text-white focus:ring-0 focus:outline-none cursor-pointer w-20 font-medium placeholder:text-[var(--paper-muted)]",
+        disableMobile: "true",
+        allowInput: false,
+        placeholder: "dd/mm/aaaa",
+        onChange: (selectedDates, dateStr) => {
+          if (isDesde) {
+            this.fechaDesdeHistorialSS = dateStr;
+            if (this.fpHastaHistorialSSInstance) {
+              this.fpHastaHistorialSSInstance.set("minDate", dateStr || null);
+            }
+          } else {
+            this.fechaHastaHistorialSS = dateStr;
+            if (this.fpDesdeHistorialSSInstance) {
+              this.fpDesdeHistorialSSInstance.set("maxDate", dateStr || null);
+            }
+          }
+          this.historialSSPage = 1;
+        }
+      });
+
+      if (isDesde) {
+        this.fpDesdeHistorialSSInstance = instance;
+      } else {
+        this.fpHastaHistorialSSInstance = instance;
+      }
+    },
+
+    limpiarFiltrosHistorialSS() {
+      this.searchHistorialSS = "";
+      this.fechaDesdeHistorialSS = "";
+      this.fechaHastaHistorialSS = "";
+      this.historialSSPage = 1;
+      if (this.fpDesdeHistorialSSInstance) {
+        this.fpDesdeHistorialSSInstance.clear();
+        this.fpDesdeHistorialSSInstance.set("maxDate", null);
+      }
+      if (this.fpHastaHistorialSSInstance) {
+        this.fpHastaHistorialSSInstance.clear();
+        this.fpHastaHistorialSSInstance.set("minDate", null);
+      }
     },
 
     // Visor de documentos
@@ -508,6 +829,15 @@ function revisionSolicitudApp() {
 
       await this.cargarSolicitud();
 
+      // Cargar notificaciones del usuario y escuchar eventos SSE en vivo
+      this.cargarNotificaciones(50);
+      window.addEventListener("notificacion-en-caliente", (e) => {
+        if (e.detail) {
+          this.notifications.unshift(e.detail);
+          this.unreadNotificationsCount++;
+        }
+      });
+
       // Si la URL contiene el parámetro ?confirmar=true y la solicitud está preaprobada en estado POR APROBAR
       const paramsConfirmar = params.get("confirmar");
       if ((paramsConfirmar === "true" || paramsConfirmar === "1") && (this.rolActual === "SCR" || this.esSuperAdmin) && this.solicitud?.pre_aprobado && this.solicitud?.estado === "POR APROBAR") {
@@ -558,6 +888,12 @@ function revisionSolicitudApp() {
 
         this.solicitud = this.normalizar(data);
 
+        // Limpiar cualquier cache obsoleto de autorizaciones en localStorage para que la base de datos sea la única fuente de la verdad
+        try {
+          localStorage.removeItem(`incarsa_solicitud_${this.solicitudId}_personas`);
+          localStorage.removeItem(`incarsa_solicitud_${this.solicitudId}_vehiculos`);
+        } catch (e) {}
+
         // Si se ingresa a revisar la solicitud desde cualquier lugar (listado, búsqueda, URL directa),
         // marcar automáticamente las notificaciones pendientes de esta solicitud como leídas para su usuario/rol.
         try {
@@ -599,8 +935,8 @@ function revisionSolicitudApp() {
           this.dictamenForm.decision = "aprobar";
         }
 
-        // Cargar vigencias de antecedentes e inducciones de cada ingresante
-        if (this.puedeVerAntecedentes || this.puedeVerInduccion) {
+        // Cargar vigencias de antecedentes, inducciones y seguridad social de cada ingresante
+        if (this.puedeVerAntecedentes || this.puedeVerInduccion || this.puedeVerSeguridadSocial) {
           await this.cargarVigenciasPersonas();
         }
 
@@ -698,26 +1034,6 @@ function revisionSolicitudApp() {
         });
       }
 
-      // Cargar autorizaciones individuales de vehículos persistidas en localStorage
-      try {
-        const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
-        const vehiculosGuardados = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
-        if (Array.isArray(vehiculosGuardados) && vehiculosGuardados.length > 0) {
-          listaVehiculos = listaVehiculos.map(v => {
-            const match = vehiculosGuardados.find(vg => String(vg.id) === String(v.id) || (vg.placa && vg.placa === v.placa));
-            if (match) {
-              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
-              return {
-                ...v,
-                autorizado: autGuardado,
-                motivo_rechazo: match.motivo_rechazo || v.motivo_rechazo || ""
-              };
-            }
-            return v;
-          });
-        }
-      } catch (e) {}
-
       let listaPersonas = [];
       if (typeof s.personas === 'string' && s.personas.trim() !== '') {
         if (s.personas.includes('|||') || s.personas.includes('###')) {
@@ -765,6 +1081,10 @@ function revisionSolicitudApp() {
             responsable_induccion: p.responsable_induccion || null,
             anotaciones_induccion: p.anotaciones_induccion || "",
             estadoVigenciaInduccion: this.getEstadoVigenciaInduccion(p.fecha_vigencia_induccion || (p.fecha_induccion ? this.obtenerFechaMasUnAnio(p.fecha_induccion) : null)),
+            fecha_vigencia_ss: (p.fecha_vigencia_ss && p.fecha_vigencia_ss !== "None" && p.fecha_vigencia_ss !== "null" && p.fecha_vigencia_ss !== "Pendiente" && p.fecha_vigencia_ss !== "No registrada") ? p.fecha_vigencia_ss : null,
+            responsable_ss: p.responsable_ss || null,
+            anotaciones_ss: p.anotaciones_ss || "",
+            estadoVigenciaSS: this.getEstadoVigenciaSS(p.fecha_vigencia_ss || null),
             documentos: Array.isArray(p.documentos) && p.documentos.length > 0 ? p.documentos : [
               { tipo_doc: "cedula", nombre_archivo: `Cedula_${p.identificacion || 'doc'}.pdf` },
               { tipo_doc: "arl", nombre_archivo: `ARL_${p.identificacion || 'doc'}.pdf` },
@@ -774,26 +1094,6 @@ function revisionSolicitudApp() {
           };
         });
       }
-
-      // Cargar autorizaciones individuales previas persistidas en localStorage
-      try {
-        const storageKey = `incarsa_solicitud_${s.id}_personas`;
-        const personasGuardadas = JSON.parse(localStorage.getItem(storageKey) || "null");
-        if (Array.isArray(personasGuardadas) && personasGuardadas.length > 0) {
-          listaPersonas = listaPersonas.map(p => {
-            const match = personasGuardadas.find(pg => String(pg.id) === String(p.id) || (pg.identificacion && pg.identificacion === p.identificacion));
-            if (match) {
-              const autGuardado = match.autorizado !== false && match.autorizado !== 0 && match.autorizado !== '0' && match.autorizado !== 'false';
-              return {
-                ...p,
-                autorizado: autGuardado,
-                motivo_rechazo: match.motivo_rechazo || p.motivo_rechazo || ""
-              };
-            }
-            return p;
-          });
-        }
-      } catch (e) {}
 
       // Código alfanumérico
       let codigoVal = s.codigo_radicado || s.codigo;
@@ -966,10 +1266,9 @@ function revisionSolicitudApp() {
         persona.motivo_rechazo = "";
       }
       this.hayCambiosPersonas = true;
-      this.persistirPersonasEnStorage();
       const nombre = persona.nombre || "Ingresante";
       this.mostrarToast(
-        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (guarda los cambios para notificar)` : `⛔ Acceso denegado a ${nombre} (guarda los cambios para notificar)`,
+        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (pendiente de guardar)` : `⛔ Acceso denegado a ${nombre} (pendiente de guardar)`,
         estaAutorizado ? "success" : "info"
       );
     },
@@ -999,9 +1298,8 @@ function revisionSolicitudApp() {
         }
       });
       this.hayCambiosPersonas = true;
-      this.persistirPersonasEnStorage();
       if (omitidas > 0) {
-        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados).`, "info");
+        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados). Recuerda guardar cambios.`, "info");
       } else {
         this.mostrarToast("Todas las personas marcadas como autorizadas (recuerda guardar cambios)", "success");
       }
@@ -1017,34 +1315,24 @@ function revisionSolicitudApp() {
         p.autorizado = false;
       });
       this.hayCambiosPersonas = true;
-      this.persistirPersonasEnStorage();
       this.mostrarToast("Todas las personas marcadas como No Autorizadas (recuerda guardar cambios)", "info");
     },
 
     async persistirPersonasEnStorage() {
-      if (!this.puedeEditarAutorizacion) return;
-      try {
-        const storageKey = `incarsa_solicitud_${this.solicitudId}_personas`;
-        localStorage.setItem(storageKey, JSON.stringify(this.solicitud.personas));
-
-        const locales = JSON.parse(localStorage.getItem("incarsa_solicitudes") || "[]");
-        const idx = locales.findIndex(s => String(s.id) === String(this.solicitudId));
-        if (idx > -1) {
-          locales[idx].personas = this.solicitud.personas;
-          localStorage.setItem("incarsa_solicitudes", JSON.stringify(locales));
-        }
-      } catch (e) {
-        console.warn("No se pudo guardar personas en storage:", e);
-      }
+      // Intencionalmente vacío: los cambios en autorizaciones no se guardan en localStorage
+      // para asegurar que solo se apliquen en la base de datos al presionar el botón de guardar.
+      return;
     },
 
     async guardarCambiosPersonas() {
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
       this.guardandoPersonas = true;
       try {
-        const nombreUsuario = this.usuarioSesion?.nombres 
-          ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
-          : `Auditor (${this.rolActual})`;
+        const nombreUsuario = (
+          this.usuarioSesion?.nombre || 
+          this.usuarioSesion?.nombre_completo || 
+          (this.usuarioSesion?.nombres ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() : '')
+        ) || `Revisor (${this.rolActual})`;
 
         const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
         const headers = { "Content-Type": "application/json" };
@@ -1070,7 +1358,10 @@ function revisionSolicitudApp() {
 
         if (res.ok) {
           this.hayCambiosPersonas = false;
-          this.mostrarToast("✅ Autorizaciones actualizadas y notificación enviada a SCR y roles superiores.", "success");
+          try {
+            localStorage.removeItem(`incarsa_solicitud_${targetId}_personas`);
+          } catch (e) {}
+          this.mostrarToast("✅ Autorizaciones actualizadas en la base de datos y notificadas a SCR.", "success");
           await this.cargarSolicitud();
         } else {
           const errData = await res.json().catch(() => ({}));
@@ -1087,8 +1378,11 @@ function revisionSolicitudApp() {
 
     async descartarCambiosPersonas() {
       this.hayCambiosPersonas = false;
+      try {
+        localStorage.removeItem(`incarsa_solicitud_${this.solicitudId}_personas`);
+      } catch (e) {}
       await this.cargarSolicitud();
-      this.mostrarToast("Cambios descartados.", "info");
+      this.mostrarToast("Cambios descartados. Se restauró el estado registrado en base de datos.", "info");
     },
 
     setAutorizacionVehiculo(vehiculo, estaAutorizado, motivo = "") {
@@ -1258,7 +1552,7 @@ function revisionSolicitudApp() {
             aprobado: sstAprobado,
             rechazado: sstRechazado,
             revisor: revSst?.nombre_revisor || '',
-            fecha: revSst?.fecha_revision ? new Date(revSst.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+            fecha: revSst?.fecha_revision ? formatearFechaHoraEspanol(revSst.fecha_revision) : '',
             observacion: revSst?.observacion || '',
             motivoRechazo: revSst?.motivo_rechazo || ''
           },
@@ -1266,7 +1560,7 @@ function revisionSolicitudApp() {
             aprobado: gescoAprobado,
             rechazado: gescoRechazado,
             revisor: revGesco?.nombre_revisor || '',
-            fecha: revGesco?.fecha_revision ? new Date(revGesco.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+            fecha: revGesco?.fecha_revision ? formatearFechaHoraEspanol(revGesco.fecha_revision) : '',
             observacion: revGesco?.observacion || '',
             motivoRechazo: revGesco?.motivo_rechazo || ''
           },
@@ -1283,7 +1577,7 @@ function revisionSolicitudApp() {
         aprobado: revScr?.decision === 'APROBADO' || this.solicitud?.estado === 'APROBADO',
         rechazado: revScr?.decision === 'RECHAZADO' || (this.solicitud?.estado === 'RECHAZADO' && revScr?.decision === 'RECHAZADO'),
         revisor: revScr?.nombre_revisor || '',
-        fecha: revScr?.fecha_revision ? new Date(revScr.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+        fecha: revScr?.fecha_revision ? formatearFechaHoraEspanol(revScr.fecha_revision) : '',
         observacion: revScr?.observacion || '',
         motivoRechazo: revScr?.motivo_rechazo || ''
       };
@@ -1302,7 +1596,7 @@ function revisionSolicitudApp() {
           planta: planta?.nombre || r.planta_nombre || (r.id_planta ? `Planta ${r.id_planta}` : 'General'),
           decision: r.decision,
           observacion: r.observacion || r.motivo_rechazo || r.motivo_devolucion || '',
-          fecha: r.fecha_revision ? new Date(r.fecha_revision).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : ''
+          fecha: r.fecha_revision ? formatearFechaHoraEspanol(r.fecha_revision) : ''
         };
       });
     },
@@ -1531,9 +1825,11 @@ function revisionSolicitudApp() {
       }
 
       this.guardando = true;
-      const nombreUsuario = this.usuarioSesion?.nombres 
-        ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() 
-        : `Auditor (${this.rolActual})`;
+      const nombreUsuario = (
+        this.usuarioSesion?.nombre || 
+        this.usuarioSesion?.nombre_completo || 
+        (this.usuarioSesion?.nombres ? `${this.usuarioSesion.nombres} ${this.usuarioSesion.apellidos || ''}`.trim() : '')
+      ) || `Revisor (${this.rolActual})`;
 
       try {
         let decisionBackend = "APROBADO";
@@ -1883,6 +2179,49 @@ function revisionSolicitudApp() {
             p.estadoVigenciaInduccion = this.getEstadoVigenciaInduccion(null);
           }
         }
+
+        // 3. CARGA DE SEGURIDAD SOCIAL (SST, SCR, Administrador, SuperAdmin)
+        if (this.puedeVerSeguridadSocial) {
+          let ssCargado = false;
+          const localKeySS = `incarsa_ss_${ident}`;
+          const localSavedSS = JSON.parse(localStorage.getItem(localKeySS) || "null");
+          if (localSavedSS && localSavedSS.fecha_vigencia && localSavedSS.fecha_vigencia !== "Pendiente" && localSavedSS.fecha_vigencia !== "No registrada") {
+            p.fecha_vigencia_ss = localSavedSS.fecha_vigencia;
+            p.ultima_revision_ss = localSavedSS.ultima_revision;
+            p.responsable_ss = localSavedSS.responsable;
+            p.anotaciones_ss = localSavedSS.anotaciones;
+            p.estadoVigenciaSS = this.getEstadoVigenciaSS(localSavedSS.fecha_vigencia);
+            ssCargado = true;
+          } else if (p.fecha_vigencia_ss && p.fecha_vigencia_ss !== "None" && p.fecha_vigencia_ss !== "null" && p.fecha_vigencia_ss !== "Pendiente" && p.fecha_vigencia_ss !== "No registrada") {
+            p.estadoVigenciaSS = this.getEstadoVigenciaSS(p.fecha_vigencia_ss);
+            ssCargado = true;
+          }
+
+          if (!ssCargado) {
+            try {
+              if (idPersona) {
+                const resSS = await fetch(`${API.seguridad_social}/persona/${idPersona}?actualizar_revision=false`);
+                if (resSS.ok) {
+                  const resDataSS = await resSS.json().catch(() => ({}));
+                  const dataSS = resDataSS.data || resDataSS;
+                  if (dataSS && (dataSS.fecha_vigencia || dataSS.fecha_consulta)) {
+                    const fVig = dataSS.fecha_vigencia || dataSS.fecha_consulta;
+                    p.fecha_vigencia_ss = fVig;
+                    p.ultima_revision_ss = dataSS.ultima_revision;
+                    p.responsable_ss = dataSS.responsable;
+                    p.anotaciones_ss = dataSS.anotaciones;
+                    p.estadoVigenciaSS = this.getEstadoVigenciaSS(fVig);
+                    ssCargado = true;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!ssCargado) {
+            p.estadoVigenciaSS = this.getEstadoVigenciaSS(null);
+          }
+        }
       });
 
       await Promise.all(tareas);
@@ -2081,6 +2420,83 @@ function revisionSolicitudApp() {
           textoDias: `${diffDias} días restantes de vigencia`,
           icono: 'fa-solid fa-circle-check',
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
+          dotClass: 'bg-emerald-500',
+          dias: diffDias
+        };
+      }
+    },
+
+    getEstadoVigenciaSS(fechaVigenciaStr) {
+      if (!fechaVigenciaStr || fechaVigenciaStr === "None" || fechaVigenciaStr === "null" || fechaVigenciaStr === "Pendiente" || fechaVigenciaStr === "No registrada" || fechaVigenciaStr === "Sin fecha" || fechaVigenciaStr === "Sin vigencia registrada") {
+        return {
+          estado: 'sin_revision',
+          etiqueta: 'Sin revisión',
+          textoDias: 'Sin dictamen SST registrado',
+          icono: 'fa-solid fa-circle-question',
+          badgeClass: 'vigencia-badge-neon is-sin-revision text-slate-400 border-slate-500/30 bg-slate-500/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaLimite = this.parsearFechaLocal(fechaVigenciaStr);
+      if (!fechaLimite || isNaN(fechaLimite.getTime())) {
+        return {
+          estado: 'sin_revision',
+          etiqueta: 'Fecha inválida',
+          textoDias: 'Fecha inválida',
+          icono: 'fa-solid fa-circle-question',
+          badgeClass: 'vigencia-badge-neon is-sin-revision text-slate-400 border-slate-500/30 bg-slate-500/10',
+          dotClass: 'bg-slate-400',
+          dias: null
+        };
+      }
+      fechaLimite.setHours(0, 0, 0, 0);
+
+      const diffMs = fechaLimite.getTime() - hoy.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDias < 0) {
+        const diasVencidos = Math.abs(diffDias);
+        return {
+          estado: 'vencido',
+          etiqueta: `Vencido (${diasVencidos}d)`,
+          textoDias: `Planilla vencida hace ${diasVencidos} ${diasVencidos === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-circle-xmark',
+          badgeClass: 'vigencia-badge-neon is-vencido text-red-400 border-red-500/40 bg-red-500/15',
+          dotClass: 'bg-red-500',
+          dias: diffDias
+        };
+      } else if (diffDias === 0) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: 'Vence hoy',
+          textoDias: 'La planilla vence hoy',
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'vigencia-badge-neon is-por-vencer text-amber-400 border-amber-500/40 bg-amber-500/15',
+          dotClass: 'bg-amber-500',
+          dias: 0
+        };
+      } else if (diffDias <= 5) {
+        return {
+          estado: 'por_vencer',
+          etiqueta: `Por vencer (${diffDias}d)`,
+          textoDias: `Planilla por vencer en ${diffDias} ${diffDias === 1 ? 'día' : 'días'}`,
+          icono: 'fa-solid fa-triangle-exclamation',
+          badgeClass: 'vigencia-badge-neon is-por-vencer text-amber-400 border-amber-500/40 bg-amber-500/15',
+          dotClass: 'bg-amber-500',
+          dias: diffDias
+        };
+      } else {
+        return {
+          estado: 'vigente',
+          etiqueta: `Vigente (${diffDias}d)`,
+          textoDias: `Planilla vigente por ${diffDias} días`,
+          icono: 'fa-solid fa-circle-check',
+          badgeClass: 'vigencia-badge-neon is-vigente text-emerald-400 border-emerald-500/40 bg-emerald-500/15',
           dotClass: 'bg-emerald-500',
           dias: diffDias
         };
@@ -2703,6 +3119,311 @@ function revisionSolicitudApp() {
         this.mensajeErrorInduccion = e.message || "No fue posible guardar los cambios de inducción.";
       } finally {
         this.guardandoInduccion = false;
+      }
+    },
+
+    // =============================================================
+    // GESTIÓN Y AUDITORÍA DE SEGURIDAD SOCIAL (SST)
+    // =============================================================
+
+    async abrirSeguridadSocialModal(persona) {
+      if (!this.puedeVerSeguridadSocial) {
+        this.mostrarToast("No tienes permisos para dictaminar seguridad social.", "warning");
+        return;
+      }
+      this.personaSeleccionadaSS = persona;
+      const idPersona = persona.id_persona || persona.id;
+      const identificacion = String(persona.identificacion || "").trim();
+      const tipoDoc = persona.tipo_doc || "CC";
+      const cargo = persona.cargo || "Operario";
+      const nombre = persona.nombre || "Persona";
+      const apellido = persona.apellido || "";
+
+      this.cargandoSeguridadSocial = true;
+      this.mensajeExitoSS = "";
+      this.mensajeErrorSS = "";
+      this.limpiarFiltrosHistorial();
+      this.showSeguridadSocialModal = true;
+
+      const contratistaSolicitud = this.solicitud?.nombre_emContratista || this.solicitud?.contratista || this.solicitud?.empresa_contratista || this.solicitud?.nombre_contratista || persona.contratista || "Sin contratista asignado";
+      const empresaSolicitud = this.solicitud?.nombre_empresa || this.solicitud?.empresa_solicitante || "INCARSA S.A.S.";
+
+      let usuarioSST = "";
+      try {
+        const sesion = (typeof getAuthSession === 'function') 
+          ? getAuthSession() 
+          : JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || '{}');
+        const nombres = sesion?.nombres || sesion?.nombre || "";
+        const apellidos = sesion?.apellidos || sesion?.apellido || "";
+        usuarioSST = `${nombres} ${apellidos}`.trim() || sesion?.usuario || "";
+      } catch (e) {}
+
+      const sesionNombre = usuarioSST || (this.userDisplayName && this.userDisplayName !== "Usuario Activo" ? this.userDisplayName : "Evaluador SST");
+
+      // 1. Estado inicial reactivo unificado
+      this.formSeguridadSocial = {
+        id: null,
+        id_persona: idPersona,
+        persona_nombre: nombre,
+        persona_apellido: apellido,
+        persona_tipo_doc: tipoDoc,
+        persona_identificacion: identificacion,
+        persona_cargo: cargo,
+        responsable: persona.responsable_ss || sesionNombre,
+        anotaciones: persona.anotaciones_ss || "",
+        ultima_empresa_contratista: contratistaSolicitud,
+        ultima_revision: persona.ultima_revision_ss || null,
+        fecha_vigencia: persona.fecha_vigencia_ss || null,
+        historial: [
+          {
+            id: 1,
+            codigo_radicado: this.solicitud?.codigo || "SOL-ACTUAL",
+            nombre_empresa: empresaSolicitud,
+            nombre_contratista: contratistaSolicitud,
+            usuario_registro: this.solicitud?.diligenciador || null,
+            diligenciador: this.solicitud?.diligenciador || null,
+            fecha_inicio: this.solicitud?.fecha_inicio || this.solicitud?.fecha_registro,
+            fecha_fin: this.solicitud?.fecha_fin || this.solicitud?.fecha_estimada,
+            fecha_solicitud: this.solicitud?.fecha_registro || new Date().toISOString()
+          }
+        ]
+      };
+      this.detalleSeguridadSocial = this.formSeguridadSocial;
+      this.formSeguridadSocialRevision = this.formSeguridadSocial;
+
+      // 2. Consultar backend
+      try {
+        if (idPersona) {
+          const res = await fetch(`${API.seguridad_social}/persona/${idPersona}?actualizar_revision=false`);
+          if (res.ok) {
+            const resData = await res.json().catch(() => ({}));
+            const data = resData.data || resData;
+            if (data && typeof data === 'object') {
+              this.formSeguridadSocial.id = data.id || null;
+              if (data.persona_nombre) this.formSeguridadSocial.persona_nombre = data.persona_nombre;
+              if (data.persona_apellido) this.formSeguridadSocial.persona_apellido = data.persona_apellido;
+              if (data.persona_tipo_doc) this.formSeguridadSocial.persona_tipo_doc = data.persona_tipo_doc;
+              if (data.persona_identificacion) this.formSeguridadSocial.persona_identificacion = String(data.persona_identificacion);
+              if (data.persona_cargo) this.formSeguridadSocial.persona_cargo = data.persona_cargo;
+              if (data.responsable && data.responsable !== "Sin asignar") {
+                this.formSeguridadSocial.responsable = data.responsable;
+              } else {
+                this.formSeguridadSocial.responsable = sesionNombre;
+              }
+              if (data.ultima_empresa_contratista) {
+                this.formSeguridadSocial.ultima_empresa_contratista = data.ultima_empresa_contratista;
+              }
+              if (data.ultima_revision) {
+                this.formSeguridadSocial.ultima_revision = data.ultima_revision;
+              }
+              const fVigBackend = data.fecha_vigencia || data.fecha_consulta;
+              if (fVigBackend && fVigBackend !== "Pendiente" && fVigBackend !== "No registrada") {
+                this.formSeguridadSocial.fecha_vigencia = fVigBackend;
+              }
+              if (data.anotaciones) {
+                this.formSeguridadSocial.anotaciones = data.anotaciones;
+              }
+              if (Array.isArray(data.historial) && data.historial.length > 0) {
+                this.formSeguridadSocial.historial = data.historial;
+              }
+            }
+          }
+        }
+
+        // Revisar cache localStorage
+        const localKeySS = `incarsa_ss_${identificacion}`;
+        const localSavedSS = JSON.parse(localStorage.getItem(localKeySS) || "null");
+        if (localSavedSS && localSavedSS.fecha_vigencia) {
+          this.formSeguridadSocial.fecha_vigencia = localSavedSS.fecha_vigencia;
+          this.formSeguridadSocial.responsable = localSavedSS.responsable || this.formSeguridadSocial.responsable;
+          this.formSeguridadSocial.anotaciones = localSavedSS.anotaciones || this.formSeguridadSocial.anotaciones;
+        }
+
+        persona.fecha_vigencia_ss = this.formSeguridadSocial.fecha_vigencia;
+        persona.estadoVigenciaSS = this.getEstadoVigenciaSS(this.formSeguridadSocial.fecha_vigencia);
+
+        // Inicializar o sincronizar Flatpickr
+        this.$nextTick(() => {
+          const el = this.$refs.fpVigenciaInput;
+          if (el) {
+            if (!this.fpVigenciaModalInstance) {
+              this.initFlatpickrVigencia(el);
+            } else {
+              if (this.formSeguridadSocial.fecha_vigencia) {
+                this.fpVigenciaModalInstance.setDate(this.formSeguridadSocial.fecha_vigencia, false);
+              } else {
+                this.fpVigenciaModalInstance.clear();
+              }
+            }
+          }
+        });
+
+      } catch (e) {
+        console.warn("Aviso al consultar seguridad social en revisión:", e);
+      } finally {
+        this.cargandoSeguridadSocial = false;
+      }
+    },
+
+    cerrarSeguridadSocialModal() {
+      this.showSeguridadSocialModal = false;
+      this.mensajeExitoSS = "";
+      this.mensajeErrorSS = "";
+      this.limpiarFiltrosHistorial();
+    },
+
+    initFlatpickrVigencia(el) {
+      if (typeof flatpickr === "undefined" || !el) return;
+      if (this.fpVigenciaModalInstance) {
+        try { this.fpVigenciaModalInstance.destroy(); } catch (e) {}
+      }
+      const self = this;
+      this.fpVigenciaModalInstance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        altInputClass: "input-field w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-[var(--paper-shadow)] cursor-pointer font-bold",
+        defaultDate: this.formSeguridadSocial?.fecha_vigencia || null,
+        disableMobile: "true",
+        allowInput: true,
+        placeholder: "Seleccionar fecha de vigencia...",
+        onChange: (selectedDates, dateStr) => {
+          if (self.formSeguridadSocial) {
+            self.formSeguridadSocial.fecha_vigencia = dateStr || null;
+          }
+        }
+      });
+
+      if (this.fpVigenciaModalInstance.altInput) {
+        this.fpVigenciaModalInstance.altInput.addEventListener('input', (e) => {
+          const val = e.target.value.trim();
+          if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+            const [d, m, y] = val.split('/');
+            const iso = `${y}-${m}-${d}`;
+            if (self.formSeguridadSocial) {
+              self.formSeguridadSocial.fecha_vigencia = iso;
+            }
+          }
+        });
+      }
+
+      if (this.formSeguridadSocial?.fecha_vigencia) {
+        this.fpVigenciaModalInstance.setDate(this.formSeguridadSocial.fecha_vigencia, false);
+      }
+    },
+
+    async guardarSeguridadSocial() {
+      if (!this.formSeguridadSocial || !this.formSeguridadSocial.id_persona) return;
+
+      this.guardandoSeguridadSocial = true;
+      this.mensajeExitoSS = "";
+      this.mensajeErrorSS = "";
+
+      let usuarioSST = "";
+      try {
+        const sesion = (typeof getAuthSession === 'function') 
+          ? getAuthSession() 
+          : JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || '{}');
+        const nombres = sesion?.nombres || sesion?.nombre || "";
+        const apellidos = sesion?.apellidos || sesion?.apellido || "";
+        usuarioSST = `${nombres} ${apellidos}`.trim() || sesion?.usuario || "";
+      } catch (e) {}
+
+      const sesionNombre = usuarioSST || (this.userDisplayName && this.userDisplayName !== "Usuario Activo" ? this.userDisplayName : "Evaluador SST");
+
+      const fVigStr = this.formSeguridadSocial.fecha_vigencia
+        ? String(this.formSeguridadSocial.fecha_vigencia).split("T")[0].split(" ")[0].trim()
+        : null;
+
+      const payload = {
+        responsable: sesionNombre,
+        anotaciones: this.formSeguridadSocial.anotaciones ? this.formSeguridadSocial.anotaciones.trim() : null,
+        fecha_vigencia: fVigStr,
+        fecha_consulta: fVigStr,
+        ultima_revision: this.obtenerFechaHoraLocal(new Date())
+      };
+
+      try {
+        const idPers = this.formSeguridadSocial.id_persona;
+        const res = await fetch(`${API.seguridad_social}/persona/${idPers}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || err.mensaje || `Error al guardar (HTTP ${res.status})`);
+        }
+
+        // Persistir en cache localStorage
+        const ident = String(this.formSeguridadSocial.persona_identificacion || "").trim();
+        const localKeySS = `incarsa_ss_${ident}`;
+        localStorage.setItem(localKeySS, JSON.stringify({
+          ...this.formSeguridadSocial,
+          ...payload
+        }));
+
+        // Actualizar detalle reactivo
+        this.formSeguridadSocial.fecha_vigencia = fVigStr;
+        this.formSeguridadSocial.responsable = payload.responsable;
+        this.formSeguridadSocial.anotaciones = payload.anotaciones || "";
+        this.formSeguridadSocial.ultima_revision = payload.ultima_revision;
+
+        // Actualizar persona en la lista
+        if (this.personaSeleccionadaSS) {
+          this.personaSeleccionadaSS.fecha_vigencia_ss = fVigStr;
+          this.personaSeleccionadaSS.responsable_ss = payload.responsable;
+          this.personaSeleccionadaSS.anotaciones_ss = payload.anotaciones || "";
+          this.personaSeleccionadaSS.estadoVigenciaSS = this.getEstadoVigenciaSS(fVigStr);
+        }
+
+        this.mensajeExitoSS = "¡Dictamen de seguridad social actualizado exitosamente!";
+        this.mostrarToast("Seguridad social dictaminada y actualizada con éxito", "success");
+
+        setTimeout(() => {
+          this.mensajeExitoSS = "";
+        }, 3000);
+
+      } catch (err) {
+        console.error("Error al dictaminar seguridad social:", err);
+        this.mensajeErrorSS = err.message || "Error al actualizar la seguridad social.";
+      } finally {
+        this.guardandoSeguridadSocial = false;
+      }
+    },
+
+    // Alias compatibles para el modal unificado
+    get guardando() { return this.guardandoSeguridadSocial; },
+    set guardando(val) { this.guardandoSeguridadSocial = val; },
+    get mensajeExito() { return this.mensajeExitoSS; },
+    get mensajeError() { return this.mensajeErrorSS; },
+    getEstadoVigencia(fecha) { return this.getEstadoVigenciaSS(fecha); },
+    formatearSoloFecha(fechaStr) {
+      if (!fechaStr || fechaStr === "None" || fechaStr === "null") return "—";
+      try {
+        const str = String(fechaStr).trim().split("T")[0].split(" ")[0];
+        const [y, m, d] = str.split("-");
+        if (y && m && d) return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+        return str;
+      } catch {
+        return fechaStr;
+      }
+    },
+    async copiarCodigo(codigo) {
+      if (!codigo) return;
+      try {
+        await navigator.clipboard.writeText(codigo);
+        this.copiadoFeedback = codigo;
+        this.mostrarToast(`Código ${codigo} copiado al portapapeles`, "success");
+        setTimeout(() => {
+          if (this.copiadoFeedback === codigo) {
+            this.copiadoFeedback = null;
+          }
+        }, 2000);
+      } catch (e) {
+        console.warn("No se pudo copiar código:", e);
       }
     },
 

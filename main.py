@@ -29,6 +29,7 @@ from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
 from src.routes.inducciones_route import router as inducciones_router
+from src.routes.seguridad_social_route import router as seguridad_social_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
 from src.routes.superadmin_router import router as superadmin_router
@@ -412,6 +413,8 @@ app.include_router(vehiculo_router)
 app.include_router(empresa_router)
 app.include_router(antecedentes_router, prefix="/api/v1")
 app.include_router(inducciones_router, prefix="/api/v1")
+app.include_router(seguridad_social_router, prefix="/api/v1")
+app.include_router(seguridad_social_router)
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(notificacion_router, prefix="/api/v1")
@@ -469,6 +472,11 @@ async def get_splash_loading(request: Request):
 @app.get("/antecedentes")
 async def get_antecedentes(request: Request):
     return templates.TemplateResponse(name="antecedentes.html", request=request)
+
+@app.get("/seguridad-social")
+@app.get("/seguridadsocial")
+async def get_seguridad_social(request: Request):
+    return templates.TemplateResponse(name="seguridadsocial.html", request=request)
 
 @app.get("/inducciones")
 async def get_inducciones(request: Request):

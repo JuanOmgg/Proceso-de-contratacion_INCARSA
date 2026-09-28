@@ -73,7 +73,7 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/estadisticas.js') }}?v=1.2"></script>
+  <script src="{{ url_for('static', path='js/estadisticas.js') }}?v=1.7"></script>
 {% endblock %}
 
 {% block content %}
@@ -101,7 +101,7 @@
           <!-- ============================================================
              1. HEADER CON FILTROS INTELIGENTES
           ============================================================= -->
-          <div class="stat-neon-box rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+          <div class="stat-neon-box relative z-30 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
             
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
@@ -110,7 +110,7 @@
                   <span>Afluencia Diaria a Plantas</span>
                 </h1>
                 <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
-                  Conteo diario deduplicado: personas en múltiples solicitudes se contabilizan una sola vez.
+                  Conteo de personas ingresantes a las plantas.
                 </p>
               </div>
 
@@ -175,21 +175,101 @@
                 </div>
               </div>
 
-              <!-- Selector de Planta -->
-              <div>
-                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center gap-1.5">
-                  <i class="fa-solid fa-industry text-[11px] text-cyan-500"></i>
-                  <span>Planta de destino:</span>
+              <!-- Selector de Planta (Buscador directo en el input con icono centrado) -->
+              <div class="relative z-40" @click.outside="cerrarDropdownPlanta()">
+                <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-industry text-[11px] text-cyan-500"></i>
+                    <span>Planta de destino:</span>
+                  </span>
+                  <button type="button" x-show="filtros.id_planta" @click.stop="limpiarPlanta()"
+                    class="text-[10px] text-cyan-400 hover:underline cursor-pointer" title="Restablecer a todas las plantas">
+                    Limpiar
+                  </button>
                 </label>
-                <div class="stat-filter-input-wrap">
-                  <select x-model="filtros.id_planta" @change="cargarEstadisticas()"
-                    class="input-field w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-lg font-medium cursor-pointer text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-                    <option value="">Todas las plantas</option>
-                    <template x-for="p in plantas" :key="p.id">
-                      <option :value="p.id" x-text="p.nombre + (p.empresa ? ' (' + p.empresa + ')' : '')"></option>
-                    </template>
-                  </select>
+                
+                <!-- Input de búsqueda directa en el mismo campo -->
+                <div class="stat-filter-input-wrap relative">
+                  <input type="text"
+                    x-ref="plantaInput"
+                    x-model="inputPlantaTexto"
+                    @focus="abrirDropdownPlanta($refs.plantaInput)"
+                    @click="abrirDropdownPlanta($refs.plantaInput)"
+                    @input="dropdownPlantasOpen = true"
+                    @keydown.escape.stop="cerrarDropdownPlanta()"
+                    @keydown.enter.prevent="if (plantasDropdownFiltradas.length > 0) { seleccionarPlanta(plantasDropdownFiltradas[0].id); } else if (!inputPlantaTexto.trim()) { seleccionarPlanta(''); }"
+                    placeholder="Todas las plantas"
+                    autocomplete="off"
+                    class="input-field w-full pl-9 pr-14 py-2 text-xs sm:text-sm rounded-lg font-medium text-[var(--text-primary)] bg-[var(--bg-subtle)] border border-[var(--border-subtle)] cursor-text"
+                    :class="dropdownPlantasOpen ? 'border-cyan-500 ring-2 ring-cyan-500/20' : ''" />
+
+                  <!-- Icono de planta alineado a la izquierda y centrado verticalmente exacto -->
                   <i class="fa-solid fa-industry absolute left-3 top-1/2 -translate-y-1/2 text-xs text-cyan-500 pointer-events-none"></i>
+
+                  <!-- Botones a la derecha: Limpiar y Chevron desplegable -->
+                  <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button type="button"
+                      x-show="filtros.id_planta || inputPlantaTexto"
+                      @click.stop="limpiarPlanta()"
+                      class="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Restablecer">
+                      <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                    <button type="button"
+                      @click.stop="toggleDropdownPlanta($refs.plantaInput)"
+                      class="w-5 h-5 flex items-center justify-center text-[var(--text-muted)] hover:text-cyan-400 transition-colors cursor-pointer"
+                      title="Desplegar opciones">
+                      <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200"
+                        :class="dropdownPlantasOpen ? 'rotate-180 text-cyan-400' : ''"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Menú Desplegable con opciones filtradas en vivo (sin segundo buscador) -->
+                <div x-show="dropdownPlantasOpen" x-cloak
+                  x-transition:enter="transition ease-out duration-150"
+                  x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave="transition ease-in duration-100"
+                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                  x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                  class="absolute z-50 mt-1.5 w-full min-w-[280px] sm:min-w-[340px] bg-white dark:bg-[#18181b] rounded-xl shadow-2xl border border-slate-200 dark:border-white/15 overflow-hidden">
+                  
+                  <div class="max-h-64 overflow-y-auto custom-scroll p-1.5 space-y-0.5 bg-white dark:bg-[#18181b]">
+                    
+                    <!-- Opción: Todas las plantas -->
+                    <div @click="seleccionarPlanta('')"
+                      class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center justify-between"
+                      :class="!filtros.id_planta ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30' : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-cyan-500 dark:hover:text-cyan-400'">
+                      <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-xs text-cyan-500"></i>
+                        <span>Todas las plantas</span>
+                      </div>
+                      <i x-show="!filtros.id_planta" class="fa-solid fa-check text-xs text-cyan-500 dark:text-cyan-400"></i>
+                    </div>
+
+                    <div class="h-px bg-slate-200 dark:bg-white/10 my-1"></div>
+
+                    <!-- Plantas individuales -->
+                    <template x-for="p in plantasDropdownFiltradas" :key="p.id">
+                      <div @click="seleccionarPlanta(p.id)"
+                        class="px-3 py-2 rounded-lg text-xs cursor-pointer transition-all flex items-center justify-between group"
+                        :class="String(filtros.id_planta) === String(p.id) ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30' : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-cyan-500 dark:hover:text-cyan-400'">
+                        <div class="min-w-0 pr-2">
+                          <p class="font-semibold truncate" x-text="p.nombre"></p>
+                          <p class="text-[10.5px] text-[var(--text-muted)] group-hover:text-cyan-600 dark:group-hover:text-cyan-300/80 truncate mt-0.5" x-show="p.empresa" x-text="p.empresa"></p>
+                        </div>
+                        <i x-show="String(filtros.id_planta) === String(p.id)" class="fa-solid fa-check text-xs text-cyan-500 dark:text-cyan-400 flex-shrink-0"></i>
+                      </div>
+                    </template>
+
+                    <div x-show="plantasDropdownFiltradas.length === 0" class="py-5 text-center text-xs text-[var(--text-muted)]">
+                      <i class="fa-solid fa-ban text-base mb-1 block opacity-50"></i>
+                      <span>No se encontraron plantas con "<span x-text="inputPlantaTexto"></span>"</span>
+                    </div>
+
+                  </div>
+
                 </div>
               </div>
 
@@ -325,9 +405,9 @@
                 <div>
                   <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <i class="fa-solid fa-chart-column text-cyan-500"></i>
-                    <span>Top Plantas con Más Ingresos</span>
+                    <span>Top plantas con más ingresos</span>
                   </h3>
-                  <p class="text-xs text-[var(--text-muted)]">Personas acumuladas por sede</p>
+                  <p class="text-xs text-[var(--text-muted)]">Personas acumuladas por planta</p>
                 </div>
               </div>
               <div class="h-64 sm:h-72 w-full relative">
@@ -343,7 +423,7 @@
           <div class="stat-neon-box rounded-2xl shadow-sm overflow-hidden">
             
             <!-- Barra Superior de la Tabla -->
-            <div class="p-4 sm:p-5 border-b border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="p-4 sm:p-5 border-b border-[var(--border-subtle)] flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
               <div>
                 <h3 class="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <i class="fa-solid fa-table-list text-emerald-500"></i>
@@ -354,19 +434,37 @@
                 </p>
               </div>
 
-              <!-- Buscador en tabla -->
-              <div class="relative w-full sm:w-72">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
-                <input type="search" x-model="search" name="search_estadisticas_tbl" id="search_estadisticas_tbl"
-                  placeholder="Buscar fecha, planta o empresa..."
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+              <!-- Controles de filtrado de la tabla (Buscador por Fecha + Buscador general) -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+                
+                <!-- Buscador / Selector de Fecha con Flatpickr -->
+                <div class="relative w-full sm:w-48" @click="$refs.fechaTablaInput && $refs.fechaTablaInput._flatpickr && $refs.fechaTablaInput._flatpickr.open()">
+                  <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-xs text-emerald-500 pointer-events-none"></i>
+                  <input type="text" x-ref="fechaTablaInput" x-init="initFlatpickrTabla($el)"
+                    placeholder="Filtrar por fecha..."
+                    class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer font-medium" />
+                  <button type="button" x-show="filtroFechaTabla" @click.stop="limpiarFiltroFechaTabla()"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-red-400 text-xs p-1 transition-colors cursor-pointer"
+                    title="Quitar filtro de fecha">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <!-- Buscador en tabla -->
+                <div class="relative w-full sm:w-60">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+                  <input type="search" x-model="search" name="search_estadisticas_tbl" id="search_estadisticas_tbl"
+                    placeholder="Buscar planta o empresa..."
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                </div>
+
               </div>
             </div>
 
@@ -399,7 +497,11 @@
                       <td colspan="6" class="py-12 text-center text-[var(--text-muted)]">
                         <i class="fa-regular fa-calendar-xmark text-3xl mb-2 text-slate-500"></i>
                         <p class="text-sm font-medium">No se encontraron registros de ingresos para los filtros seleccionados.</p>
-                        <p class="text-xs text-slate-500 mt-1">Prueba ampliando el rango de fechas o cambiando el estado a "Todas las solicitudes".</p>
+                        <p class="text-xs text-slate-500 mt-1" x-show="filtroFechaTabla">
+                          Estás filtrando por una fecha específica.
+                          <button type="button" @click="limpiarFiltroFechaTabla()" class="text-emerald-400 hover:text-emerald-300 underline font-semibold ml-1 cursor-pointer">Limpiar fecha</button>
+                        </p>
+                        <p class="text-xs text-slate-500 mt-1" x-show="!filtroFechaTabla">Prueba ampliando el rango de fechas o cambiando el estado a "Todas las solicitudes".</p>
                       </td>
                     </tr>
                   </template>

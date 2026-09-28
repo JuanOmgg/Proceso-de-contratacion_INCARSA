@@ -310,6 +310,13 @@
         return fechaStr || '';
       },
 
+      formatearFechaHora(fechaStr) {
+        if (typeof window.formatearFechaHoraEspanol === 'function') {
+          return window.formatearFechaHoraEspanol(fechaStr);
+        }
+        return fechaStr || '';
+      },
+
       formatearTextoEnlace(url) {
         if (typeof window.formatearTextoEnlace === 'function') {
           return window.formatearTextoEnlace(url);

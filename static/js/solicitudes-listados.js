@@ -1,51 +1,15 @@
 function formatearFechaHoraEspanol(fechaStr) {
-    if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
-    try {
-        const str = String(fechaStr).trim();
-        const partes = str.replace('T', ' ').split(' ');
-        const fPartes = partes[0].split('-');
-        if (fPartes.length === 3) {
-            const anio = fPartes[0];
-            const mesIdx = parseInt(fPartes[1], 10) - 1;
-            const dia = fPartes[2].padStart(2, '0');
-            const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-            const mesNombre = meses[mesIdx] || fPartes[1];
-
-            if (partes[1]) {
-                const hPartes = partes[1].split(':');
-                let h = parseInt(hPartes[0], 10);
-                const m = (hPartes[1] || '00').padStart(2, '0');
-                const ampm = h >= 12 ? 'PM' : 'AM';
-                h = h % 12;
-                h = h ? h : 12;
-                const horaFinal = `${String(h).padStart(2, '0')}:${m} ${ampm}`;
-                return `${dia} ${mesNombre} ${anio}, ${horaFinal}`;
-            }
-            return `${dia} ${mesNombre} ${anio}`;
-        }
-        return fechaStr;
-    } catch (e) {
-        return fechaStr;
+    if (window.Fechas && typeof window.Fechas.formatearFechaHora === 'function') {
+        return window.Fechas.formatearFechaHora(fechaStr);
     }
+    return fechaStr || '—';
 }
 
 function formatearFechaCorta(fechaStr) {
-    if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
-    try {
-        const str = String(fechaStr).trim().split('T')[0].split(' ')[0];
-        const fPartes = str.split('-');
-        if (fPartes.length === 3) {
-            const anio = fPartes[0];
-            const mesIdx = parseInt(fPartes[1], 10) - 1;
-            const dia = fPartes[2].padStart(2, '0');
-            const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-            const mesNombre = meses[mesIdx] || fPartes[1];
-            return `${dia} ${mesNombre} ${anio}`;
-        }
-        return fechaStr;
-    } catch (e) {
-        return fechaStr;
+    if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
+        return window.Fechas.formatearCorta(fechaStr);
     }
+    return fechaStr || '—';
 }
 
 function generarCodigoAlfanumerico(id) {

@@ -1108,6 +1108,111 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Contenedor responsive de 4 chips: 2x2 en móviles (<640px) y 1 fila en PC/tablets (>=640px) */
+.filter-chips-responsive {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.filter-chips-responsive > button,
+.filter-chips-responsive > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive > button,
+  .filter-chips-responsive > .filter-status-chip {
+    width: auto !important;
+  }
+}
+
+.filter-chips-wrapper {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-wrapper {
+    width: auto !important;
+  }
+}
+
+/* Contenedor responsive de 6 chips (procesamiento): 3x2 en móviles (<640px) y 1 fila en PC (>=640px) */
+.filter-chips-responsive-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.filter-chips-responsive-3 > button,
+.filter-chips-responsive-3 > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive-3 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive-3 > button,
+  .filter-chips-responsive-3 > .filter-status-chip {
+    width: auto !important;
+  }
+}
+
+/* Contenedor responsive de 5 chips (inducciones): en móviles (<640px) 2 columnas con el último centrado/completo (2-2-1), en PC (>=640px) 1 fila corrida */
+.filter-chips-responsive-5 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.filter-chips-responsive-5 > button,
+.filter-chips-responsive-5 > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.filter-chips-responsive-5 > button:last-child,
+.filter-chips-responsive-5 > .filter-status-chip:last-child {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive-5 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive-5 > button,
+  .filter-chips-responsive-5 > .filter-status-chip {
+    width: auto !important;
+  }
+  .filter-chips-responsive-5 > button:last-child,
+  .filter-chips-responsive-5 > .filter-status-chip:last-child {
+    grid-column: auto !important;
+  }
+}
+
 .chip-dot {
   width: 6px;
   height: 6px;
@@ -4331,15 +4436,4 @@ table td .inline-flex {
   color: #475569 !important;
   background: rgba(148, 163, 184, 0.12) !important;
 }
-
-
-
-
-
-
-
-
-
-
-
 

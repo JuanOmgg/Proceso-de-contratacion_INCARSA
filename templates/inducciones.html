@@ -101,30 +101,30 @@
                 class="input-field w-full rounded-lg py-2 text-xs sm:text-sm">
             </div>
 
-            <!-- Chips de Vigencia -->
-            <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap overflow-visible py-2 px-1">
+            <!-- Chips de Vigencia (2-2-1 en móviles <640px, 1 fila corrida en PC >=640px) -->
+            <div class="filter-chips-responsive-5 overflow-visible py-1 px-1">
               <button type="button" @click="filtroVigencia = 'todos'" 
-                class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                class="filter-status-chip chip-neon-todos relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                 :class="filtroVigencia === 'todos' ? 'is-active scale-105' : 'is-idle'">
                 Todos
               </button>
               <button type="button" @click="filtroVigencia = 'vigente'" 
-                class="filter-status-chip chip-neon-aprobado relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                class="filter-status-chip chip-neon-aprobado relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                 :class="filtroVigencia === 'vigente' ? 'is-active scale-105' : 'is-idle'">
                 <i class="fa-solid fa-circle-check text-xs mr-1"></i> Vigentes
               </button>
               <button type="button" @click="filtroVigencia = 'por_vencer'" 
-                class="filter-status-chip chip-neon-aprobar relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                class="filter-status-chip chip-neon-aprobar relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                 :class="filtroVigencia === 'por_vencer' ? 'is-active scale-105' : 'is-idle'">
                 <i class="fa-solid fa-triangle-exclamation text-xs mr-1"></i> Por vencer
               </button>
               <button type="button" @click="filtroVigencia = 'vencido'" 
-                class="filter-status-chip chip-neon-rechazado relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                class="filter-status-chip chip-neon-rechazado relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                 :class="filtroVigencia === 'vencido' ? 'is-active scale-105' : 'is-idle'">
                 <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Vencidos
               </button>
               <button type="button" @click="filtroVigencia = 'sin_induccion'" 
-                class="filter-status-chip chip-neon-milpa relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                class="filter-status-chip chip-neon-milpa relative rounded-full text-[11px] sm:text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                 :class="filtroVigencia === 'sin_induccion' ? 'is-active scale-105' : 'is-idle'">
                 <i class="fa-solid fa-clock-rotate-left text-xs mr-1"></i> Sin inducción
               </button>

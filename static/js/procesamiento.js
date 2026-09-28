@@ -5,12 +5,67 @@
  * Enviado → En revisión → Por aprobar → Aprobado/Rechazado.
  */
 
+function formatearFechaCorta(fechaStr) {
+  if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
+    return window.Fechas.formatearCorta(fechaStr);
+  }
+  return fechaStr || '—';
+}
+
 function procesamientoBoard() {
   return {
     search: "",
     filtroEstado: "TODOS",
     filtroActivo: "todos", // "todos" | "activos" | "inactivos"
     userRole: "",
+
+    // Formateadores de fechas delegados a window.Fechas
+    formatearFecha(fechaStr) {
+      return window.Fechas ? window.Fechas.formatearCorta(fechaStr) : formatearFechaCorta(fechaStr);
+    },
+
+    formatearRangoFechas(fechaInicio, fechaFin) {
+      if (window.Fechas) return window.Fechas.formatearRango(fechaInicio, fechaFin);
+      const f1 = formatearFechaCorta(fechaInicio);
+      const f2 = formatearFechaCorta(fechaFin);
+      if (f1 && f1 !== '—' && f2 && f2 !== '—') return `${f1} → ${f2}`;
+      if (f1 && f1 !== '—') return `Desde ${f1}`;
+      if (f2 && f2 !== '—') return `Hasta ${f2}`;
+      return '—';
+    },
+
+    formatearRangoFechasHtml(fechaInicio, fechaFin) {
+      if (window.Fechas) return window.Fechas.formatearRangoFechasHtml(fechaInicio, fechaFin);
+      return `<span class="text-slate-400 dark:text-slate-500">Por definir</span>`;
+    },
+
+    formatearFechaTooltip(fechaInicio, fechaFin) {
+      const parsearLarga = (f) => {
+        if (!f || f === '—' || f === '-') return null;
+        try {
+          const str = String(f).trim().split('T')[0].split(' ')[0];
+          const partes = str.split('-');
+          if (partes.length === 3) {
+            const dia = parseInt(partes[2], 10);
+            const mesIdx = parseInt(partes[1], 10) - 1;
+            const anio = partes[0];
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const mes = meses[mesIdx] || partes[1];
+            return `${dia} de ${mes} de ${anio}`;
+          }
+          return f;
+        } catch (e) {
+          return f;
+        }
+      };
+
+      const l1 = parsearLarga(fechaInicio);
+      const l2 = parsearLarga(fechaFin);
+      if (l1 && l2) return `Vigencia: ${l1} al ${l2}`;
+      if (l1) return `Vigencia desde: ${l1}`;
+      if (l2) return `Vigencia hasta: ${l2}`;
+      return 'Vigencia de la solicitud';
+    },
 
     // Roles autorizados para filtrar entre activos, inactivos o ver todos
     rolesPermitidosInactivos: [
@@ -266,6 +321,7 @@ function procesamientoBoard() {
           const diligenciadorStr = String(s.diligenciador || s.diligenciadoPor || s.usuario_creador || "").toLowerCase();
           const estadoStr = String(s.estado || "").toLowerCase();
           const obsStr = String(s.observaciones || s.observacion || "").toLowerCase();
+          const fechasStr = `${String(s.fecha_ingreso || '')} ${String(s.fecha_salida || '')} ${this.formatearRangoFechas(s.fecha_ingreso, s.fecha_salida)}`.toLowerCase();
 
           return (
             coincideCodigo ||
@@ -274,7 +330,8 @@ function procesamientoBoard() {
             empresaOrigenStr.includes(term) ||
             diligenciadorStr.includes(term) ||
             estadoStr.includes(term) ||
-            obsStr.includes(term)
+            obsStr.includes(term) ||
+            fechasStr.includes(term)
           );
         });
       }

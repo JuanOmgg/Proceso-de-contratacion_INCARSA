@@ -43,14 +43,47 @@ def GET_OR_CREATE_induccion_persona_db(id_persona: int, auto_renovar: bool = Fal
                 )
                 induccion = cursor.fetchone()
 
+                # Obtener contratista vinculado de su última solicitud para display informativo
+                cursor.execute(
+                    """
+                    SELECT ec.nombre AS contratista_nombre
+                    FROM ingresantes ing
+                    JOIN solicitudes s ON ing.id_solicitud = s.id
+                    JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                    WHERE ing.id_persona = %s
+                    ORDER BY s.id DESC LIMIT 1
+                    """,
+                    (id_persona,)
+                )
+                contratista_row = cursor.fetchone()
+                ultima_empresa_contratista = contratista_row["contratista_nombre"] if contratista_row else None
+
                 if not induccion:
                     if auto_renovar:
+                        # Buscar empresa_origen para id_empresa (referencia a tabla 'empresa')
                         cursor.execute(
                             """
-                            INSERT INTO inducciones (id_persona, responsable, fecha_induccion, fecha_vigencia, ultima_revision, fecha_creacion)
-                            VALUES (%s, 'Auditor GESCO', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW(), NOW())
+                            SELECT s.empresa_origen
+                            FROM ingresantes ing
+                            INNER JOIN solicitudes s ON ing.id_solicitud = s.id
+                            WHERE ing.id_persona = %s AND s.empresa_origen IS NOT NULL
+                            ORDER BY s.id DESC LIMIT 1
                             """,
                             (id_persona,)
+                        )
+                        sol_emp = cursor.fetchone()
+                        id_emp_init = sol_emp["empresa_origen"] if sol_emp else None
+                        if id_emp_init:
+                            cursor.execute("SELECT id FROM empresa WHERE id = %s", (id_emp_init,))
+                            if not cursor.fetchone():
+                                id_emp_init = None
+
+                        cursor.execute(
+                            """
+                            INSERT INTO inducciones (id_persona, responsable, id_empresa, fecha_induccion, fecha_vigencia, ultima_revision, fecha_creacion)
+                            VALUES (%s, 'Auditor GESCO', %s, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), NOW(), NOW())
+                            """,
+                            (id_persona, id_emp_init)
                         )
                         conexion.commit()
                         new_id = cursor.lastrowid
@@ -80,6 +113,7 @@ def GET_OR_CREATE_induccion_persona_db(id_persona: int, auto_renovar: bool = Fal
                                 "anotaciones": None,
                                 "id_empresa": None,
                                 "nombre_empresa": None,
+                                "ultima_empresa_contratista": ultima_empresa_contratista,
                                 "fecha_induccion": None,
                                 "fecha_vigencia": None,
                                 "ultima_revision": None,
@@ -121,6 +155,7 @@ def GET_OR_CREATE_induccion_persona_db(id_persona: int, auto_renovar: bool = Fal
                     "anotaciones": induccion.get("anotaciones"),
                     "id_empresa": induccion.get("id_empresa"),
                     "nombre_empresa": induccion.get("nombre_empresa"),
+                    "ultima_empresa_contratista": ultima_empresa_contratista,
                     "fecha_induccion": _formatear_fecha(induccion.get("fecha_induccion")),
                     "fecha_vigencia": _formatear_fecha(induccion.get("fecha_vigencia")),
                     "ultima_revision": _formatear_fecha_hora(induccion.get("ultima_revision")),
@@ -153,14 +188,15 @@ def UPDATE_induccion_persona_db(id_persona: int, data: Dict[str, Any], responsab
                 fecha_ind = data.get("fecha_induccion")
                 fecha_vig = data.get("fecha_vigencia")
 
-                # Si no viene id_empresa, intentar inferir de la última solicitud de la persona
+                # Si no viene id_empresa, inferir empresa_origen de la última solicitud de la persona
+                # NOTA: inducciones.id_empresa referencia a 'empresa' (mandante: INCARSA, MILPA, etc.), NO a 'emp_contratista'
                 if not id_empresa:
                     cursor.execute(
                         """
-                        SELECT s.empresa_contratista AS id_empresa
+                        SELECT s.empresa_origen AS id_empresa
                         FROM ingresantes ing
                         INNER JOIN solicitudes s ON ing.id_solicitud = s.id
-                        WHERE ing.id_persona = %s AND s.empresa_contratista IS NOT NULL
+                        WHERE ing.id_persona = %s AND s.empresa_origen IS NOT NULL
                         ORDER BY s.id DESC LIMIT 1
                         """,
                         (id_persona,)
@@ -168,6 +204,29 @@ def UPDATE_induccion_persona_db(id_persona: int, data: Dict[str, Any], responsab
                     sol_emp = cursor.fetchone()
                     if sol_emp and sol_emp.get("id_empresa"):
                         id_empresa = sol_emp["id_empresa"]
+
+                # Validar estrictamente que si id_empresa tiene valor, exista en tabla empresa (evita error FK 1452)
+                if id_empresa is not None:
+                    cursor.execute("SELECT id FROM empresa WHERE id = %s", (id_empresa,))
+                    emp_val = cursor.fetchone()
+                    if not emp_val:
+                        # Si no es ID válido en 'empresa', intentar buscar empresa_origen como fallback
+                        cursor.execute(
+                            """
+                            SELECT s.empresa_origen
+                            FROM ingresantes ing
+                            INNER JOIN solicitudes s ON ing.id_solicitud = s.id
+                            WHERE ing.id_persona = %s AND s.empresa_origen IS NOT NULL
+                            ORDER BY s.id DESC LIMIT 1
+                            """,
+                            (id_persona,)
+                        )
+                        sol_fallback = cursor.fetchone()
+                        if sol_fallback and sol_fallback.get("empresa_origen"):
+                            cursor.execute("SELECT id FROM empresa WHERE id = %s", (sol_fallback["empresa_origen"],))
+                            id_empresa = sol_fallback["empresa_origen"] if cursor.fetchone() else None
+                        else:
+                            id_empresa = None
 
                 # Si no hay fecha de inducción ni de vigencia, renovar por defecto a 1 año desde hoy
                 if not fecha_ind and not fecha_vig:

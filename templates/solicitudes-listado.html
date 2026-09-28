@@ -26,8 +26,7 @@
       {% set page_title = 'Solicitudes' %}
       {% include 'pages/navbar.html' %}
       <!-- ---------- CONTENT ---------- -->
-      <main class="flex-1 p-6">
-        <div class="max-w-6xl mx-auto space-y-6">
+      <main class="flex-1 p-4 sm:p-6 space-y-6 min-w-0 w-full">
 
           <!-- ===== Contadores ===== -->
           <section x-data="solicitudesCards()" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,25 +134,25 @@
             </div>
 
             <!-- Chips de Filtro Estado + Limpiar filtros -->
-            <div class="flex items-center justify-between w-full lg:w-auto gap-2 py-1 overflow-visible">
-              <div class="flex items-center gap-2 overflow-visible py-1.5 px-1">
+            <div class="filter-chips-wrapper flex items-center justify-between gap-2 py-1 overflow-visible">
+              <div class="filter-chips-responsive overflow-visible py-1 px-1">
                 <button type="button" @click="filtroEstado = 'todos'" 
-                  class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                   :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">
                   Todos
                 </button>
                 <button type="button" @click="filtroEstado = 'activos'" 
-                  class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                   :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
                   <i class="fa-solid fa-circle-check text-xs mr-1"></i> Activos
                 </button>
                 <button type="button" @click="filtroEstado = 'inactivos'" 
-                  class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer"
+                  class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
                   :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
                   <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
                 </button>
                 <button type="button" @click="filtroEstado = 'pre-enviado'" 
-                  class="filter-status-chip relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer border border-purple-500/40 text-purple-300 bg-purple-900/20"
+                  class="filter-status-chip relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer border border-purple-500/40 text-purple-300 bg-purple-900/20 flex items-center justify-center text-center"
                   :class="filtroEstado === 'pre-enviado' ? 'is-active scale-105 ring-2 ring-purple-500' : 'is-idle'">
                   <i class="fa-solid fa-clock-rotate-left text-xs mr-1"></i> Pre-enviados
                 </button>
@@ -674,8 +673,6 @@
               <div class="modal-serrated"></div>
             </div>
           </div>
-
-        </div>
       </main>
 
       <!-- Footer compartido -->
@@ -703,7 +700,7 @@
           <h3 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1">Observaciones</h3>
           <p class="text-xs text-[var(--paper-muted)] font-mono font-semibold" x-text="solicitudObservacion ? ((solicitudObservacion.codigo || '') + ' · ' + (solicitudObservacion.nombre_empresa || '')) : ''"></p>
           <p class="text-[11px] text-[var(--paper-muted)] mt-1" x-show="solicitudObservacion && solicitudObservacion.diligenciador">
-            <i class="fa-regular fa-user mr-1 text-slate-400"></i>Diligenciado por: <span class="font-medium text-[var(--paper-ink)]" x-text="solicitudObservacion.diligenciador"></span>
+            <i class="fa-regular fa-user mr-1 text-slate-400"></i>Diligenciado por: <span class="font-medium text-[var(--paper-ink)]" x-text="solicitudObservacion?.diligenciador || ''"></span>
           </p>
         </div>
 
@@ -938,5 +935,6 @@
       </div>
     </div>
   </div>
+</div>
 
-{% endblock%}
+{% endblock %}

@@ -29,12 +29,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.7">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=4.6">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=4.7">
 
   <!-- Estilos dedicados de la ventana de verificación (sobrescriben dark-mode.css) -->
   <link rel="stylesheet" href="{{ url_for('static', path='css/verificar.css') }}?v=1.0">
 
-  <!-- Lógica Reactiva de Portería -->
+  <!-- Módulo unificado de fechas y Lógica Reactiva de Portería -->
+  <script src="{{ url_for('static', path='js/fechas.js') }}?v=1.0"></script>
   <script src="{{ url_for('static', path='js/verificar.js') }}?v=1.0"></script>
 
   <!-- Alpine.js -->
