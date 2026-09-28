@@ -155,18 +155,9 @@ window.mostrarToastNotificacion = mostrarToastNotificacion;
 window._solicitudesConfirmadasDirectas = window._solicitudesConfirmadasDirectas || new Set();
 
 function esNotifPreaprobada(n) {
-    if (!n) return false;
-    if (n.aprobadoExitoso) return true; // Permite mostrar el badge "Aprobación confirmada"
-    const cod = obtenerCodigoSolicitudDeNotif(n);
-    if (cod && window._solicitudesConfirmadasDirectas && window._solicitudesConfirmadasDirectas.has(cod)) {
-        return true; // Para que muestre el badge verde confirmado
-    }
-    const enlace = String(n.enlace || "");
-    const titulo = String(n.titulo || "");
-    const mensaje = String(n.mensaje || "");
-    return enlace.includes("confirmar=true") || 
-           ((titulo.toLowerCase().includes("preaprobada") || titulo.toLowerCase().includes("pre-aprobada")) && enlace.includes("/solicitudes/revision/")) ||
-           ((mensaje.toLowerCase().includes("preaprobada") || mensaje.toLowerCase().includes("pre-aprobada")) && enlace.includes("/solicitudes/revision/"));
+    // Ya no se maneja la confirmación de aprobación mediante notificación.
+    // Al alcanzar los avales técnicos, las solicitudes pre-aprobadas pasan automáticamente a APROBADO.
+    return false;
 }
 window.esNotifPreaprobada = esNotifPreaprobada;
 

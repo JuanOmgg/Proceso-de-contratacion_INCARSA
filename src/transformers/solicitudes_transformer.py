@@ -162,6 +162,10 @@ def limpiar_vehiculos_solicitud(
                     "conductor_id": id_persona,
                     "documentos": v.get("documentos") or [],
                 }
+                if "autorizado" in v:
+                    v_dict["autorizado"] = v["autorizado"]
+                if "motivo" in v:
+                    v_dict["motivo"] = v["motivo"]
                 if id_vehiculo:
                     v_dict["id_vehiculo"] = id_vehiculo
                 if v.get("placa"):

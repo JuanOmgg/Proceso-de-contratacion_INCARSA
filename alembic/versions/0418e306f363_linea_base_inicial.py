@@ -34,7 +34,7 @@ def upgrade() -> None:
         ('SUPERADMIN', ''),
         ('VIGILANTE', ''),
         ('EQUIPO SCR', ''),
-        ('GESTION DOCUMENTAL', ''),
+        ('SOLICITANTE', ''),
         ('SST', 'Seguridad y Salud en el Trabajo'),
         ('GESCO', 'Gestión del conocimiento'),
         ('SCR', 'Segurdad corporativa y riesgo')

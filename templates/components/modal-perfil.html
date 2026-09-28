@@ -40,7 +40,7 @@
       <!-- Encabezado estilo Ticket -->
       <div class="flex items-center gap-3.5 pb-3.5 border-b border-dashed border-[var(--paper-shadow)] flex-shrink-0">
         <div class="modal-profile-avatar w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg text-white shadow-md flex-shrink-0"
-             style="background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important; color: #ffffff !important; box-shadow: 0 4px 14px rgba(12, 118, 125, 0.35);"
+             style="background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%); color: #ffffff; box-shadow: 0 4px 14px rgba(12, 118, 125, 0.35);"
              x-text="inicialesUsuario">
           U
         </div>
@@ -119,7 +119,7 @@
         </div>
 
         <!-- 2. BLOQUE DE DATOS EDITABLES -->
-        <div class="space-y-3.5 pt-1">
+        <form @submit.prevent="guardar()" autocomplete="off" class="space-y-3.5 pt-1">
           <div class="flex items-center gap-2">
             <span class="subtitles-modal text-xs font-bold uppercase tracking-wider text-[var(--paper-ink)] flex items-center gap-1.5">
               <i class="fa-solid fa-pen-to-square text-amber-500"></i> Datos que puedes editar
@@ -135,6 +135,10 @@
               <i class="fa-solid fa-phone absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)]"></i>
               <input type="tel" 
                      x-model="form.num_telefono" 
+                     id="modal_perfil_telefono"
+                     name="modal_perfil_telefono"
+                     autocomplete="off"
+                     data-lpignore="true"
                      placeholder="Ej: 3001234567" 
                      maxlength="15"
                      class="input-field w-full rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm bg-[#faf7f0] dark:bg-[#18181b] border border-[var(--paper-shadow)] dark:border-white/15 text-[var(--paper-ink)] dark:text-zinc-100 focus:outline-none focus:border-[var(--paper-ink)] focus:ring-1 focus:ring-[var(--paper-ink)]">
@@ -165,6 +169,11 @@
                 <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)]"></i>
                 <input :type="mostrarPass ? 'text' : 'password'"
                        x-model="form.contrasena"
+                       id="modal_perfil_nueva_contrasena"
+                       name="modal_perfil_nueva_contrasena"
+                       autocomplete="new-password"
+                       data-lpignore="true"
+                       data-1p-ignore="true"
                        placeholder="Mínimo 6 caracteres"
                        class="input-field w-full rounded-xl pl-9 pr-10 py-2 text-xs sm:text-sm bg-[#faf7f0] dark:bg-[#18181b] border border-[var(--paper-shadow)] dark:border-white/15 text-[var(--paper-ink)] dark:text-zinc-100 focus:outline-none focus:border-[var(--paper-ink)] focus:ring-1 focus:ring-[var(--paper-ink)]">
                 <button type="button" @click="mostrarPass = !mostrarPass"
@@ -184,6 +193,11 @@
                 <i class="fa-solid fa-shield-halved absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)]"></i>
                 <input :type="mostrarConfirmPass ? 'text' : 'password'"
                        x-model="form.confirmar_contrasena"
+                       id="modal_perfil_confirmar_contrasena"
+                       name="modal_perfil_confirmar_contrasena"
+                       autocomplete="new-password"
+                       data-lpignore="true"
+                       data-1p-ignore="true"
                        placeholder="Repite la nueva contraseña"
                        class="input-field w-full rounded-xl pl-9 pr-10 py-2 text-xs sm:text-sm bg-[#faf7f0] dark:bg-[#18181b] border border-[var(--paper-shadow)] dark:border-white/15 text-[var(--paper-ink)] dark:text-zinc-100 focus:outline-none focus:border-[var(--paper-ink)] focus:ring-1 focus:ring-[var(--paper-ink)]"
                        :class="form.confirmar_contrasena && form.contrasena !== form.confirmar_contrasena ? '!border-rose-500' : ''">
@@ -199,7 +213,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </form>
 
       </div>
 
@@ -211,7 +225,7 @@
         </button>
 
         <button type="button" @click="guardar()" :disabled="guardando || cargando"
-          class="px-6 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-900/30 transition-all cursor-pointer"
+          class="btn-superadmin-multicolor px-6 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-900/30 transition-all cursor-pointer"
           :class="guardando ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'">
           <i class="fa-solid fa-spinner fa-spin text-xs" x-show="guardando"></i>
           <i class="fa-solid fa-floppy-disk text-xs" x-show="!guardando"></i>

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
+from src.schemas.superadmin_schema import MantenimientoInput, PermisosRolInput
 
 from src.utils.security import get_current_user, require_role
 from src.loaders.superadmin_loader import (
@@ -15,21 +15,6 @@ from src.loaders.superadmin_loader import (
 
 router = APIRouter(tags=["SuperAdmin"])
 templates = Jinja2Templates(directory="templates")
-
-# Schemas para requests
-class MantenimientoInput(BaseModel):
-    activo: bool
-    tipo: Optional[str] = "general"
-    modulos: Optional[List[str]] = []
-    mensaje: Optional[str] = None
-    tiempo: Optional[str] = None
-    temporizador_minutos: Optional[int] = None
-    temporizador_fin: Optional[str] = None
-
-class PermisosRolInput(BaseModel):
-    permisos: Optional[List[Dict[str, Any]]] = None
-    modulos: Optional[Dict[str, bool]] = None
-    acciones: Optional[Dict[str, bool]] = None
 
 # -----------------------------------------------------------------------------
 # VISTA HTML: Panel de Control SuperAdmin & Previsualización 503

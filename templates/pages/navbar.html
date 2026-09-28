@@ -67,7 +67,7 @@
                         <p class="text-[13px] truncate font-semibold"
                            :class="!n.leido ? 'notification-title-unread' : 'notification-title-read'"
                            x-text="n.titulo"></p>
-                        <span class="notification-time text-[10px] flex-shrink-0 font-medium" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
+                        <span class="notification-time text-[10px] flex-shrink-0 font-medium cursor-help" :title="formatearFechaHora(n.fecha_creacion)" x-text="formatearTiempoRelativo(n.fecha_creacion)"></span>
                       </div>
                       <p class="notification-msg text-xs leading-relaxed" x-text="n.mensaje"></p>
 
@@ -131,7 +131,7 @@
                 </span>
                 <button type="button" 
                         @click="notificationsOpen = false; abrirModalTodasNotificaciones()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-[var(--signal-500)] hover:bg-[var(--signal-500)]/10 transition-colors cursor-pointer">
+                        class="btn-notif-ver-todas inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-[var(--signal-500)] hover:bg-[var(--signal-500)]/10 transition-colors cursor-pointer">
                   <span>Ver todas</span>
                   <i class="fa-solid fa-arrow-right text-[10px]"></i>
                 </button>

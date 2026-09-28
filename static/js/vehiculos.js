@@ -182,6 +182,7 @@ function vehiculoManager() {
         addDocumento() {
             this.form.documentos.push({
                 tipo_doc: "Revisión Tecnomecánica",
+                tipo_doc_otro: "",
                 nombre_archivo: ""
             });
         },
@@ -191,6 +192,7 @@ function vehiculoManager() {
                 this.form.documentos.splice(idx, 1);
             } else {
                 this.form.documentos[0].nombre_archivo = "";
+                this.form.documentos[0].tipo_doc_otro = "";
             }
         },
 
@@ -201,19 +203,33 @@ function vehiculoManager() {
             formData.append("tipo_documento", tipoDocumento);
 
             try {
-                const res = await fetch(`${API.solicitudes}/subir-documento/`, {
+                const response = await fetch("/documentos/upload", {
                     method: "POST",
                     body: formData
                 });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
                 return {
                     nombre_archivo: data.nombre_archivo,
                     url_documento: data.url_documento,
                     nombre_original: data.nombre_original || file.name
                 };
             } catch (error) {
-                console.warn("⚠️ No se pudo subir el archivo, usando nombre local:", error.message);
+                console.error("❌ Error al subir archivo:", error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al subir',
+                        text: 'No fue posible subir el archivo seleccionado.',
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'Cerrar'
+                    });
+                }
                 return {
                     nombre_archivo: file.name,
                     url_documento: null,
@@ -255,6 +271,8 @@ function vehiculoManager() {
             if (!nombre) return;
             if (nombre.startsWith('http://') || nombre.startsWith('https://') || nombre.startsWith('blob:') || nombre.startsWith('data:')) {
                 window.open(nombre, '_blank');
+            } else if (nombre.startsWith('/uploads/')) {
+                window.open(`${API.base}${nombre}`, '_blank');
             } else {
                 window.open(`${API.base}/uploads/${nombre}`, '_blank');
             }
@@ -263,7 +281,7 @@ function vehiculoManager() {
         // ---------------------------------------------------
         // Acciones: Crear, Editar, Eliminar
         // ---------------------------------------------------
-        iniciarEdicion(v) {
+        editarVehiculo(v) {
             this.editandoId = v.id;
             this.form.tipo = v.tipo || "Camioneta";
             this.form.placa = (v.placa || "").toUpperCase().trim();
@@ -271,15 +289,24 @@ function vehiculoManager() {
             this.form.licencia_doc = v.licencia_doc || "";
             this.form.licencia_url = v.licencia_url || null;
             this.form.documentos = Array.isArray(v.documentos) && v.documentos.length > 0
-                ? v.documentos.map(d => ({
-                    tipo_doc: d.tipo_doc || d.tipo || "SOAT",
-                    nombre_archivo: d.nombre_archivo || d.nom_documento || ""
-                }))
-                : [{ tipo_doc: "SOAT", nombre_archivo: "" }];
+                ? v.documentos.map(d => {
+                    const rawTipo = d.tipo_doc || d.tipo || "SOAT";
+                    const isPredefined = (this.tiposDocAdjuntoVehiculo || []).includes(rawTipo) && rawTipo !== "Otro documento";
+                    return {
+                        tipo_doc: isPredefined ? rawTipo : "Otro documento",
+                        tipo_doc_otro: isPredefined ? "" : rawTipo,
+                        nombre_archivo: d.nombre_archivo || d.nom_documento || ""
+                    };
+                })
+                : [{ tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }];
 
             this.limpiarMensajes();
             const input = document.getElementById("inputPlacaVehiculoModal");
             if (input) input.focus();
+        },
+
+        iniciarEdicion(v) {
+            return this.editarVehiculo(v);
         },
 
         cancelarEdicion() {
@@ -290,7 +317,7 @@ function vehiculoManager() {
                 conductor: "",
                 licencia_doc: "",
                 licencia_url: null,
-                documentos: [{ tipo_doc: "SOAT", nombre_archivo: "" }]
+                documentos: [{ tipo_doc: "SOAT", tipo_doc_otro: "", nombre_archivo: "" }]
             };
         },
 
@@ -309,7 +336,7 @@ function vehiculoManager() {
         async guardarVehiculo() {
             this.limpiarMensajes();
 
-            const placa = (this.form.placa || "").toUpperCase().trim();
+            const placa = (this.form.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
             const tipo = this.form.tipo || "Camioneta";
             const conductor = (this.form.conductor || "").trim();
             const licencia_doc = (this.form.licencia_doc || "").trim();
@@ -321,15 +348,23 @@ function vehiculoManager() {
 
             const docsValidos = (this.form.documentos || [])
                 .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-                .map(d => ({
-                    tipo_doc: d.tipo_doc || "SOAT",
-                    nom_documento: d.nombre_archivo.trim(),
-                    nombre_archivo: d.nombre_archivo.trim()
-                }));
+                .map(d => {
+                    let tipoFinal = d.tipo_doc || "SOAT";
+                    if (d.tipo_doc === 'Otro documento' || d.tipo_doc === 'Otro') {
+                        tipoFinal = (d.tipo_doc_otro && d.tipo_doc_otro.trim()) ? d.tipo_doc_otro.trim() : 'Otro documento';
+                    }
+                    return {
+                        tipo_doc: tipoFinal,
+                        tipo_doc_otro: d.tipo_doc_otro || "",
+                        nom_documento: d.nombre_archivo.trim(),
+                        nombre_archivo: d.nombre_archivo.trim()
+                    };
+                });
 
             if (licencia_doc && !docsValidos.some(d => String(d.tipo_doc).toLowerCase().includes("licencia"))) {
                 docsValidos.push({
                     tipo_doc: "licencia",
+                    tipo_doc_otro: "",
                     nom_documento: licencia_doc,
                     nombre_archivo: licencia_doc
                 });

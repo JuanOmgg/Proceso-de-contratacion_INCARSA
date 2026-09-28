@@ -50,7 +50,15 @@
                     <i class="fa-solid fa-file-pdf text-lg"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="doc-type-badge inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#faf7f0] dark:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 border border-[var(--paper-shadow)]" x-text="doc.tipo"></span>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="doc-type-badge inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#faf7f0] dark:bg-white/10 text-[var(--paper-ink)] dark:text-zinc-200 border border-[var(--paper-shadow)]" x-text="doc.tipo"></span>
+                      <template x-if="doc.vigencia">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                          <i class="fa-regular fa-calendar-check text-[9px]"></i>
+                          <span>Vigencia: <strong x-text="doc.vigencia"></strong></span>
+                        </span>
+                      </template>
+                    </div>
                     <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-zinc-100 truncate mt-1" x-text="doc.nombre"></p>
                   </div>
                 </div>

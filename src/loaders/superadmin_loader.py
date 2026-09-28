@@ -187,6 +187,7 @@ MODULOS_SISTEMA = [
     "personas",
     "procesamiento",
     "antecedentes",
+    "seguridad_social",
     "revision_solicitud",
     "dispositivos"
 ]

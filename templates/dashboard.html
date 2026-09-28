@@ -105,7 +105,8 @@
             <div class="relative w-full sm:w-72">
               <i
                 class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
-              <input type="text" x-model.debounce.250ms="search" @input.debounce.250ms="resetPage()" placeholder="Buscar..."
+              <input type="search" x-model.debounce.250ms="search" @input.debounce.250ms="resetPage()" placeholder="Buscar..."
+                name="busqueda_dashboard" id="busqueda_dashboard" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
                 class="input-field w-full rounded-lg pl-9 pr-3 py-2 text-sm">
             </div>
           </div>
@@ -407,7 +408,7 @@
                                 <i class="fa-solid fa-laptop text-[11px] text-cyan-400"></i>
                                 <span class="ticket-card-title font-semibold text-xs" x-text="(e.marca || '') + ' ' + (e.modelo || '')"></span>
                               </div>
-                              <span class="ticket-td-code font-mono text-xs" x-text="'S/N: ' + (e.serie || '—')"></span>
+                              <span class="ticket-td-code font-mono text-xs" x-text="'Serie: ' + (e.serie || '—')"></span>
                             </li>
                           </template>
                         </ul>

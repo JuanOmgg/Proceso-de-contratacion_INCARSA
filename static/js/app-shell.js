@@ -47,6 +47,15 @@
     const roleId = sesion?.id_rol || 2;
     const rolNombre = sesion?.rol || 'ADMINISTRADOR';
 
+    // Sincronización de atributos de rol para estilos exclusivos
+    if (String(rolNombre || '').trim().toUpperCase() === 'SUPERADMIN') {
+      document.documentElement.setAttribute('data-role', 'SUPERADMIN');
+      document.documentElement.classList.add('role-superadmin');
+    } else {
+      document.documentElement.removeAttribute('data-role');
+      document.documentElement.classList.remove('role-superadmin');
+    }
+
     return {
       // ----------------------------------------------------------------------
       // 1. ESTADO DE NAVEGACIÓN Y SIDEBAR
@@ -297,6 +306,13 @@
       formatearTiempoRelativo(fechaStr) {
         if (typeof window.formatearTiempoRelativo === 'function') {
           return window.formatearTiempoRelativo(fechaStr);
+        }
+        return fechaStr || '';
+      },
+
+      formatearFechaHora(fechaStr) {
+        if (typeof window.formatearFechaHoraEspanol === 'function') {
+          return window.formatearFechaHoraEspanol(fechaStr);
         }
         return fechaStr || '';
       },

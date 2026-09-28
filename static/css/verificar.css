@@ -1,0 +1,267 @@
+[x-cloak] {
+  display: none !important;
+}
+
+/* =========================================================
+   1. PLACAS VEHICULARES Y CHIPS (TEXTO EN NEGRO ABSOLUTO)
+   Sobrescribe cualquier regla general de dark-mode.css
+   ========================================================= */
+.placa-colombia-box,
+.placa-colombia-box *,
+.dark .placa-colombia-box,
+.dark .placa-colombia-box *,
+.mini-placa-chip,
+.mini-placa-chip *,
+.dark .mini-placa-chip,
+.dark .mini-placa-chip * {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.placa-colombia-box {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fcd34d !important; /* Amarillo oficial placa colombiana */
+  border: 1.5px solid #000000 !important;
+  border-radius: 6px;
+  padding: 3px 12px 4px 12px;
+  min-width: 125px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  user-select: all;
+}
+.placa-colombia-box .placa-colombia-header {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 8px;
+  font-weight: 800 !important;
+  letter-spacing: 2px;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 2px;
+  opacity: 0.9 !important;
+}
+.placa-colombia-box .placa-colombia-numero {
+  font-family: 'Space Grotesk', ui-monospace, 'Consolas', monospace;
+  font-size: 18px;
+  font-weight: 900 !important;
+  letter-spacing: 2.5px;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* En Modo Oscuro: Placa amarilla con texto NEGRO y halo neón ámbar / dorado */
+.dark .placa-colombia-box {
+  background: #fcd34d !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.65), 0 0 4px rgba(251, 191, 36, 0.9) !important;
+}
+.dark .placa-colombia-box .placa-colombia-header {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  font-weight: 800 !important;
+  opacity: 0.9 !important;
+}
+.dark .placa-colombia-box .placa-colombia-numero {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* =========================================================
+   2. INSIGNIA CONDUCTOR ASIGNADO Y CHIP AMARILLO
+   ========================================================= */
+.badge-conductor-oficial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 7px;
+  padding: 2.5px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.badge-conductor-oficial .conductor-texto {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #92400e;
+}
+.badge-conductor-oficial .conductor-icono {
+  color: #d97706;
+  font-size: 12px;
+}
+.badge-conductor-oficial .mini-placa-chip {
+  background-color: #fcd34d !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  font-family: 'Space Grotesk', ui-monospace, monospace;
+  font-weight: 900 !important;
+  font-size: 11px;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  border: 1px solid #000000 !important;
+  letter-spacing: 1px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* En Modo Oscuro: Insignia Conductor con Neón Ámbar y chip con texto NEGRO */
+.dark .badge-conductor-oficial {
+  background: rgba(245, 158, 11, 0.16) !important;
+  border: 1.5px solid rgba(251, 191, 36, 0.85) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5), inset 0 0 8px rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+}
+.dark .badge-conductor-oficial .conductor-texto {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.8) !important;
+}
+.dark .badge-conductor-oficial .conductor-icono {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.9)) !important;
+}
+.dark .badge-conductor-oficial .mini-placa-chip {
+  background-color: #fcd34d !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  font-weight: 900 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.7) !important;
+}
+
+/* Resalte de la tarjeta de la persona seleccionada como conductor */
+.persona-card-conductor {
+  border-left: 4px solid #f59e0b !important;
+}
+.dark .persona-card-conductor {
+  border-left: 4px solid #fbbf24 !important;
+  border-color: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.3), inset 0 0 15px rgba(245, 158, 11, 0.08) !important;
+  background: rgba(15, 23, 42, 0.98) !important;
+}
+
+/* =========================================================
+   3. EFECTOS NEÓN EN MODO OSCURO PARA TODA LA PANTALLA
+   ========================================================= */
+
+/* Tarjetas contenedor con aura sutil neón */
+.dark .card-neon-panel {
+  background: #101626 !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.7), 0 0 18px rgba(56, 189, 248, 0.06) !important;
+}
+
+/* Neón Esmeralda (AUTORIZADO) */
+.dark .badge-autorizado-neon {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  border: 1.5px solid #10b981 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.55), inset 0 0 8px rgba(16, 185, 129, 0.25) !important;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.8) !important;
+}
+.dark .badge-autorizado-neon i {
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) !important;
+}
+
+/* Neón Carmesí (NO AUTORIZADO) */
+.dark .badge-rechazado-neon {
+  background-color: rgba(244, 63, 94, 0.2) !important;
+  border: 1.5px solid #f43f5e !important;
+  color: #fb7185 !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.55), inset 0 0 8px rgba(244, 63, 94, 0.25) !important;
+  text-shadow: 0 0 8px rgba(251, 113, 133, 0.8) !important;
+}
+.dark .badge-rechazado-neon i {
+  filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.9)) !important;
+}
+
+/* Neón Cyan (Escudo, Íconos de Sección, Chips de Documentos) */
+.dark .neon-cyan-glow {
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.3) !important;
+  border: 1.5px solid #22d3ee !important;
+  color: #22d3ee !important;
+}
+.dark .neon-cyan-glow i {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.9)) !important;
+}
+.dark .icon-neon-cyan {
+  filter: drop-shadow(0 0 8px #22d3ee) !important;
+  color: #22d3ee !important;
+}
+.dark .doc-chip-neon {
+  border: 1px solid rgba(34, 211, 238, 0.5) !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.3) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+.dark .doc-chip-neon .doc-tipo {
+  color: #22d3ee !important;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.85) !important;
+}
+
+/* Neón Reloj en Vivo */
+.dark .live-clock-neon {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.45) !important;
+  border: 1.5px solid #10b981 !important;
+  color: #34d399 !important;
+}
+
+/* Neón Semáforo Principal (Aura Neón y Bordes Vivos) */
+.dark .semaforo-card-neon-emerald {
+  box-shadow: 0 0 35px rgba(16, 185, 129, 0.35), inset 0 0 20px rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid #10b981 !important;
+  background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.18), rgba(15, 23, 42, 0.95)) !important;
+}
+.dark .semaforo-card-neon-amber {
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.35), inset 0 0 20px rgba(245, 158, 11, 0.12) !important;
+  border: 1.5px solid #f59e0b !important;
+  background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.95)) !important;
+}
+.dark .semaforo-card-neon-rose {
+  box-shadow: 0 0 35px rgba(244, 63, 94, 0.35), inset 0 0 20px rgba(244, 63, 94, 0.12) !important;
+  border: 1.5px solid #f43f5e !important;
+  background: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.18), rgba(15, 23, 42, 0.95)) !important;
+}
+
+/* Radicado Badge Neón */
+.dark .rad-badge-neon {
+  border: 1.5px solid rgba(168, 85, 247, 0.75) !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45) !important;
+  color: #f3e8ff !important;
+  text-shadow: 0 0 8px rgba(216, 180, 254, 0.7) !important;
+}
+
+/* Botones de acción con neón */
+.dark .btn-neon-cyan {
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.45) !important;
+  border: 1.5px solid #22d3ee !important;
+}
+.dark .btn-neon-neutral {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* =========================================================
+   4. ESTILOS DE IMPRESIÓN PARA PORTERÍA
+   ========================================================= */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer, form, button, a {
+    display: none !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}

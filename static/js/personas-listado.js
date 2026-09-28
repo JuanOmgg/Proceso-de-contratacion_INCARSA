@@ -56,6 +56,7 @@ function personasTable() {
       tipo_doc: "CC",
       identificacion: "",
       cargo: "",
+      correo: "",
       observacion: "",
       documentos: [
         { tipo_doc: "ARL (Afiliación / Pago)", nombre_archivo: "" }
@@ -112,6 +113,7 @@ function personasTable() {
         tipo_doc: p.tipo_doc || p.tipoDoc || "CC",
         identificacion: String(p.identificacion || p.numDoc || p.documento || ""),
         cargo: p.cargo || "General",
+        correo: p.correo || "",
         observacion: p.observacion || "",
         documentos: Array.isArray(p.documentos) ? p.documentos : (p.documentos_ids || []),
         fecha_creacion: p.fecha_creacion || p.created_at || p.creado_en || null
@@ -144,6 +146,7 @@ function personasTable() {
         const matchQuery = !q ||
           nombreCompleto.includes(q) ||
           p.identificacion.toLowerCase().includes(q) ||
+          (p.correo && p.correo.toLowerCase().includes(q)) ||
           (p.cargo && p.cargo.toLowerCase().includes(q)) ||
           (p.observacion && p.observacion.toLowerCase().includes(q));
 
@@ -405,10 +408,12 @@ function personasTable() {
         tipo_doc: "CC",
         identificacion: "",
         cargo: "",
+        correo: "",
         observacion: "",
         documentos: [
-          { tipo_doc: "ARL (Afiliación / Pago)", nombre_archivo: "" }
-        ]
+          { tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "" }
+        ],
+        fecha_creacion: null
       };
       this.mensajeExito = "";
       this.mensajeError = "";
@@ -418,11 +423,16 @@ function personasTable() {
     abrirEditar(p) {
       this.editandoId = p.id;
       const docs = Array.isArray(p.documentos) && p.documentos.length > 0
-        ? p.documentos.map(d => ({
-            tipo_doc: d.tipo_doc || d.tipo || "Documento",
-            nombre_archivo: d.nombre_archivo || d.nom_documento || (typeof d === 'string' ? d : "")
-          }))
-        : [{ tipo_doc: "ARL (Afiliación / Pago)", nombre_archivo: "" }];
+        ? p.documentos.map(d => {
+            const rawTipo = d.tipo_doc || d.tipo || "ARL";
+            const isPredefined = (this.tiposDocPersona || []).includes(rawTipo) && rawTipo !== "Otro documento";
+            return {
+              tipo_doc: isPredefined ? rawTipo : "Otro documento",
+              tipo_doc_otro: isPredefined ? "" : rawTipo,
+              nombre_archivo: d.nombre_archivo || d.nom_documento || (typeof d === 'string' ? d : "")
+            };
+          })
+        : [{ tipo_doc: "ARL", tipo_doc_otro: "", nombre_archivo: "" }];
 
       this.form = {
         nombre: p.nombre,
@@ -430,6 +440,7 @@ function personasTable() {
         tipo_doc: p.tipo_doc || "CC",
         identificacion: p.identificacion,
         cargo: p.cargo,
+        correo: p.correo || "",
         observacion: p.observacion || "",
         documentos: docs,
         fecha_creacion: p.fecha_creacion || null
@@ -446,8 +457,14 @@ function personasTable() {
     },
 
     async guardarPersona() {
-      if (!this.form.nombre || !this.form.apellido || !this.form.identificacion) {
-        this.mensajeError = "Por favor completa los nombres, apellidos y número de documento.";
+      const correo = (this.form.correo || "").trim();
+      if (!this.form.nombre || !this.form.apellido || !this.form.identificacion || !correo) {
+        this.mensajeError = "Por favor completa los nombres, apellidos, número de documento y correo electrónico.";
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        this.mensajeError = "Por favor ingresa un correo electrónico válido.";
         return;
       }
 
@@ -457,10 +474,17 @@ function personasTable() {
 
       const docsValidos = (this.form.documentos || [])
         .filter(d => d.nombre_archivo && d.nombre_archivo.trim())
-        .map(d => ({
-          tipo_doc: d.tipo_doc || "Documento",
-          nombre_archivo: d.nombre_archivo.trim()
-        }));
+        .map(d => {
+          let tipoFinal = d.tipo_doc || "Documento";
+          if (d.tipo_doc === 'Otro documento' || d.tipo_doc === 'Otro') {
+            tipoFinal = (d.tipo_doc_otro && d.tipo_doc_otro.trim()) ? d.tipo_doc_otro.trim() : 'Otro documento';
+          }
+          return {
+            tipo_doc: tipoFinal,
+            tipo_doc_otro: d.tipo_doc_otro || "",
+            nombre_archivo: d.nombre_archivo.trim()
+          };
+        });
 
       const payload = {
         nombre: this.form.nombre.trim(),
@@ -468,6 +492,7 @@ function personasTable() {
         tipo_doc: this.form.tipo_doc,
         identificacion: this.form.identificacion.trim(),
         cargo: this.form.cargo ? this.form.cargo.trim() : "General",
+        correo: this.form.correo ? this.form.correo.trim().toLowerCase() : null,
         observacion: this.form.observacion ? this.form.observacion.trim() : "",
         documentos_ids: docsValidos
       };

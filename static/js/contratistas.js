@@ -31,6 +31,7 @@ function contratistaManager() {
         // Formulario (registro o edición)
         form: {
             nombre: "",
+            nit: "",
             observacion: ""
         },
 
@@ -84,6 +85,7 @@ function contratistaManager() {
                 if (!text) return true;
                 return (
                     (c.nombre || "").toLowerCase().includes(text) ||
+                    (c.nit || "").toLowerCase().includes(text) ||
                     (c.observacion || "").toLowerCase().includes(text) ||
                     String(c.id).includes(text)
                 );
@@ -114,6 +116,7 @@ function contratistaManager() {
             this.editandoId = contratista.id;
             this.form = {
                 nombre: contratista.nombre || "",
+                nit: contratista.nit || "",
                 observacion: contratista.observacion || ""
             };
 
@@ -129,8 +132,41 @@ function contratistaManager() {
         async guardarContratista() {
             this.limpiarMensajes();
 
-            if (!this.form.nombre.trim()) {
+            const nombre = this.form.nombre.trim();
+            const nit = this.form.nit.trim();
+
+            if (!nombre) {
                 this.mensajeError = "El nombre de la empresa contratista es obligatorio.";
+                return;
+            }
+
+            if (!nit) {
+                this.mensajeError = "El NIT de la empresa contratista es obligatorio.";
+                return;
+            }
+
+            if (!/^\d+$/.test(nit)) {
+                this.mensajeError = "El NIT debe contener únicamente números.";
+                return;
+            }
+
+            // Validar nombre único
+            const existeNombre = this.contratistas.find(c =>
+                String(c.nombre || "").trim().toLowerCase() === nombre.toLowerCase() &&
+                c.id !== this.editandoId
+            );
+            if (existeNombre) {
+                this.mensajeError = `Ya existe otra empresa contratista con el nombre "${nombre}".`;
+                return;
+            }
+
+            // Validar NIT único
+            const existeNit = this.contratistas.find(c =>
+                String(c.nit || "").trim() === nit &&
+                c.id !== this.editandoId
+            );
+            if (existeNit) {
+                this.mensajeError = `El NIT ${nit} ya está registrado para la empresa "${existeNit.nombre}".`;
                 return;
             }
 
@@ -138,6 +174,7 @@ function contratistaManager() {
             try {
                 const payload = {
                     nombre: this.form.nombre.trim(),
+                    nit: this.form.nit.trim(),
                     observacion: (this.form.observacion || "").trim()
                 };
 
@@ -222,6 +259,7 @@ function contratistaManager() {
         limpiarFormulario() {
             this.form = {
                 nombre: "",
+                nit: "",
                 observacion: ""
             };
         },

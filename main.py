@@ -29,11 +29,13 @@ from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
 from src.routes.inducciones_route import router as inducciones_router
+from src.routes.seguridad_social_route import router as seguridad_social_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
 from src.routes.superadmin_router import router as superadmin_router
 from src.routes.correspondencia_route import router as correspondencia_router
 from src.routes.dispositivo_router import router as dispositivo_router
+from src.routes.estadisticas_route import router as estadisticas_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.utils.security import decode_access_token
 
@@ -411,6 +413,8 @@ app.include_router(vehiculo_router)
 app.include_router(empresa_router)
 app.include_router(antecedentes_router, prefix="/api/v1")
 app.include_router(inducciones_router, prefix="/api/v1")
+app.include_router(seguridad_social_router, prefix="/api/v1")
+app.include_router(seguridad_social_router)
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(notificacion_router, prefix="/api/v1")
@@ -419,6 +423,8 @@ app.include_router(correspondencia_router, prefix="/api/v1")
 app.include_router(correspondencia_router)
 app.include_router(dispositivo_router, prefix="/api/v1")
 app.include_router(dispositivo_router)
+app.include_router(estadisticas_router, prefix="/api/v1")
+app.include_router(estadisticas_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -467,6 +473,20 @@ async def get_splash_loading(request: Request):
 async def get_antecedentes(request: Request):
     return templates.TemplateResponse(name="antecedentes.html", request=request)
 
+@app.get("/seguridad-social")
+@app.get("/seguridadsocial")
+async def get_seguridad_social(request: Request):
+    return templates.TemplateResponse(name="seguridadsocial.html", request=request)
+
+@app.get("/inducciones")
+async def get_inducciones(request: Request):
+    return templates.TemplateResponse(name="inducciones.html", request=request)
+
+@app.get("/estadisticas")
+async def get_estadisticas(request: Request):
+    return templates.TemplateResponse(name="Estadisticas.html", request=request)
+
+
 @app.get("/procesamiento")
 async def get_procesamiento(request: Request):
     return templates.TemplateResponse(name="procesamiento.html", request=request)
@@ -512,6 +532,39 @@ async def get_editar_solicitud(request: Request, codigo: str):
 @app.get("/revision-solicitud.html")
 async def get_revision_solicitud(request: Request, codigo: str = ""):
     return templates.TemplateResponse(name="revision-solicitud.html", request=request, context={"codigo_solicitud": codigo})
+
+
+@app.get("/verificar/{codigo}")
+@app.get("/verificar")
+@app.get("/porteria/verificar/{codigo}")
+@app.get("/porteria/verificar")
+async def get_verificar_solicitud(request: Request, codigo: str = ""):
+    return templates.TemplateResponse(
+        name="verificar-solicitud.html",
+        request=request,
+        context={"codigo_solicitud": codigo.strip().upper()}
+    )
+
+
+@app.get("/autorizacion-datos/{token}")
+@app.get("/autorizacion-datos")
+async def get_autorizacion_datos_page(request: Request, token: str = ""):
+    return templates.TemplateResponse(
+        name="autorizacion-datos.html",
+        request=request,
+        context={"token": token.strip()}
+    )
+
+
+@app.get("/formulario-temporal/{token}")
+@app.get("/formulario-temporal")
+async def get_formulario_temporal_page(request: Request, token: str = ""):
+    return templates.TemplateResponse(
+        name="formulario-temporal.html",
+        request=request,
+        context={"token": token.strip()}
+    )
+
 
 
 @app.get("/formulario-correspondencia")

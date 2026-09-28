@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autorización de Tratamiento de Datos Personales · Ley 1581 de 2012 · INCARSA</title>
+
+  <!-- Favicon / Ícono -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Google Fonts: Space Grotesk + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Alpine.js Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b1120;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .font-brand {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .bg-pattern {
+      background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55);
+    }
+    .legal-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #334155 #0f172a;
+    }
+    .legal-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .legal-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .legal-scroll::-webkit-scrollbar-thumb {
+      background-color: #334155;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-pattern flex flex-col justify-between py-6 px-3 sm:px-6">
+
+  <!-- Token inyectado por FastAPI -->
+  <script>
+    window.__TOKEN_AUTORIZACION__ = "{{ token }}";
+  </script>
+
+  <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center" x-data="autorizacionDatosApp()" x-init="iniciar()">
+    
+    <!-- Header Institucional -->
+    <header class="text-center mb-6">
+      <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-lg mb-3">
+        <img src="{{ url_for('static', path='img/icono.png') }}" alt="Logo INCARSA" class="h-10 w-auto rounded-lg object-contain">
+      </div>
+      <h1 class="text-xl sm:text-2xl font-bold font-brand tracking-tight text-white flex items-center justify-center gap-2">
+        <span>INCARSA</span>
+        <span class="text-sky-400 font-light">·</span>
+        <span class="text-slate-300 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 mt-1">
+        Autorización de Tratamiento de Datos Personales — Ley Estatutaria 1581 de 2012
+      </p>
+    </header>
+
+    <!-- Estado: Cargando -->
+    <div x-show="cargando" class="glass-card rounded-2xl p-10 text-center flex flex-col items-center justify-center my-8">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-sky-500 border-t-transparent mb-4"></div>
+      <p class="text-slate-300 font-medium">Validando enlace de consentimiento...</p>
+      <span class="text-xs text-slate-500 mt-1">Por favor espere un momento</span>
+    </div>
+
+    <!-- Estado: Error de Enlace o no encontrado -->
+    <div x-show="!cargando && error" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 text-center border-red-500/30">
+      <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h2 class="text-lg sm:text-xl font-bold text-white mb-2 font-brand" x-text="errorTitulo">Enlace no disponible</h2>
+      <p class="text-sm text-slate-400 max-w-md mx-auto mb-6" x-text="errorMensaje">
+        El enlace de autorización proporcionado ha expirado o no corresponde a un registro válido.
+      </p>
+      <div class="inline-flex items-center gap-2 text-xs text-slate-500 bg-slate-900/60 py-2 px-4 rounded-xl border border-slate-800">
+        <i class="fa-solid fa-circle-info text-sky-400"></i>
+        <span>Si considera que se trata de un error, comuníquese con el responsable de su solicitud o contratista.</span>
+      </div>
+    </div>
+
+    <!-- Estado: YA AUTORIZADO PREVIAMENTE -->
+    <div x-show="!cargando && !error && datos.estado_datos === 'AUTORIZADO'" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 border-emerald-500/30 shadow-emerald-950/20">
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          AUTORIZACIÓN CONFIRMADA
+        </span>
+        <h2 class="text-xl sm:text-2xl font-bold text-white font-brand mt-1">Consentimiento Vigente</h2>
+        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto">
+          Estimado(a) <strong class="text-white" x-text="datos.nombre_completo"></strong>, ya has autorizado formalmente el tratamiento de tus datos personales conforme a la Ley 1581 de 2012 para el ingreso a nuestras instalaciones.
+        </p>
+      </div>
+
+      <!-- Resumen de Registro Legal -->
+      <div class="mt-6 bg-slate-900/80 rounded-xl p-4 sm:p-5 border border-slate-800 space-y-3 text-xs sm:text-sm">
+        <div class="flex justify-between items-center py-1 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Documento de Identidad:</span>
+          <span class="text-white font-semibold" x-text="datos.cedula || 'No especificado'"></span>
+        </div>
+        <div class="flex justify-between items-center py-1 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Radicado de Solicitud:</span>
+          <span class="text-sky-400 font-mono font-bold" x-text="datos.codigo_radicado"></span>
+        </div>
+        <div class="flex justify-between items-center py-1 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Empresa Contratista:</span>
+          <span class="text-white font-medium text-right" x-text="datos.empresa_contratista"></span>
+        </div>
+        <div class="flex justify-between items-center py-1" x-show="datos.fecha_respuesta_datos">
+          <span class="text-slate-400 font-medium">Fecha y Hora de Autorización:</span>
+          <span class="text-emerald-400 font-medium" x-text="datos.fecha_respuesta_datos"></span>
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <p class="text-xs text-slate-500">
+          Tu estado ha sido sincronizado automáticamente con la portería de INCARSA.
+        </p>
+      </div>
+    </div>
+
+    <!-- Estado: RECHAZADO PREVIAMENTE -->
+    <div x-show="!cargando && !error && datos.estado_datos === 'RECHAZADO'" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 border-red-500/30">
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+          <i class="fa-solid fa-ban"></i>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 mb-2">
+          AUTORIZACIÓN RECHAZADA
+        </span>
+        <h2 class="text-xl sm:text-2xl font-bold text-white font-brand mt-1">Tratamiento No Autorizado</h2>
+        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto">
+          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-400 font-mono" x-text="datos.codigo_radicado"></strong>.
+        </p>
+      </div>
+
+      <div class="mt-6 bg-red-950/30 rounded-xl p-4 sm:p-5 border border-red-900/40 text-xs sm:text-sm">
+        <div class="flex items-start gap-3 text-red-300">
+          <i class="fa-solid fa-triangle-exclamation text-base mt-0.5 shrink-0"></i>
+          <div>
+            <strong class="font-semibold block mb-1">Bloqueo de Ingreso en Portería:</strong>
+            De conformidad con los protocolos de seguridad industrial y la Ley 1581 de 2012, sin esta autorización no es posible validar tu identidad ni permitir el ingreso a las instalaciones de la planta.
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <button @click="cambiarADecision()" class="text-xs sm:text-sm text-sky-400 hover:text-sky-300 underline font-medium cursor-pointer">
+          ¿Deseas cambiar tu respuesta y autorizar el tratamiento para permitir tu ingreso?
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado: PENDIENTE (Formulario Principal de Autorización) -->
+    <div x-show="!cargando && !error && datos.estado_datos === 'PENDIENTE'" x-cloak class="glass-card rounded-2xl overflow-hidden border-slate-700/80">
+      
+      <!-- Ficha de Datos del Titular -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-5 sm:p-6 border-b border-slate-700/80">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-semibold tracking-wider uppercase text-sky-400">Titular de los Datos</span>
+            <h2 class="text-lg sm:text-xl font-bold text-white font-brand mt-0.5" x-text="datos.nombre_completo"></h2>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 mt-1">
+              <span><i class="fa-solid fa-id-card text-slate-400 mr-1.5"></i> C.C. <strong class="text-white" x-text="datos.cedula || '—'"></strong></span>
+              <span x-show="datos.cargo"><i class="fa-solid fa-briefcase text-slate-400 mr-1.5"></i> <span x-text="datos.cargo"></span></span>
+            </div>
+          </div>
+          <div class="sm:text-right bg-slate-800/60 sm:bg-transparent p-3 sm:p-0 rounded-xl border border-slate-700/50 sm:border-0">
+            <span class="text-[11px] text-slate-400 block font-medium">Solicitud / Radicado</span>
+            <span class="text-sm sm:text-base font-mono font-bold text-sky-400" x-text="datos.codigo_radicado"></span>
+            <span class="text-xs text-slate-300 block truncate max-w-[220px]" x-text="datos.empresa_contratista"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta Informativa Obligatoria -->
+      <div class="bg-amber-500/10 border-b border-amber-500/20 px-5 sm:px-6 py-3 flex items-center gap-3">
+        <i class="fa-solid fa-circle-exclamation text-amber-400 text-base shrink-0"></i>
+        <p class="text-xs sm:text-sm text-amber-200">
+          <strong>Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
+        </p>
+      </div>
+
+      <!-- Contenido Legal con Scroll -->
+      <div class="p-5 sm:p-6">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+          <span>Términos y Condiciones de la Autorización</span>
+          <span class="text-[11px] font-normal text-slate-500">Deslice para leer el texto completo</span>
+        </h3>
+
+        <div class="legal-scroll h-60 overflow-y-auto bg-slate-950/80 rounded-xl p-4 border border-slate-800 text-xs text-slate-300 space-y-3 leading-relaxed">
+          <p class="font-semibold text-white">
+            AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA PARA EL TRATAMIENTO DE DATOS PERSONALES
+          </p>
+          <p>
+            En cumplimiento de lo dispuesto en la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Ley Estatutaria 1581 de 2012</a>, el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Decreto Reglamentario 1377 de 2013</a> y demás normas concordantes sobre el régimen general de protección de datos personales en la República de Colombia, de manera libre, voluntaria, previa, explícita e inequívoca, autorizo a <strong>INCARSA S.A.S.</strong> (en adelante "LA COMPAÑÍA") para que recolecte, almacene, use, circule, suprima y en general dé tratamiento a mis datos personales.
+          </p>
+          <p class="font-medium text-slate-200">
+            1. Finalidades del Tratamiento:
+          </p>
+          <ul class="list-disc list-inside space-y-1 pl-1 text-slate-300">
+            <li>Validar, verificar y autorizar el control de acceso físico a las instalaciones y plantas de LA COMPAÑÍA.</li>
+            <li>Gestionar el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) y el Plan de Prevención de Riesgos Laborales.</li>
+            <li>Verificar la vigencia y suficiencia de la afiliación a la Administradora de Riesgos Laborales (ARL), EPS y Fondo de Pensiones.</li>
+            <li>Monitoreo por circuito cerrado de televisión (CCTV) y control de portería por motivos de seguridad física de las personas e infraestructura.</li>
+            <li>Atención, evacuación o reporte ante situaciones de emergencia, accidentes o incidentes laborales.</li>
+            <li>Cumplimiento de obligaciones legales, auditorías de calidad y requerimientos de autoridades competentes.</li>
+          </ul>
+          <p class="font-medium text-slate-200">
+            2. Datos Sensibles y Biométricos:
+          </p>
+          <p>
+            Se me ha informado expresamente que el suministro de datos sensibles (tales como imágenes de videovigilancia, datos biométricos de registro dactilar o facial, o certificados de aptitud médica laboral) tiene carácter facultativo; sin embargo, reconozco que son indispensables para los protocolos de seguridad industrial y control de acceso estricto a las plantas de producción.
+          </p>
+          <p class="font-medium text-slate-200">
+            3. Derechos del Titular:
+          </p>
+          <p>
+            Como titular de los datos personales, se me ha informado que me asisten los derechos previstos en el Artículo 8 de la Ley 1581 de 2012, especialmente:
+          </p>
+          <ul class="list-disc list-inside space-y-1 pl-1 text-slate-300">
+            <li>Conocer, actualizar y rectificar mis datos personales frente a LA COMPAÑÍA.</li>
+            <li>Solicitar prueba de la autorización otorgada.</li>
+            <li>Ser informado sobre el uso que se le ha dado a mis datos personales previa solicitud.</li>
+            <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</li>
+            <li>Revocar la autorización y/o solicitar la supresión del dato cuando no medie un deber legal o contractual que obligue a conservarlo.</li>
+          </ul>
+          <p class="font-medium text-slate-200">
+            4. Canales de Atención:
+          </p>
+          <p>
+            Para el ejercicio de los derechos de Habeas Data, LA COMPAÑÍA dispone del correo electrónico institucional de atención y sus oficinas principales, donde se atenderán consultas y reclamos en los términos fijados por la legislación vigente.
+          </p>
+        </div>
+
+        <!-- Checkbox de Aceptación Expresa -->
+        <div class="mt-5 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+          <label class="flex items-start gap-3 cursor-pointer select-none">
+            <input type="checkbox" x-model="aceptaTerminos" class="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900 cursor-pointer">
+            <span class="text-xs sm:text-sm text-slate-200 font-medium leading-snug">
+              Declaro que he leído de manera completa este documento, comprendo los alcances de la Ley 1581 de 2012 y <strong>autorizo de manera libre y expresa el tratamiento de mis datos personales</strong> para el ingreso y permanencia en las instalaciones de INCARSA.
+            </span>
+          </label>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
+          <!-- Botón Rechazar -->
+          <button 
+            type="button" 
+            @click="abrirModalRechazo()"
+            :disabled="enviando"
+            class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/5 text-xs sm:text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
+            <i class="fa-solid fa-xmark"></i>
+            <span>No Acepto / Rechazar</span>
+          </button>
+
+          <!-- Botón Aceptar -->
+          <button 
+            type="button" 
+            @click="enviarRespuesta(true)"
+            :disabled="!aceptaTerminos || enviando"
+            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+            <template x-if="enviando">
+              <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+            </template>
+            <template x-if="!enviando">
+              <i class="fa-solid fa-check"></i>
+            </template>
+            <span>Aceptar y Autorizar Ingreso</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer Legal -->
+  <footer class="w-full max-w-3xl mx-auto text-center mt-6 text-[11px] text-slate-500 space-y-1">
+    <p>© 2026 PSI · Sistema de Gestión de Solicitudes y Acceso a Planta</p>
+    <p>Este sistema opera bajo los principios de legalidad, finalidad y seguridad de la información (Ley 1581 de 2012).</p>
+  </footer>
+
+  <!-- Lógica Alpine.js -->
+  <script>
+    function autorizacionDatosApp() {
+      return {
+        token: window.__TOKEN_AUTORIZACION__ || "",
+        cargando: true,
+        enviando: false,
+        error: false,
+        errorTitulo: "",
+        errorMensaje: "",
+        aceptaTerminos: false,
+        datos: {
+          nombre_completo: "",
+          cedula: "",
+          cargo: "",
+          correo: "",
+          codigo_radicado: "",
+          empresa_contratista: "",
+          estado_datos: "PENDIENTE",
+          fecha_respuesta_datos: ""
+        },
+
+        async iniciar() {
+          if (!this.token) {
+            this.mostrarError("Token no proporcionado", "El enlace no contiene el token de verificación requerido.");
+            this.cargando = false;
+            return;
+          }
+
+          try {
+            const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}`);
+            const data = await resp.json();
+
+            if (!resp.ok || !data.exito) {
+              this.mostrarError("Enlace no válido o expirado", data.detail || data.mensaje || "No se encontró el registro asociado.");
+              this.cargando = false;
+              return;
+            }
+
+            this.datos = data.datos;
+            this.cargando = false;
+          } catch (e) {
+            console.error("Error al consultar token:", e);
+            this.mostrarError("Error de Conexión", "No se pudo establecer comunicación con el servidor. Por favor intente más tarde.");
+            this.cargando = false;
+          }
+        },
+
+        mostrarError(titulo, mensaje) {
+          this.error = true;
+          this.errorTitulo = titulo;
+          this.errorMensaje = mensaje;
+        },
+
+        cambiarADecision() {
+          this.datos.estado_datos = "PENDIENTE";
+          this.aceptaTerminos = false;
+        },
+
+        async abrirModalRechazo() {
+          const { value: confirmacion } = await Swal.fire({
+            title: '¿Rechazar Autorización?',
+            html: `
+              <div style="text-align: left; font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+                <p style="margin-bottom: 12px;">
+                  ⚠️ <strong>Atención:</strong> Si rechaza el tratamiento de datos personales, el sistema de portería de <strong>INCARSA</strong> bloqueará automáticamente su ingreso a las instalaciones físicas.
+                </p>
+                <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #94a3b8;">
+                  Motivo del rechazo (opcional):
+                </label>
+                <textarea id="swal-motivo-rechazo" class="swal2-textarea" style="width: 100%; height: 70px; margin: 0; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; font-size: 12px; padding: 8px;" placeholder="Indique si tiene alguna observación..."></textarea>
+              </div>
+            `,
+            icon: 'warning',
+            background: '#1e293b',
+            color: '#f8fafc',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, Rechazar y No Ingresar',
+            confirmButtonColor: '#ef4444',
+            cancelButtonText: 'Volver a Leer',
+            cancelButtonColor: '#475569',
+            reverseButtons: true,
+            preConfirm: () => {
+              const motivo = document.getElementById('swal-motivo-rechazo')?.value || '';
+              return { rechazar: true, motivo: motivo };
+            }
+          });
+
+          if (confirmacion && confirmacion.rechazar) {
+            await this.enviarRespuesta(false, confirmacion.motivo);
+          }
+        },
+
+        async enviarRespuesta(acepto, motivo = null) {
+          if (this.enviando) return;
+          this.enviando = true;
+
+          try {
+            const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}/responder`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                acepto: acepto,
+                motivo_rechazo: motivo
+              })
+            });
+
+            const resData = await resp.json();
+
+            if (!resp.ok || !resData.exito) {
+              Swal.fire({
+                title: 'Error',
+                text: resData.detail || resData.mensaje || 'No se pudo registrar su respuesta.',
+                icon: 'error',
+                background: '#1e293b',
+                color: '#f8fafc',
+                confirmButtonColor: '#0284c7'
+              });
+              this.enviando = false;
+              return;
+            }
+
+            // Actualizar estado local
+            this.datos.estado_datos = resData.nuevo_estado;
+            this.datos.fecha_respuesta_datos = resData.fecha;
+
+            if (acepto) {
+              Swal.fire({
+                title: '¡Autorización Exitosa!',
+                text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
+                icon: 'success',
+                background: '#1e293b',
+                color: '#f8fafc',
+                confirmButtonColor: '#10b981'
+              });
+            } else {
+              Swal.fire({
+                title: 'Respuesta Registrada',
+                text: 'Se ha registrado su rechazo al tratamiento de datos. El ingreso a la planta queda restringido.',
+                icon: 'info',
+                background: '#1e293b',
+                color: '#f8fafc',
+                confirmButtonColor: '#64748b'
+              });
+            }
+          } catch (e) {
+            console.error("Error al registrar respuesta:", e);
+            Swal.fire({
+              title: 'Error de Red',
+              text: 'Ocurrió un fallo al comunicar la respuesta al servidor.',
+              icon: 'error',
+              background: '#1e293b',
+              color: '#f8fafc',
+              confirmButtonColor: '#0284c7'
+            });
+          } finally {
+            this.enviando = false;
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>

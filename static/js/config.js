@@ -10,6 +10,7 @@ const API = {
     roles: `${API_BASE_URL}/roles`,
     personas: `${API_BASE_URL}/api/v1/personas`,
     antecedentes: `${API_BASE_URL}/api/v1/antecedentes`,
+    seguridad_social: `${API_BASE_URL}/api/v1/seguridad-social`,
     inducciones: `${API_BASE_URL}/api/v1/inducciones`,
     vehiculos: `${API_BASE_URL}/api/v1/vehiculos`,
     dispositivos: `${API_BASE_URL}/api/v1/dispositivos`,
@@ -122,26 +123,23 @@ function cerrarSesionUsuario() {
     };
 })();
 
+function formatearFechaHoraEspanol(fechaStr) {
+    if (window.Fechas && typeof window.Fechas.formatearFechaHora === 'function') {
+        return window.Fechas.formatearFechaHora(fechaStr);
+    }
+    return fechaStr || '—';
+}
+window.formatearFechaHoraEspanol = formatearFechaHoraEspanol;
+window.formatearFechaHora = formatearFechaHoraEspanol;
+
 // Utilidad para formatear tiempos relativos amigables
 function formatearTiempoRelativo(fechaStr) {
-    if (!fechaStr) return "";
-    try {
-        const fecha = new Date(String(fechaStr).replace(" ", "T"));
-        const ahora = new Date();
-        const diffSegundos = Math.floor((ahora - fecha) / 1000);
-        if (diffSegundos < 60) return "Hace un momento";
-        const diffMinutos = Math.floor(diffSegundos / 60);
-        if (diffMinutos < 60) return `Hace ${diffMinutos} min`;
-        const diffHoras = Math.floor(diffMinutos / 60);
-        if (diffHoras < 24) return `Hace ${diffHoras} h`;
-        const diffDias = Math.floor(diffHoras / 24);
-        if (diffDias === 1) return "Ayer";
-        if (diffDias < 7) return `Hace ${diffDias} d`;
-        return fecha.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
-    } catch (e) {
-        return fechaStr;
+    if (window.Fechas && typeof window.Fechas.tiempoRelativo === 'function') {
+        return window.Fechas.tiempoRelativo(fechaStr);
     }
+    return fechaStr || '';
 }
+window.formatearTiempoRelativo = formatearTiempoRelativo;
 
 function formatearTextoEnlace(url) {
     if (!url) return '';

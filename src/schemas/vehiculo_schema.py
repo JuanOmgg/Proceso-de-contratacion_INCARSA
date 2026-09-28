@@ -15,7 +15,7 @@ class DocumentoVehiculoSchema(BaseModel):
 
 class VehiculoInput(BaseModel):
     tipo: str = Field(..., json_schema_extra={"example": "Camioneta"})
-    placa: str = Field(..., json_schema_extra={"example": "ABC-123"})
+    placa: str = Field(..., json_schema_extra={"example": "ABC123"})
     conductor: Optional[str] = Field(None, json_schema_extra={"example": "Juan Pérez"})
     licencia_doc: Optional[str] = Field(None, json_schema_extra={"example": "licencia_123.pdf"})
     licencia_url: Optional[str] = None

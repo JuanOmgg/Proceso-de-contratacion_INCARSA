@@ -3,7 +3,7 @@
 {% block title %}Personas · PSI{% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/personas-listado.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/personas-listado.js') }}?v=3.7"></script>
 {% endblock %}
 
 {% block content %}
@@ -25,14 +25,14 @@
       {% include 'pages/navbar.html' %}
 
       <!-- ---------- CONTENT ---------- -->
-      <main class="flex-1 p-6">
-        <div class="max-w-6xl mx-auto space-y-6">
+      <main class="flex-1 p-4 sm:p-6 space-y-6 min-w-0 w-full">
 
           <!-- ===== Filtros y Buscador ===== -->
           <div class="filter-bar p-4 flex flex-col lg:flex-row lg:items-center gap-3 bg-white rounded-2xl shadow-sm border border-[var(--border-subtle)]">
             <div class="search-input-wrapper flex-1">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" x-model.debounce.250ms="search" placeholder="Buscar por nombre, documento o cargo..."
+              <input type="search" x-model.debounce.250ms="search" placeholder="Buscar por nombre, documento o cargo..."
+                name="busqueda_personas" id="busqueda_personas" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
                 class="input-field w-full rounded-lg py-2.5 text-sm">
             </div>
             
@@ -75,6 +75,7 @@
 
                       <td class="px-4 py-3 text-center font-semibold text-[var(--text-primary)]">
                         <span x-text="(p.nombre + ' ' + p.apellido).trim() || '—'"></span>
+                        <div class="text-[11px] text-[var(--text-muted)] font-normal truncate max-w-[200px] mx-auto" x-show="p.correo" x-text="p.correo"></div>
                       </td>
 
                       <td class="px-4 py-3 text-center text-xs font-mono text-[var(--text-muted)]">
@@ -192,8 +193,6 @@
               </div>
             </div>
           </div>
-
-        </div>
       </main>
 
       <!-- Footer compartido -->
@@ -266,6 +265,15 @@
                 <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-0.5">Especialidad / Cargo</span>
                 <span class="text-sm font-semibold text-[var(--paper-ink)]" x-text="personaDetalle?.cargo || 'General'"></span>
               </div>
+            </div>
+
+            <!-- Fila Correo Electrónico -->
+            <div class="py-2 border-b border-dashed border-[var(--paper-shadow)]" x-show="personaDetalle?.correo">
+              <span class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-0.5">Correo electrónico</span>
+              <span class="text-xs font-semibold text-[var(--paper-ink)] flex items-center gap-1.5">
+                <i class="fa-regular fa-envelope text-blue-500 text-[11px]"></i>
+                <span x-text="personaDetalle?.correo"></span>
+              </span>
             </div>
 
             <!-- Fila Fecha Registro -->
@@ -555,11 +563,18 @@
                   </div>
                 </div>
 
-                <!-- Cargo / Especialidad -->
-                <div>
-                  <label class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-1">Cargo o Especialidad</label>
-                  <input type="text" x-model="form.cargo" placeholder="Ej: Técnico Electricista, Supervisor, Conductor..."
-                    class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm border border-[var(--paper-shadow)]">
+                <!-- Cargo y Correo -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-1">Cargo o Especialidad</label>
+                    <input type="text" x-model="form.cargo" placeholder="Ej: Técnico Electricista, Supervisor, Conductor..."
+                      class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm border border-[var(--paper-shadow)]">
+                  </div>
+                  <div>
+                    <label class="subtitles-modal text-[10.5px] font-bold tracking-wider uppercase block mb-1">Correo Electrónico <span class="text-red-500">*</span></label>
+                    <input type="email" x-model="form.correo" required placeholder="Ej: persona@ejemplo.com"
+                      class="input-field w-full rounded-lg px-3 py-2 text-xs sm:text-sm border border-[var(--paper-shadow)]">
+                  </div>
                 </div>
 
                 <!-- Observaciones -->
@@ -594,6 +609,13 @@
                           <button type="button" @click="removeDocumento(dIdx)" class="action-icon-btn danger text-xs" title="Quitar este documento">
                             <i class="fa-solid fa-trash text-[10px]"></i>
                           </button>
+                        </div>
+
+                        <!-- Input condicional para 'Otro documento' -->
+                        <div x-show="doc.tipo_doc === 'Otro documento' || doc.tipo_doc === 'Otro'" class="pt-0.5">
+                          <input type="text" x-model="doc.tipo_doc_otro"
+                            placeholder="Especifica qué tipo de documento es..."
+                            class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500">
                         </div>
 
                         <!-- Dropzone / Estado del archivo subido -->

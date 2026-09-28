@@ -71,6 +71,77 @@
   filter: drop-shadow(0 0 8px #ff2a55) !important;
 }
 
+/* ============================================================
+   SUB-ITEMS DE DICTAMEN TÉCNICO (SST Y GESCO) CON ESTILO NEÓN
+   ============================================================ */
+
+/* Base para sub-items en modo oscuro */
+:root.dark .dictamen-subitem {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.25s ease !important;
+}
+
+:root.dark .dictamen-subitem .subitem-title {
+  color: #ffffff !important;
+}
+
+/* SST Aprobado (Esmeralda Neón Vibrante) */
+:root.dark .dictamen-subitem.subitem-sst.is-aprobado,
+:root.dark .dictamen-subitem.is-aprobado:not(.subitem-gesco) {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 32, 20, 0.92) 100%) !important;
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35), inset 0 0 8px rgba(16, 185, 129, 0.12) !important;
+}
+:root.dark .dictamen-subitem.subitem-sst.is-aprobado .subitem-status,
+:root.dark .dictamen-subitem.is-aprobado:not(.subitem-gesco) .subitem-status {
+  color: #34d399 !important;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.75) !important;
+}
+:root.dark .dictamen-subitem.subitem-sst.is-aprobado .role-badge-sst {
+  background: rgba(16, 185, 129, 0.30) !important;
+  border: 1px solid #34d399 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45) !important;
+  color: #ffffff !important;
+}
+
+/* GESCO Aprobado (Púrpura Neón Vibrante) */
+:root.dark .dictamen-subitem.subitem-gesco.is-aprobado {
+  background: linear-gradient(145deg, rgba(168, 85, 247, 0.14) 0%, rgba(32, 10, 48, 0.92) 100%) !important;
+  border: 1.5px solid #a855f7 !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35), inset 0 0 8px rgba(168, 85, 247, 0.12) !important;
+}
+:root.dark .dictamen-subitem.subitem-gesco.is-aprobado .subitem-status {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.75) !important;
+}
+:root.dark .dictamen-subitem.subitem-gesco.is-aprobado .role-badge-gesco {
+  background: rgba(168, 85, 247, 0.30) !important;
+  border: 1px solid #c084fc !important;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.45) !important;
+  color: #ffffff !important;
+}
+
+/* Rechazado (Rojo Rubí Neón) */
+:root.dark .dictamen-subitem.is-rechazado {
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.14) 0%, rgba(42, 10, 16, 0.92) 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35), inset 0 0 8px rgba(239, 68, 68, 0.12) !important;
+}
+:root.dark .dictamen-subitem.is-rechazado .subitem-status {
+  color: #f87171 !important;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.75) !important;
+}
+
+/* Pendiente (Gris Sutil) */
+:root.dark .dictamen-subitem.is-pendiente {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+:root.dark .dictamen-subitem.is-pendiente .subitem-status {
+  color: #94a3b8 !important;
+}
+
 /* 4. TARJETAS EQUIPOS DE CÓMPUTO EN MODO OSCURO */
 :root.dark .computo-card {
   background: rgba(255, 255, 255, 0.03) !important;

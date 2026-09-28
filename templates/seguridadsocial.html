@@ -1,0 +1,286 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Seguridad social · PSI{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/seguridad_social.js') }}?v=5.4"></script>
+{% endblock %}
+
+{% block content %}
+
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- ============================================================ -->
+    <!--SIDEBAR -->
+    
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="seguridadSocialModule()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      {% set page_title = "Seguridad social" %}
+      {% include 'pages/navbar.html' %}
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-4 sm:p-6 space-y-6 min-w-0 w-full">
+
+          <!-- ===== 1. CARDS DE INDICADORES NEÓN (gauge-card) ===== -->
+          <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+            
+            <!-- Total Personas (Cian Neón) -->
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-users-viewfinder text-base sm:text-xl"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Total personas</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalRegistros"></p>
+              </div>
+            </div>
+
+            <!-- Vigentes (Verde Esmeralda Neón) -->
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-shield-halved text-base sm:text-xl"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium truncate sm:whitespace-normal" title="Revisiones vigentes">Revisiones vigentes</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVigentes"></p>
+              </div>
+            </div>
+
+            <!-- Por Vencer (Ámbar / Oro Neón) -->
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-carboinsa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clock-rotate-left text-base sm:text-xl"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Por vencer (≤5d)</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalPorVencer"></p>
+              </div>
+            </div>
+
+            <!-- Consultas Vencidas (Rojo Carmesí Neón) -->
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 neon-stat-card neon-card-total rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-xmark text-base sm:text-xl"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Consultas vencidas</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalVencidos"></p>
+              </div>
+            </div>
+
+            <!-- Total Solicitudes Históricas (Morada Neón) -->
+            <div class="gauge-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 col-span-2 sm:col-span-1 neon-stat-card neon-card-milpa rounded-xl">
+              <div class="gauge-icon w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clipboard-list text-base sm:text-xl"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] sm:text-xs leading-tight text-[var(--text-muted)] neon-label font-medium">Ingresos solicitados</p>
+                <p class="gauge-value text-xl sm:text-2xl font-bold neon-value" x-text="cargando ? '...' : totalIngresosHistoricos"></p>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ===== 2. FILTROS / BUSCADOR (filter-bar) ===== -->
+          <div class="filter-bar p-3.5 flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-card)] overflow-visible">
+            
+            <!-- Buscador general -->
+            <div class="search-input-wrapper flex-1 min-w-[240px]">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="search" x-model.debounce.250ms="search" placeholder="Buscar persona por nombre, cargo o documento..."
+                name="busqueda_seguridad_social" id="busqueda_seguridad_social" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                class="input-field w-full rounded-lg py-2 text-xs sm:text-sm">
+            </div>
+
+            <!-- Chips de Vigencia: 2 arriba y 2 abajo en móvil (<640px), 1 fila horizontal en PC (>=640px) -->
+            <div class="filter-chips-responsive overflow-visible py-1 px-1">
+              <button type="button" @click="filtroVigencia = 'todos'" 
+                class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroVigencia === 'todos' ? 'is-active scale-105' : 'is-idle'">
+                Todos
+              </button>
+              <button type="button" @click="filtroVigencia = 'vigente'" 
+                class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroVigencia === 'vigente' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-circle-check text-xs mr-1"></i> Vigentes
+              </button>
+              <button type="button" @click="filtroVigencia = 'por_vencer'" 
+                class="filter-status-chip chip-neon-aprobar relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroVigencia === 'por_vencer' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-triangle-exclamation text-xs mr-1"></i> Por vencer
+              </button>
+              <button type="button" @click="filtroVigencia = 'vencido'" 
+                class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroVigencia === 'vencido' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Vencidos
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ===== 3. TABLA DE SEGURIDAD SOCIAL (wizard-card) ===== -->
+          <div class="wizard-card overflow-hidden">
+            <div class="w-full overflow-x-auto xl:overflow-x-visible custom-scroll">
+              <table class="data-table w-full min-w-[760px] text-left text-sm">
+                <thead>
+                  <tr class="border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                    <th class="px-4 py-3.5 text-center w-12">#</th>
+                    <th class="px-4 py-3.5">Persona / Documento</th>
+                    <th class="px-4 py-3.5">Última Revisión</th>
+                    <th class="px-4 py-3.5">Vigencia Dictaminada (SST)</th>
+                    <th class="px-4 py-3.5 text-center">Días Restantes</th>
+                    <th class="px-4 py-3.5 text-center w-36">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]">
+                  
+                  <!-- Skeleton / Loading -->
+                  <template x-if="cargando">
+                    <tr>
+                      <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)] mb-2"></i>
+                        <p class="text-sm font-medium">Cargando registros de seguridad social...</p>
+                      </td>
+                    </tr>
+                  </template>
+
+                  <!-- Filas de la tabla -->
+                  <template x-for="(item, index) in registrosPagina" :key="item.id_persona || index">
+                    <tr class="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors">
+                      
+                      <!-- Índice -->
+                      <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-400"
+                        x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                      <!-- Persona -->
+                      <td class="px-4 py-3.5">
+                        <div class="flex items-center gap-3">
+                          <div>
+                            <p class="font-semibold text-[var(--text-primary)] text-sm"
+                              x-text="obtenerNombreCompleto(item)"></p>
+                            <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                              <span class="font-mono bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px]" x-text="item.persona_tipo_doc + ': ' + item.persona_identificacion"></span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Última Revisión -->
+                      <td class="px-4 py-3.5 whitespace-nowrap">
+                        <div class="text-xs text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                          <i class="fa-regular fa-clock text-slate-400 flex-shrink-0 text-sm"></i>
+                          <span x-text="formatearFechaRevision(item.ultima_revision)"></span>
+                        </div>
+                      </td>
+
+                      <!-- Vigencia Dictaminada por SST -->
+                      <td class="px-4 py-3.5 whitespace-nowrap">
+                        <div class="text-xs text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                          <i class="fa-regular fa-calendar-check text-slate-400 flex-shrink-0 text-sm"></i>
+                          <span x-text="formatearFechaVigencia(item.fecha_vigencia)"></span>
+                        </div>
+                      </td>
+
+                      <!-- Días Restantes -->
+                      <td class="px-4 py-3.5 text-center">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all select-none shadow-sm"
+                          :class="getEstadoVigencia(item.fecha_vigencia).badgeClass">
+                          <i :class="getEstadoVigencia(item.fecha_vigencia).icono" class="text-xs"></i>
+                          <span x-text="getEstadoVigencia(item.fecha_vigencia).textoDias"></span>
+                        </div>
+                      </td>
+
+                      <!-- Acciones Estándar (action-icon-btn con tooltips) -->
+                      <td class="px-4 py-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <!-- Botón 1: Ver Historial y Detalle -->
+                          <button type="button" @click="abrirSeguridadSocialModal(item)"
+                            class="action-icon-btn action-btn-historial text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            data-tooltip="Ver historial de solicitudes"
+                            title="Ver historial de solicitudes">
+                            <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                          </button>
+
+                          <!-- Botón 2: Actualizar Vigencia y Formulario -->
+                          <button type="button" @click="abrirSeguridadSocialModal(item)"
+                            class="action-icon-btn action-btn-vigencia text-[var(--signal-500)] hover:text-red-700 hover:bg-red-50 dark:hover:bg-rose-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            data-tooltip="Dictaminar vigencia y observaciones SST"
+                            title="Dictaminar vigencia y observaciones SST">
+                            <i class="fa-solid fa-calendar-check text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  </template>
+
+                  <!-- Estado vacío -->
+                  <tr x-show="!cargando && registrosFiltrados.length === 0">
+                    <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+                      <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                      <p class="text-sm font-medium">No se encontraron registros de seguridad social con los filtros aplicados.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- ===== Paginación Estándar ===== -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+                <span>Mostrar</span>
+                <select x-model.number="pageSize" @change="resetPage()"
+                  class="input-field rounded-lg px-2.5 py-1 text-xs border border-[var(--border-subtle)] cursor-pointer">
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                </select>
+                <span>registros por página · <strong class="text-[var(--text-primary)] font-semibold" x-text="rangoMostrado"></strong></span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                  class="pagination-btn flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] transition-all duration-200"
+                  :class="currentPage === 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'"
+                  title="Página anterior">
+                  <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <span class="text-xs text-[var(--text-muted)] select-none">
+                  Página <strong class="text-[var(--text-primary)] font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10" x-text="currentPage"></strong> de <span class="font-medium" x-text="totalPaginas"></span>
+                </span>
+                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
+                  class="pagination-btn flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] transition-all duration-200"
+                  :class="currentPage === totalPaginas ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'"
+                  title="Página siguiente">
+                  <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+      </main>
+
+      <!-- Footer compartido -->
+      {% include 'pages/footer.html' %}
+
+      <!-- ============================================================
+         MODAL UNIFICADO: DETALLE Y DICTAMEN DE SEGURIDAD SOCIAL (SST)
+      ============================================================= -->
+      {% include 'components/modals/modal-seguridad-social.html' %}
+
+    </div>
+  </div>
+
+  <!-- Modal Component: Plantas -->
+  <div x-data="plantasManager()" x-cloak>
+    <!-- Componente de gestión de plantas -->
+  </div>
+{% endblock %}

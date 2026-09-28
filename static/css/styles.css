@@ -21,6 +21,15 @@
   display: none !important;
 }
 
+/* Reset para inputs de búsqueda: evita decoraciones nativas y botones de borrado indeseados */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* ==========================================================================
    [01-VARS] TOKENS DE DISEÑO Y PALETA CORPORATIVA
    ========================================================================== */
@@ -424,20 +433,26 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  justify-content: center;
+  text-align: center;
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
-.status-pill::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
+.status-pill::before,
+.status-enviado::before,
+.status-revision::before,
+.status-aprobar::before,
+.status-devuelto::before,
+.status-aprobado::before,
+.status-rechazado::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .status-enviado {
@@ -687,6 +702,90 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   border-color: rgba(220, 38, 38, 0.35) !important;
   transform: scale(1.12) !important;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2) !important;
+}
+
+/* 5. FICHA TICKET / INDUCCIÓN (Púrpura / Violeta sofisticado) */
+:root:not(.dark) .action-icon-btn.text-purple-600,
+:root:not(.dark) .action-icon-btn.text-purple-500,
+:root:not(.dark) .action-icon-btn.action-btn-ficha,
+:root:not(.dark) .action-icon-btn:has(> .fa-id-card-clip) {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.08) !important;
+  border: 1px solid rgba(124, 58, 237, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-purple-600 i,
+:root:not(.dark) .action-icon-btn.text-purple-500 i,
+:root:not(.dark) .action-icon-btn.action-btn-ficha i,
+:root:not(.dark) .action-icon-btn:has(> .fa-id-card-clip) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-purple-600:hover,
+:root:not(.dark) .action-icon-btn.text-purple-500:hover,
+:root:not(.dark) .action-icon-btn.action-btn-ficha:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-id-card-clip):hover {
+  color: #6d28d9 !important;
+  background: rgba(124, 58, 237, 0.18) !important;
+  border-color: rgba(124, 58, 237, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2) !important;
+}
+
+/* 6. RENOVAR / CONFIRMAR (Esmeralda / Verde vibrante) */
+:root:not(.dark) .action-icon-btn.text-emerald-600,
+:root:not(.dark) .action-icon-btn.text-emerald-500,
+:root:not(.dark) .action-icon-btn.action-btn-renovar,
+:root:not(.dark) .action-icon-btn:has(> .fa-arrows-rotate) {
+  color: #059669 !important;
+  background: rgba(5, 150, 105, 0.08) !important;
+  border: 1px solid rgba(5, 150, 105, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-emerald-600 i,
+:root:not(.dark) .action-icon-btn.text-emerald-500 i,
+:root:not(.dark) .action-icon-btn.action-btn-renovar i,
+:root:not(.dark) .action-icon-btn:has(> .fa-arrows-rotate) i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.text-emerald-600:hover,
+:root:not(.dark) .action-icon-btn.text-emerald-500:hover,
+:root:not(.dark) .action-icon-btn.action-btn-renovar:hover,
+:root:not(.dark) .action-icon-btn:has(> .fa-arrows-rotate):hover {
+  color: #047857 !important;
+  background: rgba(5, 150, 105, 0.18) !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2) !important;
+}
+
+/* 7. ACTUALIZAR VIGENCIA / SIGNAL (Carmesí / Rose vibrante) */
+:root:not(.dark) .action-icon-btn.action-btn-vigencia,
+:root:not(.dark) .action-icon-btn.text-\[var\(--signal-500\)\],
+:root:not(.dark) .action-icon-btn.text-rose-500,
+:root:not(.dark) .action-icon-btn.text-pink-500 {
+  color: #e11d48 !important;
+  background: rgba(225, 29, 72, 0.08) !important;
+  border: 1px solid rgba(225, 29, 72, 0.18) !important;
+}
+
+:root:not(.dark) .action-icon-btn.action-btn-vigencia i,
+:root:not(.dark) .action-icon-btn.text-\[var\(--signal-500\)\] i,
+:root:not(.dark) .action-icon-btn.text-rose-500 i,
+:root:not(.dark) .action-icon-btn.text-pink-500 i {
+  color: inherit !important;
+}
+
+:root:not(.dark) .action-icon-btn.action-btn-vigencia:hover,
+:root:not(.dark) .action-icon-btn.text-\[var\(--signal-500\)\]:hover,
+:root:not(.dark) .action-icon-btn.text-rose-500:hover,
+:root:not(.dark) .action-icon-btn.text-pink-500:hover {
+  color: #be123c !important;
+  background: rgba(225, 29, 72, 0.18) !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.2) !important;
 }
 
 :root:not(.dark) .action-icon-btn:active {
@@ -1007,6 +1106,111 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   cursor: pointer;
   outline: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Contenedor responsive de 4 chips: 2x2 en móviles (<640px) y 1 fila en PC/tablets (>=640px) */
+.filter-chips-responsive {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.filter-chips-responsive > button,
+.filter-chips-responsive > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive > button,
+  .filter-chips-responsive > .filter-status-chip {
+    width: auto !important;
+  }
+}
+
+.filter-chips-wrapper {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-wrapper {
+    width: auto !important;
+  }
+}
+
+/* Contenedor responsive de 6 chips (procesamiento): 3x2 en móviles (<640px) y 1 fila en PC (>=640px) */
+.filter-chips-responsive-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.filter-chips-responsive-3 > button,
+.filter-chips-responsive-3 > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive-3 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive-3 > button,
+  .filter-chips-responsive-3 > .filter-status-chip {
+    width: auto !important;
+  }
+}
+
+/* Contenedor responsive de 5 chips (inducciones): en móviles (<640px) 2 columnas con el último centrado/completo (2-2-1), en PC (>=640px) 1 fila corrida */
+.filter-chips-responsive-5 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.filter-chips-responsive-5 > button,
+.filter-chips-responsive-5 > .filter-status-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.filter-chips-responsive-5 > button:last-child,
+.filter-chips-responsive-5 > .filter-status-chip:last-child {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .filter-chips-responsive-5 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+  .filter-chips-responsive-5 > button,
+  .filter-chips-responsive-5 > .filter-status-chip {
+    width: auto !important;
+  }
+  .filter-chips-responsive-5 > button:last-child,
+  .filter-chips-responsive-5 > .filter-status-chip:last-child {
+    grid-column: auto !important;
+  }
 }
 
 .chip-dot {
@@ -1347,15 +1551,50 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
 }
 
 .form-error {
-  font-size: 11px;
-  color: var(--state-rechazado);
-  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #dc2626;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.3;
   animation: fadeInUp 0.2s var(--ease-standard);
 }
 
-.input-field.has-error {
-  border-color: var(--state-rechazado);
+/* Ocultar completamente cuando esté vacío o si x-show lo oculta */
+.form-error:empty,
+.form-error[style*="display: none"],
+.form-error[style*="display:none"],
+[x-cloak] .form-error {
+  display: none !important;
+}
+
+.form-error:not(:empty)::before {
+  content: "";
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+.input-field.has-error,
+select.input-field.has-error,
+textarea.input-field.has-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2.5px rgba(239, 68, 68, 0.2) !important;
+  background-color: #fff8f8 !important;
   animation: shake 0.35s var(--ease-standard);
+}
+
+.input-field.has-error:focus,
+select.input-field.has-error:focus,
+textarea.input-field.has-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
 }
 
 .chip-select {
@@ -1673,6 +1912,58 @@ span.flatpickr-weekday {
 /* Input alt estilizado de Flatpickr */
 .flatpickr-input[readonly] {
   cursor: pointer !important;
+}
+
+/* Wrapper y contenedor de Flatpickr en vigencia de documentos */
+.flatpickr-vigencia-wrapper {
+  position: relative !important;
+  width: 100% !important;
+}
+
+.flatpickr-vigencia-wrapper .flatpickr-wrapper {
+  display: block !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+.flatpickr-vigencia-wrapper input.flatpickr-input,
+.flatpickr-vigencia-wrapper input.input,
+.flatpickr-vigencia-wrapper input {
+  width: 100% !important;
+  height: 32px !important;
+  padding-left: 32px !important;
+  padding-right: 12px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  box-sizing: border-box !important;
+  border-radius: 8px !important;
+}
+
+.flatpickr-vigencia-wrapper .fa-calendar {
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 12px !important;
+  color: var(--signal-500, #fa051a) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+/* Alineación hacia la derecha para el calendario de vigencia (evita que se corte a la derecha del modal) */
+.flatpickr-vigencia-wrapper .flatpickr-calendar {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:before,
+.flatpickr-vigencia-wrapper .flatpickr-calendar.arrowTop:after,
+.flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:before,
+.flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:after {
+  right: 28px !important;
+  left: auto !important;
 }
 
 /* ==========================================================================
@@ -2149,6 +2440,19 @@ table td .inline-flex {
   color: var(--paper-info);
 }
 
+.modal-stamp.signal {
+  background: rgba(250, 5, 26, 0.12) !important;
+  color: var(--signal-500) !important;
+}
+
+.modal-stamp.signal::before {
+  border-color: var(--signal-500) !important;
+}
+
+.modal-stamp.signal i {
+  color: var(--signal-500) !important;
+}
+
 /* Botones en modales ticket */
 .modal-btn-confirm,
 .al-btn-confirm {
@@ -2205,6 +2509,41 @@ table td .inline-flex {
   border-color: var(--paper-muted) !important;
   color: var(--paper-ink) !important;
   transform: translateX(4px) !important;
+}
+
+/* =========================================================
+   BOTÓN '+ ADJUNTAR OTRO' DOCUMENTO (Personas y Vehículos)
+   ========================================================= */
+.btn-adjuntar-otro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  background-color: #047857 !important;
+  color: #ffffff !important;
+  border: 1px solid #065f46 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-adjuntar-otro:hover {
+  background-color: #065f46 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(4, 120, 87, 0.3);
+}
+
+.btn-adjuntar-otro:active {
+  transform: translateY(0);
+}
+
+.btn-adjuntar-otro i {
+  color: #ffffff !important;
+  font-size: 10px;
 }
 
 /* =========================================================
@@ -2855,18 +3194,12 @@ table td .inline-flex {
   border: 1px solid #fca5a5 !important;
   box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08);
 }
-:root:not(.dark) .status-pill.status-rechazado::before {
-  background: #dc2626 !important;
-}
 
 :root:not(.dark) .status-pill.status-aprobado {
   background: #dcfce7 !important;
   color: #16a34a !important;
   border: 1px solid #86efac !important;
   box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08);
-}
-:root:not(.dark) .status-pill.status-aprobado::before {
-  background: #16a34a !important;
 }
 
 :root:not(.dark) .status-pill.status-revision {
@@ -2875,9 +3208,6 @@ table td .inline-flex {
   border: 1px solid #d8b4fe !important;
   box-shadow: 0 1px 3px rgba(147, 51, 234, 0.08);
 }
-:root:not(.dark) .status-pill.status-revision::before {
-  background: #9333ea !important;
-}
 
 :root:not(.dark) .status-pill.status-aprobar {
   background: #fef3c7 !important;
@@ -2885,18 +3215,12 @@ table td .inline-flex {
   border: 1px solid #fcd34d !important;
   box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08);
 }
-:root:not(.dark) .status-pill.status-aprobar::before {
-  background: #d97706 !important;
-}
 
 :root:not(.dark) .status-pill.status-enviado {
   background: #ccfbf1 !important;
   color: #0d9488 !important;
   border: 1px solid #5eead4 !important;
   box-shadow: 0 1px 3px rgba(13, 148, 136, 0.08);
-}
-:root:not(.dark) .status-pill.status-enviado::before {
-  background: #0d9488 !important;
 }
 
 /* =========================================================
@@ -3230,6 +3554,222 @@ table td .inline-flex {
   color: var(--paper-ink) !important;
   border: 1px solid var(--paper-shadow) !important;
   font-weight: 700 !important;
+}
+
+/* =========================================================
+   PASE DE DILIGENCIAMIENTO (MODAL TICKET & CONTROLES)
+   ========================================================= */
+/* 1. Pastillas de Duración de Horas */
+.tkt-duration-pill {
+  padding: 10px 4px !important;
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  display: block !important;
+  width: 100% !important;
+  user-select: none !important;
+}
+/* Modo Claro: Inactivo */
+.tkt-duration-pill.is-idle {
+  background: #ffffff !important;
+  border: 1.5px solid var(--paper-shadow, #e8e2d3) !important;
+  color: #1c2033 !important;
+}
+.tkt-duration-pill.is-idle:hover {
+  border-color: var(--signal-500) !important;
+  color: var(--signal-500) !important;
+  background: rgba(250, 5, 26, 0.05) !important;
+}
+/* Modo Claro: Activo (Fondo corporativo signal-500 y texto blanco nítido) */
+.tkt-duration-pill.is-active {
+  background: var(--signal-500) !important;
+  border: 1.5px solid var(--signal-500) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.35) !important;
+}
+
+/* 2. Pestañas Superiores del Ticket (Emitir / Historial) */
+.tkt-tab-btn {
+  padding: 6px 16px !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  user-select: none !important;
+}
+/* Modo Claro: Pestaña Inactiva */
+.tkt-tab-btn.is-idle {
+  background: #ebe4d5 !important;
+  color: #4b5563 !important;
+  border: 1.5px solid #dcd4c0 !important;
+}
+.tkt-tab-btn.is-idle:hover {
+  background: #dfd6c4 !important;
+  color: #1c2033 !important;
+  border-color: #cfc4ad !important;
+}
+/* Modo Claro: Pestaña Activa */
+.tkt-tab-btn.is-active {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+  border: 1.5px solid var(--signal-500) !important;
+  box-shadow: 0 2px 8px rgba(250, 5, 26, 0.35) !important;
+}
+
+/* 3. Conmutador Rápida vs Fecha Exacta */
+.tkt-toggle-container {
+  display: inline-flex !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  background: #ede6d7 !important;
+  border: 1.5px solid #ded5c2 !important;
+}
+.tkt-toggle-btn {
+  padding: 5px 12px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  border: 1px solid transparent !important;
+}
+.tkt-toggle-btn.is-idle {
+  background: transparent !important;
+  color: #6b7280 !important;
+}
+.tkt-toggle-btn.is-idle:hover {
+  color: #1c2033 !important;
+}
+.tkt-toggle-btn.is-active {
+  background: #ffffff !important;
+  color: var(--signal-500) !important;
+  font-weight: 800 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 4. Botones de Acción al Pie del Ticket */
+.tkt-btn-submit {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+  border: 1.5px solid var(--signal-500) !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  padding: 10px 22px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(250, 5, 26, 0.35) !important;
+  transition: all 0.18s ease !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  user-select: none !important;
+}
+.tkt-btn-submit:hover:not(:disabled) {
+  background: var(--signal-600, #df5050) !important;
+  border-color: var(--signal-600, #df5050) !important;
+  box-shadow: 0 6px 18px rgba(250, 5, 26, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+.tkt-btn-submit:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
+.tkt-btn-cancel {
+  background: #ffffff !important;
+  color: #4b5563 !important;
+  border: 1.5px solid #d8cfbe !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+  border-radius: 12px !important;
+  transition: all 0.18s ease !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  user-select: none !important;
+}
+.tkt-btn-cancel:hover {
+  background: #f4f0e6 !important;
+  color: #1c2033 !important;
+  border-color: #c9bfab !important;
+}
+
+/* =========================================================
+   FLATPICKR TIME & DATETIME SELECTOR (ESTILO TICKET INCARSA)
+   ========================================================= */
+.flatpickr-calendar.hasTime {
+  width: 320px !important;
+}
+
+/* Modo Claro: Base de Tiempo */
+.flatpickr-calendar.hasTime .flatpickr-time {
+  height: 48px !important;
+  line-height: 48px !important;
+  max-height: 48px !important;
+  border-top: 1px dashed #d8cfbe !important;
+  background: #fbf9f4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0 0 14px 14px !important;
+  padding: 4px 12px !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time input {
+  font-family: var(--font-mono, monospace) !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  color: #1c2033 !important;
+  background: transparent !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator {
+  color: #555048 !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm {
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  color: var(--signal-500) !important;
+  border-radius: 8px !important;
+  background: rgba(250, 5, 26, 0.1) !important;
+  padding: 4px 12px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  border: 1px solid rgba(250, 5, 26, 0.25) !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover {
+  background: var(--signal-500) !important;
+  color: #ffffff !important;
+}
+
+.flatpickr-input-custom:focus {
+  border-color: var(--signal-500) !important;
+  box-shadow: 0 0 0 3px rgba(250, 5, 26, 0.15) !important;
+}
+
+.text-incarsa-petroleo {
+  color: var(--signal-500) !important;
+}
+.bg-incarsa-petroleo {
+  background-color: var(--signal-500) !important;
 }
 
 /* =========================================================
@@ -3695,14 +4235,205 @@ table td .inline-flex {
   font-size: 0.875rem;
 }
 
+/* ==========================================================================
+   Tarjetas de Resumen en Modales (Modo Claro)
+   Estilizado coordinado y reactivo: Responsable, Empresa y Vigencia
+   ========================================================================== */
 
+:root:not(.dark) .historial-summary-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
 
+/* 1. Card Responsable (Indigo / Violeta) */
+:root:not(.dark) .historial-summary-card.card-responsable {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.85) 0%, rgba(245, 247, 255, 0.5) 100%) !important;
+  border: 1.5px solid rgba(199, 210, 254, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(99, 102, 241, 0.08) !important;
+}
+:root:not(.dark) .historial-summary-card.card-responsable:hover {
+  border-color: rgba(129, 140, 248, 0.9) !important;
+  box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.16) !important;
+  transform: translateY(-2px);
+}
+:root:not(.dark) .historial-summary-card.card-responsable .summary-icon-box {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border: 1.5px solid rgba(129, 140, 248, 0.45) !important;
+  color: #4f46e5 !important;
+}
+:root:not(.dark) .historial-summary-card.card-responsable .subtitles-modal {
+  color: #4f46e5 !important;
+}
+:root:not(.dark) .historial-summary-card.card-responsable p {
+  color: #1e1b4b !important;
+}
+:root:not(.dark) .historial-summary-card.card-responsable span:not(.subtitles-modal) {
+  color: #4338ca !important;
+  opacity: 0.9;
+}
 
+/* 2. Card Empresa (Cian / Océano) */
+:root:not(.dark) .historial-summary-card.card-empresa {
+  background: linear-gradient(135deg, rgba(236, 254, 255, 0.85) 0%, rgba(240, 253, 250, 0.5) 100%) !important;
+  border: 1.5px solid rgba(165, 243, 252, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(6, 182, 212, 0.08) !important;
+}
+:root:not(.dark) .historial-summary-card.card-empresa:hover {
+  border-color: rgba(34, 211, 238, 0.9) !important;
+  box-shadow: 0 4px 16px -2px rgba(6, 182, 212, 0.16) !important;
+  transform: translateY(-2px);
+}
+:root:not(.dark) .historial-summary-card.card-empresa .summary-icon-box {
+  background: rgba(6, 182, 212, 0.12) !important;
+  border: 1.5px solid rgba(34, 211, 238, 0.45) !important;
+  color: #0891b2 !important;
+}
+:root:not(.dark) .historial-summary-card.card-empresa .subtitles-modal {
+  color: #0891b2 !important;
+}
+:root:not(.dark) .historial-summary-card.card-empresa p {
+  color: #164e63 !important;
+}
+:root:not(.dark) .historial-summary-card.card-empresa span:not(.subtitles-modal) {
+  color: #0e7490 !important;
+  opacity: 0.9;
+}
 
+/* 3. Card Vigencia Actual (Esmeralda / Reactivo por Estado) */
+:root:not(.dark) .historial-summary-card.card-vigencia {
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.85) 0%, rgba(240, 253, 244, 0.5) 100%) !important;
+  border: 1.5px solid rgba(167, 243, 208, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(16, 185, 129, 0.08) !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia:hover {
+  border-color: rgba(52, 211, 153, 0.9) !important;
+  box-shadow: 0 4px 16px -2px rgba(16, 185, 129, 0.16) !important;
+  transform: translateY(-2px);
+}
+:root:not(.dark) .historial-summary-card.card-vigencia .summary-icon-box {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.45) !important;
+  color: #059669 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia .subtitles-modal {
+  color: #059669 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia p {
+  color: #064e3b !important;
+}
 
+/* Estados específicos de Vigencia en Modo Claro */
+:root:not(.dark) .historial-summary-card.card-vigencia.is-sin-revision {
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.85) 0%, rgba(248, 250, 252, 0.5) 100%) !important;
+  border-color: rgba(203, 213, 225, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(100, 116, 139, 0.06) !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-sin-revision .summary-icon-box {
+  background: rgba(100, 116, 139, 0.12) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  color: #64748b !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-sin-revision .subtitles-modal {
+  color: #64748b !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-sin-revision p {
+  color: #334155 !important;
+}
 
+:root:not(.dark) .historial-summary-card.card-vigencia.is-por-vencer {
+  background: linear-gradient(135deg, rgba(254, 252, 232, 0.85) 0%, rgba(255, 251, 235, 0.5) 100%) !important;
+  border-color: rgba(253, 224, 71, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(245, 158, 11, 0.08) !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-por-vencer .summary-icon-box {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  color: #d97706 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-por-vencer .subtitles-modal {
+  color: #d97706 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-por-vencer p {
+  color: #78350f !important;
+}
 
+:root:not(.dark) .historial-summary-card.card-vigencia.is-vencido {
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.85) 0%, rgba(255, 241, 242, 0.5) 100%) !important;
+  border-color: rgba(254, 202, 202, 0.85) !important;
+  box-shadow: 0 2px 10px -2px rgba(239, 68, 68, 0.08) !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-vencido .summary-icon-box {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+  color: #dc2626 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-vencido .subtitles-modal {
+  color: #dc2626 !important;
+}
+:root:not(.dark) .historial-summary-card.card-vigencia.is-vencido p {
+  color: #7f1d1d !important;
+}
 
+/* 4. Radicado Pills en Tablas de Historial (Modo Claro) */
+:root:not(.dark) .radicado-pill-custom {
+  background: rgba(14, 165, 233, 0.08) !important;
+  border: 1.2px solid rgba(14, 165, 233, 0.35) !important;
+  outline: none !important;
+  user-select: none !important;
+}
+:root:not(.dark) .radicado-pill-custom span {
+  background: transparent !important;
+  color: #0369a1 !important;
+  user-select: none !important;
+}
+:root:not(.dark) .radicado-pill-custom i,
+:root:not(.dark) .radicado-pill-custom button {
+  color: #0284c7 !important;
+}
+:root:not(.dark) .radicado-pill-custom:hover {
+  background: rgba(14, 165, 233, 0.15) !important;
+  border-color: rgba(14, 165, 233, 0.6) !important;
+}
+:root:not(.dark) .radicado-pill-custom *::selection,
+:root:not(.dark) .radicado-pill-custom::selection {
+  background: transparent !important;
+}
 
+/* 5. Insignias de Vigencia en Tablas y Modales (Modo Claro) */
+.vigencia-badge-neon {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
 
+:root:not(.dark) .vigencia-badge-neon.is-vigente {
+  border: 1.5px solid rgba(16, 185, 129, 0.75) !important;
+  color: #047857 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+:root:not(.dark) .vigencia-badge-neon.is-vigente i {
+  color: #059669 !important;
+}
+
+:root:not(.dark) .vigencia-badge-neon.is-por-vencer {
+  border: 1.5px solid rgba(245, 158, 11, 0.75) !important;
+  color: #b45309 !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+:root:not(.dark) .vigencia-badge-neon.is-por-vencer i {
+  color: #d97706 !important;
+}
+
+:root:not(.dark) .vigencia-badge-neon.is-vencido {
+  border: 1.5px solid rgba(239, 68, 68, 0.75) !important;
+  color: #b91c1c !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+:root:not(.dark) .vigencia-badge-neon.is-vencido i {
+  color: #dc2626 !important;
+}
+
+:root:not(.dark) .vigencia-badge-neon.is-sin-revision {
+  border: 1.5px solid rgba(148, 163, 184, 0.75) !important;
+  color: #475569 !important;
+  background: rgba(148, 163, 184, 0.12) !important;
+}
 

@@ -93,8 +93,9 @@
 
     try {
       const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
-      if (permisos && permisos[modulo] && permisos[modulo].ver !== undefined) {
-        return !!permisos[modulo].ver;
+      const modKey = (modulo === 'seguridadsocial') ? 'seguridad_social' : modulo;
+      if (permisos && permisos[modKey] && permisos[modKey].ver !== undefined) {
+        return !!permisos[modKey].ver;
       }
     } catch (e) {}
 
@@ -112,6 +113,8 @@
       'personas': true,
       'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),
+      'seguridad_social': ['ADMINISTRADOR', 'SST'].includes(miRol),
+      'inducciones': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SST'].includes(miRol),
       'correspondencias': true,
       'nueva_correspondencia': true,
       'superadmin': miRol === 'SUPERADMIN'
@@ -139,13 +142,15 @@
 
     try {
       const permisos = window.permisosActivos || JSON.parse(sessionStorage.getItem('incarsa_permisos') || localStorage.getItem('incarsa_permisos') || 'null');
-      if (permisos && permisos[modulo] && permisos[modulo][accion] !== undefined) {
-        return !!permisos[modulo][accion];
+      const modKey = (modulo === 'seguridadsocial') ? 'seguridad_social' : modulo;
+      if (permisos && permisos[modKey] && permisos[modKey][accion] !== undefined) {
+        return !!permisos[modKey][accion];
       }
     } catch (e) {}
 
-    // Por defecto el administrador tiene permiso de acción si no hay regla específica contraria
+    // Por defecto el administrador y SST tienen permiso de acción en seguridad social
     if (miRol === 'ADMINISTRADOR') return true;
+    if (miRol === 'SST' && (modulo === 'seguridad_social' || modulo === 'seguridadsocial')) return true;
     return false;
   }
   window.puedeAccion = puedeAccion;
@@ -174,8 +179,28 @@
     }
 
     const est = String(solicitud.estado || '').trim().toUpperCase();
-    return est === 'ENVIADO';
+    return est === 'ENVIADO' || est === 'PRE-ENVIADO';
   }
+
+  function puedeGenerarFormularioTemporal() {
+    let sesion = null;
+    if (typeof getAuthSession === 'function') {
+      sesion = getAuthSession();
+    } else {
+      try {
+        sesion = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      } catch (e) {}
+    }
+    if (!sesion) return true;
+    const idRol = parseInt(sesion.id_rol || sesion.rol_id, 10);
+    const rolNom = String(sesion.rol || sesion.nombre_rol || '').toUpperCase();
+    return idRol === 5 || idRol === 1 || idRol === 2 ||
+           rolNom.includes('SOLICITANTE') ||
+           rolNom.includes('GESTION DOCUMENTAL') ||
+           rolNom.includes('GESTIÓN DOCUMENTAL') ||
+           rolNom.includes('ADMIN');
+  }
+  window.puedeGenerarFormularioTemporal = puedeGenerarFormularioTemporal;
   window.puedeEditarSolicitud = puedeEditarSolicitud;
 
   /**
@@ -202,7 +227,9 @@
         path.includes('/500') ||
         path.includes('/503') ||
         path.includes('/splash-loading') ||
-        path.includes('/cargando')
+        path.includes('/cargando') ||
+        path.includes('/formulario-temporal') ||
+        path.includes('/autorizacion-datos')
       ) {
         return true;
       }
