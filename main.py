@@ -259,11 +259,21 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
             token = auth_header.split(" ")[1]
         elif "token" in request.cookies:
             token = request.cookies.get("token")
+        elif "incarsa_token" in request.cookies:
+            token = request.cookies.get("incarsa_token")
+        elif "access_token" in request.cookies:
+            token = request.cookies.get("access_token")
 
         if token:
-            payload = decode_access_token(token)
-            if payload and payload.get("rol") == "SUPERADMIN":
-                return await call_next(request)
+            import urllib.parse
+            token_clean = urllib.parse.unquote(str(token)).strip().strip('"').strip("'")
+            if token_clean.startswith("Bearer "):
+                token_clean = token_clean.split(" ")[1]
+            payload = decode_access_token(token_clean)
+            if payload:
+                user_rol = str(payload.get("rol", "")).strip().upper()
+                if user_rol in ("SUPERADMIN", "SUPER ADMIN", "SUPER_ADMIN") or payload.get("id_rol") == 1:
+                    return await call_next(request)
 
         tipo = mantenimiento.get("tipo", "general")
         modulos_mantenimiento = mantenimiento.get("modulos") or []

@@ -351,6 +351,8 @@ function loginForm() {
       sessionStorage.setItem("incarsa_session", JSON.stringify(datos));
       if (token) {
         sessionStorage.setItem("incarsa_token", token);
+        document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        document.cookie = `incarsa_token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
       if (permisos) {
         sessionStorage.setItem("incarsa_permisos", JSON.stringify(permisos));

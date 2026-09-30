@@ -1607,6 +1607,12 @@ function solicitudWizard() {
 
       if (numDoc && esDuplicado) {
         this.personaModalErrors.numDoc = "Ya existe una persona registrada en la solicitud con ese número de documento.";
+      } else if (!this.isEditingPersona && numDoc) {
+        const enCatalogo = this.personasRegistradas.find(p => String(p.numDoc || p.identificacion || "").trim() === numDoc);
+        if (enCatalogo) {
+          const nomExist = enCatalogo.nombres || `${enCatalogo.nombre || ''} ${enCatalogo.apellido || ''}`.trim() || 'registrada';
+          this.personaModalErrors.numDoc = `Ya existe en el sistema una persona con este documento (${nomExist}). Búscala en el buscador para añadirla.`;
+        }
       }
       return Object.keys(this.personaModalErrors).length === 0;
     },
@@ -1785,7 +1791,10 @@ function solicitudWizard() {
 
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.detail || errData.mensaje || `HTTP ${response.status}`);
+            const msg = errData.detail || errData.mensaje || `HTTP ${response.status}`;
+            this.personaModalErrors.numDoc = msg;
+            this.guardandoPersona = false;
+            return;
           }
 
           const data = await response.json();
@@ -1795,7 +1804,11 @@ function solicitudWizard() {
             personaNueva.id = parseInt(nuevoId);
           }
         } catch (error) {
-          console.warn("⚠️ No se pudo guardar en backend, guardando localmente:", error.message);
+          if (this.personaModalErrors.numDoc) {
+            this.guardandoPersona = false;
+            return;
+          }
+          console.warn("⚠️ Error de conexión al guardar persona, guardando localmente:", error.message);
           personaNueva.id = `per-${Date.now()}`;
         } finally {
           // 1. Agregar al catálogo de búsqueda

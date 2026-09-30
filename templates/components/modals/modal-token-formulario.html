@@ -17,6 +17,7 @@
     
     <!-- Contenedor Ticket Nativo INCARSA -->
     <div class="modal-panel modal-ticket w-full max-w-xl pt-7 px-6 sm:px-8 pb-7 relative text-left"
+      :class="esSuperAdmin ? 'is-superadmin-ticket' : ''"
       @click.outside="if (!$event.target.closest('.flatpickr-calendar')) cerrarModal()" x-cloak>
       
       <!-- Botón Cerrar Superior Derecho -->

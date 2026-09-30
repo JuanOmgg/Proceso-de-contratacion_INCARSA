@@ -145,6 +145,11 @@ def GET_ALL_solicitudes(
     except (ValueError, TypeError):
         pass
 
+    # Administradores y Superadministradores tienen acceso al histórico absoluto de solicitudes.
+    # Los demás roles no ven solicitudes inactivas que ya caducaron según la fecha actual.
+    es_admin = (id_rol_user in (1, 2)) or ("ADMIN" in rol_user) or (rol_user in ("SUPERADMIN", "ADMINISTRADOR", "ADMIN", "SUPER ADMIN"))
+    excluir_inactivas_vencidas = not es_admin
+
     # Si el usuario autenticado es SST (6) o GESCO (7), SIEMPRE filtrar estrictamente por sus plantas asignadas
     if id_rol_user in (6, 7) or rol_user in ("SST", "GESCO"):
         id_usuario = current_user.get("id")
@@ -153,9 +158,14 @@ def GET_ALL_solicitudes(
     if id_rol_user == 5 or "GESTION DOCUMENTAL" in rol_user or "GESTIÓN DOCUMENTAL" in rol_user:
         diligenciado_por = current_user.get("id")
 
-    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por})...")
+    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por}, excluir_inactivas_vencidas={excluir_inactivas_vencidas})...")
     
-    resultado = GET_ALL_solicitudes_bd(only_active=active, id_usuario=id_usuario, diligenciado_por=diligenciado_por)
+    resultado = GET_ALL_solicitudes_bd(
+        only_active=active, 
+        id_usuario=id_usuario, 
+        diligenciado_por=diligenciado_por,
+        excluir_inactivas_vencidas=excluir_inactivas_vencidas
+    )
 
     if not resultado.get("exito", True):
         error_msg = resultado.get("mensaje", "Error desconocido en la consulta de solicitudes.")

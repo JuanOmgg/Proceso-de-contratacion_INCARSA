@@ -468,6 +468,18 @@ function personasTable() {
         return;
       }
 
+      // Validación de documento de identidad único
+      const numDoc = String(this.form.identificacion || "").trim();
+      const numDocNormalizado = numDoc.toLowerCase();
+      const yaExiste = (this.personas || []).some(p => {
+        if (this.editandoId && String(p.id) === String(this.editandoId)) return false;
+        return String(p.identificacion || "").trim().toLowerCase() === numDocNormalizado;
+      });
+      if (yaExiste) {
+        this.mensajeError = `Ya existe una persona registrada con el documento de identidad ${numDoc}. No se permiten duplicados.`;
+        return;
+      }
+
       this.guardando = true;
       this.mensajeExito = "";
       this.mensajeError = "";

@@ -5,7 +5,27 @@
  */
 
 function tokenFormularioManager() {
+    const checkEsSuperAdmin = () => {
+        try {
+            const ses = (typeof getAuthSession === 'function') 
+                ? getAuthSession() 
+                : JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+            const r = String(ses?.rol || ses?.nombre_rol || ses?.rol_nombre || '').toUpperCase().trim();
+            const u = String(ses?.tipo_usuario || ses?.usuario || '').toUpperCase().trim();
+            return r === 'SUPERADMIN' 
+                || u === 'SUPERADMIN'
+                || ses?.id_rol === 1
+                || ses?.id_rol === 6
+                || window.location.pathname.includes('/superadmin')
+                || document.documentElement.getAttribute('data-role') === 'SUPERADMIN'
+                || document.documentElement.classList.contains('role-superadmin');
+        } catch (e) {
+            return false;
+        }
+    };
+
     return {
+        esSuperAdmin: checkEsSuperAdmin(),
         isOpen: false,
         modalTokenTab: 'crear', // 'crear' | 'historial'
         cargandoTokens: false,
@@ -51,6 +71,7 @@ function tokenFormularioManager() {
         },
 
         async abrirModal(tab = 'crear') {
+            this.esSuperAdmin = checkEsSuperAdmin();
             this.isOpen = true;
             this.modalTokenTab = tab;
             this.tokenBuscadorAbierto = false;
@@ -269,9 +290,9 @@ function tokenFormularioManager() {
                     Swal.fire({
                         icon: 'success',
                         title: '¡Pase Emitido!',
-                        text: 'El enlace del formulario ha sido generado correctamente. Cópialo y compártelo con el tercero.',
+                        text: 'El enlace del formulario ha sido generado correctamente.',
                         confirmButtonColor: signalColor,
-                        timer: 2500,
+                        timer: 1500,
                         timerProgressBar: true
                     });
                 }

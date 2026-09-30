@@ -23,6 +23,13 @@ const API = {
 // ============================================================================
 // GESTIÓN CENTRALIZADA DE AUTENTICACIÓN Y TOKEN JWT
 // ============================================================================
+function syncAuthCookie(token) {
+    if (token) {
+        document.cookie = "token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+        document.cookie = "incarsa_token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
+    }
+}
+
 function getAuthToken() {
     let token = sessionStorage.getItem("incarsa_token") || localStorage.getItem("incarsa_token") || null;
     if (!token) {
@@ -33,12 +40,19 @@ function getAuthToken() {
             }
         } catch (e) {}
     }
+    if (token) {
+        syncAuthCookie(token);
+    }
     return token;
 }
 
 function getAuthSession() {
     try {
-        return JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        if (sesion && sesion.token) {
+            syncAuthCookie(sesion.token);
+        }
+        return sesion;
     } catch (e) {
         return null;
     }
@@ -51,6 +65,9 @@ function clearAuthSession() {
         sessionStorage.clear();
         localStorage.removeItem("incarsa_token");
         localStorage.removeItem("incarsa_session");
+        document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+        document.cookie = "incarsa_token=; path=/; max-age=0; SameSite=Lax";
+        document.cookie = "access_token=; path=/; max-age=0; SameSite=Lax";
     } catch (e) {}
 }
 
@@ -58,6 +75,12 @@ function cerrarSesionUsuario() {
     clearAuthSession();
     window.location.replace("/login?logout=1");
 }
+
+// Sincronización proactiva al cargar config.js
+try {
+    const _t = getAuthToken();
+    if (_t) syncAuthCookie(_t);
+} catch (e) {}
 
 // ============================================================================
 // INTERCEPTOR GLOBAL DE FETCH: Inyecta Authorization: Bearer <token>

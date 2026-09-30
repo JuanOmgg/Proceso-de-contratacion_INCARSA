@@ -585,62 +585,65 @@
       </main>
 
       <!-- ============================================================
-         5. MODAL DE INSPECCIÓN DETALLADA DE PERSONAS POR DÍA
+         5. MODAL DE INSPECCIÓN DETALLADA DE PERSONAS POR DÍA (ESTILO TICKET)
       ============================================================= -->
       <div x-show="modalDetalleAbierto" x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm"
-        x-transition:enter="transition ease-out duration-200"
+        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         @keydown.escape.window="cerrarDetalle()">
 
-        <div class="stat-neon-box rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-emerald-500/30"
+        <div class="modal-panel modal-ticket w-full max-w-3xl pt-7 px-6 sm:px-8 pb-9 relative text-left my-auto"
           @click.outside="cerrarDetalle()"
-          x-transition:enter="transition ease-out duration-200"
-          x-transition:enter-start="opacity-0 scale-95"
-          x-transition:enter-end="opacity-100 scale-100">
+          x-transition:enter="transition ease-out duration-300 transform"
+          x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+          x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+          x-transition:leave="transition ease-in duration-200 transform"
+          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+          x-transition:leave-end="opacity-0 translate-y-4 scale-95">
 
-          <!-- Header del Modal -->
-          <div class="p-4 sm:p-5 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)]/70 flex items-center justify-between flex-shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
-                <i class="fa-solid fa-users-line text-lg"></i>
-              </div>
-              <div>
-                <h3 class="text-base sm:text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                  <span>Personas Autorizadas</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold"
-                    x-text="detalleHeader.total_personas + ' únicas'"></span>
-                </h3>
-                <p class="text-xs text-[var(--text-muted)] flex items-center gap-2 mt-0.5">
-                  <span class="font-medium text-emerald-400" x-text="detalleHeader.fecha_formateada"></span>
-                  <span>•</span>
-                  <span class="font-medium text-cyan-400" x-text="detalleHeader.planta"></span>
-                </p>
-              </div>
+          <!-- Botón de Cerrar Superior Derecho -->
+          <button type="button" @click="cerrarDetalle()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Encabezado estilo Ticket -->
+          <div class="modal-ticket-header text-center pb-4 mb-4 border-b border-dashed border-[var(--paper-shadow)] relative">
+            <div class="modal-stamp info mb-2.5">
+              <i class="fa-solid fa-users-line text-2xl text-[var(--paper-info)]"></i>
             </div>
-
-            <button type="button" @click="cerrarDetalle()"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
-              title="Cerrar ventana">
-              <i class="fa-solid fa-xmark text-base"></i>
-            </button>
+            <h2 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+              Personas Autorizadas
+            </h2>
+            <div class="flex items-center justify-center gap-2 mt-2 flex-wrap">
+              <span class="status-pill inline-flex select-none font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 text-xs px-2.5 py-0.5 rounded-full">
+                <i class="fa-solid fa-user-check mr-1.5 text-emerald-600 dark:text-emerald-400"></i>
+                <span x-text="detalleHeader.total_personas + ' únicas'"></span>
+              </span>
+              <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+                x-text="detalleHeader.fecha_formateada"></span>
+              <span class="text-xs text-[var(--paper-muted)] font-semibold inline-flex items-center gap-1" x-show="detalleHeader.planta">
+                <i class="fa-solid fa-location-dot text-cyan-600 dark:text-cyan-400 text-[10px]"></i>
+                <span class="text-cyan-700 dark:text-cyan-300" x-text="detalleHeader.planta"></span>
+              </span>
+            </div>
           </div>
 
-          <!-- Buscador y Nota Informativa -->
-          <div class="p-4 border-b border-[var(--border-subtle)] space-y-3 flex-shrink-0">
-            <div class="flex items-center justify-between text-xs text-[var(--text-muted)] bg-emerald-500/5 p-2.5 rounded-xl border border-emerald-500/15">
-              <span class="flex items-center gap-2">
-                <i class="fa-solid fa-circle-info text-emerald-400"></i>
-                <span>Cada persona figura una sola vez en este reporte, aunque esté asignada en múltiples solicitudes.</span>
-              </span>
+          <!-- Filtro y Nota Informativa -->
+          <div class="space-y-3 mb-3">
+            <div class="p-2.5 rounded-xl bg-[#efe9dc]/50 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)] flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-emerald-600 dark:text-emerald-400 text-sm flex-shrink-0"></i>
+              <span>Cada persona figura una sola vez en este reporte, aunque esté asignada en múltiples solicitudes.</span>
             </div>
 
             <div class="relative w-full">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)] pointer-events-none"></i>
               <input type="search" x-model="searchPersonaModal" name="search_personas_modal" id="search_personas_modal"
                 placeholder="Filtrar por nombre, identificación, cargo o radicado..."
                 autocomplete="off"
@@ -650,58 +653,59 @@
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-form-type="other"
-                class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-slate-900/90 border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-white placeholder-[var(--paper-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
             </div>
           </div>
 
-          <!-- Contenido: Lista de Personas -->
-          <div class="flex-1 overflow-y-auto p-4 space-y-3">
+          <!-- Contenido: Lista de Personas en formato Ticket -->
+          <div class="max-h-[48vh] sm:max-h-[52vh] overflow-y-auto custom-scroll pr-1.5 space-y-2.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3 my-3">
             
             <template x-if="cargandoDetalle">
-              <div class="py-12 text-center text-[var(--text-muted)]">
+              <div class="py-12 text-center text-[var(--paper-muted)]">
                 <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500 mb-2"></i>
-                <p class="text-xs">Cargando personal autorizado...</p>
+                <p class="text-xs font-medium">Cargando personal autorizado...</p>
               </div>
             </template>
 
             <template x-if="!cargandoDetalle && personasDetalleFiltradas.length === 0">
-              <div class="py-10 text-center text-[var(--text-muted)]">
-                <i class="fa-solid fa-user-slash text-2xl mb-2 text-slate-500"></i>
-                <p class="text-xs">No se encontraron personas con el término de búsqueda.</p>
+              <div class="py-10 px-4 text-center rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.02] border border-[var(--paper-shadow)] text-[var(--paper-muted)]">
+                <i class="fa-solid fa-user-slash text-2xl mb-2 text-[var(--paper-muted)] opacity-60"></i>
+                <p class="text-xs font-semibold text-[var(--paper-ink)]">No se encontraron personas</p>
+                <p class="text-[11px] text-[var(--paper-muted)] mt-0.5">No hay resultados para el término de búsqueda ingresado.</p>
               </div>
             </template>
 
             <template x-for="p in personasDetalleFiltradas" :key="p.id_persona">
-              <div class="p-3.5 rounded-xl bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] hover:border-emerald-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/40 dark:bg-white/[0.03] border border-[var(--paper-shadow)] hover:border-emerald-500/40 hover:bg-[#efe9dc]/70 dark:hover:bg-white/[0.06] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 
                 <!-- Datos Personales -->
                 <div class="flex items-start gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 font-bold text-xs flex-shrink-0">
-                    <span x-text="p.nombre_completo.charAt(0)"></span>
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm flex-shrink-0 shadow-xs">
+                    <span x-text="(p.nombre_completo || '?').charAt(0).toUpperCase()"></span>
                   </div>
                   <div class="min-w-0">
-                    <h4 class="text-sm font-bold text-[var(--text-primary)] truncate" x-text="p.nombre_completo"></h4>
-                    <p class="text-xs text-[var(--text-muted)]">
-                      <span x-text="p.tipo_doc + ': ' + p.identificacion"></span>
-                      <span class="mx-1">•</span>
-                      <span class="text-slate-300" x-text="p.cargo"></span>
+                    <h4 class="text-sm font-bold text-[var(--paper-ink)] truncate" x-text="p.nombre_completo"></h4>
+                    <p class="text-xs text-[var(--paper-muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span class="font-mono font-semibold text-[var(--paper-ink)]" x-text="p.tipo_doc + ': ' + p.identificacion"></span>
+                      <span>•</span>
+                      <span class="font-medium text-[var(--paper-ink)]/80" x-text="p.cargo || 'Sin cargo'"></span>
                     </p>
-                    <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
-                      <i class="fa-regular fa-building text-[10px] mr-1 text-cyan-400"></i>
-                      <span x-text="p.empresa_contratista"></span>
+                    <p class="text-[11px] text-[var(--paper-muted)] mt-1 flex items-center gap-1.5">
+                      <i class="fa-regular fa-building text-[10px] text-cyan-600 dark:text-cyan-400"></i>
+                      <span class="font-medium truncate" x-text="p.empresa_contratista"></span>
                     </p>
                   </div>
                 </div>
 
                 <!-- Solicitudes / Radicados en los que participa -->
-                <div class="flex flex-col sm:items-end gap-1 flex-shrink-0">
-                  <div class="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted)] flex items-center gap-1">
-                    <i class="fa-solid fa-file-signature text-emerald-400"></i>
-                    <span>Radicados (<span x-text="p.total_solicitudes"></span>):</span>
+                <div class="flex flex-col sm:items-end gap-1.5 flex-shrink-0">
+                  <div class="text-[10px] uppercase tracking-wider font-bold text-[var(--paper-muted)] flex items-center gap-1">
+                    <i class="fa-solid fa-file-signature text-emerald-600 dark:text-emerald-400"></i>
+                    <span>Radicados (<span x-text="p.total_solicitudes || (p.radicados ? p.radicados.length : 0)"></span>):</span>
                   </div>
                   <div class="flex flex-wrap gap-1 sm:justify-end">
                     <template x-for="rad in p.radicados" :key="rad">
-                      <span class="radicado-tag px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                      <span class="radicado-tag px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#efe9dc] dark:bg-white/10 text-emerald-700 dark:text-emerald-300 border border-[var(--paper-shadow)] shadow-xs"
                         x-text="rad"></span>
                     </template>
                   </div>
@@ -712,14 +716,17 @@
 
           </div>
 
-          <!-- Footer del Modal -->
-          <div class="p-3 sm:p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-subtle)]/70 flex items-center justify-between text-xs text-[var(--text-muted)] flex-shrink-0">
-            <span>Total consultado: <strong class="text-[var(--text-primary)]" x-text="personasDetalleFiltradas.length"></strong> personas</span>
+          <!-- Footer del Modal Ticket -->
+          <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--paper-muted)]">
+            <span>Total consultado: <strong class="text-[var(--paper-ink)] font-bold" x-text="personasDetalleFiltradas.length"></strong> personas</span>
             <button type="button" @click="cerrarDetalle()"
-              class="btn-action-detalle px-4 py-2 rounded-lg font-semibold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-colors cursor-pointer">
+              class="modal-btn-cancel px-6 py-2 text-xs sm:text-sm font-semibold cursor-pointer">
               Cerrar
             </button>
           </div>
+
+          <!-- Dientes inferiores de corte estilo ticket -->
+          <div class="modal-serrated"></div>
 
         </div>
       </div>

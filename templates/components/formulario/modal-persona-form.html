@@ -110,12 +110,7 @@
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <!-- Tipo de documento -->
                           <div class="w-full sm:w-1/2">
-                            <label x-show="doc.tipo_doc === 'Planilla seguridad social'"
-                              class="form-label text-[11px] font-semibold text-[var(--paper-ink)] mb-1 block">
-                              Tipo de documento
-                            </label>
                             <select x-model="doc.tipo_doc"
-                              @change="if (doc.tipo_doc !== 'Planilla seguridad social') doc.vigencia = ''"
                               class="input-field w-full rounded-lg px-2.5 py-1.5 text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)]">
                               <template x-for="t in tiposDocAdjuntoPersona" :key="t">
                                 <option :value="t" x-text="t"></option>
@@ -123,65 +118,22 @@
                             </select>
                           </div>
 
-                          <!-- Vigencia de la planilla (posicionada al lado del tipo de documento si es Planilla) -->
-                          <div x-show="doc.tipo_doc === 'Planilla seguridad social'"
-                            class="w-full sm:w-1/2">
-                            <label class="form-label text-[11px] font-semibold text-[var(--paper-ink)] mb-1 flex items-center gap-1.5">
-                              <i class="fa-regular fa-calendar-check text-[var(--signal-500)]"></i>
-                              <span>Vigencia de la planilla</span>
-                            </label>
-                            <div class="relative flatpickr-vigencia-wrapper">
-                              <i class="fa-regular fa-calendar text-[var(--signal-500)]"></i>
-                              <input type="text"
-                                placeholder="dd/mm/aaaa"
-                                x-model="doc.vigencia"
-                                x-init="initFlatpickrDoc($el, doc)"
-                                class="input-field w-full rounded-lg text-xs bg-white border border-[var(--paper-shadow)] text-[var(--paper-ink)] focus:border-red-500 focus:ring-1 focus:ring-red-500/20 cursor-pointer"
-                                readonly>
-                            </div>
-                          </div>
-
-                          <!-- Subir Archivo (cuando NO es planilla, comparte la fila 1) -->
-                          <div x-show="doc.tipo_doc !== 'Planilla seguridad social'"
-                            class="flex-1 relative flex items-center min-w-0">
-                            <label
-                              class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
-                              <span class="truncate text-[var(--paper-ink)]"
-                                x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF)...'"></span>
-                              <i
-                                class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
-                              <input type="file" accept="application/pdf,.pdf,image/*"
-                                @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
-                            </label>
-                          </div>
-
-                          <!-- Botón eliminar fila (cuando NO es planilla) -->
-                          <button x-show="doc.tipo_doc !== 'Planilla seguridad social'"
-                            type="button" @click="removeDocumentoPersona(dIdx)"
-                            class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
-                            <i class="fa-solid fa-trash text-xs"></i>
-                          </button>
-                        </div>
-
-                        <!-- Fila 2 para Planilla de seguridad social: Subir Archivo + Eliminar -->
-                        <div x-show="doc.tipo_doc === 'Planilla seguridad social'"
-                          x-transition:enter="transition ease-out duration-200"
-                          x-transition:enter-start="opacity-0 -translate-y-1"
-                          x-transition:enter-end="opacity-100 translate-y-0"
-                          class="flex items-center gap-2 pt-0.5">
+                          <!-- Subir Archivo -->
                           <div class="flex-1 relative flex items-center min-w-0">
                             <label
                               class="w-full cursor-pointer flex items-center justify-between border border-dashed border-[var(--paper-shadow)] hover:border-red-500 rounded-lg px-3 py-1.5 text-xs bg-white transition">
                               <span class="truncate text-[var(--paper-ink)]"
-                                x-text="doc.nombre_archivo || 'Seleccionar archivo de planilla (PDF)...'"></span>
+                                x-text="doc.nombre_archivo || (doc.tipo_doc === 'Planilla seguridad social' ? 'Seleccionar archivo de planilla (PDF)...' : 'Seleccionar archivo (PDF)...')"></span>
                               <i
                                 class="fa-solid fa-cloud-arrow-up text-red-500 ml-2 text-xs flex-shrink-0"></i>
                               <input type="file" accept="application/pdf,.pdf,image/*"
                                 @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
                             </label>
                           </div>
+
+                          <!-- Botón eliminar fila -->
                           <button type="button" @click="removeDocumentoPersona(dIdx)"
-                            class="action-icon-btn danger flex-shrink-0" title="Eliminar fila">
+                            class="action-icon-btn danger flex-shrink-0 self-end sm:self-auto" title="Eliminar fila">
                             <i class="fa-solid fa-trash text-xs"></i>
                           </button>
                         </div>

@@ -37,9 +37,17 @@ def CREATE_correspondencia_db(correspondencia: Dict) -> Dict:
                 except Exception:
                     anio = datetime.now().year
 
-                # Generar radicado consecutivo tipo SCR-001 para el año actual
+                # Generar o validar radicado consecutivo
                 radicado = correspondencia.get("radicado")
-                if not radicado:
+                if radicado:
+                    radicado = str(radicado).strip().upper()
+                    cursor.execute("SELECT id FROM correspondencia WHERE UPPER(radicado) = %s", (radicado,))
+                    if cursor.fetchone():
+                        return {
+                            "exito": False,
+                            "mensaje": f"El código de radicado '{radicado}' ya existe en el sistema."
+                        }
+                else:
                     radicado = GENERAR_RADICADO_CORRESPONDENCIA(cursor, anio)
 
                 sql_corr = """
@@ -217,6 +225,15 @@ def UPDATE_correspondencia_db(id_corr: int, correspondencia: Dict) -> Dict:
             with conexion.cursor() as cursor:
                 campos = []
                 valores = []
+
+                if "radicado" in correspondencia and correspondencia["radicado"]:
+                    rad_up = str(correspondencia["radicado"]).strip().upper()
+                    cursor.execute("SELECT id FROM correspondencia WHERE UPPER(radicado) = %s AND id != %s", (rad_up, int(id_corr)))
+                    if cursor.fetchone():
+                        return {
+                            "exito": False,
+                            "mensaje": f"El código de radicado '{rad_up}' ya pertenece a otra correspondencia."
+                        }
 
                 for k, col in [
                     ("tipo_correspondencia", "tipo_correspondencia"),

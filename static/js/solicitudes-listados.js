@@ -9,7 +9,40 @@ function formatearFechaCorta(fechaStr) {
     if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
         return window.Fechas.formatearCorta(fechaStr);
     }
-    return fechaStr || '—';
+    if (!fechaStr || fechaStr === '—' || fechaStr === 'null' || fechaStr === 'None') return '—';
+    return String(fechaStr).split('T')[0].split(' ')[0];
+}
+
+function esInactivaVencida(s) {
+    if (!s) return false;
+    const esInactiva = (s.is_active === 0 || s.is_active === false || s.is_active === "0");
+    if (!esInactiva) return false;
+
+    const fFinRaw = s.fecha_salida || s.fecha_fin || s.fechaSalida;
+    if (!fFinRaw) return false;
+
+    let fechaFinDate = null;
+    if (fFinRaw instanceof Date) {
+        fechaFinDate = new Date(fFinRaw.getTime());
+    } else if (typeof fFinRaw === "string" && fFinRaw.trim()) {
+        const limpia = fFinRaw.trim().split("T")[0].split(" ")[0].replace(/\//g, "-");
+        const partes = limpia.split("-");
+        if (partes.length === 3) {
+            if (partes[0].length === 4) {
+                fechaFinDate = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+            } else if (partes[2].length === 4) {
+                fechaFinDate = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+            }
+        }
+    }
+
+    if (!fechaFinDate || isNaN(fechaFinDate.getTime())) return false;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    fechaFinDate.setHours(0, 0, 0, 0);
+
+    return fechaFinDate.getTime() < hoy.getTime();
 }
 
 function generarCodigoAlfanumerico(id) {
@@ -218,7 +251,9 @@ function normalizarSolicitud(s) {
         fecha_salida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
         fechaIngreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
         fechaSalida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
+        fecha_creacion_raw: s.fecha_creacion,
         fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion),
+        fecha_registro: formatearFechaCorta(s.fecha_registro || s.fecha_creacion || s.created_at),
         estado: (s.estado || "ENVIADO").toUpperCase(),
         riesgo: s.nivel_de_riesgo || s.nivelRiesgo || s.riesgo || "—",
         actividad: s.actividad || "—",
@@ -247,6 +282,16 @@ function solicitudesCards() {
             this.cargarInicial();
         },
 
+        get esAdmin() {
+            let sesion = null;
+            try {
+                sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+            } catch (e) {}
+            const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
+            const rolId = Number(sesion ? (sesion.id_rol || sesion.rol_id) : 0);
+            return rolId === 1 || rolId === 2 || rolTexto.includes("ADMIN");
+        },
+
         actualizarConteo(lista) {
             let filtrada = lista;
             let sesion = null;
@@ -255,13 +300,20 @@ function solicitudesCards() {
             } catch (e) {}
             const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
             const rolId = Number(sesion ? sesion.id_rol : 0);
+            const esAdminUser = rolId === 1 || rolId === 2 || rolTexto.includes("ADMIN");
+
+            // Si el usuario no es admin ni superadmin, omitir solicitudes inactivas por vencimiento
+            if (!esAdminUser) {
+                filtrada = filtrada.filter(s => !esInactivaVencida(s));
+            }
+
             const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
             if (esSstGesco) {
                 const misPlantas = (sesion && sesion.plantas_ids ? sesion.plantas_ids : []).map(Number);
                 if (!misPlantas || misPlantas.length === 0) {
                     filtrada = [];
                 } else {
-                    filtrada = lista.filter(s => {
+                    filtrada = filtrada.filter(s => {
                         const pIds = Array.isArray(s.plantas_ids) ? s.plantas_ids.map(Number) : (s.plantas_ids ? String(s.plantas_ids).split(",").map(Number).filter(Boolean) : []);
                         return pIds.some(pid => misPlantas.includes(pid));
                     });
@@ -504,10 +556,23 @@ function solicitudesTable() {
             }
         },
 
+        get esAdmin() {
+            const u = this.sesionUsuario;
+            if (!u) return false;
+            const idRol = parseInt(u.id_rol || u.rol_id, 10);
+            const rolNom = String(u.rol || u.nombre_rol || "").toUpperCase();
+            return idRol === 1 || idRol === 2 || rolNom.includes("ADMIN");
+        },
+
         get solicitudFiltrados() {
             const text = this.search.trim().toLowerCase();
+            const esAdminUser = this.esAdmin;
 
             return this.solicitudes.filter(s => {
+                // Si el usuario no es admin ni superadmin, no enlistar solicitudes inactivas por vencimiento
+                if (!esAdminUser && esInactivaVencida(s)) {
+                    return false;
+                }
                 const idNum = s.id != null ? String(s.id).trim() : "";
                 const idPad = idNum ? idNum.padStart(4, "0") : "";
                 const radCode = idNum ? `rad-${idPad}` : "";
@@ -522,8 +587,9 @@ function solicitudesTable() {
                     idPad.includes(text) ||
                     (textClean && radCode.replace(/[\s\-_]/g, "").includes(textClean));
 
-                // Búsqueda en múltiples campos incluyendo código y observaciones
+                // Búsqueda en múltiples campos incluyendo código, fecha de registro y observaciones
                 const matchTexto = matchCodigo ||
+                    (s.fecha_registro || "").toLowerCase().includes(text) ||
                     (s.observaciones || "").toLowerCase().includes(text) ||
                     (s.nombre_empresa || "").toLowerCase().includes(text) ||
                     (s.nombre_emContratista || "").toLowerCase().includes(text) ||

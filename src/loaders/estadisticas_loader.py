@@ -49,21 +49,17 @@ def GET_estadisticas_ingresos_plantas_db(
         if fecha_inicio > fecha_fin:
             fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
 
-        # 2. Construir la consulta SQL para traer todas las solicitudes activas en el rango
+        # 2. Construir la consulta SQL para traer todas las solicitudes activas en el rango (excluyendo rechazadas)
         filtros_sql = [
             "s.is_active = 1",
             "s.fecha_inicio <= %(fecha_fin)s",
             "s.fecha_fin >= %(fecha_inicio)s",
-            "i.autorizado = 1"
+            "s.estado != 'RECHAZADO'"
         ]
         params: Dict[str, Any] = {
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin
         }
-
-        if estado and estado.strip().upper() not in ("TODOS", "ALL", ""):
-            filtros_sql.append("s.estado = %(estado)s")
-            params["estado"] = estado.strip().upper()
 
         if id_planta and int(id_planta) > 0:
             filtros_sql.append("v.id_planta = %(id_planta)s")
@@ -82,6 +78,7 @@ def GET_estadisticas_ingresos_plantas_db(
                 pl.nombre AS planta,
                 emp.nombre_empresa AS empresa_origen,
                 i.id_persona,
+                i.autorizado,
                 p.nombre,
                 p.apellido,
                 p.tipo_doc,
@@ -105,18 +102,6 @@ def GET_estadisticas_ingresos_plantas_db(
                 filas = cursor.fetchall() or []
 
         # 3. Estructuras de acumulación y deduplicación por día
-        # Mapa: dia -> {
-        #   "personas_global": set(id_persona),
-        #   "solicitudes_global": set(id_solicitud),
-        #   "plantas": {
-        #       id_planta: {
-        #           "nombre": str,
-        #           "empresa": str,
-        #           "personas": set(id_persona),
-        #           "solicitudes": set(id_solicitud)
-        #       }
-        #   }
-        # }
         dias_map: Dict[datetime.date, Dict[str, Any]] = {}
         
         # Generar todos los días del rango continuo
@@ -124,6 +109,8 @@ def GET_estadisticas_ingresos_plantas_db(
         for i in range(dias_totales):
             dia_actual = fecha_inicio + datetime.timedelta(days=i)
             dias_map[dia_actual] = {
+                "personas_aprobadas": set(),
+                "personas_pendientes": set(),
                 "personas_global": set(),
                 "solicitudes_global": set(),
                 "plantas": {}
@@ -141,18 +128,22 @@ def GET_estadisticas_ingresos_plantas_db(
             pemp = row["empresa_origen"] or ""
             persona_id = row["id_persona"]
             solicitud_id = row["id_solicitud"]
+            st_upper = str(row["estado"] or "").strip().upper()
+            aut_val = row.get("autorizado")
 
-            todas_personas_periodo.add(persona_id)
+            is_aprobado = (st_upper == "APROBADO") and (aut_val is None or aut_val == 1)
 
-            if pid not in plantas_acumulado:
-                plantas_acumulado[pid] = {
-                    "id_planta": pid,
-                    "planta": pnom,
-                    "empresa": pemp,
-                    "personas_unicas": set(),
-                    "total_visitas": 0
-                }
-            plantas_acumulado[pid]["personas_unicas"].add(persona_id)
+            if is_aprobado:
+                todas_personas_periodo.add(persona_id)
+                if pid not in plantas_acumulado:
+                    plantas_acumulado[pid] = {
+                        "id_planta": pid,
+                        "planta": pnom,
+                        "empresa": pemp,
+                        "personas_unicas": set(),
+                        "total_visitas": 0
+                    }
+                plantas_acumulado[pid]["personas_unicas"].add(persona_id)
 
             # Acotar al rango seleccionado
             d_start = max(fecha_inicio, f_ini)
@@ -162,6 +153,11 @@ def GET_estadisticas_ingresos_plantas_db(
             while cur_date <= d_end:
                 if cur_date in dias_map:
                     dia_entry = dias_map[cur_date]
+                    if is_aprobado:
+                        dia_entry["personas_aprobadas"].add(persona_id)
+                    else:
+                        dia_entry["personas_pendientes"].add(persona_id)
+
                     dia_entry["personas_global"].add(persona_id)
                     dia_entry["solicitudes_global"].add(solicitud_id)
 
@@ -173,7 +169,8 @@ def GET_estadisticas_ingresos_plantas_db(
                             "personas": set(),
                             "solicitudes": set()
                         }
-                    dia_entry["plantas"][pid]["personas"].add(persona_id)
+                    if is_aprobado:
+                        dia_entry["plantas"][pid]["personas"].add(persona_id)
                     dia_entry["plantas"][pid]["solicitudes"].add(solicitud_id)
 
                 cur_date += datetime.timedelta(days=1)
@@ -190,7 +187,9 @@ def GET_estadisticas_ingresos_plantas_db(
 
         for dia in sorted(dias_map.keys()):
             info_dia = dias_map[dia]
-            total_unicas_dia = len(info_dia["personas_global"])
+            cant_aprobadas = len(info_dia["personas_aprobadas"])
+            cant_pendientes = len(info_dia["personas_pendientes"] - info_dia["personas_aprobadas"])
+            total_unicas_dia = cant_aprobadas
             total_solic_dia = len(info_dia["solicitudes_global"])
 
             total_ingresos_acumulados += total_unicas_dia
@@ -206,7 +205,10 @@ def GET_estadisticas_ingresos_plantas_db(
             serie_tiempo.append({
                 "fecha": dia_str,
                 "fecha_corta": dia_corta,
-                "total_personas": total_unicas_dia,
+                "total_personas": cant_aprobadas,
+                "personas_aprobadas": cant_aprobadas,
+                "personas_pendientes": cant_pendientes,
+                "total_combinado": cant_aprobadas + cant_pendientes,
                 "total_solicitudes": total_solic_dia
             })
 

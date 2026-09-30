@@ -60,7 +60,7 @@
       // ----------------------------------------------------------------------
       // 1. ESTADO DE NAVEGACIÓN Y SIDEBAR
       // ----------------------------------------------------------------------
-      sidebarCollapsed: false,
+      sidebarCollapsed: true,
       sidebarOpenMobile: false,
       profileMenuOpen: false,
       openModules: { formularios: false, tablas: true, procesamiento: false },

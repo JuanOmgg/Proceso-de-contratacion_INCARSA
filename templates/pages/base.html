@@ -24,15 +24,21 @@
 
       try {
         var raw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+        var tok = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
         if (raw) {
           var ses = JSON.parse(raw);
           var rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
-          if (rol === 'SUPERADMIN') {
+          if (rol === 'SUPERADMIN' || rol === 'SUPER ADMIN') {
             document.documentElement.setAttribute('data-role', 'SUPERADMIN');
             document.documentElement.classList.add('role-superadmin');
           } else {
             document.documentElement.removeAttribute('data-role');
             document.documentElement.classList.remove('role-superadmin');
+          }
+          if (!tok && ses && ses.token) tok = ses.token;
+          if (tok) {
+            document.cookie = "token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
+            document.cookie = "incarsa_token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
           }
         }
       } catch (e) {}
@@ -69,9 +75,9 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Estilos globales compartidos -->
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=4.9">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=3.9">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=5.5">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=5.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/navbar-sidebar.css') }}?v=4.1">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dark-mode.css') }}?v=5.8">
 
   <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
   {% block extra_head %}{% endblock %}

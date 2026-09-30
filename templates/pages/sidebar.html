@@ -13,6 +13,8 @@
         return defaults;
       }
     })(),
+    isHovered: false,
+    isFocused: false,
     toggleModule(mod) {
       this.openModules[mod] = !this.openModules[mod];
       try {
@@ -38,7 +40,11 @@
       return true;
     }
   }"
-  :class="{ 'is-collapsed': sidebarCollapsed, 'is-mobile-open': sidebarOpenMobile }"
+  @mouseenter="isHovered = true"
+  @mouseleave="isHovered = false; isFocused = false; if (document.activeElement && $el.contains(document.activeElement)) document.activeElement.blur()"
+  @focusin="if ($el.matches(':has(:focus-visible)')) isFocused = true"
+  @focusout="if (!$el.contains($event.relatedTarget)) isFocused = false"
+  :class="{ 'is-collapsed': !isHovered && !isFocused, 'is-hovered': isHovered || isFocused, 'is-mobile-open': sidebarOpenMobile }"
   @open-plantas-modal.window="sidebarOpenMobile = false"
   @open-contratistas-modal.window="sidebarOpenMobile = false"
   @open-vehiculos-modal.window="sidebarOpenMobile = false"
@@ -49,9 +55,9 @@
       <div class="relative flex items-center justify-center px-4 h-20 border-b border-white/10 flex-shrink-0">
         <a href="/dashboard" class="flex items-center justify-center w-full py-2 transition-transform hover:opacity-90">
           <img src="/static/img/logo-sidebar.png" alt="PSI"
-            class="w-auto object-contain select-none transition-all duration-100 mx-auto"
+            class="sidebar-logo w-auto object-contain select-none transition-all duration-200 mx-auto"
             style="mix-blend-mode: screen;"
-            :class="sidebarCollapsed ? 'max-w-[44px] h-8' : 'max-w-[145px] h-10'">
+            :class="(isHovered || isFocused) ? 'max-w-[145px] h-10' : 'max-w-[44px] h-8'">
         </a>
         <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close absolute right-4 top-1/2 -translate-y-1/2" aria-label="Cerrar menú">
           <i class="fa-solid fa-xmark text-sm"></i>
@@ -70,7 +76,7 @@
 
         <!-- Módulo desplegable: Formularios -->
         <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario') || puedeModulo('nueva_correspondencia')">
-          <button type="button" @click="toggleModule('formularios')"
+          <button type="button" @click="toggleModule('formularios'); $el.blur()"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
             :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') || isActive('/correspondencia/nueva') || isActive('/formulario-correspondencia') || isActive('/correspondencia-form') }">
             <span class="flex items-center gap-3">
@@ -81,7 +87,7 @@
               :class="openModules.formularios ? 'rotate-180' : ''"></i>
           </button>
           <div x-show="openModules.formularios" x-collapse
-            class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
+            class="sidebar-submenu ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
             <a href="/solicitudes/nueva" x-show="puedeModulo('nueva_solicitud')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') ? 'is-active' : ''">
               <span>Nueva solicitud</span>
@@ -108,7 +114,7 @@
 
         <!-- Módulo desplegable: Tablas / consultas -->
         <div>
-          <button type="button" @click="toggleModule('tablas')"
+          <button type="button" @click="toggleModule('tablas'); $el.blur()"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
             :class="{ 'is-module-active': (isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar')) || isActive('/usuarios') || isActive('/personas') }">
             <span class="flex items-center gap-3">
@@ -119,7 +125,7 @@
               :class="openModules.tablas ? 'rotate-180' : ''"></i>
           </button>
           <div x-show="openModules.tablas" x-collapse
-            class="sidebar-label ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
+            class="sidebar-submenu ml-3.5 mt-1 space-y-1 border-l border-white/10 pl-2.5">
             <a href="/solicitudes" x-show="puedeModulo('solicitudes')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
               :class="isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar') ? 'is-active' : ''">
               <span>Solicitudes</span>
@@ -214,27 +220,48 @@
 
 
         <!-- Módulo Exclusivo SuperAdmin -->
-        <div x-show="tieneRol('SUPERADMIN')" class="pt-3 border-t border-white/10 mt-3">
-          <div class="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-amber-400/90 sidebar-label flex items-center gap-1.5">
-            <i class="fa-solid fa-crown text-[9px]"></i> Control Maestro
+        <div x-show="tieneRol('SUPERADMIN')" class="pt-3 border-t border-white/10 mt-3 sidebar-superadmin-group">
+          <div class="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider sidebar-superadmin-header sidebar-label flex items-center gap-1.5">
+            <i class="fa-solid fa-crown text-[9px] text-amber-400"></i>
+            <span>Control Maestro</span>
           </div>
-          <a href="/superadmin" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-amber-300 hover:text-amber-200"
-            :class="isActive('/superadmin') ? 'is-active' : ''">
-            <i class="fa-solid fa-shield-halved w-4 text-center text-amber-400"></i>
+
+          <!-- 1. Panel SuperAdmin (Principal) -->
+          <a href="/superadmin" class="sidebar-superadmin-item flex items-center gap-2.5 px-3 py-1.5"
+            :class="isActive('/superadmin') && !window.location.hash ? 'is-active' : ''">
+            <i class="fa-solid fa-shield-halved w-4 text-center"></i>
             <span class="sidebar-label font-semibold">Panel SuperAdmin</span>
+          </a>
+
+          <!-- 2. Modo Mantenimiento -->
+          <a href="/superadmin#seccion-mantenimiento-superadmin" class="sidebar-superadmin-subitem flex items-center gap-2.5 px-3 py-1 ml-3"
+            @click="if (window.location.pathname === '/superadmin') { $event.preventDefault(); document.getElementById('seccion-mantenimiento-superadmin')?.scrollIntoView({ behavior: 'smooth' }); history.pushState(null, '', '#seccion-mantenimiento-superadmin'); }">
+            <i class="fa-solid fa-triangle-exclamation w-4 text-center"></i>
+            <span class="sidebar-label">Modo Mantenimiento</span>
+          </a>
+
+          <!-- 3. Matriz de Permisos (RBAC) -->
+          <a href="/superadmin#seccion-rbac-superadmin" class="sidebar-superadmin-subitem flex items-center gap-2.5 px-3 py-1 ml-3"
+            @click="if (window.location.pathname === '/superadmin') { $event.preventDefault(); document.getElementById('seccion-rbac-superadmin')?.scrollIntoView({ behavior: 'smooth' }); history.pushState(null, '', '#seccion-rbac-superadmin'); }">
+            <i class="fa-solid fa-users-gear w-4 text-center"></i>
+            <span class="sidebar-label">Matriz de Permisos</span>
+          </a>
+
+          <!-- 4. Mensajes y Comunicados -->
+          <a href="/superadmin#seccion-comunicados-superadmin" class="sidebar-superadmin-subitem flex items-center gap-2.5 px-3 py-1 ml-3"
+            @click="if (window.location.pathname === '/superadmin') { $event.preventDefault(); document.getElementById('seccion-comunicados-superadmin')?.scrollIntoView({ behavior: 'smooth' }); history.pushState(null, '', '#seccion-comunicados-superadmin'); }">
+            <i class="fa-solid fa-bullhorn w-4 text-center"></i>
+            <span class="sidebar-label">Mensajes y Comunicados</span>
+          </a>
+
+          <!-- 5. Radicar Correspondencia -->
+          <a href="/superadmin#seccion-correspondencia-superadmin" class="sidebar-superadmin-subitem flex items-center gap-2.5 px-3 py-1 ml-3"
+            @click="if (window.location.pathname === '/superadmin') { $event.preventDefault(); document.getElementById('seccion-correspondencia-superadmin')?.scrollIntoView({ behavior: 'smooth' }); history.pushState(null, '', '#seccion-correspondencia-superadmin'); }">
+            <i class="fa-solid fa-envelope-open-text w-4 text-center"></i>
+            <span class="sidebar-label">Radicar correspondencia</span>
           </a>
         </div>
       </nav>
-
-      <!-- Footer del sidebar: Control interactivo Modo Compacto -->
-      <div class="p-2.5 border-t border-white/10">
-        <button type="button" @click="sidebarCollapsed = !sidebarCollapsed"
-          class="sidebar-collapse-btn w-full h-10 px-3 flex items-center justify-center gap-2.5 cursor-pointer group"
-          :title="sidebarCollapsed ? 'Expandir barra lateral' : 'Modo compacto (Plegar panel)'">
-          <i class="fa-solid text-xs" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left group-hover:-translate-x-1'"></i>
-          <span class="sidebar-label text-xs font-semibold tracking-wide">Modo compacto</span>
-        </button>
-      </div>
     </aside>
 
   <!-- ============================================================

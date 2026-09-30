@@ -40,19 +40,59 @@ def obtener_notificaciones_db(
     """
     Obtiene las notificaciones dirigidas al usuario o a su rol,
     ordenadas de la más reciente a la más antigua.
-    """
-    sql = """
-        SELECT id, id_usuario, rol_destino, titulo, mensaje, tipo, enlace, archivo_url, archivo_nombre, leido, fecha_creacion
-        FROM notificaciones
-        WHERE (%s IS NOT NULL AND id_usuario = %s)
-           OR (%s IS NOT NULL AND rol_destino = %s)
-        ORDER BY fecha_creacion DESC
-        LIMIT %s
+    Para roles SST y GESCO, las notificaciones de revisión de solicitud
+    solo se muestran si la solicitud tiene al menos una planta asignada al usuario.
     """
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol, limit))
+                nombre_rol = ""
+                if id_usuario:
+                    cursor.execute("SELECT r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
+                    u_row = cursor.fetchone()
+                    if u_row and u_row.get("nombre_rol"):
+                        nombre_rol = str(u_row["nombre_rol"]).strip().upper()
+                if not nombre_rol and id_rol:
+                    cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (id_rol,))
+                    r_row = cursor.fetchone()
+                    if r_row and r_row.get("nombre_rol"):
+                        nombre_rol = str(r_row["nombre_rol"]).strip().upper()
+
+                sql = """
+                    SELECT n.id, n.id_usuario, n.rol_destino, n.titulo, n.mensaje, n.tipo, n.enlace, n.archivo_url, n.archivo_nombre, n.leido, n.fecha_creacion
+                    FROM notificaciones n
+                    LEFT JOIN solicitudes s ON s.codigo = SUBSTRING_INDEX(n.enlace, '/', -1)
+                    WHERE (
+                        (%s IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s IS NOT NULL AND n.rol_destino = %s)
+                    )
+                    AND (
+                        (n.enlace NOT LIKE '/solicitudes/revision/%%' AND n.titulo NOT LIKE 'Nueva solicitud para revisi%%')
+                        OR
+                        (n.id_usuario IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s NOT IN ('SST', 'GESCO'))
+                        OR
+                        (
+                            s.id IS NOT NULL AND (
+                                EXISTS (
+                                    SELECT 1 FROM visita v 
+                                    JOIN usuario_plantas up ON up.id_planta = v.id_planta 
+                                    WHERE v.id_solicitud = s.id AND up.id_usuario = %s
+                                )
+                                OR EXISTS (
+                                    SELECT 1 FROM usuario_plantas up2 
+                                    WHERE up2.id_usuario = %s 
+                                      AND FIND_IN_SET(up2.id_planta, s.plantas_ids)
+                                )
+                            )
+                        )
+                    )
+                    ORDER BY n.fecha_creacion DESC
+                    LIMIT %s
+                """
+                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol, id_usuario, nombre_rol, id_usuario, id_usuario, limit))
                 filas = cursor.fetchall() or []
                 
                 # Formatear datetime a string para serialización JSON limpia
@@ -71,19 +111,58 @@ def contar_no_leidas_db(
     id_rol: Optional[int] = None,
 ) -> int:
     """
-    Cuenta cuántas notificaciones no leídas tiene el usuario o su rol.
-    """
-    sql = """
-        SELECT COUNT(*) as total
-        FROM notificaciones
-        WHERE leido = FALSE
-          AND ((%s IS NOT NULL AND id_usuario = %s)
-            OR (%s IS NOT NULL AND rol_destino = %s))
+    Cuenta cuántas notificaciones no leídas tiene el usuario o su rol,
+    respetando el filtro de plantas para SST y GESCO.
     """
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol))
+                nombre_rol = ""
+                if id_usuario:
+                    cursor.execute("SELECT r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
+                    u_row = cursor.fetchone()
+                    if u_row and u_row.get("nombre_rol"):
+                        nombre_rol = str(u_row["nombre_rol"]).strip().upper()
+                if not nombre_rol and id_rol:
+                    cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (id_rol,))
+                    r_row = cursor.fetchone()
+                    if r_row and r_row.get("nombre_rol"):
+                        nombre_rol = str(r_row["nombre_rol"]).strip().upper()
+
+                sql = """
+                    SELECT COUNT(*) as total
+                    FROM notificaciones n
+                    LEFT JOIN solicitudes s ON s.codigo = SUBSTRING_INDEX(n.enlace, '/', -1)
+                    WHERE n.leido = FALSE
+                      AND (
+                        (%s IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s IS NOT NULL AND n.rol_destino = %s)
+                      )
+                      AND (
+                        (n.enlace NOT LIKE '/solicitudes/revision/%%' AND n.titulo NOT LIKE 'Nueva solicitud para revisi%%')
+                        OR
+                        (n.id_usuario IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s NOT IN ('SST', 'GESCO'))
+                        OR
+                        (
+                            s.id IS NOT NULL AND (
+                                EXISTS (
+                                    SELECT 1 FROM visita v 
+                                    JOIN usuario_plantas up ON up.id_planta = v.id_planta 
+                                    WHERE v.id_solicitud = s.id AND up.id_usuario = %s
+                                )
+                                OR EXISTS (
+                                    SELECT 1 FROM usuario_plantas up2 
+                                    WHERE up2.id_usuario = %s 
+                                      AND FIND_IN_SET(up2.id_planta, s.plantas_ids)
+                                )
+                            )
+                        )
+                      )
+                """
+                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol, id_usuario, nombre_rol, id_usuario, id_usuario))
                 res = cursor.fetchone()
                 return int(res.get("total", 0)) if res else 0
     except Exception as e:
@@ -112,19 +191,58 @@ def marcar_todas_leidas_db(
     id_rol: Optional[int] = None,
 ) -> bool:
     """
-    Marca todas las notificaciones pendientes de un usuario o rol como leídas.
-    """
-    sql = """
-        UPDATE notificaciones
-        SET leido = TRUE
-        WHERE leido = FALSE
-          AND ((%s IS NOT NULL AND id_usuario = %s)
-            OR (%s IS NOT NULL AND rol_destino = %s))
+    Marca todas las notificaciones pendientes de un usuario o rol como leídas,
+    respetando el filtro de plantas para SST y GESCO.
     """
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol))
+                nombre_rol = ""
+                if id_usuario:
+                    cursor.execute("SELECT r.nombre_rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id WHERE u.id = %s", (id_usuario,))
+                    u_row = cursor.fetchone()
+                    if u_row and u_row.get("nombre_rol"):
+                        nombre_rol = str(u_row["nombre_rol"]).strip().upper()
+                if not nombre_rol and id_rol:
+                    cursor.execute("SELECT nombre_rol FROM roles WHERE id = %s", (id_rol,))
+                    r_row = cursor.fetchone()
+                    if r_row and r_row.get("nombre_rol"):
+                        nombre_rol = str(r_row["nombre_rol"]).strip().upper()
+
+                sql = """
+                    UPDATE notificaciones n
+                    LEFT JOIN solicitudes s ON s.codigo = SUBSTRING_INDEX(n.enlace, '/', -1)
+                    SET n.leido = TRUE
+                    WHERE n.leido = FALSE
+                      AND (
+                        (%s IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s IS NOT NULL AND n.rol_destino = %s)
+                      )
+                      AND (
+                        (n.enlace NOT LIKE '/solicitudes/revision/%%' AND n.titulo NOT LIKE 'Nueva solicitud para revisi%%')
+                        OR
+                        (n.id_usuario IS NOT NULL AND n.id_usuario = %s)
+                        OR
+                        (%s NOT IN ('SST', 'GESCO'))
+                        OR
+                        (
+                            s.id IS NOT NULL AND (
+                                EXISTS (
+                                    SELECT 1 FROM visita v 
+                                    JOIN usuario_plantas up ON up.id_planta = v.id_planta 
+                                    WHERE v.id_solicitud = s.id AND up.id_usuario = %s
+                                )
+                                OR EXISTS (
+                                    SELECT 1 FROM usuario_plantas up2 
+                                    WHERE up2.id_usuario = %s 
+                                      AND FIND_IN_SET(up2.id_planta, s.plantas_ids)
+                                )
+                            )
+                        )
+                      )
+                """
+                cursor.execute(sql, (id_usuario, id_usuario, id_rol, id_rol, id_usuario, nombre_rol, id_usuario, id_usuario))
                 conexion.commit()
                 return True
     except Exception as e:

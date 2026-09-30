@@ -1,5 +1,24 @@
 function correspondenciaTable() {
+    const checkEsSuperAdmin = () => {
+        try {
+            const ses = (typeof getAuthSession === 'function') 
+                ? getAuthSession() 
+                : JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+            const r = String(ses?.rol || ses?.nombre_rol || ses?.rol_nombre || '').toUpperCase().trim();
+            const u = String(ses?.tipo_usuario || ses?.usuario || '').toUpperCase().trim();
+            return r === 'SUPERADMIN' 
+                || u === 'SUPERADMIN' 
+                || ses?.id_rol === 1 
+                || ses?.id_rol === 6
+                || document.documentElement.getAttribute('data-role') === 'SUPERADMIN'
+                || document.documentElement.classList.contains('role-superadmin');
+        } catch (e) {
+            return false;
+        }
+    };
+
     return {
+        esSuperAdmin: checkEsSuperAdmin(),
         correspondencias: [],
         cargando: false,
         error: null,
@@ -331,6 +350,7 @@ function correspondenciaTable() {
         },
 
         abrirModalEditar(item) {
+            this.esSuperAdmin = checkEsSuperAdmin();
             this.formEdit = {
                 id: item.id,
                 radicado: item.radicado || "",
@@ -376,7 +396,9 @@ function correspondenciaTable() {
                     tipo_correspondencia: this.formEdit.tipo_correspondencia,
                     asunto: this.formEdit.asunto.trim(),
                     procedencia: this.formEdit.procedencia.trim(),
-                    destino: this.formEdit.destino.trim()
+                    destino: this.formEdit.destino.trim(),
+                    radicado: this.formEdit.radicado ? this.formEdit.radicado.trim() : undefined,
+                    fecha_envio: this.formEdit.fecha_envio || undefined
                 };
 
                 const res = await fetch(`${API.correspondencia}/${this.formEdit.id}`, {

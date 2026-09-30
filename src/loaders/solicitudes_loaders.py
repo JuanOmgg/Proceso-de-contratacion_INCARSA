@@ -25,6 +25,50 @@ def Generate_unique_code(cursor) -> str:
         if not cursor.fetchone():
             return codigo
 
+
+def obtener_usuarios_revisores_por_planta(cursor, id_solicitud: int, plantas_ids: Optional[List[int]] = None) -> List[Dict[str, Any]]:
+    """
+    Retorna los usuarios con rol SST o GESCO que tienen asignada al menos una
+    de las plantas asociadas a la solicitud (vía tabla 'visita' o 'plantas_ids').
+    Si la solicitud no tiene plantas o el usuario no tiene dicha planta, no se incluye.
+    """
+    p_ids = set()
+    if plantas_ids:
+        for p in plantas_ids:
+            if str(p).isdigit():
+                p_ids.add(int(p))
+
+    if id_solicitud:
+        cursor.execute("SELECT id_planta FROM visita WHERE id_solicitud = %s", (id_solicitud,))
+        for r in (cursor.fetchall() or []):
+            if r.get("id_planta"):
+                p_ids.add(int(r["id_planta"]))
+
+        cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (id_solicitud,))
+        row_s = cursor.fetchone()
+        if row_s and row_s.get("plantas_ids"):
+            for part in str(row_s["plantas_ids"]).split(","):
+                part = part.strip()
+                if part.isdigit():
+                    p_ids.add(int(part))
+
+    if not p_ids:
+        return []
+
+    format_p = ",".join(["%s"] * len(p_ids))
+    sql = f"""
+        SELECT DISTINCT u.id, u.id_rol, r.nombre_rol
+        FROM usuarios u
+        INNER JOIN roles r ON u.id_rol = r.id
+        INNER JOIN usuario_plantas up ON u.id = up.id_usuario
+        WHERE r.nombre_rol IN ('SST', 'GESCO')
+          AND up.id_planta IN ({format_p})
+          AND (u.is_active IS NULL OR u.is_active = 1 OR u.is_active = TRUE)
+    """
+    cursor.execute(sql, tuple(p_ids))
+    return cursor.fetchall() or []
+
+
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
     try:
@@ -399,39 +443,46 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         except Exception as e_notif:
                             print(f"[WARN] Aviso al generar notificación interna de pre-envío: {e_notif}")
                     else:
-                        # Notificar a los roles revisores (SST y GESCO) sobre la nueva solicitud
+                        # Notificar a los usuarios revisores (SST y GESCO) cuyas plantas asignadas coincidan con la solicitud
                         try:
-                            cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
-                            roles_revisores = cursor.fetchall() or []
-                            for r_rev in roles_revisores:
+                            revisores_dest = obtener_usuarios_revisores_por_planta(
+                                cursor,
+                                id_solicitud=solicitud_id,
+                                plantas_ids=sub_plantas
+                            )
+                            now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            for u_rev in revisores_dest:
                                 if cod_val:
-                                    tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
-                                    msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
+                                    rol_nom = u_rev.get("nombre_rol") or "SST"
+                                    u_id = u_rev["id"]
+                                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                                    msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {rol_nom}."
                                     cursor.execute(
                                         """
-                                        INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                                        VALUES (%s, %s, %s, %s, %s)
+                                        INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
+                                        VALUES (%s, %s, %s, %s, %s, FALSE, %s)
                                         """,
                                         (
-                                            r_rev["id"],
+                                            u_id,
                                             tit_notif,
                                             msg_notif,
                                             "info",
-                                            f"/solicitudes/revision/{cod_val}"
+                                            f"/solicitudes/revision/{cod_val}",
+                                            now_notif_str
                                         )
                                     )
-                                    # Notificar en caliente a cada rol revisor
+                                    # Notificar en caliente al usuario revisor específico
                                     notification_broadcaster.notificar_nueva(
                                         {
                                             "titulo": tit_notif,
                                             "mensaje": msg_notif,
                                             "tipo": "info",
                                             "enlace": f"/solicitudes/revision/{cod_val}",
-                                            "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "fecha_creacion": now_notif_str,
                                             "leido": False,
-                                            "rol_destino": r_rev["id"]
+                                            "id_usuario": u_id
                                         },
-                                        target_role_id=r_rev["id"]
+                                        target_user_id=u_id
                                     )
 
                             # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
@@ -1787,7 +1838,8 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
 def GET_ALL_solicitudes_bd(
     only_active: Optional[bool] = None, 
     id_usuario: Optional[int] = None,
-    diligenciado_por: Optional[int] = None
+    diligenciado_por: Optional[int] = None,
+    excluir_inactivas_vencidas: bool = False
 ):
 
     try:
@@ -1807,6 +1859,11 @@ def GET_ALL_solicitudes_bd(
                     condiciones.append(f"{is_active_expr} = 1")
                 elif only_active is False:
                     condiciones.append(f"{is_active_expr} = 0")
+
+                # Excluir solicitudes inactivas cuyo plazo/fecha_fin ya venció (anterior a la fecha actual)
+                # Solo aplica para usuarios que no sean admin ni superadmin
+                if excluir_inactivas_vencidas:
+                    condiciones.append(f"NOT ({is_active_expr} = 0 AND so.fecha_fin IS NOT NULL AND so.fecha_fin < CURDATE())")
 
                 # Filtro por usuario que diligenció la solicitud
                 if diligenciado_por:
@@ -2023,6 +2080,10 @@ def GET_ALL_solicitudes_bd(
                         row['computos'] = row['eq_computo']
                         row['equipos'] = row['eq_computo']
                     row['pre_aprobado'] = bool(row.get('pre_aprobado', False))
+                    if row.get('fecha_creacion'):
+                        f_crea_str = str(row['fecha_creacion'])
+                        row['fecha_creacion'] = f_crea_str
+                        row['fecha_registro'] = f_crea_str.split()[0]
 
                 # Asociar documentos de vehículos si existen
                 try:
@@ -2901,6 +2962,7 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         s.fecha_inicio,
                         s.fecha_fin,
                         s.actividad,
+                        s.plantas_ids,
                         ec.nombre AS empresa_contratista,
                         ec.nit AS empresa_contratista_nit,
                         e.nombre_empresa AS empresa_origen
@@ -2919,6 +2981,16 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         "mensaje": "El enlace de autorización no es válido o ha expirado."
                     }
 
+                # Resolver nombres de plantas si existen
+                plantas_nombres = []
+                raw_plantas = str(row.get("plantas_ids") or "").strip()
+                if raw_plantas:
+                    p_ids = [int(x.strip()) for x in raw_plantas.split(",") if x.strip().isdigit()]
+                    if p_ids:
+                        format_strings = ','.join(['%s'] * len(p_ids))
+                        cursor.execute(f"SELECT nombre FROM planta WHERE id IN ({format_strings})", tuple(p_ids))
+                        plantas_nombres = [pr["nombre"] for pr in cursor.fetchall() if pr.get("nombre")]
+
                 nombre_completo = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
                 return {
                     "exito": True,
@@ -2935,9 +3007,11 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         "correo": row.get("correo") or "",
                         "solicitud_id": row["solicitud_id"],
                         "codigo_radicado": row.get("codigo_radicado") or "",
-                        "empresa_contratista": row.get("empresa_contratista") or "Empresa Contratista",
+                        "empresa_contratista": row.get("empresa_contratista") or "",
                         "empresa_contratista_nit": row.get("empresa_contratista_nit") or "",
-                        "empresa_origen": row.get("empresa_origen") or "INCARSA",
+                        "empresa_origen": row.get("empresa_origen") or "INCARSA S.A.S.",
+                        "plantas": plantas_nombres,
+                        "plantas_texto": ", ".join(plantas_nombres) if plantas_nombres else "",
                         "fecha_inicio": str(row.get("fecha_inicio") or ""),
                         "fecha_fin": str(row.get("fecha_fin") or ""),
                         "actividad": row.get("actividad") or "",
@@ -3429,16 +3503,18 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                 # 3. Transicionar a ENVIADO
                 cursor.execute("UPDATE solicitudes SET estado = 'ENVIADO' WHERE id = %s", (real_id,))
 
-                # 4. Generar notificaciones oficiales para SST y GESCO
-                cursor.execute("SELECT id, nombre_rol FROM roles WHERE nombre_rol IN ('SST', 'GESCO')")
-                roles_revisores = cursor.fetchall() or []
-                for r_rev in roles_revisores:
-                    tit_notif = f"Nueva solicitud para revisión ({r_rev['nombre_rol']})"
-                    msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {r_rev['nombre_rol']}."
+                # 4. Generar notificaciones oficiales para SST y GESCO solo si la solicitud tiene una de sus plantas asignadas
+                revisores_dest = obtener_usuarios_revisores_por_planta(cursor, id_solicitud=real_id)
+                now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                for u_rev in revisores_dest:
+                    rol_nom = u_rev.get("nombre_rol") or "SST"
+                    u_id = u_rev["id"]
+                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                    msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {rol_nom}."
                     cursor.execute("""
-                        INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (r_rev["id"], tit_notif, msg_notif, "info", f"/solicitudes/revision/{cod_val}"))
+                        INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
+                        VALUES (%s, %s, %s, %s, %s, FALSE, %s)
+                    """, (u_id, tit_notif, msg_notif, "info", f"/solicitudes/revision/{cod_val}", now_notif_str))
 
                     notification_broadcaster.notificar_nueva(
                         {
@@ -3446,11 +3522,11 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                             "mensaje": msg_notif,
                             "tipo": "info",
                             "enlace": f"/solicitudes/revision/{cod_val}",
-                            "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "fecha_creacion": now_notif_str,
                             "leido": False,
-                            "rol_destino": r_rev["id"]
+                            "id_usuario": u_id
                         },
-                        target_role_id=r_rev["id"]
+                        target_user_id=u_id
                     )
 
                 # Notificar en caliente cambio general a ENVIADO

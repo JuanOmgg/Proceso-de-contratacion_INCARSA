@@ -79,6 +79,19 @@ def previsualizar_500(request: Request):
         status_code=200
     )
 
+@router.get("/superadmin/previsualizar-autorizacion-datos", response_class=HTMLResponse, summary="Previsualización de Autorización de Tratamiento de Datos (Ley 1581)")
+def previsualizar_autorizacion_datos(request: Request):
+    """Previsualiza la pantalla pública de Autorización de Tratamiento de Datos Personales con datos mock para SuperAdmin."""
+    return templates.TemplateResponse(
+        name="autorizacion-datos.html",
+        request=request,
+        status_code=200,
+        context={
+            "token": "demo-preview-superadmin",
+            "es_preview": True
+        }
+    )
+
 # -----------------------------------------------------------------------------
 # API: Gestión de Modo Mantenimiento (HTTP 503)
 # -----------------------------------------------------------------------------

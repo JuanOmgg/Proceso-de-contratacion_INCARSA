@@ -2535,7 +2535,7 @@ body.dark .input-field.has-error:focus {
   background-color: #00f0ff !important;
   color: #03202e !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.95), 0 0 32px rgba(0, 240, 255, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.7), 0 0 16px rgba(0, 240, 255, 0.35) !important;
 }
 :root.dark .step-fase-0.step-node-complete i,
 :root.dark .step-fase-0.step-node-current i {
@@ -2546,13 +2546,13 @@ body.dark .input-field.has-error:focus {
 :root.dark .step-label-fase-0.step-label-complete,
 :root.dark .step-label-fase-0.step-label-current {
   color: #00f0ff !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.9) !important;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.6) !important;
   font-weight: 700 !important;
 }
 :root.dark .step-con-0.step-connector-complete {
   background-color: #00f0ff !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 1), 0 0 20px rgba(0, 240, 255, 0.6) !important;
-  height: 3px !important;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.7) !important;
+  height: 2.5px !important;
 }
 
 /* --- PASO 1: EN REVISIÓN (MORADA / VIOLETA NEÓN) --- */
@@ -2561,7 +2561,7 @@ body.dark .input-field.has-error:focus {
   background-color: #c084fc !important;
   color: #1a042e !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 0 16px rgba(192, 132, 252, 0.95), 0 0 32px rgba(168, 85, 247, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.7), 0 0 16px rgba(168, 85, 247, 0.35) !important;
 }
 :root.dark .step-fase-1.step-node-complete i,
 :root.dark .step-fase-1.step-node-current i,
@@ -2573,13 +2573,13 @@ body.dark .input-field.has-error:focus {
 :root.dark .step-label-fase-1.step-label-complete,
 :root.dark .step-label-fase-1.step-label-current {
   color: #c084fc !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.9) !important;
+  text-shadow: 0 0 4px rgba(192, 132, 252, 0.6) !important;
   font-weight: 700 !important;
 }
 :root.dark .step-con-1.step-connector-complete {
   background-color: #c084fc !important;
-  box-shadow: 0 0 10px rgba(192, 132, 252, 1), 0 0 20px rgba(168, 85, 247, 0.6) !important;
-  height: 3px !important;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.7) !important;
+  height: 2.5px !important;
 }
 
 /* --- PASO 2: POR APROBAR (ÁMBAR / ORO ELÉCTRICO NEÓN) --- */
@@ -2588,7 +2588,7 @@ body.dark .input-field.has-error:focus {
   background-color: #ffb700 !important;
   color: #2b1700 !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 0 16px rgba(255, 183, 0, 0.95), 0 0 32px rgba(255, 183, 0, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 8px rgba(255, 183, 0, 0.7), 0 0 16px rgba(255, 183, 0, 0.35) !important;
 }
 :root.dark .step-fase-2.step-node-complete i,
 :root.dark .step-fase-2.step-node-current i,
@@ -2600,13 +2600,13 @@ body.dark .input-field.has-error:focus {
 :root.dark .step-label-fase-2.step-label-complete,
 :root.dark .step-label-fase-2.step-label-current {
   color: #ffb700 !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.9) !important;
+  text-shadow: 0 0 4px rgba(255, 183, 0, 0.6) !important;
   font-weight: 700 !important;
 }
 :root.dark .step-con-2.step-connector-complete {
   background-color: #ffb700 !important;
-  box-shadow: 0 0 10px rgba(255, 183, 0, 1), 0 0 20px rgba(255, 183, 0, 0.6) !important;
-  height: 3px !important;
+  box-shadow: 0 0 6px rgba(255, 183, 0, 0.7) !important;
+  height: 2.5px !important;
 }
 
 /* --- PASO 3: APROBADO (VERDE ESMERALDA NEÓN) --- */
@@ -2615,7 +2615,7 @@ body.dark .input-field.has-error:focus {
   background-color: #00ff9d !important;
   color: #022315 !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 0 16px rgba(0, 255, 157, 0.95), 0 0 32px rgba(0, 255, 157, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 8px rgba(0, 255, 157, 0.7), 0 0 16px rgba(0, 255, 157, 0.35) !important;
 }
 :root.dark .step-fase-3.step-node-complete i,
 :root.dark .step-fase-3.step-node-current i,
@@ -2627,7 +2627,7 @@ body.dark .input-field.has-error:focus {
 :root.dark .step-label-fase-3.step-label-complete,
 :root.dark .step-label-fase-3.step-label-current {
   color: #00ff9d !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.9) !important;
+  text-shadow: 0 0 4px rgba(0, 255, 157, 0.6) !important;
   font-weight: 700 !important;
 }
 
@@ -2636,7 +2636,7 @@ body.dark .input-field.has-error:focus {
   background-color: #ff2a55 !important;
   color: #ffffff !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 0 16px rgba(255, 42, 85, 0.95), 0 0 32px rgba(255, 42, 85, 0.55), inset 0 0 4px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 8px rgba(255, 42, 85, 0.7), 0 0 16px rgba(255, 42, 85, 0.35) !important;
 }
 :root.dark .step-node-rejected i,
 :root.dark .step-node-rejected span {
@@ -2646,7 +2646,7 @@ body.dark .input-field.has-error:focus {
 }
 :root.dark .step-label-rejected {
   color: #ff2a55 !important;
-  text-shadow: 0 0 8px rgba(255, 42, 85, 0.9) !important;
+  text-shadow: 0 0 4px rgba(255, 42, 85, 0.6) !important;
   font-weight: 700 !important;
 }
 :root.dark .step-connector-rejected {
@@ -5586,6 +5586,40 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
   box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
 }
 
+/* Botón de Confirmación SweetAlert2 cuando el usuario activo es SuperAdmin */
+:root[data-role="SUPERADMIN"].dark .swal2-popup:not(.swal2-toast) .swal2-confirm,
+html.dark.role-superadmin .swal2-popup:not(.swal2-toast) .swal2-confirm,
+body.role-superadmin .swal2-popup:not(.swal2-toast) .swal2-confirm {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  padding: 11px 26px !important;
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.75), 0 0 35px rgba(6, 182, 212, 0.45) !important;
+}
+
+:root[data-role="SUPERADMIN"].dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
+html.dark.role-superadmin .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
+body.role-superadmin .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.2) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 0 28px 2px rgba(217, 70, 239, 0.95), 0 0 48px 4px rgba(6, 182, 212, 0.7) !important;
+}
+
+
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-cancel,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-cancel {
   background: rgba(255, 255, 255, 0.08) !important;
@@ -5604,32 +5638,75 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
   color: #ffffff !important;
 }
 
+/* =========================================================
+   ÍCONOS SWEETALERT2 EN MODO OSCURO (FIX DE DISEÑO)
+   Elimina artefactos de corte diagonal, fondos desalineados
+   y doble anillo en modales de SweetAlert2
+   ========================================================= */
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success,
-html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success,
+.swal2-popup .swal2-icon.swal2-success {
+  border: 3.5px solid #10b981 !important;
   border-color: #10b981 !important;
   color: #10b981 !important;
-  filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.6)) !important;
+  background: transparent !important;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35), inset 0 0 15px rgba(16, 185, 129, 0.1) !important;
+  filter: none !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Ocultar las máscaras rotativas arcaicas que causan el corte diagonal y fondos desalineados */
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-left,
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-right,
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-fix,
+.swal2-popup .swal2-icon.swal2-success .swal2-success-circular-line-left,
+.swal2-popup .swal2-icon.swal2-success .swal2-success-circular-line-right,
+.swal2-popup .swal2-icon.swal2-success .swal2-success-fix {
+  display: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Eliminar el anillo secundario duplicado para prevenir doble círculo desfasado */
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring,
+.swal2-popup .swal2-icon.swal2-success .swal2-success-ring {
+  display: none !important;
+  border: none !important;
+}
+
+/* Checkmark limpio, nítido y perfectamente visible */
+:root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'],
+.swal2-popup .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #10b981 !important;
+  height: 4.5px !important;
+  border-radius: 3px !important;
+  z-index: 2 !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
   border-color: #ef4444 !important;
   color: #ef4444 !important;
-  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.6)) !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.35) !important;
+  filter: none !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
   border-color: #f59e0b !important;
   color: #f59e0b !important;
-  filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.6)) !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.35) !important;
+  filter: none !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   border-color: #06b6d4 !important;
   color: #06b6d4 !important;
-  filter: drop-shadow(0 0 14px rgba(6, 182, 212, 0.6)) !important;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.35) !important;
+  filter: none !important;
 }
 
 /* =========================================================
@@ -6258,6 +6335,29 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   box-shadow: 0 0 22px rgba(217, 70, 239, 0.55), inset 2px 0 10px rgba(6, 182, 212, 0.35) !important;
 }
 
+/* =========================================================
+   ENLACES SUPERADMIN EN SIDEBAR (SIN CAJA / NO ENCAJADOS)
+   Garantiza fondo 100% transparente para todas las secciones
+   ========================================================= */
+.sidebar-superadmin-group,
+.sidebar-superadmin-group a,
+.sidebar-superadmin-item,
+.sidebar-superadmin-subitem,
+.sidebar-superadmin-group .sidebar-link,
+.sidebar-superadmin-group .sidebar-sublink,
+:root[data-role="SUPERADMIN"] .sidebar-superadmin-group .sidebar-link,
+:root[data-role="SUPERADMIN"] .sidebar-superadmin-group .sidebar-link.is-active,
+:root.dark[data-role="SUPERADMIN"] .sidebar-superadmin-group .sidebar-link.is-active,
+:root.dark.role-superadmin .sidebar-superadmin-group .sidebar-link.is-active {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+
 /* 4. Avatar de Iniciales y Perfil de Usuario en Topbar para SuperAdmin (Imagen 1) */
 :root[data-role="SUPERADMIN"] .inicialesUser,
 :root.role-superadmin .inicialesUser,
@@ -6598,3 +6698,323 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   background: rgba(3, 191, 191, 0.15) !important;
   color: #38bdf8 !important;
 }
+
+/* =========================================================
+   6.10. MODAL TICKET: PASE DE DILIGENCIAMIENTO EN SUPERADMIN
+   Estilo Multicolor Fluyente Neón (Magenta -> Violeta -> Cian)
+   ========================================================= */
+
+:root[data-role="SUPERADMIN"] .modal-ticket,
+:root.role-superadmin .modal-ticket,
+body.role-superadmin .modal-ticket,
+.modal-ticket.is-superadmin-ticket,
+.is-superadmin-ticket {
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(217, 70, 239, 0.3), 0 0 20px rgba(6, 182, 212, 0.2) !important;
+}
+
+/* Estampa circular superior del ticket */
+:root[data-role="SUPERADMIN"] .modal-ticket .modal-stamp.signal,
+:root.role-superadmin .modal-ticket .modal-stamp.signal,
+body.role-superadmin .modal-ticket .modal-stamp.signal,
+.modal-ticket.is-superadmin-ticket .modal-stamp.signal,
+.is-superadmin-ticket .modal-stamp.signal {
+  background-image: linear-gradient(
+    135deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 200% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 2px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.75), 0 0 40px rgba(6, 182, 212, 0.45) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .modal-stamp.signal::before,
+:root.role-superadmin .modal-ticket .modal-stamp.signal::before,
+body.role-superadmin .modal-ticket .modal-stamp.signal::before,
+.modal-ticket.is-superadmin-ticket .modal-stamp.signal::before,
+.is-superadmin-ticket .modal-stamp.signal::before {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .modal-stamp.signal *,
+:root[data-role="SUPERADMIN"] .modal-ticket .modal-stamp.signal i,
+:root.role-superadmin .modal-ticket .modal-stamp.signal *,
+:root.role-superadmin .modal-ticket .modal-stamp.signal i,
+body.role-superadmin .modal-ticket .modal-stamp.signal *,
+body.role-superadmin .modal-ticket .modal-stamp.signal i,
+.modal-ticket.is-superadmin-ticket .modal-stamp.signal *,
+.modal-ticket.is-superadmin-ticket .modal-stamp.signal i,
+.is-superadmin-ticket .modal-stamp.signal *,
+.is-superadmin-ticket .modal-stamp.signal i {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* Pestañas del Ticket (Emitir pase / Historial) */
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-tab-btn.is-active,
+:root.role-superadmin .modal-ticket .tkt-tab-btn.is-active,
+body.role-superadmin .modal-ticket .tkt-tab-btn.is-active,
+.modal-ticket.is-superadmin-ticket .tkt-tab-btn.is-active,
+.is-superadmin-ticket .tkt-tab-btn.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.7), 0 0 32px rgba(6, 182, 212, 0.45) !important;
+  text-shadow: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-tab-btn.is-active *,
+:root.role-superadmin .modal-ticket .tkt-tab-btn.is-active *,
+body.role-superadmin .modal-ticket .tkt-tab-btn.is-active *,
+.modal-ticket.is-superadmin-ticket .tkt-tab-btn.is-active *,
+.is-superadmin-ticket .tkt-tab-btn.is-active * {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-tab-btn.is-active:hover,
+:root.role-superadmin .modal-ticket .tkt-tab-btn.is-active:hover,
+body.role-superadmin .modal-ticket .tkt-tab-btn.is-active:hover,
+.modal-ticket.is-superadmin-ticket .tkt-tab-btn.is-active:hover,
+.is-superadmin-ticket .tkt-tab-btn.is-active:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+  box-shadow: 0 0 24px rgba(217, 70, 239, 0.85), 0 0 40px rgba(6, 182, 212, 0.6) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-tab-btn.is-idle:hover,
+:root.role-superadmin .modal-ticket .tkt-tab-btn.is-idle:hover,
+body.role-superadmin .modal-ticket .tkt-tab-btn.is-idle:hover,
+.modal-ticket.is-superadmin-ticket .tkt-tab-btn.is-idle:hover,
+.is-superadmin-ticket .tkt-tab-btn.is-idle:hover {
+  background: rgba(217, 70, 239, 0.12) !important;
+  color: #ffffff !important;
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.25) !important;
+}
+
+/* Conmutador Rápida vs Fecha Exacta */
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-toggle-btn.is-active,
+:root.role-superadmin .modal-ticket .tkt-toggle-btn.is-active,
+body.role-superadmin .modal-ticket .tkt-toggle-btn.is-active,
+.modal-ticket.is-superadmin-ticket .tkt-toggle-btn.is-active,
+.is-superadmin-ticket .tkt-toggle-btn.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.65), 0 0 26px rgba(6, 182, 212, 0.4) !important;
+  text-shadow: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-toggle-btn.is-active *,
+:root.role-superadmin .modal-ticket .tkt-toggle-btn.is-active *,
+body.role-superadmin .modal-ticket .tkt-toggle-btn.is-active *,
+.modal-ticket.is-superadmin-ticket .tkt-toggle-btn.is-active *,
+.is-superadmin-ticket .tkt-toggle-btn.is-active * {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-toggle-btn.is-active:hover,
+:root.role-superadmin .modal-ticket .tkt-toggle-btn.is-active:hover,
+body.role-superadmin .modal-ticket .tkt-toggle-btn.is-active:hover,
+.modal-ticket.is-superadmin-ticket .tkt-toggle-btn.is-active:hover,
+.is-superadmin-ticket .tkt-toggle-btn.is-active:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+}
+
+/* Pastillas de Duración de Horas */
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-duration-pill.is-active,
+:root.role-superadmin .modal-ticket .tkt-duration-pill.is-active,
+body.role-superadmin .modal-ticket .tkt-duration-pill.is-active,
+.modal-ticket.is-superadmin-ticket .tkt-duration-pill.is-active,
+.is-superadmin-ticket .tkt-duration-pill.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.7), 0 0 32px rgba(6, 182, 212, 0.45) !important;
+  text-shadow: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-duration-pill.is-active:hover,
+:root.role-superadmin .modal-ticket .tkt-duration-pill.is-active:hover,
+body.role-superadmin .modal-ticket .tkt-duration-pill.is-active:hover,
+.modal-ticket.is-superadmin-ticket .tkt-duration-pill.is-active:hover,
+.is-superadmin-ticket .tkt-duration-pill.is-active:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 24px 2px rgba(217, 70, 239, 0.85), 0 0 44px 4px rgba(6, 182, 212, 0.6) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-duration-pill.is-idle:hover,
+:root.role-superadmin .modal-ticket .tkt-duration-pill.is-idle:hover,
+body.role-superadmin .modal-ticket .tkt-duration-pill.is-idle:hover,
+.modal-ticket.is-superadmin-ticket .tkt-duration-pill.is-idle:hover,
+.is-superadmin-ticket .tkt-duration-pill.is-idle:hover {
+  border-color: #c084fc !important;
+  color: #ffffff !important;
+  background: rgba(168, 85, 247, 0.18) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.35) !important;
+}
+
+/* Botón Emitir pase (Pie de página del modal) */
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-btn-submit,
+:root.role-superadmin .modal-ticket .tkt-btn-submit,
+body.role-superadmin .modal-ticket .tkt-btn-submit,
+.modal-ticket.is-superadmin-ticket .tkt-btn-submit,
+.is-superadmin-ticket .tkt-btn-submit {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  background-repeat: repeat !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 18px rgba(217, 70, 239, 0.75), 0 0 34px rgba(6, 182, 212, 0.5) !important;
+  text-shadow: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-btn-submit *,
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-btn-submit i,
+:root.role-superadmin .modal-ticket .tkt-btn-submit *,
+:root.role-superadmin .modal-ticket .tkt-btn-submit i,
+body.role-superadmin .modal-ticket .tkt-btn-submit *,
+body.role-superadmin .modal-ticket .tkt-btn-submit i,
+.modal-ticket.is-superadmin-ticket .tkt-btn-submit *,
+.modal-ticket.is-superadmin-ticket .tkt-btn-submit i,
+.is-superadmin-ticket .tkt-btn-submit *,
+.is-superadmin-ticket .tkt-btn-submit i {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket .tkt-btn-submit:hover:not(:disabled),
+:root.role-superadmin .modal-ticket .tkt-btn-submit:hover:not(:disabled),
+body.role-superadmin .modal-ticket .tkt-btn-submit:hover:not(:disabled),
+.modal-ticket.is-superadmin-ticket .tkt-btn-submit:hover:not(:disabled),
+.is-superadmin-ticket .tkt-btn-submit:hover:not(:disabled) {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 26px 2px rgba(217, 70, 239, 0.9), 0 0 46px 4px rgba(6, 182, 212, 0.65) !important;
+}
+
+/* Botones con clase bg-[var(--signal-500)] (Copiar, etc.) */
+:root[data-role="SUPERADMIN"] .modal-ticket button[class*="bg-[var(--signal-500)]"],
+:root.role-superadmin .modal-ticket button[class*="bg-[var(--signal-500)]"],
+body.role-superadmin .modal-ticket button[class*="bg-[var(--signal-500)]"],
+.modal-ticket.is-superadmin-ticket button[class*="bg-[var(--signal-500)]"],
+.is-superadmin-ticket button[class*="bg-[var(--signal-500)]"] {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.6) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket button[class*="bg-[var(--signal-500)]"]:hover,
+:root.role-superadmin .modal-ticket button[class*="bg-[var(--signal-500)]"]:hover,
+body.role-superadmin .modal-ticket button[class*="bg-[var(--signal-500)]"]:hover,
+.modal-ticket.is-superadmin-ticket button[class*="bg-[var(--signal-500)]"]:hover,
+.is-superadmin-ticket button[class*="bg-[var(--signal-500)]"]:hover {
+  animation: superadminFlowLeft 0.8s linear infinite !important;
+  filter: brightness(1.15) !important;
+}
+
+/* Acentos, texto y tarjetas con signal-500 en el modal */
+:root[data-role="SUPERADMIN"] .modal-ticket [class*="text-[var(--signal-500)]"],
+:root.role-superadmin .modal-ticket [class*="text-[var(--signal-500)]"],
+body.role-superadmin .modal-ticket [class*="text-[var(--signal-500)]"],
+.modal-ticket.is-superadmin-ticket [class*="text-[var(--signal-500)]"],
+.is-superadmin-ticket [class*="text-[var(--signal-500)]"] {
+  color: #d946ef !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket [class*="bg-[var(--signal-500)]/10"],
+:root.role-superadmin .modal-ticket [class*="bg-[var(--signal-500)]/10"],
+body.role-superadmin .modal-ticket [class*="bg-[var(--signal-500)]/10"],
+.modal-ticket.is-superadmin-ticket [class*="bg-[var(--signal-500)]/10"],
+.is-superadmin-ticket [class*="bg-[var(--signal-500)]/10"] {
+  background-color: rgba(217, 70, 239, 0.12) !important;
+  border-color: rgba(217, 70, 239, 0.35) !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket [class*="bg-[var(--signal-500)]/20"],
+:root.role-superadmin .modal-ticket [class*="bg-[var(--signal-500)]/20"],
+body.role-superadmin .modal-ticket [class*="bg-[var(--signal-500)]/20"],
+.modal-ticket.is-superadmin-ticket [class*="bg-[var(--signal-500)]/20"],
+.is-superadmin-ticket [class*="bg-[var(--signal-500)]/20"] {
+  background-color: rgba(217, 70, 239, 0.22) !important;
+  border-color: rgba(217, 70, 239, 0.4) !important;
+  color: #f0abfc !important;
+}
+
+:root[data-role="SUPERADMIN"] .modal-ticket input:focus,
+:root.role-superadmin .modal-ticket input:focus,
+body.role-superadmin .modal-ticket input:focus,
+.modal-ticket.is-superadmin-ticket input:focus,
+.is-superadmin-ticket input:focus {
+  border-color: #d946ef !important;
+  box-shadow: 0 0 0 2px rgba(217, 70, 239, 0.25) !important;
+}
+

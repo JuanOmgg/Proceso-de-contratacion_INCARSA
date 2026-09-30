@@ -4,21 +4,41 @@
  */
 
 function correspondenciaForm() {
+  const checkEsSuperAdmin = () => {
+    try {
+      const ses = (typeof getAuthSession === 'function') 
+        ? getAuthSession() 
+        : JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+      const r = String(ses?.rol || ses?.nombre_rol || ses?.rol_nombre || '').toUpperCase().trim();
+      const u = String(ses?.tipo_usuario || ses?.usuario || '').toUpperCase().trim();
+      return r === 'SUPERADMIN' 
+        || u === 'SUPERADMIN' 
+        || ses?.id_rol === 1 
+        || ses?.id_rol === 6
+        || document.documentElement.getAttribute('data-role') === 'SUPERADMIN'
+        || document.documentElement.classList.contains('role-superadmin');
+    } catch (e) {
+      return false;
+    }
+  };
+
   return {
     form: {
       tipo_correspondencia: "",
       asunto: "",
       procedencia: "",
       destino: "",
+      radicado: "",
       fecha_envio: new Date().toISOString().split("T")[0]
     },
+    esSuperAdmin: checkEsSuperAdmin(),
     submitting: false,
     submitted: false,
     error: "",
     resultado: null,
 
     init() {
-      // Formulario listo
+      this.esSuperAdmin = checkEsSuperAdmin();
     },
 
     validar() {
@@ -54,7 +74,8 @@ function correspondenciaForm() {
           asunto: this.form.asunto.trim(),
           procedencia: this.form.procedencia.trim(),
           destino: this.form.destino.trim(),
-          fecha_envio: this.form.fecha_envio || undefined
+          fecha_envio: this.form.fecha_envio || undefined,
+          radicado: this.form.radicado ? this.form.radicado.trim() : undefined
         };
 
         let res = await fetch("/api/v1/correspondencia", {

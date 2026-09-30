@@ -140,9 +140,9 @@
                   </div>
                   <div class="flex items-center gap-1.5 flex-wrap justify-end flex-shrink-0">
                     <span x-show="solicitud.pre_aprobado"
-                      class="status-pill bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 font-bold text-[9.5px] sm:text-[10px] select-none py-0.5 px-2"
+                      class="status-pill bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-700/60 flex items-center gap-1 font-bold text-[9.5px] sm:text-[10px] select-none py-0.5 px-2"
                       data-tooltip="Pre-aprobada por SCR">
-                      <i class="fa-solid fa-bolt text-amber-600 text-[8px] sm:text-[9px]"></i> Pre-aprobada
+                      <i class="fa-solid fa-bolt text-amber-600 dark:text-amber-400 text-[8px] sm:text-[9px]"></i> Pre-aprobada
                     </span>
                     <span x-show="solicitud.is_active === 0 || solicitud.is_active === false || solicitud.is_active === '0'"
                       class="status-pill tracking-card-inactive-badge text-[9.5px] sm:text-[10px] py-0.5 px-2">Inactivo</span>
@@ -156,7 +156,7 @@
                     <i class="fa-solid fa-industry flex-shrink-0 text-slate-400 text-[11px]"></i>
                     <span class="truncate" x-text="Array.isArray(solicitud.planta) ? solicitud.planta.join(', ') : (solicitud.planta || '—')"></span>
                   </div>
-                  <div class="truncate flex items-center gap-1.5 min-w-0 whitespace-nowrap" :data-tooltip="formatearFechaTooltip(solicitud.fecha_ingreso, solicitud.fecha_salida)">
+                  <div class="truncate flex items-center gap-1.5 min-w-0 sm:justify-end whitespace-nowrap" :data-tooltip="formatearFechaTooltip(solicitud.fecha_ingreso, solicitud.fecha_salida)">
                     <i class="fa-regular fa-calendar flex-shrink-0 text-slate-400 text-[11px]"></i>
                     <span class="truncate" x-html="formatearRangoFechasHtml(solicitud.fecha_ingreso, solicitud.fecha_salida)"></span>
                   </div>
@@ -208,7 +208,7 @@
               </div>
 
               <!-- Botón de acción: Revisar Expediente con truncado seguro -->
-              <div class="mt-4 sm:mt-5 pt-2.5 sm:pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+              <div class="mt-4 sm:mt-5 pt-4 sm:pt-4 pb-1 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
                   <span class="text-[10.5px] sm:text-[11px] text-[var(--text-muted)] font-mono font-bold truncate" x-text="solicitud.codigo || ('RAD-' + String(solicitud.id).padStart(4, '0'))"></span>
                   <span x-show="getEstadoRevisionUsuario(solicitud) === 'aprobado'"

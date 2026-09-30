@@ -487,21 +487,26 @@ document.addEventListener('alpine:init', () => {
         }
 
         const labels = this.serie_tiempo.map(d => d.fecha_corta);
-        const dataPersonas = this.serie_tiempo.map(d => d.total_personas);
+        const dataAprobados = this.serie_tiempo.map(d => d.personas_aprobadas ?? d.total_personas ?? 0);
+        const dataPendientes = this.serie_tiempo.map(d => d.personas_pendientes ?? 0);
 
-        // Crear gradiente suave con brillo fosforescente
+        // Crear gradientes suaves
         const ctx2d = ctxTendencia.getContext('2d');
-        const gradient = ctx2d.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, theme.isDark ? 'rgba(0, 255, 136, 0.45)' : 'rgba(16, 185, 129, 0.35)');
-        gradient.addColorStop(1, 'rgba(0, 255, 136, 0.00)');
+        const gradientVerde = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradientVerde.addColorStop(0, theme.isDark ? 'rgba(0, 255, 136, 0.35)' : 'rgba(16, 185, 129, 0.25)');
+        gradientVerde.addColorStop(1, 'rgba(0, 255, 136, 0.00)');
+
+        const gradientNaranja = ctx2d.createLinearGradient(0, 0, 0, 300);
+        gradientNaranja.addColorStop(0, theme.isDark ? 'rgba(245, 158, 11, 0.35)' : 'rgba(245, 158, 11, 0.25)');
+        gradientNaranja.addColorStop(1, 'rgba(245, 158, 11, 0.00)');
 
         const lineGlowPlugin = {
           id: 'linePhosphorGlow',
           beforeDatasetDraw: (chart) => {
             if (!theme.isDark) return;
             chart.ctx.save();
-            chart.ctx.shadowColor = 'rgba(0, 255, 136, 0.75)';
-            chart.ctx.shadowBlur = 14;
+            chart.ctx.shadowColor = 'rgba(0, 255, 136, 0.65)';
+            chart.ctx.shadowBlur = 12;
             chart.ctx.shadowOffsetX = 0;
             chart.ctx.shadowOffsetY = 0;
           },
@@ -518,16 +523,31 @@ document.addEventListener('alpine:init', () => {
             labels: labels,
             datasets: [
               {
-                label: 'Personas',
-                data: dataPersonas,
+                label: 'Aprobados / Activos',
+                data: dataAprobados,
                 borderColor: theme.isDark ? '#00ff88' : '#10b981',
-                backgroundColor: gradient,
+                backgroundColor: gradientVerde,
                 borderWidth: theme.isDark ? 3 : 2.5,
                 fill: true,
                 tension: 0.35,
                 pointRadius: labels.length > 20 ? 2 : 4,
                 pointHoverRadius: 6,
                 pointBackgroundColor: theme.isDark ? '#00ff88' : '#10b981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1.5
+              },
+              {
+                label: 'Faltantes por aprobar',
+                data: dataPendientes,
+                borderColor: theme.isDark ? '#f59e0b' : '#d97706',
+                backgroundColor: gradientNaranja,
+                borderWidth: theme.isDark ? 2.5 : 2,
+                borderDash: [5, 4],
+                fill: true,
+                tension: 0.35,
+                pointRadius: labels.length > 20 ? 2 : 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: theme.isDark ? '#f59e0b' : '#d97706',
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 1.5
               }
@@ -542,7 +562,17 @@ document.addEventListener('alpine:init', () => {
             },
             plugins: {
               legend: {
-                display: false
+                display: true,
+                position: 'top',
+                align: 'end',
+                labels: {
+                  color: theme.text,
+                  font: { size: 11, weight: '600', family: 'system-ui' },
+                  usePointStyle: true,
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  padding: 12
+                }
               },
               tooltip: {
                 backgroundColor: theme.tooltipBg,
@@ -555,7 +585,7 @@ document.addEventListener('alpine:init', () => {
                 usePointStyle: true,
                 callbacks: {
                   label: function(context) {
-                    return ` ${context.parsed.y} personas`;
+                    return ` ${context.dataset.label}: ${context.parsed.y} personas`;
                   }
                 }
               }

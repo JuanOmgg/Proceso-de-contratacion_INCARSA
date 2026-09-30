@@ -28,276 +28,814 @@
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0b1120;
-      color: #e2e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0c0c0e;
+      color: #9ca3af;
       min-height: 100vh;
     }
     .font-brand {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     .bg-pattern {
-      background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
-      background-size: 24px 24px;
+      background-color: #0c0c0e;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 20px 20px;
     }
     .glass-card {
-      background: rgba(15, 23, 42, 0.82);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(51, 65, 85, 0.65);
-      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55);
+      background: rgba(18, 18, 20, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid #26262b;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
     }
     .legal-scroll {
       scrollbar-width: thin;
-      scrollbar-color: #334155 #0f172a;
+      scrollbar-color: #38383e #0d0d0f;
     }
     .legal-scroll::-webkit-scrollbar {
       width: 6px;
     }
     .legal-scroll::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #0d0d0f;
     }
     .legal-scroll::-webkit-scrollbar-thumb {
-      background-color: #334155;
+      background-color: #38383e;
       border-radius: 9999px;
+    }
+    .legal-scroll::-webkit-scrollbar-thumb:hover {
+      background-color: #4a4a52;
+    }
+
+    /* Modal SweetAlert2: Minimalista, Estético y Sobrio */
+    .swal2-popup.swal-dark-mono {
+      background: #141417 !important;
+      border: 1px solid #28282d !important;
+      border-radius: 18px !important;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+      padding: 26px 22px 22px 22px !important;
+      max-width: 390px !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon {
+      transform: scale(0.58) !important;
+      margin: 0 auto 2px auto !important;
+      opacity: 0.95 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success {
+      border-color: rgba(34, 197, 94, 0.35) !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-ring {
+      border: 4px solid rgba(34, 197, 94, 0.2) !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success [class^='swal2-success-line'] {
+      background-color: #4ade80 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-circular-line-left,
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-circular-line-right,
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-fix {
+      background: transparent !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-warning {
+      border-color: rgba(245, 158, 11, 0.35) !important;
+      color: #fbbf24 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-error {
+      border-color: rgba(239, 68, 68, 0.35) !important;
+      color: #f87171 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+      background-color: #f87171 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-icon.swal2-info {
+      border-color: rgba(148, 163, 184, 0.35) !important;
+      color: #94a3b8 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-title {
+      color: #f3f4f6 !important;
+      font-size: 17px !important;
+      font-weight: 700 !important;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      letter-spacing: -0.01em !important;
+      padding: 0 !important;
+      margin: 0 0 8px 0 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-html-container {
+      color: #9ca3af !important;
+      font-size: 13px !important;
+      line-height: 1.55 !important;
+      padding: 0 8px !important;
+      margin: 0 0 16px 0 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-actions {
+      margin-top: 14px !important;
+      gap: 10px !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-confirm {
+      background: #f4f4f5 !important;
+      color: #18181b !important;
+      border: 1px solid #ffffff !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      padding: 8px 24px !important;
+      border-radius: 10px !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+      transition: all 0.15s ease !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-confirm:hover {
+      background: #ffffff !important;
+      color: #09090b !important;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12) !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-confirm:focus {
+      box-shadow: 0 0 0 2px #52525b !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-cancel {
+      background: transparent !important;
+      color: #9ca3af !important;
+      border: 1px solid #28282d !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      padding: 8px 20px !important;
+      border-radius: 10px !important;
+      transition: all 0.15s ease !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-cancel:hover {
+      background: #18181b !important;
+      color: #d1d5db !important;
+      border-color: #3f3f46 !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-textarea {
+      background: #0a0a0c !important;
+      border: 1px solid #28282d !important;
+      color: #d1d5db !important;
+      border-radius: 10px !important;
+      font-size: 12px !important;
+      padding: 10px !important;
+      transition: border-color 0.15s ease !important;
+    }
+    .swal2-popup.swal-dark-mono .swal2-textarea:focus {
+      border-color: #52525b !important;
+      box-shadow: 0 0 0 1px #52525b !important;
+      outline: none !important;
+    }
+
+    /* ========================================================
+       COMPONENTES REFINADOS: SUPERADMIN BAR, BADGES & ALERT
+       ======================================================== */
+    .sa-preview-bar {
+      background: rgba(16, 18, 24, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+    }
+    .sa-segmented-group {
+      background: rgba(8, 9, 13, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .sa-tab-btn {
+      padding: 5px 11px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border-radius: 7px;
+      color: #94a3b8;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .sa-tab-btn:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .sa-tab-btn.active-tab {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+    .sa-tab-btn.active-tab-autorizado {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      font-weight: 700;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+    }
+    .sa-tab-btn.active-tab-rechazado {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fb7185;
+      font-weight: 700;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
+    }
+    .sa-tab-btn.active-tab-expirado {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fbbf24;
+      font-weight: 700;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+    }
+
+    /* Badges de Identificación */
+    .badge-cc {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .badge-cargo {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* Caja de Radicado */
+    .box-radicado {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(12, 14, 20, 0.95) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 10px 14px;
+      box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Alerta Informativa Obligatoria */
+    .alerta-requisito {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.09) 0%, rgba(20, 16, 10, 0.8) 100%);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.22);
+      border-left: 3px solid #f59e0b;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Botón Aceptar y Autorizar (Estilo Verde Esmeralda Premium) */
+    .btn-autorizar-verde {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(52, 211, 153, 0.45) !important;
+      box-shadow: 0 4px 18px -2px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+      font-weight: 800 !important;
+      border-radius: 12px !important;
+      padding: 12px 24px !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      cursor: pointer !important;
+    }
+    .btn-autorizar-verde:hover:not(:disabled) {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+      box-shadow: 0 6px 24px -2px rgba(16, 185, 129, 0.65), 0 0 0 1px rgba(52, 211, 153, 0.4) !important;
+      transform: translateY(-1px) !important;
+      color: #ffffff !important;
+    }
+    .btn-autorizar-verde:active:not(:disabled) {
+      transform: translateY(0) !important;
+      box-shadow: 0 2px 10px -2px rgba(16, 185, 129, 0.4) !important;
+    }
+    .btn-autorizar-verde:disabled {
+      background: rgba(16, 185, 129, 0.12) !important;
+      border: 1px solid rgba(16, 185, 129, 0.18) !important;
+      color: rgba(167, 243, 208, 0.35) !important;
+      box-shadow: none !important;
+      cursor: not-allowed !important;
+      transform: none !important;
     }
   </style>
 </head>
-<body class="bg-pattern flex flex-col justify-between py-6 px-3 sm:px-6">
+<body class="bg-pattern flex flex-col justify-between py-6 px-3 sm:px-6 min-h-screen" x-data="autorizacionDatosApp()" x-init="iniciar()">
 
-  <!-- Token inyectado por FastAPI -->
+  <!-- Token y Modo Previsualización inyectados por FastAPI -->
   <script>
-    window.__TOKEN_AUTORIZACION__ = "{{ token }}";
+    window.__TOKEN_AUTORIZACION__ = "{{ token if token is defined else '' }}";
+    window.__ES_PREVIEW__ = {{ 'true' if es_preview is defined and es_preview else 'false' }};
   </script>
 
-  <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center" x-data="autorizacionDatosApp()" x-init="iniciar()">
+  <!-- Barra Flotante de Previsualización SuperAdmin -->
+  <div 
+    x-cloak 
+    x-show="esPreview" 
+    class="sa-preview-bar sticky top-2 z-50 max-w-3xl mx-auto w-full mb-5 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
     
-    <!-- Header Institucional -->
+    <div class="flex items-center gap-2.5">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold text-[11px]">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Previsualización SuperAdmin</span>
+      </span>
+      <span class="text-slate-400 text-xs hidden sm:inline">Portal Ley 1581</span>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Selector de Empresa Origen (Solo en Previsualización) con Dropdown Personalizado (Siempre Visible) -->
+      <div class="relative inline-block text-xs" x-data="{ openEmpresas: false }">
+        <button 
+          type="button" 
+          @click="openEmpresas = !openEmpresas" 
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-sky-300 hover:text-sky-200 hover:border-sky-500/50 transition-all font-medium cursor-pointer shadow-xs select-none">
+          <i class="fa-solid fa-building text-sky-400 text-[10px]"></i>
+          <span x-text="datos.empresa_origen || 'Seleccionar Empresa'"></span>
+          <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 transition-transform duration-200" :class="openEmpresas ? 'rotate-180 text-sky-400' : ''"></i>
+        </button>
+
+        <!-- Menú Desplegable con fondo oscuro y opciones nítidas -->
+        <div 
+          x-show="openEmpresas" 
+          @click.outside="openEmpresas = false" 
+          x-cloak 
+          x-transition:enter="transition ease-out duration-150"
+          x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+          x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+          x-transition:leave="transition ease-in duration-100"
+          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+          x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+          class="absolute left-0 mt-1.5 w-48 rounded-xl bg-[#0f1422] border border-slate-700/90 shadow-2xl p-1.5 z-[100] backdrop-blur-md">
+          <div class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800/80 mb-1">
+            Empresa Origen
+          </div>
+          <template x-for="emp in ['INCARSA S.A.S.', 'MILPA S.A.', 'CARBOINSA S.A.S.', 'UNIMINAS S.A.S']" :key="emp">
+            <button 
+              type="button" 
+              @click="datos.empresa_origen = emp; openEmpresas = false" 
+              :class="datos.empresa_origen === emp ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'"
+              class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer">
+              <span x-text="emp"></span>
+              <i class="fa-solid fa-check text-sky-400 text-xs" x-show="datos.empresa_origen === emp"></i>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Segmented Tab Switcher sin bordes toscos -->
+      <div class="sa-segmented-group">
+        <button 
+          type="button" 
+          @click="setEstadoPreview('PENDIENTE')" 
+          :class="datos.estado_datos === 'PENDIENTE' && !error ? 'active-tab' : ''" 
+          class="sa-tab-btn">
+          Pendiente
+        </button>
+
+        <button 
+          type="button" 
+          @click="setEstadoPreview('AUTORIZADO')" 
+          :class="datos.estado_datos === 'AUTORIZADO' && !error ? 'active-tab-autorizado' : ''" 
+          class="sa-tab-btn">
+          Autorizado
+        </button>
+
+        <button 
+          type="button" 
+          @click="setEstadoPreview('RECHAZADO')" 
+          :class="datos.estado_datos === 'RECHAZADO' && !error ? 'active-tab-rechazado' : ''" 
+          class="sa-tab-btn">
+          Rechazado
+        </button>
+
+        <button 
+          type="button" 
+          @click="simularErrorToken()" 
+          :class="error ? 'active-tab-expirado' : ''" 
+          class="sa-tab-btn"
+          title="Simular enlace no válido o expirado">
+          Expirado
+        </button>
+      </div>
+
+      <div class="h-4 w-px bg-white/10 mx-0.5"></div>
+
+      <!-- Botón Volver a SuperAdmin -->
+      <a 
+        href="/superadmin" 
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all font-medium text-xs">
+        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+        <span>SuperAdmin</span>
+      </a>
+    </div>
+  </div>
+
+  <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center">
+    
+    <!-- Header Institucional: Jerarquía Clara y Colores Vivos -->
     <header class="text-center mb-6">
-      <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-lg mb-3">
+      <div class="inline-flex items-center justify-center p-3 rounded-2xl mb-3 shadow-xl" style="background: #14161f; border: 1px solid rgba(56, 189, 248, 0.25); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);">
         <img src="{{ url_for('static', path='img/icono.png') }}" alt="Logo INCARSA" class="h-10 w-auto rounded-lg object-contain">
       </div>
+      <!-- Título Principal -->
       <h1 class="text-xl sm:text-2xl font-bold font-brand tracking-tight text-white flex items-center justify-center gap-2">
-        <span>INCARSA</span>
-        <span class="text-sky-400 font-light">·</span>
-        <span class="text-slate-300 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
+        <span class="text-sky-400 font-extrabold tracking-wide" x-text="datos.empresa_origen || 'INCARSA'"></span>
+        <span class="text-sky-500/60 font-light">·</span>
+        <!-- Subtítulo del Header -->
+        <span class="text-slate-200 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
       </h1>
-      <p class="text-xs sm:text-sm text-slate-400 mt-1">
-        Autorización de Tratamiento de Datos Personales — Ley Estatutaria 1581 de 2012
+      <!-- Metadata / Ley -->
+      <p class="text-xs sm:text-sm text-slate-400 mt-1.5 flex items-center justify-center gap-1.5 flex-wrap">
+        <span>Autorización de Tratamiento de Datos Personales</span>
+        <span class="hidden sm:inline text-slate-600">—</span>
+        <span class="text-sky-300 font-semibold px-2 py-0.5 rounded text-xs" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);">Ley 1581 de 2012</span>
       </p>
     </header>
 
     <!-- Estado: Cargando -->
     <div x-show="cargando" class="glass-card rounded-2xl p-10 text-center flex flex-col items-center justify-center my-8">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-sky-500 border-t-transparent mb-4"></div>
-      <p class="text-slate-300 font-medium">Validando enlace de consentimiento...</p>
-      <span class="text-xs text-slate-500 mt-1">Por favor espere un momento</span>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-700 border-t-sky-400 mb-4"></div>
+      <p class="text-white font-semibold">Validando enlace de consentimiento...</p>
+      <span class="text-xs text-slate-400 mt-1">Por favor espere un momento</span>
     </div>
 
     <!-- Estado: Error de Enlace o no encontrado -->
-    <div x-show="!cargando && error" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 text-center border-red-500/30">
-      <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+    <div x-show="!cargando && error" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 text-center" style="border: 1px solid rgba(244, 63, 94, 0.35);">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <h2 class="text-lg sm:text-xl font-bold text-white mb-2 font-brand" x-text="errorTitulo">Enlace no disponible</h2>
-      <p class="text-sm text-slate-400 max-w-md mx-auto mb-6" x-text="errorMensaje">
+      <h2 class="text-lg sm:text-xl font-bold text-rose-300 mb-2 font-brand" x-text="errorTitulo">Enlace no disponible</h2>
+      <p class="text-sm text-slate-300 max-w-md mx-auto mb-6 leading-relaxed" x-text="errorMensaje">
         El enlace de autorización proporcionado ha expirado o no corresponde a un registro válido.
       </p>
-      <div class="inline-flex items-center gap-2 text-xs text-slate-500 bg-slate-900/60 py-2 px-4 rounded-xl border border-slate-800">
+      <div class="inline-flex items-center gap-2 text-xs text-slate-300 py-2 px-4 rounded-xl" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08);">
         <i class="fa-solid fa-circle-info text-sky-400"></i>
         <span>Si considera que se trata de un error, comuníquese con el responsable de su solicitud o contratista.</span>
       </div>
     </div>
 
-    <!-- Estado: YA AUTORIZADO PREVIAMENTE -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'AUTORIZADO'" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 border-emerald-500/30 shadow-emerald-950/20">
+    <!-- Estado: YA AUTORIZADO PREVIAMENTE (Credencial Digital de Consentimiento) -->
+    <div x-show="!cargando && !error && datos.estado_datos === 'AUTORIZADO'" x-cloak class="glass-card rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden" style="border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 35px -10px rgba(16, 185, 129, 0.15);">
       <div class="text-center">
-        <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+        <!-- Ícono con Halo y Brillo Esmeralda -->
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-lg mb-3" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.3) 100%); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; box-shadow: 0 8px 25px -4px rgba(16, 185, 129, 0.4);">
           <i class="fa-solid fa-circle-check"></i>
         </div>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+
+        <!-- Badge de Estado -->
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-emerald-300 mb-2" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3);">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          AUTORIZACIÓN CONFIRMADA
+          AUTORIZACIÓN CONFIRMADA Y VIGENTE
         </span>
-        <h2 class="text-xl sm:text-2xl font-bold text-white font-brand mt-1">Consentimiento Vigente</h2>
-        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto">
-          Estimado(a) <strong class="text-white" x-text="datos.nombre_completo"></strong>, ya has autorizado formalmente el tratamiento de tus datos personales conforme a la Ley 1581 de 2012 para el ingreso a nuestras instalaciones.
+
+        <!-- Título Principal -->
+        <h2 class="text-2xl sm:text-3xl font-black font-brand text-white tracking-tight mt-1">Consentimiento Vigente</h2>
+        
+        <!-- Texto explicativo -->
+        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
+          Estimado(a) <strong class="text-white font-bold" x-text="datos.nombre_completo"></strong>, su autorización de tratamiento de datos personales bajo la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> se encuentra formalmente registrada y activa.
         </p>
       </div>
 
-      <!-- Resumen de Registro Legal -->
-      <div class="mt-6 bg-slate-900/80 rounded-xl p-4 sm:p-5 border border-slate-800 space-y-3 text-xs sm:text-sm">
-        <div class="flex justify-between items-center py-1 border-b border-slate-800">
-          <span class="text-slate-400 font-medium">Documento de Identidad:</span>
-          <span class="text-white font-semibold" x-text="datos.cedula || 'No especificado'"></span>
+      <!-- Ficha / Credencial de Acceso en Cuadrícula Estructurada -->
+      <div class="mt-6 rounded-2xl p-4 sm:p-5" style="background: rgba(10, 13, 20, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+          
+          <!-- Bloque: Titular -->
+          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-user-shield text-sky-400"></i>
+              <span>Titular de los Datos</span>
+            </span>
+            <p class="text-sm sm:text-base font-bold text-white mt-1 truncate" x-text="datos.nombre_completo"></p>
+            <span x-show="datos.cargo" class="text-xs text-slate-400 truncate block mt-0.5" x-text="datos.cargo"></span>
+          </div>
+
+          <!-- Bloque: Identificación -->
+          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-id-card text-blue-400"></i>
+              <span>Documento de Identidad</span>
+            </span>
+            <div class="mt-1">
+              <span class="badge-cc">
+                <i class="fa-solid fa-id-card text-blue-400"></i>
+                <span class="text-blue-300 font-medium" x-text="datos.tipo_doc || 'C.C.'"></span>
+                <strong class="text-white font-mono font-bold" x-text="datos.cedula || datos.identificacion || 'No especificado'"></strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- Bloque: Radicado -->
+          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-hashtag text-sky-400"></i>
+              <span>Solicitud / Radicado</span>
+            </span>
+            <div class="mt-1">
+              <span class="font-mono font-bold text-sky-300 text-sm px-2.5 py-1 rounded-lg inline-block" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);" x-text="datos.codigo_radicado"></span>
+            </div>
+          </div>
+
+          <!-- Bloque: Empresa Contratista -->
+          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-building text-amber-400"></i>
+              <span>Empresa Contratista</span>
+            </span>
+            <p class="text-xs sm:text-sm font-semibold text-amber-300 mt-1 truncate" x-text="datos.empresa_contratista"></p>
+          </div>
+
         </div>
-        <div class="flex justify-between items-center py-1 border-b border-slate-800">
-          <span class="text-slate-400 font-medium">Radicado de Solicitud:</span>
-          <span class="text-sky-400 font-mono font-bold" x-text="datos.codigo_radicado"></span>
-        </div>
-        <div class="flex justify-between items-center py-1 border-b border-slate-800">
-          <span class="text-slate-400 font-medium">Empresa Contratista:</span>
-          <span class="text-white font-medium text-right" x-text="datos.empresa_contratista"></span>
-        </div>
-        <div class="flex justify-between items-center py-1" x-show="datos.fecha_respuesta_datos">
-          <span class="text-slate-400 font-medium">Fecha y Hora de Autorización:</span>
-          <span class="text-emerald-400 font-medium" x-text="datos.fecha_respuesta_datos"></span>
+
+        <!-- Fila Inferior de Auditoría y Fecha -->
+        <div class="mt-4 pt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs" style="border-top: 1px solid rgba(255, 255, 255, 0.06);">
+          <div class="flex items-center gap-2 text-slate-300">
+            <i class="fa-regular fa-clock text-emerald-400"></i>
+            <span class="text-slate-400">Registro Legal:</span>
+            <strong class="text-emerald-300 font-mono font-semibold" x-text="datos.fecha_respuesta_datos || 'Registrado formalmente'"></strong>
+          </div>
+          <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
+            <i class="fa-solid fa-shield-halved text-sky-400"></i>
+            <span>Habeas Data · Seguridad SG-SST</span>
+          </div>
         </div>
       </div>
 
-      <div class="mt-6 text-center">
-        <p class="text-xs text-slate-500">
-          Tu estado ha sido sincronizado automáticamente con la portería de INCARSA.
-        </p>
+      <!-- Tarjeta Informativa de Acceso a Portería -->
+      <div class="mt-5 rounded-2xl p-4 flex items-center gap-3.5 text-left" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 18px; border: 1px solid rgba(16, 185, 129, 0.3);">
+          <i class="fa-solid fa-id-badge"></i>
+        </div>
+        <div class="text-xs leading-relaxed">
+          <span class="font-bold text-emerald-300 block text-xs sm:text-sm">Ingreso Habilitado en Portería</span>
+          <span class="text-slate-300">Presente su documento de identidad original en la portería física de <strong class="text-white font-semibold" x-text="datos.empresa_origen || 'INCARSA'"></strong>. Su autorización ha sido sincronizada con el control de acceso SG-SST.</span>
+        </div>
+      </div>
+
+      <!-- Enlace para volver a probar en modo SuperAdmin -->
+      <div x-show="esPreview" class="mt-4 text-center">
+        <button @click="cambiarADecision()" class="text-xs text-slate-400 hover:text-white underline transition-colors cursor-pointer">
+          <i class="fa-solid fa-arrow-rotate-left mr-1"></i> Simular nuevamente desde estado Pendiente
+        </button>
       </div>
     </div>
 
     <!-- Estado: RECHAZADO PREVIAMENTE -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'RECHAZADO'" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 border-red-500/30">
+    <div x-show="!cargando && !error && datos.estado_datos === 'RECHAZADO'" x-cloak class="glass-card rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden" style="border: 1px solid rgba(244, 63, 94, 0.35); box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 35px -10px rgba(244, 63, 94, 0.15);">
       <div class="text-center">
-        <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-lg" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">
           <i class="fa-solid fa-ban"></i>
         </div>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 mb-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-2" style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #fda4af;">
           AUTORIZACIÓN RECHAZADA
         </span>
-        <h2 class="text-xl sm:text-2xl font-bold text-white font-brand mt-1">Tratamiento No Autorizado</h2>
-        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto">
-          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-400 font-mono" x-text="datos.codigo_radicado"></strong>.
+        <h2 class="text-xl sm:text-2xl font-bold text-rose-300 font-brand mt-1">Tratamiento No Autorizado</h2>
+        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
+          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-300 font-mono px-2 py-0.5 rounded" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);" x-text="datos.codigo_radicado"></strong>.
         </p>
       </div>
 
-      <div class="mt-6 bg-red-950/30 rounded-xl p-4 sm:p-5 border border-red-900/40 text-xs sm:text-sm">
-        <div class="flex items-start gap-3 text-red-300">
-          <i class="fa-solid fa-triangle-exclamation text-base mt-0.5 shrink-0"></i>
+      <div class="mt-6 rounded-xl p-4 sm:p-5 text-xs sm:text-sm" style="background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(20, 16, 10, 0.7) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 3px solid #f59e0b;">
+        <div class="flex items-start gap-3 text-amber-200/90 text-left">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg mt-0.5 shrink-0"></i>
           <div>
-            <strong class="font-semibold block mb-1">Bloqueo de Ingreso en Portería:</strong>
-            De conformidad con los protocolos de seguridad industrial y la Ley 1581 de 2012, sin esta autorización no es posible validar tu identidad ni permitir el ingreso a las instalaciones de la planta.
+            <strong class="font-bold block mb-1 text-amber-300">Bloqueo de Ingreso en Portería:</strong>
+            De conformidad con los protocolos de seguridad industrial y la Ley 1581 de 2012, sin esta autorización no es posible validar su identidad ni permitir el ingreso a las instalaciones de la planta.
           </div>
         </div>
       </div>
 
       <div class="mt-6 text-center">
-        <button @click="cambiarADecision()" class="text-xs sm:text-sm text-sky-400 hover:text-sky-300 underline font-medium cursor-pointer">
+        <button @click="cambiarADecision()" class="text-xs sm:text-sm text-sky-400 hover:text-sky-300 underline font-semibold cursor-pointer transition-colors">
           ¿Deseas cambiar tu respuesta y autorizar el tratamiento para permitir tu ingreso?
         </button>
       </div>
     </div>
 
     <!-- Estado: PENDIENTE (Formulario Principal de Autorización) -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'PENDIENTE'" x-cloak class="glass-card rounded-2xl overflow-hidden border-slate-700/80">
+    <div x-show="!cargando && !error && datos.estado_datos === 'PENDIENTE'" x-cloak class="glass-card rounded-2xl overflow-hidden border-slate-700/60 shadow-2xl">
       
-      <!-- Ficha de Datos del Titular -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-5 sm:p-6 border-b border-slate-700/80">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Ficha de Datos del Titular: Colores Vivos y Jerarquía Clara -->
+      <div class="bg-gradient-to-r from-[#111422] via-[#0e1017] to-[#121624] p-5 sm:p-6 border-b border-slate-700/50">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span class="text-xs font-semibold tracking-wider uppercase text-sky-400">Titular de los Datos</span>
-            <h2 class="text-lg sm:text-xl font-bold text-white font-brand mt-0.5" x-text="datos.nombre_completo"></h2>
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 mt-1">
-              <span><i class="fa-solid fa-id-card text-slate-400 mr-1.5"></i> C.C. <strong class="text-white" x-text="datos.cedula || '—'"></strong></span>
-              <span x-show="datos.cargo"><i class="fa-solid fa-briefcase text-slate-400 mr-1.5"></i> <span x-text="datos.cargo"></span></span>
+            <!-- Etiqueta de Sección (Overline) con Color Sky -->
+            <div class="flex items-center gap-1.5 text-sky-400 text-xs font-bold tracking-wider uppercase mb-1">
+              <i class="fa-solid fa-user-shield text-sky-400 text-xs"></i>
+              <span>Titular de los Datos</span>
+            </div>
+            <!-- Título Principal (Nombre en Blanco Puro) -->
+            <h2 class="text-xl sm:text-2xl font-black text-white font-brand tracking-tight" x-text="datos.nombre_completo"></h2>
+            <!-- Metadatos de Persona con Pills de Colores Diferenciados -->
+            <div class="flex flex-wrap items-center gap-2 mt-2.5">
+              <span class="badge-cc">
+                <i class="fa-solid fa-id-card text-blue-400"></i>
+                <span class="text-blue-300 font-medium">C.C.</span>
+                <strong class="text-white font-mono font-bold" x-text="datos.cedula || '—'"></strong>
+              </span>
+              <span x-show="datos.cargo" class="badge-cargo">
+                <i class="fa-solid fa-briefcase text-emerald-400"></i>
+                <span class="text-emerald-200 font-medium" x-text="datos.cargo"></span>
+              </span>
             </div>
           </div>
-          <div class="sm:text-right bg-slate-800/60 sm:bg-transparent p-3 sm:p-0 rounded-xl border border-slate-700/50 sm:border-0">
-            <span class="text-[11px] text-slate-400 block font-medium">Solicitud / Radicado</span>
-            <span class="text-sm sm:text-base font-mono font-bold text-sky-400" x-text="datos.codigo_radicado"></span>
-            <span class="text-xs text-slate-300 block truncate max-w-[220px]" x-text="datos.empresa_contratista"></span>
+
+          <!-- Caja de Radicado con Acento Sky y Ámbar -->
+          <div class="box-radicado sm:text-right">
+            <span class="text-[10.5px] text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1 sm:justify-end">
+              <i class="fa-solid fa-hashtag text-[9px] text-sky-400"></i>
+              <span>Solicitud / Radicado</span>
+            </span>
+            <!-- Código Radicado (Cyan / Sky Luminoso) -->
+            <span class="text-base sm:text-lg font-mono font-black text-sky-300 tracking-wide block mt-0.5" x-text="datos.codigo_radicado"></span>
+            <!-- Empresa Contratista (Ámbar Cálido) -->
+            <span class="text-xs text-amber-300/95 font-medium flex items-center gap-1.5 sm:justify-end mt-1 truncate max-w-[240px]">
+              <i class="fa-solid fa-building text-amber-400 text-[11px]"></i>
+              <span x-text="datos.empresa_contratista"></span>
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- Alerta Informativa Obligatoria -->
-      <div class="bg-amber-500/10 border-b border-amber-500/20 px-5 sm:px-6 py-3 flex items-center gap-3">
-        <i class="fa-solid fa-circle-exclamation text-amber-400 text-base shrink-0"></i>
-        <p class="text-xs sm:text-sm text-amber-200">
-          <strong>Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
+      <!-- Alerta Informativa Obligatoria: Estilo Limpio y Alta Legibilidad -->
+      <div class="alerta-requisito">
+        <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg shrink-0"></i>
+        <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+          <strong class="text-amber-300 font-bold">Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
         </p>
       </div>
 
       <!-- Contenido Legal con Scroll -->
       <div class="p-5 sm:p-6">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
-          <span>Términos y Condiciones de la Autorización</span>
-          <span class="text-[11px] font-normal text-slate-500">Deslice para leer el texto completo</span>
+        <!-- Encabezado de la Sección con Icono y Contraste -->
+        <h3 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-3 flex items-center justify-between flex-wrap gap-2">
+          <span class="flex items-center gap-2">
+            <i class="fa-solid fa-file-contract text-sky-400"></i>
+            <span>Términos y Condiciones de la Autorización</span>
+          </span>
+          <span class="text-[11px] font-medium text-slate-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+            <i class="fa-solid fa-arrows-up-down text-[10px] text-sky-400"></i>
+            <span>Deslice para leer el texto completo</span>
+          </span>
         </h3>
 
-        <div class="legal-scroll h-60 overflow-y-auto bg-slate-950/80 rounded-xl p-4 border border-slate-800 text-xs text-slate-300 space-y-3 leading-relaxed">
-          <p class="font-semibold text-white">
-            AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA PARA EL TRATAMIENTO DE DATOS PERSONALES
+        <!-- Caja de Texto Legal con Variedad de Colores y Secciones -->
+        <div class="legal-scroll h-64 overflow-y-auto bg-[#08090f] rounded-xl p-5 border border-slate-800 text-xs space-y-3.5 leading-relaxed">
+          <!-- Título del Documento Legal con Cinta Azul -->
+          <div class="bg-gradient-to-r from-sky-950/50 to-indigo-950/30 border-l-4 border-sky-400 p-2.5 rounded-r-lg">
+            <p class="text-xs sm:text-sm font-bold text-sky-200 tracking-wide flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-sky-400"></i>
+              <span>AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA PARA EL TRATAMIENTO DE DATOS PERSONALES</span>
+            </p>
+          </div>
+
+          <!-- Párrafo Legal con Empresa(s) Dinámicas según la Solicitud -->
+          <p class="text-slate-300">
+            En cumplimiento de lo dispuesto en la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline font-semibold transition-colors">Ley 1581 de 2012</a>, el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline font-semibold transition-colors">Decreto Reglamentario 1377 de 2013</a> y demás normas concordantes sobre el régimen general de protección de datos personales en la República de Colombia, de manera libre, voluntaria, previa, explícita e inequívoca, autorizo a 
+            <!-- Caso 1: Ambas empresas presentes y distintas -->
+            <template x-if="datos.empresa_origen && datos.empresa_contratista && datos.empresa_origen !== datos.empresa_contratista">
+              <span>
+                <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15" x-text="datos.empresa_origen"></strong>
+                <span class="text-slate-400 text-xs"> (empresa contratante / titular de instalaciones)</span>
+                <span> y a la empresa contratista </span>
+                <strong class="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/25" x-text="datos.empresa_contratista"></strong>
+              </span>
+            </template>
+            <!-- Caso 2: Solo empresa origen -->
+            <template x-if="datos.empresa_origen && (!datos.empresa_contratista || datos.empresa_origen === datos.empresa_contratista)">
+              <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15" x-text="datos.empresa_origen"></strong>
+            </template>
+            <!-- Caso 3: Solo empresa contratista -->
+            <template x-if="!datos.empresa_origen && datos.empresa_contratista">
+              <strong class="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/25" x-text="datos.empresa_contratista"></strong>
+            </template>
+            <!-- Fallback seguro -->
+            <template x-if="!datos.empresa_origen && !datos.empresa_contratista">
+              <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15">INCARSA S.A.S.</strong>
+            </template>
+            <span> para que de manera individual o conjunta recolecten, almacenen, usen, circulen, supriman y en general den tratamiento a mis datos personales.</span>
           </p>
-          <p>
-            En cumplimiento de lo dispuesto en la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Ley Estatutaria 1581 de 2012</a>, el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Decreto Reglamentario 1377 de 2013</a> y demás normas concordantes sobre el régimen general de protección de datos personales en la República de Colombia, de manera libre, voluntaria, previa, explícita e inequívoca, autorizo a <strong>INCARSA S.A.S.</strong> (en adelante "LA COMPAÑÍA") para que recolecte, almacene, use, circule, suprima y en general dé tratamiento a mis datos personales.
+
+          <!-- Subtítulo de Sección 1: Esmeralda -->
+          <p class="font-bold text-emerald-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-[11px]"></i>
+            <span>1. Finalidades del Tratamiento:</span>
           </p>
-          <p class="font-medium text-slate-200">
-            1. Finalidades del Tratamiento:
-          </p>
-          <ul class="list-disc list-inside space-y-1 pl-1 text-slate-300">
-            <li>Validar, verificar y autorizar el control de acceso físico a las instalaciones y plantas de LA COMPAÑÍA.</li>
-            <li>Gestionar el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) y el Plan de Prevención de Riesgos Laborales.</li>
-            <li>Verificar la vigencia y suficiencia de la afiliación a la Administradora de Riesgos Laborales (ARL), EPS y Fondo de Pensiones.</li>
-            <li>Monitoreo por circuito cerrado de televisión (CCTV) y control de portería por motivos de seguridad física de las personas e infraestructura.</li>
-            <li>Atención, evacuación o reporte ante situaciones de emergencia, accidentes o incidentes laborales.</li>
-            <li>Cumplimiento de obligaciones legales, auditorías de calidad y requerimientos de autoridades competentes.</li>
+          <!-- Viñetas de Lista con Iconos Esmeralda -->
+          <ul class="space-y-1.5 pl-1 text-slate-300">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Validar, verificar y autorizar el control de acceso físico a las instalaciones y plantas de <strong class="text-white font-medium" x-text="datos.empresa_origen || 'LA COMPAÑÍA'"></strong><span x-show="datos.plantas_texto" class="text-sky-300" x-text="' (' + datos.plantas_texto + ')'"></span>.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Gestionar el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) y el Plan de Prevención de Riesgos Laborales.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Verificar la vigencia y suficiencia de la afiliación a la Administradora de Riesgos Laborales (ARL), EPS y Fondo de Pensiones.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Monitoreo por circuito cerrado de televisión (CCTV) y control de portería por motivos de seguridad física de las personas e infraestructura.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Atención, evacuación o reporte ante situaciones de emergencia, accidentes o incidentes laborales.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Cumplimiento de obligaciones legales, auditorías de calidad y requerimientos de autoridades competentes.</span>
+            </li>
           </ul>
-          <p class="font-medium text-slate-200">
-            2. Datos Sensibles y Biométricos:
+
+          <!-- Subtítulo de Sección 2: Ámbar -->
+          <p class="font-bold text-amber-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-fingerprint text-amber-400 text-[11px]"></i>
+            <span>2. Datos Sensibles y Biométricos:</span>
           </p>
-          <p>
+          <div class="rounded-lg text-amber-100/90 leading-relaxed" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); padding: 12px;">
             Se me ha informado expresamente que el suministro de datos sensibles (tales como imágenes de videovigilancia, datos biométricos de registro dactilar o facial, o certificados de aptitud médica laboral) tiene carácter facultativo; sin embargo, reconozco que son indispensables para los protocolos de seguridad industrial y control de acceso estricto a las plantas de producción.
+          </div>
+
+          <!-- Subtítulo de Sección 3: Sky Blue -->
+          <p class="font-bold text-sky-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced text-sky-400 text-[11px]"></i>
+            <span>3. Derechos del Titular (Habeas Data):</span>
           </p>
-          <p class="font-medium text-slate-200">
-            3. Derechos del Titular:
-          </p>
-          <p>
+          <p class="text-slate-300">
             Como titular de los datos personales, se me ha informado que me asisten los derechos previstos en el Artículo 8 de la Ley 1581 de 2012, especialmente:
           </p>
-          <ul class="list-disc list-inside space-y-1 pl-1 text-slate-300">
-            <li>Conocer, actualizar y rectificar mis datos personales frente a LA COMPAÑÍA.</li>
-            <li>Solicitar prueba de la autorización otorgada.</li>
-            <li>Ser informado sobre el uso que se le ha dado a mis datos personales previa solicitud.</li>
-            <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</li>
-            <li>Revocar la autorización y/o solicitar la supresión del dato cuando no medie un deber legal o contractual que obligue a conservarlo.</li>
+          <ul class="space-y-1.5 pl-1 text-slate-300">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Conocer, actualizar y rectificar mis datos personales frente a LA COMPAÑÍA.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Solicitar prueba de la autorización otorgada.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Ser informado sobre el uso que se le ha dado a mis datos personales previa solicitud.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span>Revocar la autorización y/o solicitar la supresión del dato cuando no medie un deber legal o contractual que obligue a conservarlo.</span>
+            </li>
           </ul>
-          <p class="font-medium text-slate-200">
-            4. Canales de Atención:
+
+          <!-- Subtítulo de Sección 4: Índigo / Violeta -->
+          <p class="font-bold text-indigo-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-headset text-indigo-400 text-[11px]"></i>
+            <span>4. Canales de Atención Institucional:</span>
           </p>
-          <p>
+          <p class="text-slate-300">
             Para el ejercicio de los derechos de Habeas Data, LA COMPAÑÍA dispone del correo electrónico institucional de atención y sus oficinas principales, donde se atenderán consultas y reclamos en los términos fijados por la legislación vigente.
           </p>
         </div>
 
-        <!-- Checkbox de Aceptación Expresa -->
-        <div class="mt-5 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+        <!-- Checkbox de Aceptación Expresa con Borde y Fondo Azul Marino Distintivo -->
+        <div class="mt-5 rounded-xl" style="background: linear-gradient(90deg, rgba(30, 58, 138, 0.22) 0%, rgba(49, 46, 129, 0.12) 50%, transparent 100%); border: 1px solid rgba(59, 130, 246, 0.25); padding: 14px;">
           <label class="flex items-start gap-3 cursor-pointer select-none">
-            <input type="checkbox" x-model="aceptaTerminos" class="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900 cursor-pointer">
+            <input type="checkbox" x-model="aceptaTerminos" class="mt-1 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer">
             <span class="text-xs sm:text-sm text-slate-200 font-medium leading-snug">
-              Declaro que he leído de manera completa este documento, comprendo los alcances de la Ley 1581 de 2012 y <strong>autorizo de manera libre y expresa el tratamiento de mis datos personales</strong> para el ingreso y permanencia en las instalaciones de INCARSA.
+              Declaro que he leído de manera completa este documento, comprendo los alcances de la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> y <strong class="text-white font-extrabold px-1.5 py-0.5 rounded" style="background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.3);">autorizo de manera libre y expresa el tratamiento de mis datos personales</strong> para el ingreso y permanencia en las instalaciones de <strong class="text-white font-bold" x-text="datos.empresa_origen || 'la empresa'"></strong>.
             </span>
           </label>
         </div>
 
-        <!-- Botones de Acción -->
-        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
-          <!-- Botón Rechazar -->
+        <!-- Botones de Acción con Jerarquía y Colores Diferenciados -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-700/50">
+          <!-- Botón Rechazar (Rojo Rosa Acentuado) -->
           <button 
             type="button" 
             @click="abrirModalRechazo()"
             :disabled="enviando"
-            class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/5 text-xs sm:text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
-            <i class="fa-solid fa-xmark"></i>
+            class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            style="border: 1px solid rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.1); color: #fda4af;">
+            <i class="fa-solid fa-xmark text-rose-400"></i>
             <span>No Acepto / Rechazar</span>
           </button>
 
-          <!-- Botón Aceptar -->
+          <!-- Botón Aceptar (Estilo Verde Esmeralda) -->
           <button 
             type="button" 
             @click="enviarRespuesta(true)"
             :disabled="!aceptaTerminos || enviando"
-            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+            class="btn-autorizar-verde w-full sm:w-auto text-sm flex items-center justify-center gap-2.5">
             <template x-if="enviando">
               <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
             </template>
             <template x-if="!enviando">
-              <i class="fa-solid fa-check"></i>
+              <i class="fa-solid fa-check text-white text-sm"></i>
             </template>
             <span>Aceptar y Autorizar Ingreso</span>
           </button>
@@ -309,8 +847,8 @@
 
   </main>
 
-  <!-- Footer Legal -->
-  <footer class="w-full max-w-3xl mx-auto text-center mt-6 text-[11px] text-slate-500 space-y-1">
+  <!-- Footer Legal: Gris Neutro -->
+  <footer class="w-full max-w-3xl mx-auto text-center mt-6 text-[11px] text-[#52525b] space-y-1">
     <p>© 2026 PSI · Sistema de Gestión de Solicitudes y Acceso a Planta</p>
     <p>Este sistema opera bajo los principios de legalidad, finalidad y seguridad de la información (Ley 1581 de 2012).</p>
   </footer>
@@ -320,6 +858,7 @@
     function autorizacionDatosApp() {
       return {
         token: window.__TOKEN_AUTORIZACION__ || "",
+        esPreview: false,
         cargando: true,
         enviando: false,
         error: false,
@@ -328,16 +867,44 @@
         aceptaTerminos: false,
         datos: {
           nombre_completo: "",
+          tipo_doc: "C.C.",
+          identificacion: "",
           cedula: "",
           cargo: "",
           correo: "",
           codigo_radicado: "",
+          empresa_origen: "INCARSA S.A.S.",
           empresa_contratista: "",
+          plantas_texto: "",
           estado_datos: "PENDIENTE",
           fecha_respuesta_datos: ""
         },
 
         async iniciar() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const queryPreview = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
+
+          // Detectar modo previsualización SuperAdmin
+          if (window.__ES_PREVIEW__ || this.token.includes('demo') || this.token.includes('preview') || queryPreview) {
+            this.esPreview = true;
+            this.datos = {
+              nombre_completo: "Diego Alejandro Cardozo",
+              tipo_doc: "C.C.",
+              identificacion: "1.098.765.432",
+              cedula: "1.098.765.432",
+              cargo: "Supervisor de Operaciones y Mantenimiento",
+              correo: "diego.cardozo@ejemplo.com",
+              codigo_radicado: "RAD-LGKS84",
+              empresa_origen: "INCARSA S.A.S.",
+              empresa_contratista: "AGRÍCOLA & SERVICIOS INDUSTRIALES S.A.S.",
+              plantas_texto: "PLANTA 1 INCARSA",
+              estado_datos: "PENDIENTE",
+              fecha_respuesta_datos: ""
+            };
+            this.cargando = false;
+            return;
+          }
+
           if (!this.token) {
             this.mostrarError("Token no proporcionado", "El enlace no contiene el token de verificación requerido.");
             this.cargando = false;
@@ -363,6 +930,23 @@
           }
         },
 
+        setEstadoPreview(nuevoEstado) {
+          this.error = false;
+          this.cargando = false;
+          this.datos.estado_datos = nuevoEstado;
+          if (nuevoEstado === 'AUTORIZADO' && !this.datos.fecha_respuesta_datos) {
+            this.datos.fecha_respuesta_datos = new Date().toLocaleString('es-CO');
+          }
+        },
+
+        simularErrorToken() {
+          this.cargando = false;
+          this.mostrarError(
+            "Enlace no válido o expirado (Simulación)",
+            "Este es un ejemplo de cómo ve el usuario la pantalla si el token ya venció o no existe en la base de datos."
+          );
+        },
+
         mostrarError(titulo, mensaje) {
           this.error = true;
           this.errorTitulo = titulo;
@@ -375,27 +959,31 @@
         },
 
         async abrirModalRechazo() {
+          const nombreEmpresaOrigen = this.datos.empresa_origen || 'la empresa';
           const { value: confirmacion } = await Swal.fire({
             title: '¿Rechazar Autorización?',
+            customClass: {
+              popup: 'swal-dark-mono'
+            },
             html: `
-              <div style="text-align: left; font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+              <div style="text-align: left; font-size: 13px; color: #9ca3af; line-height: 1.5;">
                 <p style="margin-bottom: 12px;">
-                  ⚠️ <strong>Atención:</strong> Si rechaza el tratamiento de datos personales, el sistema de portería de <strong>INCARSA</strong> bloqueará automáticamente su ingreso a las instalaciones físicas.
+                  ⚠️ <strong style="color: #c4c4c8;">Atención:</strong> Si rechaza el tratamiento de datos personales, el sistema de portería de <strong style="color: #d1d5db;">${nombreEmpresaOrigen}</strong> bloqueará automáticamente su ingreso a las instalaciones físicas.
                 </p>
-                <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #94a3b8;">
+                <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #8e8e93;">
                   Motivo del rechazo (opcional):
                 </label>
-                <textarea id="swal-motivo-rechazo" class="swal2-textarea" style="width: 100%; height: 70px; margin: 0; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; font-size: 12px; padding: 8px;" placeholder="Indique si tiene alguna observación..."></textarea>
+                <textarea id="swal-motivo-rechazo" class="swal2-textarea" style="width: 100%; height: 70px; margin: 0; background: #0a0a0c; color: #d1d5db; border: 1px solid #28282d; border-radius: 8px; font-size: 12px; padding: 8px;" placeholder="Indique si tiene alguna observación..."></textarea>
               </div>
             `,
             icon: 'warning',
-            background: '#1e293b',
-            color: '#f8fafc',
+            background: '#141416',
+            color: '#9ca3af',
             showCancelButton: true,
             confirmButtonText: 'Sí, Rechazar y No Ingresar',
-            confirmButtonColor: '#ef4444',
+            confirmButtonColor: '#b91c1c',
             cancelButtonText: 'Volver a Leer',
-            cancelButtonColor: '#475569',
+            cancelButtonColor: '#28282d',
             reverseButtons: true,
             preConfirm: () => {
               const motivo = document.getElementById('swal-motivo-rechazo')?.value || '';
@@ -411,6 +999,37 @@
         async enviarRespuesta(acepto, motivo = null) {
           if (this.enviando) return;
           this.enviando = true;
+
+          // Modo Previsualización SuperAdmin: Simulación interactiva sin alterar base de datos
+          if (this.esPreview) {
+            await new Promise(r => setTimeout(r, 300));
+            this.datos.estado_datos = acepto ? "AUTORIZADO" : "RECHAZADO";
+            this.datos.fecha_respuesta_datos = new Date().toLocaleString('es-CO');
+
+            if (acepto) {
+              await Swal.fire({
+                title: '¡Autorización Exitosa!',
+                text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
+                icon: 'success',
+                customClass: { popup: 'swal-dark-mono' },
+                background: '#141416',
+                color: '#9ca3af',
+                confirmButtonColor: '#2e2e33'
+              });
+            } else {
+              await Swal.fire({
+                title: 'Respuesta Registrada',
+                text: 'Se ha registrado su rechazo al tratamiento de datos. El ingreso a la planta queda restringido.',
+                icon: 'info',
+                customClass: { popup: 'swal-dark-mono' },
+                background: '#141416',
+                color: '#9ca3af',
+                confirmButtonColor: '#2e2e33'
+              });
+            }
+            this.enviando = false;
+            return;
+          }
 
           try {
             const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}/responder`, {
@@ -431,9 +1050,10 @@
                 title: 'Error',
                 text: resData.detail || resData.mensaje || 'No se pudo registrar su respuesta.',
                 icon: 'error',
-                background: '#1e293b',
-                color: '#f8fafc',
-                confirmButtonColor: '#0284c7'
+                customClass: { popup: 'swal-dark-mono' },
+                background: '#141416',
+                color: '#9ca3af',
+                confirmButtonColor: '#2e2e33'
               });
               this.enviando = false;
               return;
@@ -448,18 +1068,20 @@
                 title: '¡Autorización Exitosa!',
                 text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
                 icon: 'success',
-                background: '#1e293b',
-                color: '#f8fafc',
-                confirmButtonColor: '#10b981'
+                customClass: { popup: 'swal-dark-mono' },
+                background: '#141416',
+                color: '#9ca3af',
+                confirmButtonColor: '#2e2e33'
               });
             } else {
               Swal.fire({
                 title: 'Respuesta Registrada',
                 text: 'Se ha registrado su rechazo al tratamiento de datos. El ingreso a la planta queda restringido.',
                 icon: 'info',
-                background: '#1e293b',
-                color: '#f8fafc',
-                confirmButtonColor: '#64748b'
+                customClass: { popup: 'swal-dark-mono' },
+                background: '#141416',
+                color: '#9ca3af',
+                confirmButtonColor: '#2e2e33'
               });
             }
           } catch (e) {
@@ -468,9 +1090,10 @@
               title: 'Error de Red',
               text: 'Ocurrió un fallo al comunicar la respuesta al servidor.',
               icon: 'error',
-              background: '#1e293b',
-              color: '#f8fafc',
-              confirmButtonColor: '#0284c7'
+              customClass: { popup: 'swal-dark-mono' },
+              background: '#141416',
+              color: '#9ca3af',
+              confirmButtonColor: '#2e2e33'
             });
           } finally {
             this.enviando = false;

@@ -531,6 +531,23 @@ function formularioTemporal(tokenInicial) {
       if (!this.nuevaPersona.correo.trim() || !this.nuevaPersona.correo.includes('@')) {
         this.personaModalErrors.correo = 'Ingresa un correo electrónico válido.';
       }
+
+      // Validar que no exista otra persona con el mismo documento en la solicitud activa
+      const numDocTrim = (this.nuevaPersona.numDoc || '').trim();
+      if (numDocTrim) {
+        const esDuplicado = (this.personas || []).some((p, idx) => {
+          const docP = String(p.numDoc || p.identificacion || '').trim();
+          if (docP !== numDocTrim) return false;
+          if (this.isEditingPersona && this.editingPersonaIndex !== -1 && idx === this.editingPersonaIndex) {
+            return false;
+          }
+          return true;
+        });
+        if (esDuplicado) {
+          this.personaModalErrors.numDoc = 'Ya existe una persona registrada en esta solicitud con ese número de documento.';
+        }
+      }
+
       if (Object.keys(this.personaModalErrors).length > 0) return;
 
       this.guardandoPersona = true;

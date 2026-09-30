@@ -68,6 +68,20 @@ function superAdminPanel() {
     cargandoHistorial: false,
     mostrarHistorial: false,
 
+    // 4. Radicación Especial de Correspondencia (Control Total SuperAdmin)
+    corrForm: {
+      radicado: '',
+      fecha_envio: new Date().toISOString().split('T')[0],
+      tipo_correspondencia: 'INTERNA',
+      asunto: '',
+      procedencia: '',
+      destino: ''
+    },
+    guardandoCorrespondencia: false,
+    ultimasCorrespondencias: [],
+    cargandoCorrespondencias: false,
+    filtroBusquedaCorrSuperadmin: '',
+
     get rolActual() {
       return this.roles.find(r => r.id === this.rolSeleccionadoId) || null;
     },
@@ -94,6 +108,20 @@ function superAdminPanel() {
         (u.correo || '').toLowerCase().includes(q) ||
         (u.rol || '').toLowerCase().includes(q)
       );
+    },
+
+    get correspondenciasFiltradasSuperadmin() {
+      const q = (this.filtroBusquedaCorrSuperadmin || '').trim().toLowerCase();
+      if (!q) return this.ultimasCorrespondencias;
+      return this.ultimasCorrespondencias.filter(item => {
+        const rad = (item.radicado || '').toLowerCase();
+        const asu = (item.asunto || '').toLowerCase();
+        const tip = (item.tipo_correspondencia || '').toLowerCase();
+        const pro = (item.procedencia || '').toLowerCase();
+        const des = (item.destino || '').toLowerCase();
+        const fec = (item.fecha_envio || '').toLowerCase();
+        return rad.includes(q) || asu.includes(q) || tip.includes(q) || pro.includes(q) || des.includes(q) || fec.includes(q);
+      });
     },
 
     get resumenDestinatarios() {
@@ -222,7 +250,8 @@ function superAdminPanel() {
         this.cargarEstadoMantenimiento(),
         this.cargarMatrizPermisos(),
         this.cargarUsuariosSistema(),
-        this.cargarHistorialDifusion()
+        this.cargarHistorialDifusion(),
+        this.cargarUltimasCorrespondencias()
       ]);
 
       this.cargando = false;
@@ -1025,6 +1054,247 @@ function superAdminPanel() {
       } finally {
         this.enviandoMensaje = false;
       }
+    },
+
+    // -------------------------------------------------------------
+    // 4. RADICACIÓN ESPECIAL DE CORRESPONDENCIA (SUPERADMIN)
+    // -------------------------------------------------------------
+    async cargarUltimasCorrespondencias() {
+      this.cargandoCorrespondencias = true;
+      try {
+        let res = await fetch('/api/v1/correspondencia/getAll');
+        if (!res.ok) {
+          res = await fetch('/correspondencia/getAll');
+        }
+        const data = await res.json().catch(() => ({}));
+        if (data.exito && Array.isArray(data.data)) {
+          // Ordenar de más reciente a más antiguo por id / fecha y mostrar solo las últimas 3
+          const lista = [...data.data].sort((a, b) => (b.id || 0) - (a.id || 0));
+          this.ultimasCorrespondencias = lista.slice(0, 3);
+        }
+      } catch (err) {
+        console.error('Error al cargar correspondencias:', err);
+      } finally {
+        this.cargandoCorrespondencias = false;
+      }
+    },
+
+    initFlatpickrCorrespondencia(el) {
+      if (!el || typeof flatpickr === 'undefined') return;
+      if (this.fpCorrInstance) {
+        try { this.fpCorrInstance.destroy(); } catch (e) {}
+      }
+      this.fpCorrInstance = flatpickr(el, {
+        locale: flatpickr.l10ns?.es || 'es',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd/m/Y',
+        altInputClass: 'input-field w-full rounded-xl pl-3.5 pr-10 py-2.5 text-sm bg-slate-900 border border-slate-700 text-white font-medium focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/20 cursor-pointer shadow-inner',
+        defaultDate: this.corrForm.fecha_envio || new Date(),
+        disableMobile: true,
+        onChange: (selectedDates, dateStr) => {
+          this.corrForm.fecha_envio = dateStr;
+        }
+      });
+    },
+
+    abrirCalendarioCorrespondencia() {
+      if (this.fpCorrInstance) {
+        this.fpCorrInstance.open();
+      }
+    },
+
+    limpiarFormularioCorrespondencia() {
+      const hoy = new Date().toISOString().split('T')[0];
+      this.corrForm = {
+        radicado: '',
+        fecha_envio: hoy,
+        tipo_correspondencia: 'INTERNA',
+        asunto: '',
+        procedencia: '',
+        destino: ''
+      };
+      if (this.fpCorrInstance) {
+        this.fpCorrInstance.setDate(hoy, true);
+      }
+    },
+
+    copiarTextoAlPortapapeles(texto) {
+      if (!texto) return;
+      navigator.clipboard.writeText(texto).then(() => {
+        if (typeof Swal !== 'undefined') {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+          });
+          Toast.fire({
+            icon: 'success',
+            title: `Copiado: ${texto}`
+          });
+        }
+      }).catch(() => {});
+    },
+
+    formatearFechaCorta(fecha) {
+      if (!fecha) return '—';
+      const f = String(fecha).split('T')[0].trim();
+      const partes = f.split('-');
+      const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      if (partes.length === 3) {
+        const dia = String(parseInt(partes[2], 10)).padStart(2, '0');
+        const mIdx = parseInt(partes[1], 10) - 1;
+        const anio = partes[0];
+        const mesNom = mesesCortos[mIdx] || partes[1];
+        return `${dia} ${mesNom} ${anio}`;
+      }
+      return f;
+    },
+
+    async registrarCorrespondenciaSuperAdmin() {
+      const f = this.corrForm;
+      if (!f.tipo_correspondencia || !f.asunto.trim() || !f.procedencia.trim() || !f.destino.trim()) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Campos Incompletos',
+            text: 'Por favor diligencia el asunto, procedencia y destino de la correspondencia.',
+            confirmButtonColor: '#d946ef'
+          });
+        }
+        return;
+      }
+
+      this.guardandoCorrespondencia = true;
+      try {
+        const payload = {
+          tipo_correspondencia: f.tipo_correspondencia,
+          asunto: f.asunto.trim(),
+          procedencia: f.procedencia.trim(),
+          destino: f.destino.trim(),
+          fecha_envio: f.fecha_envio || undefined,
+          radicado: f.radicado ? f.radicado.trim() : undefined
+        };
+
+        let res = await fetch('/api/v1/correspondencia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok && res.status === 404) {
+          res = await fetch('/correspondencia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.exito === false) {
+          throw new Error(data.detail || data.mensaje || 'Error al registrar la correspondencia.');
+        }
+
+        const radicadoAsignado = data.radicado || ('SCR-' + String(data.id_generado || '').padStart(3, '0'));
+        const fechaRaw = f.fecha_envio || (new Date()).toISOString().split('T')[0];
+        const fechaAsignada = this.formatearFechaCorta(fechaRaw);
+
+        const esInterna = f.tipo_correspondencia === 'INTERNA';
+        const tipoBg = esInterna ? 'rgba(6, 182, 212, 0.16)' : 'rgba(245, 158, 11, 0.16)';
+        const tipoColor = esInterna ? '#38bdf8' : '#fbbf24';
+        const tipoBorder = esInterna ? 'rgba(56, 189, 248, 0.45)' : 'rgba(251, 191, 36, 0.45)';
+        const tipoIcon = esInterna ? 'fa-building' : 'fa-paper-plane';
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: '¡Correspondencia Radicada!',
+            background: '#0f172a',
+            color: '#f8fafc',
+            html: `
+              <div style="text-align: left; padding: 2px 2px; font-size: 0.88rem; line-height: 1.5;">
+                <p style="margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8;">La correspondencia fue ingresada al sistema con éxito con permisos SuperAdmin.</p>
+
+                <!-- TICKET DE RADICACIÓN TIPO COMPROBANTE -->
+                <div class="superadmin-ticket-card">
+                  <div class="superadmin-ticket-notch-left"></div>
+                  <div class="superadmin-ticket-notch-right"></div>
+
+                  <!-- Cabecera del Ticket -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(217, 70, 239, 0.18); color: #f0abfc; border: 1px solid rgba(217, 70, 239, 0.35); padding: 3px 8px; border-radius: 6px;">
+                      <i class="fa-solid fa-receipt"></i> TICKET OFICIAL DE RADICACIÓN
+                    </span>
+                    <span style="font-size: 0.68rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">
+                      NIVEL 6 • MAESTRO
+                    </span>
+                  </div>
+
+                  <!-- Código / Radicado Principal -->
+                  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+                    <div>
+                      <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.06em; margin-bottom: 2px;">CÓDIGO / RADICADO</div>
+                      <div style="font-family: monospace; font-size: 1.45rem; font-weight: 900; color: #38bdf8; letter-spacing: 0.06em; text-shadow: 0 0 14px rgba(56, 189, 248, 0.45); line-height: 1.1;">
+                        ${radicadoAsignado}
+                      </div>
+                    </div>
+                    <div style="text-align: right;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; background: ${tipoBg}; color: ${tipoColor}; border: 1px solid ${tipoBorder};">
+                        <i class="fa-solid ${tipoIcon}" style="font-size: 0.65rem;"></i> ${f.tipo_correspondencia}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Línea divisoria perforada de corte -->
+                  <div class="superadmin-ticket-divider"></div>
+
+                  <!-- Metadatos: Fecha Asignada y Asunto -->
+                  <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: #a855f7; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-regular fa-calendar-check" style="color: #d946ef;"></i> FECHA ASIGNADA:
+                      </span>
+                      <strong style="color: #f0abfc; font-family: monospace; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.03em;">
+                        ${fechaAsignada}
+                      </strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                      <span style="color: #94a3b8; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                        <i class="fa-regular fa-file-lines" style="color: #c084fc;"></i> Asunto:
+                      </span>
+                      <span style="color: #e2e8f0; font-size: 0.8rem; font-weight: 600; text-align: right; max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.asunto.trim()}">
+                        ${f.asunto.trim()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#d946ef'
+          });
+        }
+
+        this.limpiarFormularioCorrespondencia();
+        await this.cargarUltimasCorrespondencias();
+      } catch (err) {
+        console.error('Error al registrar correspondencia SuperAdmin:', err);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Radicación',
+            text: err.message || 'No fue posible registrar la correspondencia.',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      } finally {
+        this.guardandoCorrespondencia = false;
+      }
     }
   };
 }
+

@@ -26,7 +26,7 @@ function revisionSolicitudApp() {
     error: null,
 
     // Sidebar estado responsive
-    sidebarCollapsed: false,
+    sidebarCollapsed: true,
     sidebarOpenMobile: false,
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed;

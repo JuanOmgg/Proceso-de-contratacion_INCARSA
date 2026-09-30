@@ -9,6 +9,49 @@
 <link rel="icon" type="image/png" href="/static/img/icono.png">
 <link rel="shortcut icon" href="/static/img/icono.png">
 
+<!-- Bypass y sincronización inmediata de sesión para SuperAdmin -->
+<script>
+  (function () {
+    try {
+      var raw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+      var tok = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
+      if (raw) {
+        var ses = JSON.parse(raw);
+        if (!tok && ses && ses.token) tok = ses.token;
+        var rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
+        var idRol = (ses && (ses.id_rol || (ses.usuario && ses.usuario.id_rol)));
+        if ((rol === 'SUPERADMIN' || rol === 'SUPER ADMIN' || idRol === 1) && tok) {
+          document.cookie = "token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
+          document.cookie = "incarsa_token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
+          // Redirigir de inmediato omitiendo la pantalla 503 si el Superadmin llegó por falta de cookie
+          var attemptKey = 'incarsa_503_sa_retry';
+          var attempts = parseInt(sessionStorage.getItem(attemptKey) || '0', 10);
+          if (attempts < 2) {
+            sessionStorage.setItem(attemptKey, String(attempts + 1));
+            window.location.reload();
+          }
+        }
+      }
+    } catch (e) {}
+  })();
+
+  function reintentar503() {
+    try {
+      var tok = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
+      if (!tok) {
+        var ses = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
+        if (ses && ses.token) tok = ses.token;
+      }
+      if (tok) {
+        document.cookie = "token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
+        document.cookie = "incarsa_token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
+      }
+      sessionStorage.removeItem('incarsa_503_sa_retry');
+    } catch (e) {}
+    window.location.reload();
+  }
+</script>
+
 <!-- Tailwind CSS Compilado Local -->
 <link rel="stylesheet" href="/static/css/tailwind.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -110,7 +153,7 @@
 
       <!-- Botones de Acción Centralizados -->
       <div class="w-full max-w-md mx-auto flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-0.5">
-        <button type="button" onclick="location.reload()" class="error-btn-primary error-btn-503 w-full sm:flex-1 rounded-xl px-5 py-2.5 text-sm font-bold inline-flex items-center justify-center gap-2 text-slate-950">
+        <button type="button" onclick="reintentar503()" class="error-btn-primary error-btn-503 w-full sm:flex-1 rounded-xl px-5 py-2.5 text-sm font-bold inline-flex items-center justify-center gap-2 text-slate-950">
           <i class="fa-solid fa-rotate-right text-xs"></i> Reintentar ahora
         </button>
         {% if nombre_modulo_afectado %}

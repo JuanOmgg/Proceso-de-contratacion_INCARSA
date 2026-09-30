@@ -785,14 +785,16 @@ body {
 
 /* Ícono de Éxito adaptado al tema oscuro */
 .swal2-icon.swal2-success {
+  border: 3.5px solid #4ade80 !important;
   border-color: #4ade80 !important;
   color: #4ade80 !important;
   box-shadow: 0 0 20px rgba(74, 222, 128, 0.25) !important;
   margin: 1rem auto 0.75rem !important;
+  filter: none !important;
 }
 
 .swal2-icon.swal2-success .swal2-success-ring {
-  border: 4px solid rgba(74, 222, 128, 0.25) !important;
+  display: none !important;
 }
 
 .swal2-icon.swal2-success [class^='swal2-success-line'] {
@@ -803,6 +805,7 @@ body {
 .swal2-icon.swal2-success .swal2-success-circular-line-left,
 .swal2-icon.swal2-success .swal2-success-circular-line-right,
 .swal2-icon.swal2-success .swal2-success-fix {
+  display: none !important;
   background-color: transparent !important;
 }
 

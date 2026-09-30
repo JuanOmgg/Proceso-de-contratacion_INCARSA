@@ -74,6 +74,35 @@
               <span x-text="error" class="font-medium leading-snug"></span>
             </div>
 
+            <!-- Controles Exclusivos SuperAdmin (Opcionales) -->
+            <div x-show="esSuperAdmin" x-cloak
+                 class="p-3.5 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/30 space-y-3">
+              <div class="flex items-center justify-between text-xs text-fuchsia-400 font-bold">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-crown text-[11px]"></i> Controles SuperAdmin (Manuales)
+                </span>
+                <span class="text-[10px] opacity-80 font-mono">Modo Maestro</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Código / Radicado
+                  </label>
+                  <input type="text" x-model="form.radicado" placeholder="Ej: SCR-001 (Opcional)"
+                         class="input-field w-full rounded-lg px-3 py-2 text-xs font-mono">
+                  <span class="text-[10px] text-slate-400">Vacío para autogenerar</span>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Fecha de Radicación
+                  </label>
+                  <input type="date" x-model="form.fecha_envio"
+                         class="input-field w-full rounded-lg px-3 py-2 text-xs cursor-pointer">
+                  <span class="text-[10px] text-slate-400">Modifica la fecha de emisión</span>
+                </div>
+              </div>
+            </div>
+
             <!-- 1. Tipo de correspondencia -->
             <div>
               <label class="form-label flex items-center justify-between">

@@ -59,7 +59,7 @@
                 <i class="fa-solid fa-users text-xl"></i>
               </div>
               <div>
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total solicitudes</p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium" x-text="esAdmin ? 'Total histórico' : 'Total solicitudes'">Total histórico</p>
                 <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalSolicitudes"></p>
               </div>
             </div>
@@ -182,7 +182,7 @@
                     <th class="px-4 py-3 text-center">Contratista</th>
                     <th class="px-3 py-3 text-center">Estado</th>
                     <th class="px-4 py-3 text-center">Solicitado por</th>
-                    <th class="px-4 py-3 text-center">Observaciones</th>
+                    <th class="px-4 py-3 text-center">Fecha de registro</th>
                     <th class="px-3 py-3 text-center">Modo</th>
                     <th class="px-4 py-3 text-center">Acciones</th>
                   </tr>
@@ -218,35 +218,12 @@
                       </td>
                       <td class="px-4 py-3 text-[var(--text-muted)]" x-text="s.diligenciador || '—'"></td>
 
-                      <!-- Columna Observaciones -->
-                      <td class="px-4 py-3 text-center">
-                        <template x-if="s.observaciones && s.observaciones.trim() !== ''">
-                          <div>
-                            <button type="button" x-show="puedeAccion('solicitudes', 'editar')" @click="openObservacionModal(s)" 
-                              class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-all text-left"
-                              :data-tooltip="'Editar: ' + s.observaciones">
-                              <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
-                              <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
-                            </button>
-                            <span x-show="!puedeAccion('solicitudes', 'editar')"
-                              class="inline-flex items-center gap-1.5 max-w-[150px] px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-200 text-left select-none"
-                              :data-tooltip="s.observaciones">
-                              <i class="fa-regular fa-comment-dots text-amber-600 flex-shrink-0 text-[11px]"></i>
-                              <span class="truncate font-medium text-[11px]" x-text="s.observaciones"></span>
-                            </span>
-                          </div>
-                        </template>
-                        <template x-if="!s.observaciones || s.observaciones.trim() === ''">
-                          <div>
-                            <button type="button" x-show="puedeAccion('solicitudes', 'editar')" @click="openObservacionModal(s)" 
-                              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-[var(--signal-500)] hover:bg-slate-100 border border-dashed border-slate-300 transition-colors"
-                              data-tooltip="Agregar observación">
-                              <i class="fa-solid fa-plus text-[9px]"></i>
-                              <span>Observación</span>
-                            </button>
-                            <span x-show="!puedeAccion('solicitudes', 'editar')" class="text-xs text-[var(--text-muted)] select-none">—</span>
-                          </div>
-                        </template>
+                      <!-- Columna Fecha de registro -->
+                      <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--text-muted)] select-none">
+                          <i class="fa-regular fa-calendar text-[11px] text-[var(--signal-500)]"></i>
+                          <span x-text="s.fecha_registro || '—'"></span>
+                        </span>
                       </td>
 
                       <td class="px-3 py-3 text-center">

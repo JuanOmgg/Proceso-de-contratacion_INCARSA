@@ -1,7 +1,7 @@
 <!-- ============================================================
      OVERLAY AUTÓNOMO DE TRANSICIÓN ENTRE PÁGINAS · PSI
      ============================================================ -->
-<div id="pageTransitionOverlay" class="page-loader-overlay" aria-hidden="true" style="display: none;">
+<div id="pageTransitionOverlay" class="page-loader-overlay is-active" aria-hidden="false" style="display: flex;">
   <div class="page-loader-content">
     
     <!-- Spinner orbital grande -->
@@ -29,9 +29,9 @@
     height: 100vh !important;
     height: 100dvh !important;
     z-index: 9999999 !important;
-    display: none;
-    opacity: 0;
-    pointer-events: none;
+    display: flex;
+    opacity: 1;
+    pointer-events: all;
     background-color: #0d1117 !important;
     background-image:
       radial-gradient(circle at 50% 40%, rgba(249, 115, 22, 0.12) 0%, transparent 60%),
@@ -43,14 +43,25 @@
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.45s ease !important;
+    transform: scale(1);
+    filter: blur(0px);
   }
 
-  /* Estado visible al transicionar */
+  /* Estado visible al estar activo */
   .page-loader-overlay.is-active {
-    display: flex !important;
     opacity: 1 !important;
     pointer-events: all !important;
+    transform: scale(1) !important;
+    filter: blur(0px) !important;
+  }
+
+  /* Estado al desvanecerse (salida suave) */
+  .page-loader-overlay:not(.is-active) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(1.03) !important;
+    filter: blur(6px) !important;
   }
 
   .page-loader-content {
@@ -59,6 +70,12 @@
     align-items: center;
     justify-content: center;
     user-select: none;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  }
+
+  .page-loader-overlay:not(.is-active) .page-loader-content {
+    transform: translateY(-8px) scale(0.97);
+    opacity: 0;
   }
 
   /* Animación de pulso */
@@ -172,31 +189,24 @@
         if (!overlay.classList.contains("is-active")) {
           overlay.style.display = "none";
         }
-      }, 260);
+      }, 460);
     }
 
-    // Funciones globales por si se quieren invocar manualmente desde JS
+    // Funciones globales para invocar manualmente desde JS
     window.showPageLoader = showLoader;
     window.hidePageLoader = hideLoader;
 
-    // 1. ¿Venimos de una transición de módulo iniciada en otra página?
-    try {
-      if (sessionStorage.getItem("incarsa_page_transition") === "1") {
-        sessionStorage.removeItem("incarsa_page_transition");
-        showLoader();
-        setTimeout(function () {
-          hideLoader();
-        }, 340);
-      } else {
+    // Asegurar que el loader esté visible al iniciar la carga del módulo/ventana
+    showLoader();
+
+    function scheduleHide() {
+      setTimeout(function () {
         hideLoader();
-      }
-    } catch (e) {
-      hideLoader();
+      }, 200);
     }
 
-    // 2. Interceptar clics en enlaces de navegación entre módulos (sidebar, navbar, enlaces internos)
+    // Interceptar clics en enlaces de navegación entre módulos (sidebar, navbar, enlaces internos)
     document.addEventListener("click", function (e) {
-      // Ignorar clics con teclas modificadoras (Ctrl/Cmd/Shift/Alt o botón central/secundario)
       if (e.defaultPrevented || e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
@@ -211,13 +221,8 @@
         return;
       }
 
-      // Ignorar enlaces marcados para abrir en pestaña nueva o con descarga
-      if (a.hasAttribute("download") || (a.target && a.target !== "_self" && a.target !== "")) {
-        return;
-      }
-
       // Ignorar descargas de documentos o blobs
-      if (rawHref.startsWith("/uploads/") || rawHref.startsWith("blob:") || rawHref.startsWith("data:")) {
+      if (a.hasAttribute("download") || rawHref.startsWith("/uploads/") || rawHref.startsWith("blob:") || rawHref.startsWith("data:")) {
         return;
       }
 
@@ -228,58 +233,56 @@
 
       try {
         const dest = new URL(a.href, window.location.href);
-        // Solo enlaces dentro del mismo origen (sitio interno)
         if (dest.origin !== window.location.origin) return;
 
-        // Si ya estamos exactamente en esta página y ruta, no recargar
+        // Si se abre en una ventana/pestaña nueva (target="_blank")
+        if (a.target && a.target !== "_self" && a.target !== "") {
+          showLoader();
+          setTimeout(function () {
+            hideLoader();
+          }, 800);
+          return;
+        }
+
         const currentPath = window.location.pathname + window.location.search;
         const destPath = dest.pathname + dest.search;
         if (currentPath === destPath) {
           return;
         }
 
-        // Marcar bandera de transición para que la página destino continúe con el loader
         try {
           sessionStorage.setItem("incarsa_page_transition", "1");
         } catch (err) {}
 
-        // Mostrar preloader en la página actual con animación suave
         e.preventDefault();
         showLoader();
 
-        // Navegar tras un breve instante (130ms) para apreciar la transición fluida
         setTimeout(function () {
           window.location.href = a.href;
-        }, 130);
+        }, 120);
       } catch (err) {}
     });
 
-    // 3. Controladores para ocultar el preloader cuando la página esté lista
+    // Controladores para ocultar de forma fluida el preloader cuando la página esté lista
     window.addEventListener("pageshow", function () {
-      hideLoader();
+      scheduleHide();
     });
 
     document.addEventListener("DOMContentLoaded", function () {
-      if (!sessionStorage.getItem("incarsa_page_transition")) {
-        hideLoader();
-      }
+      scheduleHide();
     });
 
     window.addEventListener("load", function () {
-      if (!sessionStorage.getItem("incarsa_page_transition")) {
-        hideLoader();
-      }
+      scheduleHide();
     });
 
     document.addEventListener("alpine:initialized", function () {
-      setTimeout(function () {
-        hideLoader();
-      }, 160);
+      scheduleHide();
     });
 
-    // Timeout de seguridad máximo (2.2s) para garantizar que nunca bloquee la pantalla
+    // Timeout de seguridad máximo (2s) para evitar bloqueos
     setTimeout(function () {
       hideLoader();
-    }, 2200);
+    }, 2000);
   })();
 </script>

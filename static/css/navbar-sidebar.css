@@ -20,15 +20,15 @@
 .app-shell {
   min-height: 100vh;
   padding: var(--shell-gap) var(--shell-gap) var(--shell-gap)
-           calc(var(--sidebar-w) + var(--shell-gap));
+           calc(var(--sidebar-collapsed-w) + var(--shell-gap));
   background: var(--bg-app);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  transition: padding-left 0.12s cubic-bezier(0.2, 0, 0, 1);
+  transition: padding-left 0.18s cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Sidebar colapsado → ajustar padding izquierdo */
+/* Sidebar colapsado → padding izquierdo constante para evitar layout shifts */
 .app-shell:has(.sidebar.is-collapsed) {
   padding-left: calc(var(--sidebar-collapsed-w) + var(--shell-gap));
 }
@@ -43,22 +43,25 @@
 
 /* =========================================================
    SIDEBAR (Menú Lateral)
+   Siempre recogido por defecto (76px) y se despliega solo en hover.
    ========================================================= */
 .sidebar {
   background: var(--ink-900);
   background-image: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-950) 100%);
-  width: var(--sidebar-w);
+  width: var(--sidebar-collapsed-w);
   flex-shrink: 0;
   border-radius: 0 20px 20px 0;
-  box-shadow: var(--shadow-panel);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
   overflow: hidden;
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
-  z-index: 40;
-  transition: width 0.12s cubic-bezier(0.2, 0, 0, 1), transform 0.14s cubic-bezier(0.2, 0, 0, 1);
-  will-change: width, transform;
+  z-index: 50;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+  will-change: width, box-shadow, transform;
 }
 
 .sidebar::after {
@@ -82,7 +85,7 @@
   animation: sidebarShimmer 12s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
   z-index: 1;
-  opacity: 1;
+  opacity: 0;
   transition: opacity 0.3s ease;
 }
 
@@ -97,6 +100,76 @@
 
 .sidebar.is-collapsed {
   width: var(--sidebar-collapsed-w);
+}
+
+/* DESPLIEGUE FLOTANTE EN HOVER O FOCO INTERNO POR TECLADO (ESCRITORIO) */
+@media (min-width: 1025px) {
+  .sidebar:hover,
+  .sidebar:has(:focus-visible),
+  .sidebar.is-hovered {
+    width: var(--sidebar-w);
+    box-shadow: 14px 0 45px -5px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    z-index: 60;
+  }
+
+  /* Si está explícitamente en modo colapsado y no hay hover ni navegación por teclado, forzar ancho compacto */
+  .sidebar.is-collapsed:not(:hover):not(:has(:focus-visible)) {
+    width: var(--sidebar-collapsed-w) !important;
+  }
+
+  /* Ocultar submenús abiertos cuando NO está en hover para mantener orden */
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered) .sidebar-submenu,
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered) [x-collapse] {
+    display: none !important;
+  }
+
+  /* Centrar iconos de enlaces cuando está en reposo (sin hover) */
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered) .sidebar-link {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered) .sidebar-collapse-btn {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+
+  /* Pausar shimmer en reposo */
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered)::after {
+    animation-play-state: paused !important;
+    opacity: 0 !important;
+  }
+
+  /* Logo compacto en reposo */
+  .sidebar:not(:hover):not(:has(:focus-visible)):not(.is-hovered) .sidebar-logo {
+    max-width: 44px !important;
+    height: 32px !important;
+  }
+
+  /* Enlaces alineados completos en hover */
+  .sidebar:hover .sidebar-link,
+  .sidebar:has(:focus-visible) .sidebar-link,
+  .sidebar.is-hovered .sidebar-link {
+    justify-content: space-between;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sidebar:hover .sidebar-logo,
+  .sidebar:has(:focus-visible) .sidebar-logo,
+  .sidebar.is-hovered .sidebar-logo {
+    max-width: 145px !important;
+    height: 40px !important;
+  }
+
+  .sidebar:hover::after,
+  .sidebar:has(:focus-visible)::after,
+  .sidebar.is-hovered::after {
+    animation-play-state: running;
+    opacity: 1;
+  }
 }
 
 /* Ocultar submenús abiertos cuando la barra se repliega al modo compacto */
@@ -123,19 +196,44 @@
   opacity: 0;
 }
 
-/* Textos, logos y chevrones con transición al colapsar y expandir */
+/* Textos, logos y chevrones con transición fluida */
 .sidebar-label,
 .sidebar-brand-text,
 .sidebar-chevron {
-  opacity: 1;
-  max-width: 200px;
+  opacity: 0;
+  max-width: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+  margin-left: 0 !important;
   overflow: hidden;
   white-space: nowrap;
   display: inline-block;
   vertical-align: middle;
-  transition: opacity 0.10s ease-out,
-              max-width 0.12s cubic-bezier(0.2, 0, 0, 1),
-              transform 0.10s ease-out;
+  transition: opacity 0.12s ease-in,
+              max-width 0.18s cubic-bezier(0.2, 0, 0, 1),
+              transform 0.12s ease-in;
+}
+
+@media (min-width: 1025px) {
+  /* Al estar en hover o focus por teclado: visibilidad suave de etiquetas y chevrones */
+  .sidebar:hover .sidebar-label,
+  .sidebar:has(:focus-visible) .sidebar-label,
+  .sidebar.is-hovered .sidebar-label,
+  .sidebar:hover .sidebar-brand-text,
+  .sidebar:has(:focus-visible) .sidebar-brand-text,
+  .sidebar.is-hovered .sidebar-brand-text,
+  .sidebar:hover .sidebar-chevron,
+  .sidebar:has(:focus-visible) .sidebar-chevron,
+  .sidebar.is-hovered .sidebar-chevron {
+    opacity: 1 !important;
+    max-width: 220px !important;
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    margin-left: revert !important;
+    transition: opacity 0.18s ease-out 0.04s,
+                max-width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.18s ease-out 0.04s !important;
+  }
 }
 
 .sidebar.is-collapsed .sidebar-label,
@@ -155,7 +253,7 @@
 .sidebar-link {
   color: #C7D0E4;
   border-radius: 12px;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, padding 0.12s cubic-bezier(0.2, 0, 0, 1), justify-content 0.12s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, padding 0.18s cubic-bezier(0.2, 0, 0, 1), justify-content 0.18s ease;
 }
 
 .sidebar-link:hover {
@@ -190,6 +288,137 @@
 .sidebar-sublink.is-active {
   color: #fff;
   border-left-color: var(--signal-500);
+}
+
+/* =========================================================
+   ENLACES SUPERADMIN EN SIDEBAR (SIN CAJA / NO ENCAJADOS)
+   Solo las letras e íconos con los colores neón de SuperAdmin
+   ========================================================= */
+
+.sidebar-superadmin-group,
+.sidebar-superadmin-group a,
+.sidebar-superadmin-item,
+.sidebar-superadmin-subitem,
+.sidebar-superadmin-group .sidebar-link,
+.sidebar-superadmin-group .sidebar-sublink {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Cabecera Control Maestro con letras doradas y magenta */
+.sidebar-superadmin-header {
+  background-image: linear-gradient(90deg, #fbbf24 0%, #f59e0b 45%, #d946ef 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Ítem principal (Panel SuperAdmin) */
+.sidebar-superadmin-item {
+  display: flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  padding: 7px 12px !important;
+  border-radius: 0 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.sidebar-superadmin-item span,
+.sidebar-superadmin-item .sidebar-label {
+  background-image: linear-gradient(90deg, #d946ef 0%, #c084fc 35%, #38bdf8 80%, #06b6d4 100%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  letter-spacing: 0.01em !important;
+  transition: filter 0.25s ease !important;
+}
+
+.sidebar-superadmin-item i {
+  background-image: linear-gradient(135deg, #d946ef 0%, #38bdf8 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  transition: transform 0.25s ease, filter 0.25s ease !important;
+}
+
+.sidebar-superadmin-item:hover,
+.sidebar-superadmin-item.is-active {
+  transform: translateX(4px) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-superadmin-item:hover span,
+.sidebar-superadmin-item.is-active span,
+.sidebar-superadmin-item:hover .sidebar-label,
+.sidebar-superadmin-item.is-active .sidebar-label {
+  animation: superadminFlowLeft 2s linear infinite !important;
+  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.85)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.6)) !important;
+}
+
+.sidebar-superadmin-item:hover i,
+.sidebar-superadmin-item.is-active i {
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 0 8px rgba(217, 70, 239, 0.9)) !important;
+}
+
+/* Sub-ítems (Mantenimiento, RBAC, Comunicados, Correspondencia) */
+.sidebar-superadmin-subitem {
+  display: flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  padding: 5px 12px !important;
+  border-radius: 0 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.sidebar-superadmin-subitem span,
+.sidebar-superadmin-subitem .sidebar-label {
+  background-image: linear-gradient(90deg, #f0abfc 0%, #c084fc 45%, #7dd3fc 100%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+  transition: filter 0.25s ease, font-weight 0.25s ease !important;
+}
+
+.sidebar-superadmin-subitem i {
+  background-image: linear-gradient(135deg, #d946ef 0%, #06b6d4 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  transition: transform 0.25s ease, filter 0.25s ease !important;
+}
+
+.sidebar-superadmin-subitem:hover {
+  transform: translateX(5px) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-superadmin-subitem:hover span,
+.sidebar-superadmin-subitem:hover .sidebar-label {
+  animation: superadminFlowLeft 1.2s linear infinite !important;
+  filter: drop-shadow(0 0 8px rgba(217, 70, 239, 0.8)) drop-shadow(0 0 14px rgba(6, 182, 212, 0.5)) !important;
+  font-weight: 700 !important;
+}
+
+.sidebar-superadmin-subitem:hover i {
+  transform: scale(1.2) !important;
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.85)) !important;
 }
 
 /* Botón inferior para contraer/expandir (Modo compacto) */
@@ -944,17 +1173,41 @@
     opacity: 1 !important;
   }
 
-  /* En móvil el drawer siempre muestra las etiquetas completas */
+  /* En móvil el drawer siempre muestra las etiquetas completas y contenido extendido */
+  .sidebar,
   .sidebar.is-collapsed {
-    width: 280px;
+    width: 280px !important;
   }
 
+  .sidebar .sidebar-label,
+  .sidebar .sidebar-brand-text,
+  .sidebar .sidebar-chevron,
   .sidebar.is-collapsed .sidebar-label,
   .sidebar.is-collapsed .sidebar-brand-text,
   .sidebar.is-collapsed .sidebar-chevron {
     opacity: 1 !important;
     max-width: 200px !important;
     margin-left: revert !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar .sidebar-link,
+  .sidebar.is-collapsed .sidebar-link {
+    justify-content: space-between !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .sidebar .sidebar-logo,
+  .sidebar.is-collapsed .sidebar-logo {
+    max-width: 145px !important;
+    height: 40px !important;
+  }
+
+  .sidebar .sidebar-submenu,
+  .sidebar.is-collapsed .sidebar-submenu {
+    display: block !important;
   }
 
   .sidebar-collapse-btn {

@@ -16,6 +16,26 @@ def CREATE_person_db(person: dict) -> dict:
                         "mensaje": "El correo electrónico es obligatorio.",
                     }
 
+                identificacion = str(person.get("identificacion") or "").strip()
+                if not identificacion:
+                    return {
+                        "exito": False,
+                        "mensaje": "El número de documento de identificación es obligatorio.",
+                    }
+
+                # Validar que no exista otra persona con el mismo documento
+                cursor.execute(
+                    "SELECT id, nombre, apellido FROM personas WHERE identificacion = %s LIMIT 1",
+                    (identificacion,)
+                )
+                persona_existente = cursor.fetchone()
+                if persona_existente:
+                    nombre_exist = f"{persona_existente.get('nombre', '')} {persona_existente.get('apellido', '')}".strip()
+                    return {
+                        "exito": False,
+                        "mensaje": f"Ya existe una persona registrada con el documento {identificacion} ({nombre_exist}). No se permiten duplicados.",
+                    }
+
                 sql_person = """
                     INSERT INTO personas (
                         nombre, apellido, tipo_doc, identificacion, cargo, observacion, correo
@@ -168,6 +188,22 @@ def UPDATE_person_db(persona_id: int, person: dict) -> dict:
                         "exito": False,
                         "mensaje": "El correo electrónico es obligatorio.",
                     }
+
+                # Si se actualiza la identificación, validar que no pertenezca a otra persona
+                identificacion = str(person.get("identificacion") or "").strip()
+                if identificacion:
+                    cursor.execute(
+                        "SELECT id, nombre, apellido FROM personas WHERE identificacion = %s AND id != %s LIMIT 1",
+                        (identificacion, persona_id)
+                    )
+                    otra_persona = cursor.fetchone()
+                    if otra_persona:
+                        nombre_otro = f"{otra_persona.get('nombre', '')} {otra_persona.get('apellido', '')}".strip()
+                        return {
+                            "exito": False,
+                            "mensaje": f"El documento {identificacion} ya pertenece a otra persona registrada ({nombre_otro}).",
+                        }
+
                 sql_update = """
                     UPDATE personas SET
                         nombre = %s,

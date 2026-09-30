@@ -115,65 +115,105 @@ def generar_html_autorizacion_datos(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
   <title>Autorización de Tratamiento de Datos Personales — Ley 1581 de 2012</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9; padding: 30px 15px;">
+<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 36px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" max-width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background-color: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7); border: 1px solid #1e293b;">
           
-          <!-- Encabezado Institucional -->
+          <!-- Franja superior en degradado Neón Sky / Blue -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 28px; text-align: center;">
-              <h1 style="color: #38bdf8; font-size: 26px; font-weight: 900; margin: 0; letter-spacing: 1.5px;">PSI</h1>
-              <p style="color: #94a3b8; font-size: 13px; font-weight: 700; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">
-                Control de Acceso y Gestión de Contratistas
+            <td style="height: 5px; background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
+          </tr>
+
+          <!-- Encabezado Institucional Modo Oscuro -->
+          <tr>
+            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #1e293b;">
+              <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                INCARSA <span style="color: #38bdf8; font-weight: 300;">·</span> <span style="color: #cbd5e1; font-size: 18px; font-weight: 500;">Gestión de Acceso a Planta</span>
+              </h1>
+              <p style="color: #94a3b8; font-size: 12px; font-weight: 500; margin: 6px 0 0 0;">
+                Autorización de Tratamiento de Datos Personales — Ley 1581 de 2012
               </p>
+              <div style="display: inline-block; background-color: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px;">
+                Marco Legal Ley 1581 de 2012
+              </div>
             </td>
           </tr>
 
           <!-- Contenido Principal -->
           <tr>
-            <td style="padding: 32px 28px;">
-              <div style="background-color: #ecfeff; border: 1px solid #a5f3fc; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: center;">
-                <span style="color: #0e7490; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                  📋 Solicitud de Ingreso Radicado: <strong>{rad_display}</strong>
-                </span>
-              </div>
+            <td style="padding: 28px 32px 32px 32px;">
+              
+              <!-- Tarjeta Titular + Radicado estilo UI -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1329; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <tr>
+                  <td style="vertical-align: middle;">
+                    <div style="color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+                      TITULAR DE LOS DATOS
+                    </div>
+                    <div style="color: #ffffff; font-size: 20px; font-weight: 800; line-height: 1.2; margin-bottom: 4px;">
+                      {nombre_display}
+                    </div>
+                    <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">
+                      🏢 {emp_display}
+                    </div>
+                  </td>
+                  <td align="right" style="vertical-align: middle; padding-left: 12px;">
+                    <div style="background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px; text-align: right; display: inline-block;">
+                      <div style="color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Solicitud / Radicado
+                      </div>
+                      <div style="color: #38bdf8; font-size: 15px; font-weight: 900; letter-spacing: 0.5px; margin-top: 2px;">
+                        {rad_display}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
 
-              <h2 style="color: #0f172a; font-size: 20px; font-weight: 800; margin: 0 0 12px 0;">
-                Hola, {nombre_display}
-              </h2>
-
-              <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 16px 0;">
-                Has sido registrado(a) por <strong>{emp_display}</strong> en la solicitud de ingreso a instalaciones industriales identificada con radicado <strong>{rad_display}</strong>.
+              <!-- Mensaje de Notificación -->
+              <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
+                Has sido registrado(a) por <strong style="color: #ffffff;">{emp_display}</strong> en la solicitud de ingreso a instalaciones industriales identificada con radicado <strong style="color: #38bdf8;">{rad_display}</strong>.
               </p>
 
-              <!-- Marco Legal Ley 1581 de 2012 -->
-              <div style="background-color: #f8fafc; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-                <h3 style="color: #0369a1; font-size: 13px; font-weight: 800; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px;">
-                  ⚖️ Autorización de Datos Personales (Ley 1581 de 2012)
-                </h3>
-                <p style="font-size: 13px; line-height: 1.6; color: #334155; margin: 0;">
-                  De conformidad con la <strong>Ley Estatutaria 1581 de 2012</strong> y el <strong>Decreto 1377 de 2013</strong> de la República de Colombia, requerimos tu consentimiento previo, expreso e informado para el tratamiento de tus datos personales exclusivamente con fines de:
-                </p>
-                <ul style="font-size: 12px; line-height: 1.5; color: #475569; margin: 8px 0 0 0; padding-left: 20px;">
-                  <li>Control de acceso, identificación y seguridad física en porterías y plantas industriales.</li>
-                  <li>Verificación de cumplimiento de requisitos de seguridad y salud en el trabajo (SST).</li>
-                  <li>Atención y coordinación de planes de emergencia y contingencias.</li>
-                </ul>
+              <!-- Aviso: Requisito Indispensable (Caja Ámbar Oscura idéntica a la UI) -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; margin-bottom: 22px;">
+                <tr>
+                  <td style="padding: 14px 16px; font-size: 13px; line-height: 1.5; color: #fef08a;">
+                    <strong style="color: #fde047;">⚠️ Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Sección Términos y Condiciones -->
+              <div style="margin-bottom: 24px;">
+                <div style="margin-bottom: 8px;">
+                  <span style="color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Términos y Condiciones de la Autorización
+                  </span>
+                </div>
+                <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 16px 18px;">
+                  <h3 style="color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px;">
+                    AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA
+                  </h3>
+                  <p style="font-size: 12px; line-height: 1.6; color: #cbd5e1; margin: 0 0 10px 0;">
+                    En cumplimiento de la <strong>Ley 1581 de 2012</strong> y el <strong>Decreto Reglamentario 1377 de 2013</strong> de la República de Colombia, requerimos su consentimiento previo, expreso e informado para el tratamiento de sus datos personales exclusivamente con fines de:
+                  </p>
+                  <ul style="font-size: 12px; line-height: 1.6; color: #94a3b8; margin: 0; padding-left: 20px;">
+                    <li>Control de acceso, identificación y seguridad física en porterías y plantas industriales.</li>
+                    <li>Verificación de cumplimiento de requisitos de seguridad y salud en el trabajo (SG-SST).</li>
+                    <li>Atención y coordinación de planes de emergencia y contingencias.</li>
+                  </ul>
+                </div>
               </div>
 
-              <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px;">
-                <p style="color: #be123c; font-size: 12px; font-weight: 700; margin: 0; line-height: 1.5;">
-                  ⚠️ <strong>Requisito Indispensable para tu Ingreso:</strong> Si no autorizas el tratamiento de tus datos personales, el sistema de portería bloqueará automáticamente tu acceso a las instalaciones, aún cuando la solicitud se encuentre aprobada administrativamente.
-                </p>
-              </div>
-
-              <!-- Botón de Acción Principal -->
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="{url_autorizacion}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 800; padding: 14px 32px; border-radius: 10px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+              <!-- Botón de Acción Principal Azul Neón Gradiente -->
+              <div style="text-align: center; margin: 30px 0 24px 0;">
+                <a href="{url_autorizacion}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; padding: 14px 34px; border-radius: 10px; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.35); text-transform: uppercase; letter-spacing: 0.6px;">
                   Ver y Autorizar Tratamiento de Datos
                 </a>
               </div>
@@ -181,20 +221,21 @@ def generar_html_autorizacion_datos(
               <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0 0 8px 0;">
                 Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:
               </p>
-              <p style="font-size: 11px; color: #0284c7; text-align: center; word-break: break-all; margin: 0;">
-                <a href="{url_autorizacion}" style="color: #0284c7;">{url_autorizacion}</a>
+              <p style="font-size: 11px; text-align: center; word-break: break-all; margin: 0;">
+                <a href="{url_autorizacion}" style="color: #38bdf8; font-weight: 600; text-decoration: none;">{url_autorizacion}</a>
               </p>
             </td>
           </tr>
 
-          <!-- Pie de Página Legal -->
+          <!-- Pie de Página Legal Modo Oscuro -->
           <tr>
-            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 28px; text-align: center;">
+            <td style="background-color: #080d19; border-top: 1px solid #1e293b; padding: 22px 32px; text-align: center;">
               <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">
                 Como titular de los datos, tienes derecho a conocer, actualizar, rectificar y revocar tu autorización en cualquier momento conforme a la legislación colombiana vigente.
               </p>
-              <p style="font-size: 11px; color: #cbd5e1; margin: 8px 0 0 0;">
-                Este es un mensaje automático generado por la plataforma PSI. Por favor no responder a este correo.
+              <p style="font-size: 10px; color: #64748b; margin: 8px 0 0 0;">
+                <strong style="color: #ffffff;">INCARSA</strong> · Industria de Alimentos y Concentrados de Santander · Plataforma PSI.<br>
+                Este es un mensaje generado automáticamente por el sistema. Por favor, no respondas a este correo.
               </p>
             </td>
           </tr>

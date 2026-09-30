@@ -248,10 +248,51 @@ function procesamientoBoard() {
       return `${conClass} step-connector-pending is-pending`;
     },
 
+    esFechaCaducada(fechaStr) {
+      if (!fechaStr || fechaStr === '—' || fechaStr === '-') return false;
+      try {
+        let d = null;
+        const str = String(fechaStr).trim().split('T')[0].split(' ')[0];
+        if (str.includes('-')) {
+          const partes = str.split('-');
+          if (partes.length === 3) {
+            d = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10), 23, 59, 59);
+          }
+        } else if (str.includes('/')) {
+          const partes = str.split('/');
+          if (partes.length === 3) {
+            d = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10), 23, 59, 59);
+          }
+        }
+        if (!d || isNaN(d.getTime())) {
+          d = new Date(fechaStr);
+        }
+        if (isNaN(d.getTime())) return false;
+
+        const hoy = new Date();
+        const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+        return d < hoyInicio;
+      } catch (e) {
+        return false;
+      }
+    },
+
     solicitudes: [],
 
     get filtered() {
       let rows = this.solicitudes;
+
+      // 0. Excluir solicitudes que están inactivas Y cuyas fechas de vigencia ya caducaron
+      rows = rows.filter(s => {
+        const esInactiva = s.is_active === 0 || s.is_active === false || s.is_active === "0" || (s.estado || '').toUpperCase() === 'INACTIVO' || s.activa === false || s.activo === false;
+        const fechaFin = s.fecha_salida || s.fecha_fin || s.fecha_hasta || s.fecha_vigencia || s.fecha_salida_contrato;
+        const esCaducada = this.esFechaCaducada(fechaFin);
+
+        if (esInactiva && esCaducada) {
+          return false;
+        }
+        return true;
+      });
 
       // 1. Filtro para Gestión Documental: solo consultar solicitudes que haya diligenciado él mismo
       const rolTextoProc = String((this.usuarioSesion && (this.usuarioSesion.rol || this.usuarioSesion.nombre_rol)) || "").toUpperCase();

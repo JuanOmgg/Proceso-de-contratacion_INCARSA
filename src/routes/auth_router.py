@@ -4,7 +4,7 @@ import hashlib
 import bcrypt
 import resend 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Response
 
 from dotenv import load_dotenv
 
@@ -71,7 +71,7 @@ def enviar_correo_smtp(destinatario: str, asunto: str, cuerpo_html: str) -> bool
         return False
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-def login(payload: LoginInput):
+def login(payload: LoginInput, response: Response):
     correo = payload.correo.strip().lower()
     usuario = GET_user_for_login_db(correo)
 
@@ -108,6 +108,24 @@ def login(payload: LoginInput):
     nombre_completo = f"{usuario.get('nombres', '')} {usuario.get('apellidos', '')}".strip()
 
     permisos_info = GET_permisos_rol_db(int(usuario["id_rol"])) if usuario.get("id_rol") else {}
+
+    # Establecer cookies de autenticación para navegaciones directas del navegador
+    response.set_cookie(
+        key="token",
+        value=token,
+        httponly=False,
+        max_age=86400 * 7,
+        path="/",
+        samesite="lax"
+    )
+    response.set_cookie(
+        key="incarsa_token",
+        value=token,
+        httponly=False,
+        max_age=86400 * 7,
+        path="/",
+        samesite="lax"
+    )
 
     return {
         "exito": True,
@@ -235,28 +253,87 @@ def solicitar_recuperacion(payload: RecuperacionInput):
 
     POST_recoveryToken_db(usuario["id_usuario"], codigo_hash, expiracion)
 
-    html_correo = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">PSI</h2>
-                <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Control y Gestión de Contratos</p>
-            </div>
-            <h3 style="color: #111827; font-size: 18px; margin-bottom: 12px; text-align: center;">Código de recuperación de contraseña</h3>
-            <p style="color: #4b5563; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
-                Has solicitado restablecer tu contraseña de acceso al sistema PSI. Utiliza el siguiente código de verificación:
-            </p>
-            <div style="background: #f9fafb; border: 2px dashed #ea580c; border-radius: 10px; padding: 18px; text-align: center; margin-bottom: 20px;">
-                <span style="font-family: monospace, Courier; font-size: 34px; font-weight: bold; letter-spacing: 8px; color: #ea580c;">{codigo_plano}</span>
-            </div>
-            <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin-bottom: 24px;">
-                Este código expira en <strong>15 minutos</strong>. Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin-bottom: 16px;" />
-            <p style="color: #9ca3af; font-size: 11px; text-align: center; margin: 0;">
-                Este es un mensaje automático generado por la plataforma PSI. Por favor no responder a este correo.
-            </p>
-        </div>
-    """
+    html_correo = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Recuperación de Contraseña — PSI INCARSA</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 36px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 540px; background-color: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7); border: 1px solid #1e293b;">
+          
+          <!-- Franja superior en degradado Sky / Blue Neón -->
+          <tr>
+            <td style="height: 5px; background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
+          </tr>
+
+          <!-- Encabezado Institucional Modo Oscuro -->
+          <tr>
+            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #1e293b;">
+              <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                INCARSA <span style="color: #38bdf8; font-weight: 300;">·</span> <span style="color: #cbd5e1; font-size: 18px; font-weight: 500;">Gestión de Acceso a Planta</span>
+              </h1>
+              <p style="color: #94a3b8; font-size: 12px; font-weight: 500; margin: 6px 0 0 0;">
+                Sistema de Control y Gestión de Seguridad · Plataforma PSI
+              </p>
+              <div style="display: inline-block; background-color: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px;">
+                Seguridad de la Cuenta
+              </div>
+            </td>
+          </tr>
+
+          <!-- Contenido Principal -->
+          <tr>
+            <td style="padding: 28px 32px 32px 32px;">
+              <h2 style="color: #ffffff; font-size: 19px; font-weight: 800; margin: 0 0 12px 0; text-align: center;">
+                Código de verificación
+              </h2>
+              <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 24px 0; text-align: center;">
+                Has solicitado restablecer tu contraseña de acceso al sistema <strong style="color: #ffffff;">PSI</strong>. Utiliza el siguiente código para completar la verificación:
+              </p>
+
+              <!-- Tarjeta OTP en Modo Oscuro (High Contrast Sky Blue) -->
+              <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 22px 16px; text-align: center; margin-bottom: 22px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);">
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #38bdf8; line-height: 1; padding-left: 10px;">
+                  {codigo_plano}
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;">
+                  ⏱️ Válido por 15 minutos
+                </div>
+              </div>
+
+              <!-- Aviso de seguridad en modo oscuro -->
+              <div style="background-color: rgba(56, 189, 248, 0.05); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;">
+                <p style="font-size: 12px; line-height: 1.5; color: #cbd5e1; margin: 0;">
+                  🛡️ <strong style="color: #ffffff;">¿No solicitaste este código?</strong> Si no realizaste esta solicitud, puedes ignorar este mensaje con total seguridad. Tu contraseña actual no se modificará.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Pie de Página: Modo Oscuro -->
+          <tr>
+            <td style="background-color: #080d19; border-top: 1px solid #1e293b; padding: 20px 32px; text-align: center;">
+              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">
+                <strong style="color: #ffffff;">INCARSA</strong> · Industria de Alimentos y Concentrados de Santander · Plataforma PSI
+              </p>
+              <p style="font-size: 10px; color: #64748b; margin: 6px 0 0 0;">
+                Este es un mensaje generado automáticamente por el sistema. Por favor, no respondas a este correo.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
 
     email_enviado = False
 
