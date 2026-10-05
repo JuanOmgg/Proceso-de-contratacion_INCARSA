@@ -55,7 +55,7 @@
                       <template x-if="doc.vigencia">
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                           <i class="fa-regular fa-calendar-check text-[9px]"></i>
-                          <span>Vigencia: <strong x-text="doc.vigencia"></strong></span>
+                          <span>Vigencia: <strong x-text="formatearFechaCorta(doc.vigencia) || doc.vigencia"></strong></span>
                         </span>
                       </template>
                     </div>

@@ -193,21 +193,27 @@ def generar_html_autorizacion_datos(
               <div style="margin-bottom: 24px;">
                 <div style="margin-bottom: 8px;">
                   <span style="color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                    Términos y Condiciones de la Autorización
+                    Términos y Condiciones de la Autorización (Formato FR_SLV_016)
                   </span>
                 </div>
                 <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 16px 18px;">
+                  <div style="margin-bottom: 8px; font-size: 10px; font-family: monospace; color: #38bdf8;">
+                    CÓDIGO: FR_SLV_016 · VERSIÓN: 00 · VIGENCIA: 16/01/2025
+                  </div>
                   <h3 style="color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px;">
-                    AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA
+                    AUTORIZACIÓN TRATAMIENTO DE DATOS PERSONALES · INCARSA S.A.S.
                   </h3>
                   <p style="font-size: 12px; line-height: 1.6; color: #cbd5e1; margin: 0 0 10px 0;">
-                    En cumplimiento de la <strong>Ley 1581 de 2012</strong> y el <strong>Decreto Reglamentario 1377 de 2013</strong> de la República de Colombia, requerimos su consentimiento previo, expreso e informado para el tratamiento de sus datos personales exclusivamente con fines de:
+                    En cumplimiento de la <strong>Ley 1581 de 2012</strong>, el <strong>Decreto 1377 de 2013</strong> y el <em>“Manual de Políticas de Tratamiento de la Información de Datos Personales”</em>, requerimos su consentimiento previo, expreso e informado para que <strong>INCARSA S.A.S. (NIT 830.078.829-5)</strong> trate sus datos personales para:
                   </p>
-                  <ul style="font-size: 12px; line-height: 1.6; color: #94a3b8; margin: 0; padding-left: 20px;">
-                    <li>Control de acceso, identificación y seguridad física en porterías y plantas industriales.</li>
-                    <li>Verificación de cumplimiento de requisitos de seguridad y salud en el trabajo (SG-SST).</li>
-                    <li>Atención y coordinación de planes de emergencia y contingencias.</li>
+                  <ul style="font-size: 12px; line-height: 1.6; color: #94a3b8; margin: 0 0 10px 0; padding-left: 20px;">
+                    <li>Procedimientos administrativos, gestión de contratistas y control de acceso físico en porterías y plantas industriales.</li>
+                    <li>Verificación de idoneidad, referencias y aportes al Sistema de Seguridad Social Integral (ARL, EPS, AFP).</li>
+                    <li>Seguridad física mediante videovigilancia (CCTV) y cumplimiento de estándares SG-SST.</li>
                   </ul>
+                  <p style="font-size: 11px; line-height: 1.5; color: #64748b; margin: 0;">
+                    Canal oficial para derechos ARCO (acceso, corrección, supresión, reclamo): <a href="mailto:incarsasas@incarsa.com.co" style="color: #38bdf8; text-decoration: none;">incarsasas@incarsa.com.co</a>.
+                  </p>
                 </div>
               </div>
 
@@ -231,10 +237,10 @@ def generar_html_autorizacion_datos(
           <tr>
             <td style="background-color: #080d19; border-top: 1px solid #1e293b; padding: 22px 32px; text-align: center;">
               <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">
-                Como titular de los datos, tienes derecho a conocer, actualizar, rectificar y revocar tu autorización en cualquier momento conforme a la legislación colombiana vigente.
+                Como titular de los datos personales, le asisten los derechos previstos en la Ley 1581 de 2012 y el Formato FR_SLV_016. Puede consultar la política institucional en <a href="https://www.incarsa.com.co" style="color: #38bdf8; text-decoration: none;">www.incarsa.com.co</a> o solicitar atención en <a href="mailto:incarsasas@incarsa.com.co" style="color: #38bdf8; text-decoration: none;">incarsasas@incarsa.com.co</a>.
               </p>
               <p style="font-size: 10px; color: #64748b; margin: 8px 0 0 0;">
-                <strong style="color: #ffffff;">INCARSA</strong> · Industria de Alimentos y Concentrados de Santander · Plataforma PSI.<br>
+                <strong style="color: #ffffff;">INCARSA S.A.S.</strong> · NIT 830.078.829-5 · Plataforma PSI.<br>
                 Este es un mensaje generado automáticamente por el sistema. Por favor, no respondas a este correo.
               </p>
             </td>

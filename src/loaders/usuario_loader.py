@@ -1,6 +1,7 @@
 from database import GET_conexion
 import bcrypt
 from typing import List, Dict, Any
+from datetime import datetime
 
 
 def CREATE_user_db(usuario: dict) -> dict:
@@ -318,6 +319,103 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                                     )
 
                 conexion.commit()
+
+                # Resolver rol actual y plantas actualizadas para sincronización en tiempo real
+                cursor.execute("""
+                    SELECT u.id, u.id_rol, r.nombre_rol
+                    FROM usuarios u
+                    LEFT JOIN roles r ON u.id_rol = r.id
+                    WHERE u.id = %s
+                """, (id_user,))
+                u_fresh = cursor.fetchone()
+                rol_id_fresh = int(u_fresh.get("id_rol") or 0) if u_fresh else 0
+                rol_nom_fresh = str(u_fresh.get("nombre_rol") or "").strip().upper() if u_fresh else ""
+
+                cursor.execute("""
+                    SELECT p.id, p.nombre
+                    FROM usuario_plantas up
+                    INNER JOIN planta p ON up.id_planta = p.id
+                    WHERE up.id_usuario = %s
+                """, (id_user,))
+                plantas_asignadas = cursor.fetchall() or []
+                plantas_ids_fresh = [int(p["id"]) for p in plantas_asignadas]
+
+                # Si es un usuario SST o GESCO y tiene plantas asignadas,
+                # identificar solicitudes activas existentes en esas plantas que requieren revisión
+                if (rol_id_fresh in (6, 7) or rol_nom_fresh in ("SST", "GESCO")) and plantas_ids_fresh:
+                    try:
+                        in_pl = ",".join(map(str, plantas_ids_fresh))
+                        find_expr = " OR ".join([f"FIND_IN_SET('{pid}', s.plantas_ids)" for pid in plantas_ids_fresh])
+                        
+                        sql_pendientes = f"""
+                            SELECT DISTINCT s.id, s.codigo, s.estado, s.plantas_ids
+                            FROM solicitudes s
+                            WHERE UPPER(s.estado) IN ('ENVIADO', 'EN REVISIÓN', 'EN REVISION', 'POR APROBAR')
+                              AND (s.fecha_fin IS NULL OR s.fecha_fin >= CURDATE())
+                              AND (
+                                  EXISTS (SELECT 1 FROM visita v WHERE v.id_solicitud = s.id AND v.id_planta IN ({in_pl}))
+                                  OR ({find_expr})
+                              )
+                        """
+                        cursor.execute(sql_pendientes)
+                        solicitudes_pendientes = cursor.fetchall() or []
+
+                        from src.utils.broadcaster import notification_broadcaster
+                        for sol_p in solicitudes_pendientes:
+                            cod_sol = sol_p.get("codigo") or f"RAD-{sol_p['id']:04d}"
+                            # Verificar si ya existe notificación previa para esta solicitud y usuario
+                            cursor.execute("""
+                                SELECT id FROM notificaciones 
+                                WHERE id_usuario = %s AND (enlace LIKE %s OR mensaje LIKE %s) LIMIT 1
+                            """, (id_user, f"%{cod_sol}%", f"%{cod_sol}%"))
+                            if not cursor.fetchone():
+                                tit_notif = f"Nueva solicitud asignada para revisión ({rol_nom_fresh})"
+                                msg_notif = f"La solicitud {cod_sol} pertenece a tus nuevas plantas asignadas y requiere dictamen de {rol_nom_fresh}."
+                                enlace_notif = f"/solicitudes/revision/{cod_sol}"
+                                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                                cursor.execute("""
+                                    INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
+                                    VALUES (%s, %s, %s, 'info', %s, FALSE, NOW())
+                                """, (id_user, tit_notif, msg_notif, enlace_notif))
+                                conexion.commit()
+                                notif_id = cursor.lastrowid
+
+                                notification_broadcaster.notificar_nueva({
+                                    "id": notif_id,
+                                    "titulo": tit_notif,
+                                    "mensaje": msg_notif,
+                                    "tipo": "info",
+                                    "enlace": enlace_notif,
+                                    "fecha_creacion": now_str,
+                                    "leido": False,
+                                    "id_usuario": id_user
+                                }, target_user_id=id_user)
+                    except Exception as e_pend:
+                        print(f"⚠️ Error al verificar solicitudes pendientes para usuario actualizado: {e_pend}")
+
+                # Emitir evento SSE global en tiempo real para que todos los navegadores conectados actualicen la sesión
+                try:
+                    from src.utils.broadcaster import notification_broadcaster
+                    notification_broadcaster.broadcast_sync(
+                        event_type="usuario_actualizado",
+                        data={
+                            "id_usuario": id_user,
+                            "plantas_ids": plantas_ids_fresh,
+                            "plantas": plantas_asignadas,
+                            "id_rol": rol_id_fresh,
+                            "rol": rol_nom_fresh
+                        },
+                        broadcast_all=True
+                    )
+                    # También notificar recarga de listas para reflejar solicitudes simultáneamente
+                    notification_broadcaster.broadcast_sync(
+                        event_type="solicitudes_recargar",
+                        data={"id_usuario": id_user},
+                        broadcast_all=True
+                    )
+                except Exception as e_sse:
+                    print(f"⚠️ Error al emitir SSE usuario_actualizado: {e_sse}")
 
         return {
             "exito": True,

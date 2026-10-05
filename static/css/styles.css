@@ -3292,6 +3292,12 @@ table td .inline-flex {
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08) !important;
 }
 
+:root:not(.dark) .persona-revision-card.is-pendiente-datos {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%) !important;
+  border-color: #fcd34d !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08) !important;
+}
+
 :root:not(.dark) .persona-revision-card.is-denegado {
   background: linear-gradient(145deg, #ffffff 0%, #fef2f2 100%) !important;
   border-color: #fca5a5 !important;
@@ -3313,6 +3319,12 @@ table td .inline-flex {
   background: #dcfce7 !important;
   color: #15803d !important;
   border-color: #86efac !important;
+}
+
+:root:not(.dark) .persona-revision-card.is-pendiente-datos .persona-num-badge {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
 }
 
 :root:not(.dark) .persona-revision-card.is-denegado .persona-num-badge {
@@ -3533,9 +3545,9 @@ table td .inline-flex {
 }
 
 .modal-profile-avatar {
-  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(12, 118, 125, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
 }
 
 .modal-ticket .doc-ticket-row {
@@ -4117,6 +4129,9 @@ table td .inline-flex {
 }
 :root:not(.dark) .ticket-status-auth {
   color: #16a34a;
+}
+:root:not(.dark) .ticket-status-warn {
+  color: #d97706;
 }
 :root:not(.dark) .ticket-status-unauth {
   color: #dc2626;

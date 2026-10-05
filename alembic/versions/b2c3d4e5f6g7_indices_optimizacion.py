@@ -19,27 +19,31 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Crear índices de alto rendimiento para filtros, búsquedas y ordenamientos frecuentes."""
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_personas_identificacion ON personas (identificacion);
-    """)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes (estado);
-    """)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_solicitudes_fecha_creacion ON solicitudes (fecha_creacion);
-    """)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_solicitudes_pre_aprobado ON solicitudes (pre_aprobado);
-    """)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_inducciones_fecha_vigencia ON inducciones (fecha_vigencia);
-    """)
+    indices = [
+        ("idx_personas_identificacion", "personas", ["identificacion"]),
+        ("idx_solicitudes_estado", "solicitudes", ["estado"]),
+        ("idx_solicitudes_fecha_creacion", "solicitudes", ["fecha_creacion"]),
+        ("idx_solicitudes_pre_aprobado", "solicitudes", ["pre_aprobado"]),
+        ("idx_inducciones_fecha_vigencia", "inducciones", ["fecha_vigencia"]),
+    ]
+    for nombre_indice, tabla, columnas in indices:
+        try:
+            op.create_index(nombre_indice, tabla, columnas)
+        except Exception as e:
+            print(f"Aviso al crear índice {nombre_indice} en {tabla}: {e}")
 
 
 def downgrade() -> None:
     """Eliminar índices añadidos."""
-    op.execute("DROP INDEX IF EXISTS idx_personas_identificacion ON personas;")
-    op.execute("DROP INDEX IF EXISTS idx_solicitudes_estado ON solicitudes;")
-    op.execute("DROP INDEX IF EXISTS idx_solicitudes_fecha_creacion ON solicitudes;")
-    op.execute("DROP INDEX IF EXISTS idx_solicitudes_pre_aprobado ON solicitudes;")
-    op.execute("DROP INDEX IF EXISTS idx_inducciones_fecha_vigencia ON inducciones;")
+    indices = [
+        ("idx_personas_identificacion", "personas"),
+        ("idx_solicitudes_estado", "solicitudes"),
+        ("idx_solicitudes_fecha_creacion", "solicitudes"),
+        ("idx_solicitudes_pre_aprobado", "solicitudes"),
+        ("idx_inducciones_fecha_vigencia", "inducciones"),
+    ]
+    for nombre_indice, tabla in indices:
+        try:
+            op.drop_index(nombre_indice, table_name=tabla)
+        except Exception as e:
+            print(f"Aviso al eliminar índice {nombre_indice} de {tabla}: {e}")

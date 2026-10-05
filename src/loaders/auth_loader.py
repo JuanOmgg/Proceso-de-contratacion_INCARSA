@@ -95,3 +95,49 @@ def PATCH_password_db(id_usuario: int, newPass_hash: str, id_token: int):
     except Exception as e:
         print(f"❌ Error actualizando contraseña del usuario: {e}")
         return False
+
+def POST_2faToken_db(id_usuario: int, code_hash: str, expiration_time: datetime):
+    """Guarda un nuevo código de verificación 2FA invalidando los anteriores pendientes."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("UPDATE tokens_2fa SET used = TRUE WHERE id_usuario = %s AND used = FALSE", (id_usuario,))
+                sql = """
+                INSERT INTO tokens_2fa (id_usuario, code_hash, expiration_time)
+                VALUES (%s, %s, %s)
+                """
+                cursor.execute(sql, (id_usuario, code_hash, expiration_time))
+                conexion.commit()
+                return True
+    except Exception as e:
+        print(f"❌ Error guardando token 2FA: {e}")
+        return False
+
+def GET_validate2faToken_db(id_usuario: int, code_hash: str):
+    """Busca y retorna el token 2FA para el usuario y hash dados."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = """
+                SELECT id, expiration_time, used 
+                FROM tokens_2fa 
+                WHERE id_usuario = %s AND code_hash = %s 
+                ORDER BY creado_en DESC LIMIT 1
+                """
+                cursor.execute(sql, (id_usuario, code_hash))
+                return cursor.fetchone()
+    except Exception as e:
+        print(f"❌ Error validando token 2FA: {e}")
+        return None
+
+def MARK_2faToken_used_db(id_token: int):
+    """Marca un token 2FA como utilizado."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("UPDATE tokens_2fa SET used = TRUE WHERE id = %s", (id_token,))
+                conexion.commit()
+                return True
+    except Exception as e:
+        print(f"❌ Error marcando token 2FA como usado: {e}")
+        return False

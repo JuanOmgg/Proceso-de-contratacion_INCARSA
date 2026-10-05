@@ -712,23 +712,30 @@ html.dark select option:checked {
 
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser {
-  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 0 10px rgba(3, 191, 191, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
-  border: 1.5px solid rgba(3, 191, 191, 0.5) !important;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+  border: 1.5px solid rgba(249, 115, 22, 0.6) !important;
   letter-spacing: 0.02em;
   transition: all 0.25s ease;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser:hover,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn:hover .inicialesUser {
-  background: linear-gradient(135deg, #0d828a 0%, #1aebeb 100%) !important;
+  background: linear-gradient(135deg, #ef4444 0%, #fb923c 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(3, 191, 191, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
-  border-color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  border-color: #f97316 !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn:hover,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn.navbar-user-btn-open {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+  border-color: rgba(249, 115, 22, 0.55) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 16px rgba(249, 115, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 :root.dark .section-users:hover {
@@ -4596,6 +4603,12 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   box-shadow: 0 0 12px rgba(0, 255, 136, 0.12) !important;
 }
 
+:root.dark .persona-revision-card.is-pendiente-datos {
+  background: rgba(245, 158, 11, 0.06) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.16) !important;
+}
+
 :root.dark .persona-revision-card.is-denegado {
   background: rgba(255, 42, 85, 0.06) !important;
   border-color: rgba(255, 42, 85, 0.35) !important;
@@ -4665,6 +4678,11 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   background: rgba(16, 185, 129, 0.25) !important;
   border: 1.5px solid #34d399 !important;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), inset 0 0 5px rgba(16, 185, 129, 0.2) !important;
+}
+:root.dark .persona-revision-card.is-pendiente-datos .persona-num-badge {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border: 1.5px solid #fbbf24 !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5), inset 0 0 5px rgba(245, 158, 11, 0.2) !important;
 }
 :root.dark .persona-revision-card.is-denegado .persona-num-badge {
   background: rgba(239, 68, 68, 0.25) !important;
@@ -5108,9 +5126,9 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   border: none !important;
 }
 
-/* Opción 1: Ver perfil (Azul / Cian Neón Eléctrico) */
-:root.dark .navbar-user-dropdown .dropdown-item-profile,
-:root.dark div[x-show="open"] button:has(.fa-user) {
+/* Opción 1: Ver perfil (Tradicional Flama / Naranja para usuarios convencionales, Cian para Superadmin) */
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-dropdown .dropdown-item-profile,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) div[x-show="open"] button:has(.fa-user) {
   color: #f8fafc !important;
   font-weight: 500 !important;
   border-radius: 9px !important;
@@ -5119,26 +5137,39 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   background: transparent !important;
 }
 
-:root.dark .navbar-user-dropdown .dropdown-item-profile i,
-:root.dark div[x-show="open"] button:has(.fa-user) i {
-  color: #38bdf8 !important;
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-dropdown .dropdown-item-profile i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) div[x-show="open"] button:has(.fa-user) i {
+  color: #f97316 !important;
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.9)) !important;
   transition: transform 0.22s ease, filter 0.22s ease !important;
 }
 
-:root.dark .navbar-user-dropdown .dropdown-item-profile:hover,
-:root.dark div[x-show="open"] button:has(.fa-user):hover {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-dropdown .dropdown-item-profile:hover,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) div[x-show="open"] button:has(.fa-user):hover {
+  background: rgba(249, 115, 22, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 12px rgba(249, 115, 22, 0.22), 0 0 14px rgba(249, 115, 22, 0.25) !important;
+  border-left: 2.5px solid #f97316 !important;
+  padding-left: 14px !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-dropdown .dropdown-item-profile:hover i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) div[x-show="open"] button:has(.fa-user):hover i {
+  filter: drop-shadow(0 0 12px #f97316) !important;
+  transform: scale(1.15);
+}
+
+:root.dark[data-role="SUPERADMIN"] .navbar-user-dropdown .dropdown-item-profile i,
+:root.dark.role-superadmin .navbar-user-dropdown .dropdown-item-profile i {
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) !important;
+}
+:root.dark[data-role="SUPERADMIN"] .navbar-user-dropdown .dropdown-item-profile:hover,
+:root.dark.role-superadmin .navbar-user-dropdown .dropdown-item-profile:hover {
   background: rgba(56, 189, 248, 0.14) !important;
   color: #ffffff !important;
   box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.22), 0 0 14px rgba(56, 189, 248, 0.25) !important;
   border-left: 2.5px solid #38bdf8 !important;
-  padding-left: 14px !important;
-}
-
-:root.dark .navbar-user-dropdown .dropdown-item-profile:hover i,
-:root.dark div[x-show="open"] button:has(.fa-user):hover i {
-  filter: drop-shadow(0 0 12px #38bdf8) !important;
-  transform: scale(1.15);
 }
 
 /* Opción 2: Cerrar sesión (Rojo / Carmín Neón Eléctrico Brillante) */
@@ -5915,6 +5946,10 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
   color: #00ff88 !important;
   filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.8)) !important;
 }
+:root.dark .ticket-status-warn {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.8)) !important;
+}
 :root.dark .ticket-status-unauth {
   color: #ff2a55 !important;
   filter: drop-shadow(0 0 6px rgba(255, 42, 85, 0.8)) !important;
@@ -6684,19 +6719,29 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 /* 6.9. MODO OSCURO GENERAL (Para roles que no son SuperAdmin) */
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-detalle,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-panel a[class*="bg-[var(--signal-500)]"] {
-  background: linear-gradient(135deg, #0C767D 0%, #03bfbf 100%) !important;
+  background-image: linear-gradient(
+    90deg,
+    #dc2626 0%,
+    #f75d20 20%,
+    #ef4444 40%,
+    #dc2626 60%,
+    #f3561d 80%,
+    #dc2626 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: flameGradientShift 6s linear infinite !important;
   color: #ffffff !important;
-  border: 1px solid rgba(3, 191, 191, 0.5) !important;
-  box-shadow: 0 0 12px rgba(3, 191, 191, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.6) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas {
-  color: #03bfbf !important;
+  color: #f75d20 !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas:hover {
-  background: rgba(3, 191, 191, 0.15) !important;
-  color: #38bdf8 !important;
+  background: rgba(247, 93, 32, 0.15) !important;
+  color: #fb923c !important;
 }
 
 /* =========================================================
@@ -7017,4 +7062,29 @@ body.role-superadmin .modal-ticket input:focus,
   border-color: #d946ef !important;
   box-shadow: 0 0 0 2px rgba(217, 70, 239, 0.25) !important;
 }
+
+/* =========================================================
+   6.11. SELECTOR MODAL: TIPO DE SOLICITUD (INTERNO VS TERCEROS)
+   Acomoda opciones al estilo tradicional corporativo de INCARSA
+   ========================================================= */
+/* Usuarios Convencionales (No Superadmin) - Brillo y bordes tradicionales */
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-tipo-card-interno:hover {
+  border-color: rgba(249, 115, 22, 0.85) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(249, 115, 22, 0.35) !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-tipo-card-terceros:hover {
+  border-color: rgba(239, 68, 68, 0.85) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(220, 38, 38, 0.4), 0 0 30px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* SuperAdmin: Efecto Neón Multicolor en opciones */
+:root[data-role="SUPERADMIN"] .modal-tipo-solicitud-card:hover,
+:root.role-superadmin .modal-tipo-solicitud-card:hover,
+:root.dark[data-role="SUPERADMIN"] .modal-tipo-solicitud-card:hover,
+:root.dark.role-superadmin .modal-tipo-solicitud-card:hover {
+  border-color: rgba(217, 70, 239, 0.75) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 0 22px rgba(217, 70, 239, 0.45), 0 0 35px rgba(6, 182, 212, 0.3) !important;
+}
+
 

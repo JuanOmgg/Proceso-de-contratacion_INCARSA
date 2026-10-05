@@ -16,3 +16,7 @@ class PermisosRolInput(BaseModel):
     permisos: Optional[List[Dict[str, Any]]] = None
     modulos: Optional[Dict[str, bool]] = None
     acciones: Optional[Dict[str, bool]] = None
+
+class DosPasosConfigInput(BaseModel):
+    activo: bool
+

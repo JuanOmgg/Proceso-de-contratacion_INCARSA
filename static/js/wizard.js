@@ -958,6 +958,22 @@ function solicitudWizard() {
       if (this.errors.plantas) delete this.errors.plantas;
     },
 
+    formatearFechaCorta(fecha) {
+      if (typeof window.formatearFechaCorta === 'function') {
+        const res = window.formatearFechaCorta(fecha);
+        if (res && res !== '—') return res;
+      }
+      if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
+        const res = window.Fechas.formatearCorta(fecha);
+        if (res && res !== '—') return res;
+      }
+      return fecha || '—';
+    },
+
+    formatearFecha(fecha) {
+      return this.formatearFechaCorta(fecha);
+    },
+
     isEmpresaSelected(empresaId) {
       const sId = String(empresaId);
       return this.form.empresas.some(id => String(id) === sId);
@@ -2519,9 +2535,10 @@ function solicitudWizard() {
 
       // Estructura de personas para payload de backend
       const personasPayload = this.personas.map(p => ({
-        id: parseInt(p.id) || undefined,
-        id_persona: parseInt(p.id) || undefined,
+        id: (!isNaN(parseInt(p.id)) && parseInt(p.id) > 0) ? parseInt(p.id) : undefined,
+        id_persona: (!isNaN(parseInt(p.id)) && parseInt(p.id) > 0) ? parseInt(p.id) : undefined,
         nombre: p.nombres || p.nombre || "Personal",
+        apellido: p.apellidos || p.apellido || "",
         identificacion: p.numDoc || p.identificacion || "",
         tipo_doc: p.tipoDoc || p.tipo_doc || "CC",
         cargo: p.cargo || "Personal",

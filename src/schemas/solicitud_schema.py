@@ -137,9 +137,11 @@ class UPDATE_Schema_Optionals(BaseSolicitudSchema):
 
 
 class DictamenInput(BaseModel):
-    id_planta: Optional[int] = None
+    id_planta: Optional[Union[int, str]] = None
+    plantas_ids: Optional[List[int]] = None
     rol: str
     decision: str
+    es_edicion: Optional[bool] = False
     motivo_rechazo: Optional[str] = None
     motivo_devolucion: Optional[str] = None
     observacion: Optional[str] = None

@@ -8,6 +8,9 @@
 // Helper: normaliza solicitudes del backend al formato estándar
 // ---------------------------------------------------------
 function formatearFechaHoraEspanol(fechaStr) {
+  if (window.Fechas && typeof window.Fechas.formatearFechaHora === 'function') {
+    return window.Fechas.formatearFechaHora(fechaStr);
+  }
   if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
   try {
     const str = String(fechaStr).trim();
@@ -39,9 +42,13 @@ function formatearFechaHoraEspanol(fechaStr) {
 }
 
 function formatearFechaCorta(fechaStr) {
-  if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
+  if (!fechaStr || fechaStr === '—' || fechaStr === '-' || fechaStr === 'null' || fechaStr === 'None' || fechaStr === 'undefined') return '—';
+  if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
+    const res = window.Fechas.formatearCorta(fechaStr);
+    if (res && res !== '—') return res;
+  }
   try {
-    const str = String(fechaStr).trim().split('T')[0].split(' ')[0];
+    const str = String(fechaStr).trim().split('T')[0].split(',')[0].split(' ')[0];
     const fPartes = str.split('-');
     if (fPartes.length === 3) {
       const anio = fPartes[0];
@@ -51,7 +58,7 @@ function formatearFechaCorta(fechaStr) {
       const mesNombre = meses[mesIdx] || fPartes[1];
       return `${dia} ${mesNombre} ${anio}`;
     }
-    return fechaStr;
+    return str || '—';
   } catch (e) {
     return fechaStr;
   }
@@ -144,6 +151,7 @@ function normalizarSolicitud(s) {
         const cargo = parts[4];
         const autorizado = parts[5];
         const motivo = parts[6] || "";
+        const estado_datos = parts[7] || "PENDIENTE";
         return {
           id,
           ap_nombre,
@@ -152,7 +160,8 @@ function normalizarSolicitud(s) {
           identificacion,
           cargo,
           autorizado: autorizado !== '0' && autorizado !== 0 && autorizado !== false && autorizado !== 'false',
-          motivo: motivo || ""
+          motivo: motivo || "",
+          estado_datos: String(estado_datos || "PENDIENTE").trim().toUpperCase()
         };
       });
     } else {
@@ -172,7 +181,8 @@ function normalizarSolicitud(s) {
       identificacion: p.identificacion || "—",
       cargo: p.cargo || "Operario",
       autorizado: p.autorizado !== '0' && p.autorizado !== 0 && p.autorizado !== false && p.autorizado !== 'false',
-      motivo: p.motivo || p.motivo_rechazo || ""
+      motivo: p.motivo || p.motivo_rechazo || "",
+      estado_datos: String(p.estado_datos || "PENDIENTE").trim().toUpperCase()
     }));
   }
 
@@ -230,8 +240,10 @@ function normalizarSolicitud(s) {
     fecha_ingreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
     fecha_salida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
     fechaIngreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
-    fechaSalida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
-    fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion),
+    fecha_creacion_raw: s.fecha_creacion_raw || s.fecha_creacion,
+    fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion_raw || s.fecha_creacion),
+    fecha_creacion_corta: formatearFechaCorta(s.fecha_creacion_raw || s.fecha_creacion),
+    fecha_registro: formatearFechaCorta(s.fecha_registro || s.fecha_creacion_raw || s.fecha_creacion || s.created_at || s.fecha_ingreso || s.fecha_inicio),
     estado: (s.estado || "ENVIADO").toUpperCase(),
     diligenciador: diligenciadorNombre,
     diligenciado_por: diligenciadoPorId,

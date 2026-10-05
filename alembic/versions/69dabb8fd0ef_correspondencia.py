@@ -31,13 +31,8 @@ def upgrade() -> None:
         mysql_engine='InnoDB',
         mysql_charset='utf8mb4',
         mysql_collate='utf8mb4_unicode_ci'
-       )
-    
-    op.execute("""
-        INSERT INTO correspondencia (radicado, tipo_correspondencia, asunto, procedencia,destino,fecha_envio) VALUES
-        ('RAD-500', '-', '-', '-', '-', NOW())
-        ON DUPLICATE KEY UPDATE radicado = VALUES(radicado);
-    """)
+       )   
+
 
 
 def downgrade() -> None:

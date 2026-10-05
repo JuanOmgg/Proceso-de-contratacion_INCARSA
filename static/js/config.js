@@ -21,44 +21,66 @@ const API = {
 };
 
 // ============================================================================
-// GESTIÓN CENTRALIZADA DE AUTENTICACIÓN Y TOKEN JWT
+// GESTIÓN CENTRALIZADA DE AUTENTICACIÓN Y TOKEN JWT (OPTIMIZADO CON CACHÉ EN MEMORIA)
 // ============================================================================
+let _cachedAuthSession = null;
+let _cachedAuthToken = null;
+let _lastSyncedToken = null;
+
 function syncAuthCookie(token) {
-    if (token) {
+    if (!token || _lastSyncedToken === token) return;
+    try {
+        _lastSyncedToken = token;
         document.cookie = "token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
         document.cookie = "incarsa_token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
-    }
+    } catch (e) {}
 }
 
 function getAuthToken() {
+    if (_cachedAuthToken) return _cachedAuthToken;
     let token = sessionStorage.getItem("incarsa_token") || localStorage.getItem("incarsa_token") || null;
     if (!token) {
         try {
-            const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+            const sesion = getAuthSession();
             if (sesion && sesion.token) {
                 token = sesion.token;
             }
         } catch (e) {}
     }
     if (token) {
+        _cachedAuthToken = token;
         syncAuthCookie(token);
     }
     return token;
 }
 
 function getAuthSession() {
+    if (_cachedAuthSession !== null) {
+        return _cachedAuthSession;
+    }
     try {
         const sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        _cachedAuthSession = sesion;
         if (sesion && sesion.token) {
+            _cachedAuthToken = sesion.token;
             syncAuthCookie(sesion.token);
         }
         return sesion;
     } catch (e) {
+        _cachedAuthSession = null;
         return null;
     }
 }
 
+function invalidateAuthCache() {
+    _cachedAuthSession = null;
+    _cachedAuthToken = null;
+    _lastSyncedToken = null;
+}
+window.invalidateAuthCache = invalidateAuthCache;
+
 function clearAuthSession() {
+    invalidateAuthCache();
     try {
         sessionStorage.removeItem("incarsa_token");
         sessionStorage.removeItem("incarsa_session");
@@ -76,10 +98,71 @@ function cerrarSesionUsuario() {
     window.location.replace("/login?logout=1");
 }
 
+async function syncAuthSessionWithServer() {
+    try {
+        const token = getAuthToken();
+        if (!token) return null;
+        const res = await window.fetch("/api/v1/auth/me", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            const u = data.usuario || data;
+            if (u && u.id) {
+                let sesionActual = null;
+                try {
+                    sesionActual = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+                } catch(e) {}
+                if (!sesionActual) sesionActual = {};
+
+                let cambio = false;
+
+                const nuevasPlantasIds = Array.isArray(u.plantas_ids) ? u.plantas_ids.map(Number) : [];
+                const viejasPlantasIds = (sesionActual.plantas_ids || []).map(Number);
+                const a1 = [...nuevasPlantasIds].sort().join(",");
+                const a2 = [...viejasPlantasIds].sort().join(",");
+                if (a1 !== a2) {
+                    sesionActual.plantas_ids = nuevasPlantasIds;
+                    cambio = true;
+                }
+
+                if (Array.isArray(u.plantas)) {
+                    sesionActual.plantas = u.plantas;
+                    cambio = true;
+                }
+
+                if (u.id_rol && Number(sesionActual.id_rol) !== Number(u.id_rol)) {
+                    sesionActual.id_rol = u.id_rol;
+                    sesionActual.rol = u.nombre_rol || sesionActual.rol;
+                    cambio = true;
+                }
+
+                if (cambio) {
+                    sessionStorage.setItem("incarsa_session", JSON.stringify(sesionActual));
+                    if (localStorage.getItem("incarsa_session")) {
+                        localStorage.setItem("incarsa_session", JSON.stringify(sesionActual));
+                    }
+                    invalidateAuthCache();
+                    window.dispatchEvent(new CustomEvent("sesion-actualizada-en-caliente", { detail: sesionActual }));
+                }
+                return sesionActual;
+            }
+        }
+    } catch (e) {
+        console.warn("Aviso al sincronizar sesión con servidor:", e);
+    }
+    return getAuthSession();
+}
+window.syncAuthSessionWithServer = syncAuthSessionWithServer;
+
 // Sincronización proactiva al cargar config.js
 try {
     const _t = getAuthToken();
-    if (_t) syncAuthCookie(_t);
+    if (_t) {
+        syncAuthCookie(_t);
+        // Sincronizar permisos y plantas en segundo plano sin bloquear renderizado
+        setTimeout(() => syncAuthSessionWithServer(), 150);
+    }
 } catch (e) {}
 
 // ============================================================================

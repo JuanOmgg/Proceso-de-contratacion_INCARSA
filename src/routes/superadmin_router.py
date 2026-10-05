@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from typing import Dict, List, Optional, Any
-from src.schemas.superadmin_schema import MantenimientoInput, PermisosRolInput
+from src.schemas.superadmin_schema import MantenimientoInput, PermisosRolInput, DosPasosConfigInput
 
 from src.utils.security import get_current_user, require_role
 from src.loaders.superadmin_loader import (
@@ -11,7 +11,10 @@ from src.loaders.superadmin_loader import (
     GET_matriz_permisos_db,
     UPDATE_permisos_rol_db,
     GET_permisos_rol_db,
+    GET_dos_pasos_status,
+    SET_dos_pasos_status,
 )
+
 
 router = APIRouter(tags=["SuperAdmin"])
 templates = Jinja2Templates(directory="templates")
@@ -123,8 +126,30 @@ def set_mantenimiento(payload: MantenimientoInput, current_user: dict = Depends(
     }
 
 # -----------------------------------------------------------------------------
+# API: Gestión de Verificación en 2 Pasos (2FA)
+# -----------------------------------------------------------------------------
+@router.get("/api/v1/superadmin/seguridad/dos-pasos", status_code=status.HTTP_200_OK)
+def get_dos_pasos_superadmin(current_user: dict = Depends(require_role(["SUPERADMIN"]))):
+    """Consulta el estado de la verificación en 2 pasos (Exclusivo SuperAdmin)."""
+    return {
+        "exito": True,
+        "activo": GET_dos_pasos_status()
+    }
+
+@router.post("/api/v1/superadmin/seguridad/dos-pasos", status_code=status.HTTP_200_OK)
+def set_dos_pasos_superadmin(payload: DosPasosConfigInput, current_user: dict = Depends(require_role(["SUPERADMIN"]))):
+    """Activa o desactiva la verificación en 2 pasos para todos los usuarios (Exclusivo SuperAdmin)."""
+    SET_dos_pasos_status(payload.activo)
+    return {
+        "exito": True,
+        "activo": payload.activo,
+        "mensaje": "Verificación en 2 pasos activada exitosamente." if payload.activo else "Verificación en 2 pasos desactivada exitosamente."
+    }
+
+# -----------------------------------------------------------------------------
 # API: Gestión de Matriz de Permisos por Rol
 # -----------------------------------------------------------------------------
+
 @router.get("/api/v1/superadmin/permisos", status_code=status.HTTP_200_OK)
 def get_permisos_matriz(current_user: dict = Depends(require_role(["SUPERADMIN"]))):
     """Retorna la matriz completa de roles y permisos (Exclusivo SuperAdmin)."""

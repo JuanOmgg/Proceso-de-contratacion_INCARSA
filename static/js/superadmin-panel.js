@@ -21,6 +21,12 @@ function superAdminPanel() {
       updated_at: null
     },
 
+    // Verificación en 2 pasos (2FA) por correo electrónico
+    dosPasos: {
+      activo: false,
+      guardando: false
+    },
+
     listaModulosSistema: [
       { id: 'dashboard', nombre: 'Dashboard y Estadísticas', icono: 'fa-gauge-high', color: 'text-cyan-400' },
       { id: 'solicitudes', nombre: 'Listado de Solicitudes', icono: 'fa-file-invoice', color: 'text-amber-400' },
@@ -35,7 +41,12 @@ function superAdminPanel() {
       { id: 'personas', nombre: 'Directorio de Personas', icono: 'fa-person', color: 'text-pink-400' },
       { id: 'procesamiento', nombre: 'Procesamiento de Solicitudes', icono: 'fa-diagram-project', color: 'text-yellow-400' },
       { id: 'antecedentes', nombre: 'Verificación de Antecedentes', icono: 'fa-magnifying-glass-chart', color: 'text-sky-400' },
-      { id: 'revision_solicitud', nombre: 'Revisión y Aprobación', icono: 'fa-clipboard-check', color: 'text-emerald-400' }
+      { id: 'seguridad_social', nombre: 'Seguridad Social', icono: 'fa-shield-heart', color: 'text-rose-400' },
+      { id: 'inducciones', nombre: 'Gestión de Inducciones', icono: 'fa-graduation-cap', color: 'text-amber-400' },
+      { id: 'estadisticas', nombre: 'Estadísticas y Reportes', icono: 'fa-chart-line', color: 'text-cyan-400' },
+      { id: 'formulario_temporal', nombre: 'Solicitudes para Terceros', icono: 'fa-link', color: 'text-purple-400' },
+      { id: 'revision_solicitud', nombre: 'Revisión y Aprobación', icono: 'fa-clipboard-check', color: 'text-emerald-400' },
+      { id: 'dispositivos', nombre: 'Consulta de Dispositivos', icono: 'fa-laptop-code', color: 'text-purple-400' }
     ],
 
     // Gestión de Permisos
@@ -248,6 +259,7 @@ function superAdminPanel() {
 
       await Promise.all([
         this.cargarEstadoMantenimiento(),
+        this.cargarEstadoDosPasos(),
         this.cargarMatrizPermisos(),
         this.cargarUsuariosSistema(),
         this.cargarHistorialDifusion(),
@@ -255,6 +267,89 @@ function superAdminPanel() {
       ]);
 
       this.cargando = false;
+    },
+
+    // -------------------------------------------------------------
+    // 0. VERIFICACIÓN EN 2 PASOS (2FA GLOBAL)
+    // -------------------------------------------------------------
+    async cargarEstadoDosPasos() {
+      try {
+        const res = await fetch('/api/v1/superadmin/seguridad/dos-pasos');
+        if (res.ok) {
+          const data = await res.json();
+          this.dosPasos.activo = !!data.activo;
+        }
+      } catch (err) {
+        console.error('Error cargando estado 2FA:', err);
+      }
+    },
+
+    async toggleDosPasos(nuevoEstado) {
+      const activar = nuevoEstado !== undefined ? nuevoEstado : !this.dosPasos.activo;
+      const titulo = activar 
+        ? '¿Activar Verificación en 2 Pasos (2FA)?' 
+        : '¿Desactivar Verificación en 2 Pasos?';
+      
+      const texto = activar
+        ? 'A partir de este momento, todo usuario que inicie sesión con correo y contraseña válidos deberá ingresar un código temporal de 6 dígitos enviado a su correo corporativo.'
+        : 'Los usuarios podrán iniciar sesión directamente con su correo y contraseña sin solicitar el código temporal.';
+
+      if (typeof Swal !== 'undefined') {
+        const confirmacion = await Swal.fire({
+          title: titulo,
+          text: texto,
+          icon: activar ? 'info' : 'warning',
+          showCancelButton: true,
+          confirmButtonText: activar ? 'Sí, activar 2FA' : 'Sí, desactivar 2FA',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: activar ? '#0284c7' : '#64748b',
+          cancelButtonColor: '#334155'
+        });
+
+        if (!confirmacion.isConfirmed) {
+          return;
+        }
+      }
+
+      this.dosPasos.guardando = true;
+      try {
+        const res = await fetch('/api/v1/superadmin/seguridad/dos-pasos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ activo: activar })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          this.dosPasos.activo = !!data.activo;
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: activar ? 'Verificación en 2 pasos activada' : 'Verificación en 2 pasos desactivada',
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true
+            });
+          }
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Error al actualizar configuración 2FA.');
+        }
+      } catch (err) {
+        console.error('Error al actualizar 2FA:', err);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'No se pudo actualizar el estado de verificación en dos pasos.',
+            confirmButtonColor: '#dc2626'
+          });
+        }
+      } finally {
+        this.dosPasos.guardando = false;
+      }
     },
 
     // -------------------------------------------------------------
@@ -675,6 +770,10 @@ function superAdminPanel() {
         personas: 'Listado de Personas',
         procesamiento: 'Procesamiento de Solicitudes',
         antecedentes: 'Verificación de Antecedentes',
+        seguridad_social: 'Seguridad Social',
+        inducciones: 'Gestión de Inducciones',
+        estadisticas: 'Estadísticas y Reportes',
+        formulario_temporal: 'Solicitudes para Terceros (Token)',
         revision_solicitud: 'Revisión y Aprobación Detallada',
         dispositivos: 'Consulta de Dispositivos',
         superadmin: 'Panel Maestro SuperAdmin'
@@ -697,6 +796,10 @@ function superAdminPanel() {
         personas: 'fa-person text-pink-400',
         procesamiento: 'fa-diagram-project text-yellow-400',
         antecedentes: 'fa-magnifying-glass-chart text-sky-400',
+        seguridad_social: 'fa-shield-heart text-rose-400',
+        inducciones: 'fa-graduation-cap text-amber-400',
+        estadisticas: 'fa-chart-line text-cyan-400',
+        formulario_temporal: 'fa-link text-purple-400',
         revision_solicitud: 'fa-clipboard-check text-emerald-400',
         dispositivos: 'fa-laptop-code text-purple-400',
         superadmin: 'fa-shield-halved text-rose-400'
@@ -719,6 +822,10 @@ function superAdminPanel() {
         personas: 'bg-pink-500/15 border-pink-500/30 text-pink-400 shadow-pink-500/10',
         procesamiento: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400 shadow-yellow-500/10',
         antecedentes: 'bg-sky-500/15 border-sky-500/30 text-sky-400 shadow-sky-500/10',
+        seguridad_social: 'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/10',
+        inducciones: 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-amber-500/10',
+        estadisticas: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400 shadow-cyan-500/10',
+        formulario_temporal: 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-purple-500/10',
         revision_solicitud: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10',
         dispositivos: 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-purple-500/10',
         superadmin: 'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/10'

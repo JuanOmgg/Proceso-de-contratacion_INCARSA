@@ -136,6 +136,11 @@ def GET_ALL_solicitudes(
     active: Optional[bool] = Query(None, description="Filtrar solo solicitudes activas. Por defecto: None"),
     id_usuario: Optional[int] = Query(None, description="Filtrar por plantas del usuario si es SST o GESCO"),
     diligenciado_por: Optional[int] = Query(None, description="Filtrar por usuario que diligenció la solicitud"),
+    page: Optional[int] = Query(None, ge=1, description="Número de página para paginación por servidor"),
+    limit: Optional[int] = Query(None, ge=1, le=100, description="Cantidad de registros por página"),
+    search: Optional[str] = Query(None, description="Búsqueda por texto"),
+    estado: Optional[str] = Query(None, description="Filtro por estado"),
+    empresa: Optional[str] = Query(None, description="Filtro por empresa"),
     current_user: dict = Depends(get_current_user)
 ):
     rol_user = str(current_user.get("rol", "")).strip().upper()
@@ -158,13 +163,18 @@ def GET_ALL_solicitudes(
     if id_rol_user == 5 or "GESTION DOCUMENTAL" in rol_user or "GESTIÓN DOCUMENTAL" in rol_user:
         diligenciado_por = current_user.get("id")
 
-    print(f"🔍 [GET] Consultando solicitudes (activas={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por}, excluir_inactivas_vencidas={excluir_inactivas_vencidas})...")
+    print(f"🔍 [GET] Consultando solicitudes (page={page}, limit={limit}, search={search}, estado={estado}, empresa={empresa}, active={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por}, excluir_inactivas_vencidas={excluir_inactivas_vencidas})...")
     
     resultado = GET_ALL_solicitudes_bd(
         only_active=active, 
         id_usuario=id_usuario, 
         diligenciado_por=diligenciado_por,
-        excluir_inactivas_vencidas=excluir_inactivas_vencidas
+        excluir_inactivas_vencidas=excluir_inactivas_vencidas,
+        page=page,
+        limit=limit,
+        search=search,
+        estado_filtro=estado,
+        empresa_filtro=empresa
     )
 
     if not resultado.get("exito", True):
@@ -175,6 +185,11 @@ def GET_ALL_solicitudes(
             detail=resultado.get("mensaje", "Error al obtener las solicitudes.")
         )
 
+    # Si se solicitó paginado, devolver el objeto con metadata (total, total_paginas, metricas)
+    if page is not None and limit is not None:
+        return resultado
+
+    # Si no se solicitó paginación, devolver lista directa para compatibilidad 100% retrocompatible
     return resultado.get("datos", resultado)
 
 
@@ -366,8 +381,8 @@ def REGISTRAR_dictamen_rt(
 ):
     print(f"📝 [DICTAMEN] Registrando dictamen para solicitud #{solicitud_id} por {payload.rol} (planta={payload.id_planta})...")
     dict_payload = payload.model_dump()
-    if not dict_payload.get("id_usuario"):
-        dict_payload["id_usuario"] = current_user.get("id")
+    dict_payload["id_usuario"] = current_user.get("id")
+    dict_payload["id_rol"] = current_user.get("id_rol")
     nombre_autenticado = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
     if not dict_payload.get("nombre_revisor") or str(dict_payload.get("nombre_revisor", "")).startswith("Auditor ("):
         if nombre_autenticado:
@@ -401,12 +416,10 @@ def ACTUALIZAR_personas_autorizacion_rt(
             detail="No tienes permisos para modificar autorizaciones de personal en esta solicitud."
         )
 
-    if not payload.get("id_usuario"):
-        payload["id_usuario"] = current_user.get("id")
-    if not payload.get("rol"):
-        payload["rol"] = current_user.get("rol") or current_user.get("nombre_rol") or rol_user
-    if not payload.get("nombre_revisor"):
-        payload["nombre_revisor"] = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
+    payload["id_usuario"] = current_user.get("id")
+    payload["id_rol"] = id_rol_user
+    payload["rol"] = current_user.get("rol") or current_user.get("nombre_rol") or rol_user
+    payload["nombre_revisor"] = f"{current_user.get('nombres', '')} {current_user.get('apellidos', '')}".strip()
 
     resultado = ACTUALIZAR_autorizacion_personas_db(solicitud_id, payload)
     if not resultado.get("exito"):

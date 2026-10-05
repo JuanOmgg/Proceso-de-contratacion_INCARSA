@@ -36,8 +36,160 @@ function loginForm() {
       }
     },
 
-    // Vista actual: 'login' | 'contacto' | 'olvide'
+    // Vista actual: 'login' | 'contacto' | 'olvide' | '2fa'
     vista: "login",
+
+    // =========================================================
+    // MÓDULO: VERIFICACIÓN EN 2 PASOS (2FA)
+    // =========================================================
+    dosPasos: {
+      tempToken: "",
+      correoOfuscado: "",
+      codigo: "",
+      codigoDemo: "",
+      verificando: false,
+      error: "",
+      reenviando: false,
+      temporizador: 60,
+      intervalo: null,
+      puedeReenviar: false
+    },
+
+    iniciarTemporizador2FA() {
+      if (this.dosPasos.intervalo) clearInterval(this.dosPasos.intervalo);
+      this.dosPasos.temporizador = 60;
+      this.dosPasos.puedeReenviar = false;
+
+      this.dosPasos.intervalo = setInterval(() => {
+        if (this.dosPasos.temporizador > 1) {
+          this.dosPasos.temporizador--;
+        } else {
+          this.dosPasos.temporizador = 0;
+          this.dosPasos.puedeReenviar = true;
+          clearInterval(this.dosPasos.intervalo);
+        }
+      }, 1000);
+    },
+
+    cancelar2FA() {
+      if (this.dosPasos.intervalo) clearInterval(this.dosPasos.intervalo);
+      this.dosPasos.tempToken = "";
+      this.dosPasos.codigo = "";
+      this.dosPasos.error = "";
+      this.dosPasos.codigoDemo = "";
+      this.dosPasos.verificando = false;
+      this.vista = "login";
+    },
+
+    async verificarCodigo2FA() {
+      this.dosPasos.error = "";
+      const code = (this.dosPasos.codigo || "").trim();
+
+      if (!code || code.length !== 6) {
+        this.dosPasos.error = "Ingresa el código completo de 6 dígitos.";
+        return;
+      }
+
+      this.dosPasos.verificando = true;
+
+      try {
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
+        const response = await fetch(`${authUrl}/verificar-2fa`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            temp_token: this.dosPasos.tempToken,
+            codigo: code
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.detail || data.mensaje || "Código de verificación incorrecto o expirado.");
+        }
+
+        if (this.dosPasos.intervalo) clearInterval(this.dosPasos.intervalo);
+
+        const matchedUser = data.usuario;
+        const accessToken = data.access_token;
+        const userPermisos = data.permisos || null;
+
+        // Guardar sesión y activar animación de carga completa
+        this.guardarSesion(
+          matchedUser.nombre,
+          matchedUser.correo,
+          matchedUser.rol,
+          matchedUser.id,
+          matchedUser.id_rol,
+          matchedUser.plantas_ids,
+          matchedUser.plantas,
+          accessToken,
+          userPermisos
+        );
+
+        this.splash.activo = true;
+        this.splash.progreso = 25;
+        this.splash.completado = false;
+        this.splash.mensaje = "Verificación exitosa. Iniciando sesión";
+        this.splash.usuarioNombre = matchedUser.nombre || matchedUser.correo;
+
+        await this.ejecutarPrecargaCompleta(matchedUser);
+
+      } catch (err) {
+        console.warn("Error en verificarCodigo2FA:", err);
+        this.dosPasos.verificando = false;
+        this.dosPasos.error = err.message || "Error al verificar el código.";
+      }
+    },
+
+    async reenviarCodigo2FA() {
+      if (!this.dosPasos.puedeReenviar || this.dosPasos.reenviando) return;
+      this.dosPasos.error = "";
+      this.dosPasos.reenviando = true;
+
+      try {
+        const authUrl = typeof API !== "undefined" && API.auth ? API.auth : `${window.location.origin}/api/v1/auth`;
+        const response = await fetch(`${authUrl}/reenviar-2fa`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            temp_token: this.dosPasos.tempToken
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.detail || data.mensaje || "No se pudo reenviar el código de verificación.");
+        }
+
+        if (data.codigo_demo) {
+          this.dosPasos.codigoDemo = String(data.codigo_demo);
+        }
+
+        this.dosPasos.reenviando = false;
+        this.dosPasos.codigo = "";
+        this.iniciarTemporizador2FA();
+
+        if (typeof Swal !== "undefined") {
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: "Código reenviado",
+            text: "Revisa tu bandeja de entrada o spam.",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          });
+        }
+      } catch (err) {
+        console.warn("Error reenviando código 2FA:", err);
+        this.dosPasos.reenviando = false;
+        this.dosPasos.error = err.message || "Error al reenviar el código.";
+      }
+    },
 
     // =========================================================
     // MÓDULO: CONTACTAR ADMINISTRADOR
@@ -405,6 +557,22 @@ function loginForm() {
 
         if (response.ok) {
           const resData = await response.json();
+          // Si el Superadministrador tiene activada la verificación en 2 pasos
+          if (resData.requiere_2fa) {
+            await new Promise(r => setTimeout(r, 200));
+            this.splash.activo = false;
+            this.submitting = false;
+            this.dosPasos.tempToken = resData.temp_token;
+            this.dosPasos.correoOfuscado = resData.correo_ofuscado || this.correo;
+            this.dosPasos.codigoDemo = resData.codigo_demo || "";
+            this.dosPasos.codigo = "";
+            this.dosPasos.error = "";
+            this.dosPasos.verificando = false;
+            this.vista = "2fa";
+            this.iniciarTemporizador2FA();
+            return;
+          }
+
           if (resData.exito && resData.usuario) {
             matchedUser = resData.usuario;
             accessToken = resData.access_token;

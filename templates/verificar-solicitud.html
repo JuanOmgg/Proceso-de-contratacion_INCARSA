@@ -291,14 +291,21 @@
                   </template>
 
                   <!-- Badge General Ingreso -->
-                  <template x-if="persona.autorizado">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 whitespace-nowrap shadow-xs select-none badge-autorizado-neon">
+                  <template x-if="persona.autorizado && persona.estado_datos === 'AUTORIZADO'">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 whitespace-nowrap shadow-xs select-none badge-autorizado-neon" title="Ingreso avalado y tratamiento de datos aprobado">
                       <i class="fa-solid fa-check text-[11px] text-emerald-600 dark:text-emerald-400"></i>
                       <span>AUTORIZADO</span>
                     </span>
                   </template>
-                  <template x-if="!persona.autorizado">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-950 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40 whitespace-nowrap shadow-xs select-none badge-rechazado-neon">
+                  <template x-if="persona.autorizado && persona.estado_datos !== 'AUTORIZADO' && persona.estado_datos !== 'RECHAZADO'">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 whitespace-nowrap shadow-xs select-none" title="Pendiente: Aún no ha aprobado el tratamiento de datos personales">
+                      <i class="fa-solid fa-clock text-[11px] text-amber-600 dark:text-amber-400"></i>
+                      <span>PENDIENTE DATOS</span>
+                    </span>
+                  </template>
+                  <template x-if="!persona.autorizado || persona.estado_datos === 'RECHAZADO'">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-950 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40 whitespace-nowrap shadow-xs select-none badge-rechazado-neon"
+                      :title="!persona.autorizado ? 'No autorizado para ingreso' : 'No autorizado: Tratamiento de datos rechazado'">
                       <i class="fa-solid fa-xmark text-[11px] text-rose-600 dark:text-rose-400"></i>
                       <span>NO AUTORIZADO</span>
                     </span>

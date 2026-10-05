@@ -429,3 +429,35 @@
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.35) !important;
   filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6)) !important;
 }
+
+/* ============================================================
+   ESTADOS DE PERSONAL EN REVISIÓN (ANIDADO CON TRATAMIENTO DE DATOS)
+   ============================================================ */
+
+/* 1. Modo Claro: Pendiente Tratamiento de Datos (Ámbar Cálido) */
+:root:not(.dark) .persona-revision-card.is-pendiente-datos {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%) !important;
+  border-color: #fcd34d !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08) !important;
+}
+
+:root:not(.dark) .persona-revision-card.is-pendiente-datos .persona-num-badge {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+}
+
+/* 2. Modo Oscuro: Pendiente Tratamiento de Datos (Ámbar Neón) */
+:root.dark .persona-revision-card.is-pendiente-datos {
+  background: rgba(245, 158, 11, 0.06) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.16) !important;
+}
+
+:root.dark .persona-revision-card.is-pendiente-datos .persona-num-badge {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border: 1.5px solid #fbbf24 !important;
+  color: #fef3c7 !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5), inset 0 0 5px rgba(245, 158, 11, 0.2) !important;
+}
+

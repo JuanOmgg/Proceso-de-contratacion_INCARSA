@@ -188,6 +188,9 @@ MODULOS_SISTEMA = [
     "procesamiento",
     "antecedentes",
     "seguridad_social",
+    "inducciones",
+    "estadisticas",
+    "formulario_temporal",
     "revision_solicitud",
     "dispositivos"
 ]
@@ -355,3 +358,54 @@ def GET_permisos_rol_db(id_rol: int) -> Dict[str, Any]:
     except Exception as e:
         print(f"❌ Error al obtener permisos para rol {id_rol}: {e}")
         return {"exito": False, "rol": "", "permisos": {}}
+
+# Cache en memoria para verificación en 2 pasos (5 segundos TTL)
+_DOS_PASOS_CACHE = {
+    "activo": False,
+    "expires_at": 0
+}
+
+def GET_dos_pasos_status() -> bool:
+    """Obtiene el estado de la verificación en 2 pasos global con caché en memoria."""
+    global _DOS_PASOS_CACHE
+    now = time.time()
+    if now < _DOS_PASOS_CACHE["expires_at"]:
+        return _DOS_PASOS_CACHE["activo"]
+
+    try:
+        with GET_conexion() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT valor FROM sistema_config WHERE clave = 'verificacion_dos_pasos'")
+                row = cur.fetchone()
+                activo = str(row["valor"]).strip() in ("1", "true", "True") if row else False
+                _DOS_PASOS_CACHE = {
+                    "activo": activo,
+                    "expires_at": now + 5
+                }
+                return activo
+    except Exception as e:
+        print(f"❌ Error al consultar estado de verificación en dos pasos: {e}")
+        return False
+
+def SET_dos_pasos_status(activo: bool) -> bool:
+    """Actualiza el estado de la verificación en dos pasos en sistema_config."""
+    global _DOS_PASOS_CACHE
+    valor_str = "1" if activo else "0"
+    try:
+        with GET_conexion() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO sistema_config (clave, valor, descripcion)
+                    VALUES ('verificacion_dos_pasos', %s, 'Estado de verificación en 2 pasos: 0=Inactivo, 1=Activo')
+                    ON DUPLICATE KEY UPDATE valor = VALUES(valor)
+                """, (valor_str,))
+                conn.commit()
+                _DOS_PASOS_CACHE = {
+                    "activo": activo,
+                    "expires_at": time.time() + 5
+                }
+                return True
+    except Exception as e:
+        print(f"❌ Error al actualizar verificación en dos pasos: {e}")
+        raise e
+

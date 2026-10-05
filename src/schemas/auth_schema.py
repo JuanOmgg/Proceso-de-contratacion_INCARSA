@@ -20,3 +20,11 @@ class PerfilUpdateInput(BaseModel):
     num_telefono: str | None = None
     contrasena: str | None = None
     confirmar_contrasena: str | None = None
+
+class Verificar2FAInput(BaseModel):
+    temp_token: str = Field(..., description="Token temporal emitido tras login")
+    codigo: str = Field(..., min_length=6, max_length=6, description="Código OTP de 6 dígitos")
+
+class Reenviar2FAInput(BaseModel):
+    temp_token: str = Field(..., description="Token temporal emitido tras login")
+

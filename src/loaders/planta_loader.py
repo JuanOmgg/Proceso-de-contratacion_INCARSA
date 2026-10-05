@@ -28,9 +28,21 @@ def CREATE_planta_db(planta: dict) -> dict:
         }
 
     except Exception as e:
+        err_msg = str(e)
+        if "1062" in err_msg or "Duplicate entry" in err_msg:
+            nombre = planta.get("nombre", "")
+            return {
+                "exito": False,
+                "mensaje": f"Ya existe una planta registrada con el nombre '{nombre}'. Por favor, elija un nombre diferente."
+            }
+        elif "1452" in err_msg or "foreign key constraint" in err_msg.lower():
+            return {
+                "exito": False,
+                "mensaje": "La empresa seleccionada no es válida o no existe."
+            }
         return {
             "exito": False,
-            "mensaje": f"❌❌ Error al crear la planta: {e} ❌❌"
+            "mensaje": f"Error al crear la planta: {e}"
         }
 
 def GET_planta_db(id_planta: int) -> dict:
@@ -138,9 +150,21 @@ def UPDATE_planta_db(id_planta: int, new_updates: dict) -> dict:
             "mensaje": f"✅✅ Planta/zona con ID {id_planta} actualizada con éxito ✅✅"
         }
     except Exception as e:
+        err_msg = str(e)
+        if "1062" in err_msg or "Duplicate entry" in err_msg:
+            nombre = new_updates.get("nombre", "")
+            return {
+                "exito": False,
+                "mensaje": f"Ya existe otra planta registrada con el nombre '{nombre}'. Por favor, elija un nombre diferente."
+            }
+        elif "1452" in err_msg or "foreign key constraint" in err_msg.lower():
+            return {
+                "exito": False,
+                "mensaje": "La empresa seleccionada no es válida o no existe."
+            }
         return {
             "exito": False,
-            "mensaje": f"❌❌ Error al actualizar planta/zona: {e} ❌❌"
+            "mensaje": f"Error al actualizar la planta: {e}"
         }
 
 def DELETE_planta_db(id_planta: int) -> dict:
@@ -148,7 +172,7 @@ def DELETE_planta_db(id_planta: int) -> dict:
     if id_planta <= 0:
         return {
             "exito": False,
-            "mensaje": "❌❌ El ID de la planta/zona debe ser mayor a 0 ❌❌"
+            "mensaje": "El ID de la planta/zona debe ser mayor a 0."
         }
 
     try:
@@ -160,17 +184,23 @@ def DELETE_planta_db(id_planta: int) -> dict:
                 if cursor.rowcount == 0:
                     return {
                         "exito": False,
-                        "mensaje": f"❌❌ No se encontró la planta/zona con ID {id_planta} ❌❌"
+                        "mensaje": f"No se encontró la planta/zona con ID {id_planta}."
                     }
 
                 conexion.commit()
 
         return {
             "exito": True,
-            "mensaje": f"✅✅ Planta con ID {id_planta} eliminada con éxito ✅✅"
+            "mensaje": f"Planta con ID {id_planta} eliminada con éxito."
         }
     except Exception as e:
+        err_msg = str(e)
+        if "1451" in err_msg or "foreign key constraint" in err_msg.lower():
+            return {
+                "exito": False,
+                "mensaje": "No es posible eliminar esta planta porque tiene solicitudes o registros vinculados."
+            }
         return {
             "exito": False,
-            "mensaje": f"❌❌ Error al eliminar planta: {e} ❌❌"
+            "mensaje": f"Error al eliminar la planta: {e}"
         }

@@ -604,9 +604,9 @@
 
 :root:not(.dark) .topbar .inicialesUser {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%) !important;
-  color: #0C767D !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+  color: var(--signal-500, #fa051a) !important;
+  border: 1px solid rgba(220, 38, 38, 0.25) !important;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.12) !important;
 }
 
 /* Modo Oscuro Neón / Premium */
@@ -622,8 +622,8 @@
 :root.dark .navbar-user-btn:hover,
 :root.dark .navbar-user-btn.navbar-user-btn-open {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
-  border-color: rgba(3, 191, 191, 0.5) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 16px rgba(3, 191, 191, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 16px rgba(249, 115, 22, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Indicador de estado en línea (Status dot) */
@@ -635,7 +635,7 @@
   height: 9px;
   border-radius: 9999px;
   background-color: #10b981;
-  border: 2px solid #0C767D;
+  border: 2px solid #0f172a;
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
   transition: all 0.2s ease;
 }

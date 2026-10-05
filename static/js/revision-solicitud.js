@@ -346,6 +346,20 @@ function revisionSolicitudApp() {
       return ["SST", "GESCO"].includes(rolActualNorm) || ["SST", "GESCO"].includes(rolSesionNorm) || [6, 7].includes(idRol);
     },
 
+    get esAdminOSuperadmin() {
+      const rolActualNorm = String(this.rolActual || "").trim().toUpperCase();
+      const rolSesionNorm = String(this.usuarioSesion?.rol || this.usuarioSesion?.nombre_rol || "").trim().toUpperCase();
+      const idRol = Number(this.usuarioSesion?.id_rol || 0);
+      if (this.esSuperAdmin || idRol === 2 || rolSesionNorm === "SUPERADMIN" || rolActualNorm === "SUPERADMIN") return true;
+      if (["ADMINISTRADOR", "ADMIN"].includes(rolActualNorm) || ["ADMINISTRADOR", "ADMIN"].includes(rolSesionNorm) || idRol === 1) return true;
+      return false;
+    },
+
+    get esRevisionFinalizada() {
+      const estado = String(this.solicitud?.estado || "").trim().toUpperCase();
+      return ["APROBADO", "FINALIZADO", "RECHAZADO"].includes(estado);
+    },
+
     get userDisplayName() {
       if (this.usuarioSesion && (this.usuarioSesion.nombres || this.usuarioSesion.nombre)) {
         return `${this.usuarioSesion.nombres || this.usuarioSesion.nombre} ${this.usuarioSesion.apellidos || ''}`.trim();
@@ -803,13 +817,21 @@ function revisionSolicitudApp() {
         }
       }
 
-      // 2. Obtener sesión de usuario
+      // 2. Obtener y sincronizar sesión de usuario más reciente
+      if (typeof window.syncAuthSessionWithServer === "function") {
+        try {
+          await window.syncAuthSessionWithServer();
+        } catch (eSync) {}
+      }
+
       try {
-        const sesion = JSON.parse(
-          sessionStorage.getItem("incarsa_session") ||
-          localStorage.getItem("incarsa_session") ||
-          "null"
-        );
+        const sesion = (typeof getAuthSession === "function")
+          ? getAuthSession()
+          : JSON.parse(
+              sessionStorage.getItem("incarsa_session") ||
+              localStorage.getItem("incarsa_session") ||
+              "null"
+            );
         if (sesion) {
           this.usuarioSesion = sesion;
           const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
@@ -820,6 +842,25 @@ function revisionSolicitudApp() {
       } catch (e) {
         console.warn("No se pudo parsear sesión:", e);
       }
+
+      // Escuchar actualización de sesión en caliente vía SSE (cambio de plantas por administrador)
+      window.addEventListener("sesion-actualizada-en-caliente", (e) => {
+        if (e.detail) {
+          this.usuarioSesion = e.detail;
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
+          const rol = this.usuarioSesion.rol || this.usuarioSesion.nombre_rol || mapaRoles[this.usuarioSesion.id_rol] || this.rolActual;
+          this.rolActual = rol;
+          this.rolNombre = rol;
+          if (this.misPlantasDictaminables && this.misPlantasDictaminables.length > 0) {
+            if (this.misPlantasDictaminables.length > 1) {
+              this.plantaSeleccionadaDictamen = "todas";
+            } else if (!this.plantaSeleccionadaDictamen || !this.misPlantasDictaminables.some(p => Number(p.id) === Number(this.plantaSeleccionadaDictamen))) {
+              this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
+            }
+          }
+          this.mostrarToast("Tus zonas asignadas fueron actualizadas por el Administrador. Permisos actualizados en tiempo real.", "info");
+        }
+      });
 
       if (!this.solicitudId) {
         this.error = "No se especificó un ID de solicitud válido.";
@@ -922,8 +963,10 @@ function revisionSolicitudApp() {
           this.cargarRevisionesGuardadas();
         }
 
-        // Preseleccionar planta para dictamen
-        if (this.misPlantasDictaminables && this.misPlantasDictaminables.length > 0) {
+        // Preseleccionar planta(s) para dictamen: si tiene más de 1 planta asignada, preseleccionar 'todas'
+        if (this.misPlantasDictaminables && this.misPlantasDictaminables.length > 1) {
+          this.plantaSeleccionadaDictamen = "todas";
+        } else if (this.misPlantasDictaminables && this.misPlantasDictaminables.length === 1) {
           this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
         }
 
@@ -1071,7 +1114,13 @@ function revisionSolicitudApp() {
             cargo: p.cargo || "Operario",
             autorizado: isAut,
             denegadaEnBd: !isAut,
+            denegado_por: p.denegado_por || null,
+            denegado_por_nombre: p.denegado_por_nombre || "",
             motivo_rechazo: p.motivo_rechazo || "",
+            estado_datos: String(p.estado_datos || "PENDIENTE").trim().toUpperCase(),
+            token_autorizacion: p.token_autorizacion || null,
+            fecha_respuesta_datos: p.fecha_respuesta_datos || null,
+            _reenviandoCorreo: false,
             fecha_consulta: (p.fecha_consulta && p.fecha_consulta !== "None" && p.fecha_consulta !== "null" && p.fecha_consulta !== "Pendiente" && p.fecha_consulta !== "No registrada") ? p.fecha_consulta : null,
             ultima_revision: (p.ultima_revision && p.ultima_revision !== "None" && p.ultima_revision !== "null" && p.ultima_revision !== "No registrada") ? p.ultima_revision : null,
             responsable: p.responsable || null,
@@ -1151,6 +1200,14 @@ function revisionSolicitudApp() {
       return this.solicitud?.personas?.filter(p => p.autorizado === true).length || 0;
     },
 
+    get totalPersonasAutorizadasCompletas() {
+      return this.solicitud?.personas?.filter(p => p.autorizado === true && String(p.estado_datos || 'PENDIENTE').toUpperCase() === 'AUTORIZADO').length || 0;
+    },
+
+    get totalPersonasPendientesDatos() {
+      return this.solicitud?.personas?.filter(p => p.autorizado === true && String(p.estado_datos || 'PENDIENTE').toUpperCase() !== 'AUTORIZADO').length || 0;
+    },
+
     get totalPersonasDenegadas() {
       return this.solicitud?.personas?.filter(p => p.autorizado === false).length || 0;
     },
@@ -1228,15 +1285,62 @@ function revisionSolicitudApp() {
 
     puedeAutorizarPersona(persona) {
       if (!this.puedeEditarAutorizacion) return false;
-      // SCR, roles superiores, SST y GESCO siempre pueden autorizar personas
-      if (this.esScrOSuperior || this.esSstOGesco) {
+
+      // Si la persona NO estaba denegada en BD, cualquier revisor con permisos puede autorizarla
+      if (!persona || !persona.denegadaEnBd) {
         return true;
       }
-      // Regla de negocio para otros roles: Si ya estaba denegada en BD
-      if (persona && persona.denegadaEnBd) {
-        return false;
+
+      // Si estaba denegada en BD:
+      // REGLA 1: "si un usuario en la revision no autoriza a una persona, otros usuarios no pueden reautorizarla, SOLO la persona que nego el acceso puede volver a autorizar"
+      const idMiUsuario = this.usuarioSesion?.id || this.usuarioSesion?.id_usuario;
+      if (this.esSuperAdmin) {
+        return true;
       }
+      if (persona.denegado_por && idMiUsuario) {
+        return String(persona.denegado_por) === String(idMiUsuario);
+      }
+
+      // Si por datos anteriores no se registró denegado_por, solo SCR o Superadmin
+      if (!persona.denegado_por && this.esScrOSuperior) {
+        return true;
+      }
+
+      return false;
+    },
+
+    puedeDenegarPersona(persona) {
+      if (!this.puedeEditarAutorizacion) return false;
+
+      // REGLA 2: "ademas al finalizar el proceso de la revision los que hayan finalizado con autorizacion no pueden ser editados a no autorizado A MENOS que sea rol admin o superadmin"
+      if (this.esRevisionFinalizada) {
+        if (persona?.denegadaEnBd === false || persona?.autorizado) {
+          return this.esAdminOSuperadmin;
+        }
+      }
+
       return true;
+    },
+
+    getTooltipAutorizar(persona) {
+      if (!this.puedeEditarAutorizacion) {
+        return "Autorización bloqueada: no tienes permisos de edición en esta etapa.";
+      }
+      if (persona && persona.denegadaEnBd && !this.puedeAutorizarPersona(persona)) {
+        const nom = persona.denegado_por_nombre || "otro revisor";
+        return `No puedes autorizar a este ingresante: fue denegado por ${nom}. Solo quien negó el acceso puede volver a autorizarlo.`;
+      }
+      return "Autorizar ingresante";
+    },
+
+    getTooltipDenegar(persona) {
+      if (!this.puedeEditarAutorizacion) {
+        return "Autorización bloqueada: no tienes permisos de edición en esta etapa.";
+      }
+      if (!this.puedeDenegarPersona(persona)) {
+        return "El proceso de revisión ya finalizó. Solo un Administrador o Superadmin puede revocar la autorización de una persona aprobada.";
+      }
+      return "Denegar acceso a este ingresante";
     },
 
     puedeAutorizarVehiculo(vehiculo) {
@@ -1256,7 +1360,12 @@ function revisionSolicitudApp() {
         return;
       }
       if (estaAutorizado && !this.puedeAutorizarPersona(persona)) {
-        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
+        const nom = persona.denegado_por_nombre || "otro revisor";
+        this.mostrarToast(`No puedes autorizar a este ingresante: fue denegado por ${nom}. Solo quien negó el acceso puede volver a autorizarlo.`, "warning");
+        return;
+      }
+      if (!estaAutorizado && !this.puedeDenegarPersona(persona)) {
+        this.mostrarToast("El proceso de revisión ya finalizó. Solo un Administrador o Superadmin puede revocar la autorización de una persona aprobada.", "warning");
         return;
       }
       persona.autorizado = estaAutorizado;
@@ -1268,7 +1377,7 @@ function revisionSolicitudApp() {
       this.hayCambiosPersonas = true;
       const nombre = persona.nombre || "Ingresante";
       this.mostrarToast(
-        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (pendiente de guardar)` : `⛔ Acceso denegado a ${nombre} (pendiente de guardar)`,
+        estaAutorizado ? `✅ ${nombre} marcado como Autorizado (recuerda guardar cambios)` : `⛔ Acceso denegado a ${nombre} (recuerda guardar cambios)`,
         estaAutorizado ? "success" : "info"
       );
     },
@@ -1276,7 +1385,12 @@ function revisionSolicitudApp() {
     toggleAutorizacionPersona(persona) {
       if (!this.puedeEditarAutorizacion) return;
       if (!persona.autorizado && !this.puedeAutorizarPersona(persona)) {
-        this.mostrarToast("No puedes autorizar a este ingresante: fue denegado en una revisión previa.", "warning");
+        const nom = persona.denegado_por_nombre || "otro revisor";
+        this.mostrarToast(`No puedes autorizar a este ingresante: fue denegado por ${nom}. Solo quien negó el acceso puede volver a autorizarlo.`, "warning");
+        return;
+      }
+      if (persona.autorizado && !this.puedeDenegarPersona(persona)) {
+        this.mostrarToast("El proceso de revisión ya finalizó. Solo un Administrador o Superadmin puede revocar la autorización de una persona aprobada.", "warning");
         return;
       }
       this.setAutorizacionPersona(persona, !persona.autorizado);
@@ -1299,7 +1413,7 @@ function revisionSolicitudApp() {
       });
       this.hayCambiosPersonas = true;
       if (omitidas > 0) {
-        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados). Recuerda guardar cambios.`, "info");
+        this.mostrarToast(`Se autorizaron los ingresantes disponibles (${omitidas} ingresante(s) se mantuvieron denegados porque solo quien los denegó puede reautorizarlos). Recuerda guardar cambios.`, "info");
       } else {
         this.mostrarToast("Todas las personas marcadas como autorizadas (recuerda guardar cambios)", "success");
       }
@@ -1311,11 +1425,88 @@ function revisionSolicitudApp() {
         return;
       }
       if (!this.solicitud?.personas || this.solicitud.personas.length === 0) return;
+      let omitidas = 0;
       this.solicitud.personas.forEach(p => {
-        p.autorizado = false;
+        if (this.puedeDenegarPersona(p)) {
+          p.autorizado = false;
+        } else {
+          omitidas++;
+        }
       });
       this.hayCambiosPersonas = true;
-      this.mostrarToast("Todas las personas marcadas como No Autorizadas (recuerda guardar cambios)", "info");
+      if (omitidas > 0) {
+        this.mostrarToast(`Se denegaron los ingresantes disponibles (${omitidas} persona(s) con aprobación final no pudieron modificarse porque solo Admin/Superadmin tienen potestad). Recuerda guardar cambios.`, "warning");
+      } else {
+        this.mostrarToast("Todas las personas marcadas como No Autorizadas (recuerda guardar cambios)", "info");
+      }
+    },
+
+    getPersonaCardClass(persona) {
+      if (!persona) return '';
+      if (!persona.autorizado) return 'is-denegado';
+      const est = String(persona.estado_datos || 'PENDIENTE').trim().toUpperCase();
+      if (est === 'AUTORIZADO') return 'is-autorizado';
+      return 'is-pendiente-datos';
+    },
+
+    getPersonaNumBadgeClass(persona) {
+      if (!persona) return '';
+      if (!persona.autorizado) return 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-700/60';
+      const est = String(persona.estado_datos || 'PENDIENTE').trim().toUpperCase();
+      if (est === 'AUTORIZADO') return 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40';
+      return 'bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/40';
+    },
+
+    copiarEnlaceAutorizacionDatos(persona) {
+      if (!persona?.token_autorizacion) {
+        this.mostrarToast("Esta persona no tiene un enlace de autorización disponible.", "warning");
+        return;
+      }
+      const url = `${window.location.origin}/autorizacion-datos/${persona.token_autorizacion}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url)
+          .then(() => {
+            this.mostrarToast(`📋 Enlace de autorización copiado para ${persona.nombre || 'el ingresante'}.`, "success");
+          })
+          .catch(() => {
+            prompt("Copia el siguiente enlace:", url);
+          });
+      } else {
+        prompt("Copia el siguiente enlace:", url);
+      }
+    },
+
+    async reenviarCorreoAutorizacionDatos(persona) {
+      if (!persona) return;
+      const sId = this.solicitud?.id || this.solicitudId;
+      const pId = persona.id || persona.id_persona;
+      if (!sId || !pId) {
+        this.mostrarToast("No se pudo identificar la persona o solicitud.", "error");
+        return;
+      }
+      persona._reenviandoCorreo = true;
+      try {
+        const token = (typeof getAuthToken === "function") ? getAuthToken() : (this.usuarioSesion?.token || null);
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`/api/v1/solicitudes/${sId}/personas/${pId}/reenviar-autorizacion`, {
+          method: "POST",
+          headers
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && (data.exito || data.status === "success")) {
+          this.mostrarToast(`📧 Correo de autorización reenviado exitosamente a ${persona.nombre || 'el ingresante'}.`, "success");
+        } else {
+          const msg = data.mensaje || data.detail || "Error al reenviar el correo de autorización.";
+          this.mostrarToast(msg, "error");
+        }
+      } catch (err) {
+        console.error("Error al reenviar correo de autorización:", err);
+        this.mostrarToast("Error de conexión al reenviar correo.", "error");
+      } finally {
+        persona._reenviandoCorreo = false;
+      }
     },
 
     async persistirPersonasEnStorage() {
@@ -1517,7 +1708,7 @@ function revisionSolicitudApp() {
       }
 
       if (this.misPlantasDictaminables.length > 0) {
-        this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
+        this.plantaSeleccionadaDictamen = this.misPlantasDictaminables.length > 1 ? "todas" : this.misPlantasDictaminables[0].id;
       }
     },
 
@@ -1607,12 +1798,13 @@ function revisionSolicitudApp() {
 
     get misPlantasDictaminables() {
       const todas = this.plantasSolicitud;
+      const sesion = (typeof getAuthSession === 'function' ? getAuthSession() : null) || this.usuarioSesion;
       const esAdmin = this.rolActual === 'Administrador' || this.rolActual === 'SCR' || 
-                      (this.usuarioSesion && (Number(this.usuarioSesion.id_rol) === 1 || String(this.usuarioSesion.rol).toUpperCase().includes("ADMIN")));
+                      (sesion && (Number(sesion.id_rol) === 1 || String(sesion.rol).toUpperCase().includes("ADMIN")));
       if (esAdmin) {
         return todas;
       }
-      const misIds = (this.usuarioSesion?.plantas_ids || []).map(Number);
+      const misIds = (sesion?.plantas_ids || []).map(Number);
       if (misIds.length === 0) return todas;
       const filtradas = todas.filter(p => misIds.includes(p.id));
       return filtradas.length > 0 ? filtradas : todas;
@@ -1620,17 +1812,23 @@ function revisionSolicitudApp() {
 
     get miPlantaYaFirmada() {
       if (this.rolActual !== 'SST' && this.rolActual !== 'GESCO') return false;
-      let pid = Number(this.plantaSeleccionadaDictamen);
-      if (!pid && this.misPlantasDictaminables.length > 0) {
-        pid = Number(this.misPlantasDictaminables[0].id);
-      } else if (!pid && this.plantasSolicitud.length > 0) {
-        pid = Number(this.plantasSolicitud[0].id);
-      }
       const rolKey = this.rolActual.toLowerCase();
-      if (!pid) {
-        return this.matrizRevisionesPorPlanta.some(item => Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado));
+      const misPlantas = this.misPlantasDictaminables || [];
+      if (misPlantas.length === 0) return false;
+
+      // Si seleccionó 'todas' o aún no ha seleccionado:
+      if (!this.plantaSeleccionadaDictamen || this.plantaSeleccionadaDictamen === 'todas') {
+        const matriz = this.matrizRevisionesPorPlanta || [];
+        // Solo se considera ya firmada si TODAS sus plantas asignadas ya tienen dictamen registrado
+        return misPlantas.every(p => {
+          const item = matriz.find(m => Number(m.id) === Number(p.id));
+          return item && Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado);
+        });
       }
-      const item = this.matrizRevisionesPorPlanta.find(p => p.id === pid);
+
+      // Si seleccionó una planta específica:
+      const pid = Number(this.plantaSeleccionadaDictamen);
+      const item = this.matrizRevisionesPorPlanta.find(p => Number(p.id) === pid);
       if (!item) return false;
       return Boolean(item[rolKey]?.aprobado || item[rolKey]?.rechazado);
     },
@@ -1641,7 +1839,7 @@ function revisionSolicitudApp() {
       }
 
       // Si el rol es simulado por un Administrador o no tiene restricciones, permitir
-      const sesion = this.usuarioSesion;
+      const sesion = (typeof getAuthSession === 'function' ? getAuthSession() : null) || this.usuarioSesion;
       const esAdmin = sesion && (Number(sesion.id_rol) === 1 || String(sesion.rol).toUpperCase().includes("ADMIN"));
       if (esAdmin) {
         return true;
@@ -1779,16 +1977,19 @@ function revisionSolicitudApp() {
     async emitirDictamen() {
       const esEdicion = Boolean(this.editandoRevision);
       const rolDictamen = this.editandoRevision ? this.editandoRevision.rol : this.rolActual;
-      const idPlantaDictamen = this.editandoRevision 
-        ? this.editandoRevision.id_planta 
-        : ((this.rolActual === "SST" || this.rolActual === "GESCO") ? Number(this.plantaSeleccionadaDictamen) : null);
+      let targetPlantasIds = [];
+      let idPlantaDictamen = null;
 
-      // Asegurar selección de planta
-      if (!this.editandoRevision && (this.rolActual === "SST" || this.rolActual === "GESCO") && !this.plantaSeleccionadaDictamen) {
-        if (this.misPlantasDictaminables.length > 0) {
-          this.plantaSeleccionadaDictamen = this.misPlantasDictaminables[0].id;
-        } else if (this.plantasSolicitud.length > 0) {
-          this.plantaSeleccionadaDictamen = this.plantasSolicitud[0].id;
+      if (this.editandoRevision) {
+        idPlantaDictamen = this.editandoRevision.id_planta;
+        targetPlantasIds = [Number(idPlantaDictamen)];
+      } else if (this.rolActual === "SST" || this.rolActual === "GESCO") {
+        if (!this.plantaSeleccionadaDictamen || this.plantaSeleccionadaDictamen === "todas") {
+          targetPlantasIds = this.misPlantasDictaminables.map(p => Number(p.id));
+          idPlantaDictamen = targetPlantasIds.length === 1 ? targetPlantasIds[0] : null;
+        } else {
+          idPlantaDictamen = Number(this.plantaSeleccionadaDictamen);
+          targetPlantasIds = [idPlantaDictamen];
         }
       }
 
@@ -1843,6 +2044,7 @@ function revisionSolicitudApp() {
 
         const payloadDictamen = {
           id_planta: idPlantaDictamen,
+          plantas_ids: targetPlantasIds,
           rol: rolDictamen,
           decision: decisionBackend,
           es_edicion: esEdicion,
@@ -1889,13 +2091,15 @@ function revisionSolicitudApp() {
             this.mostrarToast(`Revisión de ${rolDictamen} actualizada exitosamente (${dataRes.nuevo_estado}).`, "success");
             await this.cargarSolicitud();
           } else {
+            const countPlantas = targetPlantasIds.length;
+            const extraPlantaMsg = countPlantas > 1 ? ` para ${countPlantas} plantas en simultáneo` : '';
             const mensajeToast = decision === "preaprobar"
               ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
               : (decision === "devolver"
                   ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
                   : (decision === "rechazar"
-                      ? `Solicitud rechazada. Redirigiendo a Procesamiento...`
-                      : `Dictamen registrado exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
+                      ? `Solicitud rechazada${extraPlantaMsg}. Redirigiendo a Procesamiento...`
+                      : `Dictamen registrado${extraPlantaMsg} exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
             this.mostrarToast(mensajeToast, "success");
 
             setTimeout(() => {

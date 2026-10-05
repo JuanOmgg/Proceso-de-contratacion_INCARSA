@@ -184,12 +184,18 @@ MODULO_NOMBRES = {
     "nueva_solicitud": "Nueva Solicitud",
     "usuarios": "Listado de Usuarios",
     "nuevo_usuario": "Formulario de Usuarios",
+    "correspondencias": "Listado de Correspondencia",
+    "nueva_correspondencia": "Nueva Correspondencia",
     "plantas": "Gestión de Plantas y Zonas",
     "contratistas": "Empresas Contratistas",
     "vehiculos": "Vehículos y Maquinaria",
     "personas": "Directorio de Personas",
     "procesamiento": "Procesamiento de Solicitudes",
     "antecedentes": "Verificación de Antecedentes",
+    "seguridad_social": "Seguridad Social",
+    "inducciones": "Gestión de Inducciones",
+    "estadisticas": "Estadísticas y Reportes",
+    "formulario_temporal": "Solicitudes para Terceros",
     "revision_solicitud": "Revisión y Aprobación de Solicitudes",
     "dispositivos": "Consulta de Dispositivos"
 }
@@ -211,6 +217,10 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "nuevo_usuario"
     if p == "/usuarios" or p.startswith("/api/v1/usuarios"):
         return "usuarios"
+    if p in ("/formulario-correspondencia", "/correspondencia/nueva", "/correspondencia-form"):
+        return "nueva_correspondencia"
+    if p == "/correspondencias" or p.startswith("/api/v1/correspondencias"):
+        return "correspondencias"
     if p.startswith("/planta") or p.startswith("/api/plantas") or p.startswith("/api/v1/plantas"):
         return "plantas"
     if p.startswith("/emp_contratista") or p.startswith("/api/contratistas") or p.startswith("/api/v1/contratistas"):
@@ -225,6 +235,14 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "procesamiento"
     if p.startswith("/antecedentes") or p.startswith("/api/v1/antecedentes"):
         return "antecedentes"
+    if p.startswith("/seguridad-social") or p.startswith("/seguridadsocial") or p.startswith("/api/v1/seguridad-social"):
+        return "seguridad_social"
+    if p.startswith("/inducciones") or p.startswith("/api/v1/inducciones"):
+        return "inducciones"
+    if p.startswith("/estadisticas") or p.startswith("/api/v1/estadisticas"):
+        return "estadisticas"
+    if p.startswith("/formulario-temporal") or p.startswith("/api/v1/tokens-formulario") or p.startswith("/api/tokens"):
+        return "formulario_temporal"
     return None
 
 # Middleware de modo mantenimiento (Error 503)
@@ -680,7 +698,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 if __name__ == "__main__":
-    host = os.getenv("HOST", "0.0.0.0")
+    host = os.getenv("HOST", "127.0.0.1")
     port = int(os.getenv("PORT", 8000))
     reload_env = os.getenv("RELOAD", "True").lower() in ("true", "1", "yes")
     uvicorn.run("main:app", host=host, port=port, reload=reload_env)

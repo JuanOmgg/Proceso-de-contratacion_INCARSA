@@ -3,11 +3,11 @@
 {% block title %} Revisión de solicitud · PSI {% endblock %}
 
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', path='css/revision-solicitud.css') }}?v=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/revision-solicitud.css') }}?v=1.1">
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=5.6"></script>
+  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=5.8"></script>
 {% endblock %}
 
 {% block content %}
@@ -121,7 +121,7 @@
               </div>
               <span class="hidden md:block text-xs sm:text-sm font-semibold text-white tracking-tight truncate max-w-[130px]" x-text="userDisplayName"></span>
               <i class="fa-solid fa-chevron-down text-[9px] text-white/70 transition-transform duration-200 group-hover:text-white"
-                 :class="open ? 'rotate-180 text-[#03bfbf]' : ''"></i>
+                 :class="open ? 'rotate-180 text-orange-400' : ''"></i>
             </button>
             <div x-show="open" x-transition x-cloak
               class="navbar-user-dropdown absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-[var(--shadow-panel)] border border-[var(--border-subtle)] overflow-hidden z-50 text-[var(--text-primary)]">
@@ -413,9 +413,15 @@
                       <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold" x-text="totalPersonas + ' personas'"></span>
                       
                       <!-- Píldoras de Conteo de Autorización -->
-                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1">
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1"
+                        title="Personas con autorización de ingreso y tratamiento de datos personales aceptado">
                         <i class="fa-solid fa-circle-check text-[10px]"></i>
-                        <span x-text="totalPersonasAutorizadas + ' autorizados'"></span>
+                        <span x-text="totalPersonasAutorizadasCompletas + ' autorizados'"></span>
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold flex items-center gap-1" x-show="totalPersonasPendientesDatos > 0"
+                        title="Personas con acceso habilitado pero aún tienen pendiente la autorización de tratamiento de datos">
+                        <i class="fa-solid fa-clock text-[10px] text-amber-600"></i>
+                        <span x-text="totalPersonasPendientesDatos + ' pendiente datos'"></span>
                       </span>
                       <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-1" x-show="totalPersonasDenegadas > 0">
                         <i class="fa-solid fa-circle-xmark text-[10px]"></i>
@@ -476,39 +482,86 @@
                   <div class="space-y-3.5">
                     <template x-for="(persona, pIdx) in solicitud.personas" :key="persona.id || persona.identificacion || pIdx">
                       <div class="persona-revision-card p-4 rounded-xl border transition-all space-y-3"
-                        :class="persona.autorizado ? 'is-autorizado' : 'is-denegado'">
+                        :class="getPersonaCardClass(persona)">
                         
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-100 dark:border-white/10">
                           <!-- Datos de la Persona -->
                           <div class="flex items-center gap-3 min-w-0">
                             <div class="persona-num-badge w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-colors"
-                              :class="persona.autorizado ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'">
+                              :class="getPersonaNumBadgeClass(persona)">
                               <span x-text="pIdx + 1"></span>
                             </div>
                             <div class="min-w-0">
                               <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="font-display font-bold text-sm text-slate-900 dark:text-white" x-text="persona.nombre"></h4>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1"
-                                  :class="persona.autorizado ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40' : 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40'">
-                                  <i class="fa-solid" :class="persona.autorizado ? 'fa-check' : 'fa-xmark'"></i>
-                                  <span x-text="persona.autorizado ? 'Autorizado' : 'Acceso Denegado'"></span>
-                                </span>
+                                
+                                <!-- Estado General / Tratamiento de Datos Anidado -->
+                                <template x-if="!persona.autorizado">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1 bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-500/40">
+                                    <i class="fa-solid fa-xmark"></i>
+                                    <span>Acceso Denegado</span>
+                                  </span>
+                                </template>
 
-                                <!-- Indicador si está denegada previamente en BD y bloqueada para reautorización -->
-                                <span x-show="persona.denegadaEnBd && !puedeAutorizarPersona(persona)"
-                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700/60 inline-flex items-center gap-1 select-none"
-                                  title="No autorizada en revisión previa: los demás revisores no pueden cambiarla. Solo SCR o roles superiores pueden reautorizarla.">
-                                  <i class="fa-solid fa-lock text-[9px]"></i>
-                                  <span>Denegado previo</span>
-                                </span>
+                                <template x-if="persona.autorizado && persona.estado_datos === 'AUTORIZADO'">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40"
+                                    title="Ingreso autorizado y tratamiento de datos personales aceptado conforme a la Ley 1581">
+                                    <i class="fa-solid fa-check"></i>
+                                    <span>Autorizado</span>
+                                  </span>
+                                </template>
 
-                                <!-- Indicador de Bloqueo tras Aprobación / Dictamen -->
-                                <span x-show="!puedeEditarAutorizacion && !persona.denegadaEnBd"
-                                  class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10 inline-flex items-center gap-1 select-none"
-                                  title="Autorización fijada: no editable tras haber emitido dictamen">
-                                  <i class="fa-solid fa-lock text-[9px]"></i>
-                                  <span>Fijado</span>
-                                </span>
+                                <template x-if="persona.autorizado && persona.estado_datos !== 'AUTORIZADO' && persona.estado_datos !== 'RECHAZADO'">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1 bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/40"
+                                    title="Ingresante pre-autorizado por la empresa, pero aún no ha firmado la autorización de tratamiento de datos personales (Ley 1581/2012)">
+                                    <i class="fa-solid fa-clock text-amber-600 dark:text-amber-400"></i>
+                                    <span>Pendiente Tratamiento de Datos</span>
+                                  </span>
+                                </template>
+
+                                <template x-if="persona.autorizado && persona.estado_datos === 'RECHAZADO'">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1 bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-500/40"
+                                    title="El ingresante rechazó la autorización de tratamiento de datos personales (Ley 1581/2012)">
+                                    <i class="fa-solid fa-shield-xmark text-rose-600 dark:text-rose-400"></i>
+                                    <span>Datos Rechazados</span>
+                                  </span>
+                                </template>
+
+                                <!-- Indicador si está denegada previamente en BD y bloqueada para otros revisores -->
+                                <template x-if="persona.denegadaEnBd && !puedeAutorizarPersona(persona)">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700/60 inline-flex items-center gap-1 select-none"
+                                    :title="'Acceso denegado por ' + (persona.denegado_por_nombre || 'otro revisor') + '. Solo esa persona puede volver a autorizar su ingreso.'">
+                                    <i class="fa-solid fa-user-lock text-[9px]"></i>
+                                    <span>Denegado por <span x-text="persona.denegado_por_nombre || 'otro revisor'"></span></span>
+                                  </span>
+                                </template>
+
+                                <!-- Indicador si fuiste tú quien denegó a la persona (puedes reautorizarla) -->
+                                <template x-if="persona.denegadaEnBd && puedeAutorizarPersona(persona)">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-700/60 inline-flex items-center gap-1 select-none"
+                                    title="Tú denegaste este ingreso. Tienes permiso exclusivo para volver a autorizarlo.">
+                                    <i class="fa-solid fa-key text-[9px]"></i>
+                                    <span>Denegado por ti</span>
+                                  </span>
+                                </template>
+
+                                <!-- Indicador si la revisión ya finalizó y la autorización quedó fijada para no-admins -->
+                                <template x-if="esRevisionFinalizada && (persona.denegadaEnBd === false || persona.autorizado) && !esAdminOSuperadmin">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60 inline-flex items-center gap-1 select-none"
+                                    title="Revisión finalizada: la autorización solo puede ser revocada por rol Administrador o Superadmin">
+                                    <i class="fa-solid fa-shield-check text-[9px]"></i>
+                                    <span>Aprobación final</span>
+                                  </span>
+                                </template>
+
+                                <!-- Indicador de Bloqueo genérico tras Dictamen -->
+                                <template x-if="!puedeEditarAutorizacion && !persona.denegadaEnBd && !esRevisionFinalizada">
+                                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10 inline-flex items-center gap-1 select-none"
+                                    title="Autorización bloqueada: no editable para tu rol en esta etapa">
+                                    <i class="fa-solid fa-lock text-[9px]"></i>
+                                    <span>Fijado</span>
+                                  </span>
+                                </template>
                               </div>
                               <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-medium flex items-center gap-1.5 flex-wrap">
                                 <span><span class="text-slate-400 dark:text-slate-500 font-semibold" x-text="persona.tipo_doc || 'CC'"></span> <span x-text="persona.identificacion"></span></span>
@@ -521,37 +574,75 @@
                           <!-- Controles de Autorización Individual -->
                           <div class="persona-controls-group flex items-center gap-1.5 self-start sm:self-center p-1 rounded-xl border transition-all flex-shrink-0"
                             :class="!puedeEditarAutorizacion ? 'is-locked opacity-60 cursor-not-allowed pointer-events-none select-none' : ''"
-                            :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: ya has emitido dictamen para esta solicitud' : ''">
+                            :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: no puedes editar autorizaciones en esta etapa' : ''">
                             <!-- Botón: Autorizar -->
                             <button type="button" 
                               :disabled="!puedeAutorizarPersona(persona)"
                               @click="puedeAutorizarPersona(persona) && setAutorizacionPersona(persona, true)"
                               class="btn-autorizar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                               :class="[persona.autorizado ? 'is-active' : 'is-inactive', !puedeAutorizarPersona(persona) ? 'opacity-50 cursor-not-allowed pointer-events-none' : '']"
-                              :title="!puedeAutorizarPersona(persona) ? (persona.denegadaEnBd ? 'No autorizable: denegado previamente por otro revisor' : 'Autorización bloqueada: dictamen ya emitido') : 'Autorizar ingresante'">
+                              :title="getTooltipAutorizar(persona)">
                               <i class="fa-solid fa-circle-check text-[11px]"></i>
                               <span>Autorizar</span>
                             </button>
 
                             <!-- Botón: No Autorizar / Denegar -->
                             <button type="button" 
-                              :disabled="!puedeEditarAutorizacion"
-                              @click="puedeEditarAutorizacion && setAutorizacionPersona(persona, false)"
+                              :disabled="!puedeDenegarPersona(persona)"
+                              @click="puedeDenegarPersona(persona) && setAutorizacionPersona(persona, false)"
                               class="btn-denegar-action px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                              :class="[!persona.autorizado ? 'is-active' : 'is-inactive', !puedeEditarAutorizacion ? 'cursor-not-allowed' : '']"
-                              :title="!puedeEditarAutorizacion ? 'Autorización bloqueada: dictamen ya emitido' : 'Denegar acceso'">
+                              :class="[!persona.autorizado ? 'is-active' : 'is-inactive', !puedeDenegarPersona(persona) ? 'opacity-50 cursor-not-allowed pointer-events-none' : '']"
+                              :title="getTooltipDenegar(persona)">
                               <i class="fa-solid fa-circle-xmark text-[11px]"></i>
                               <span>No Autorizar</span>
                             </button>
                           </div>
                         </div>
 
-                        <!-- Fila de Auditorías y Vigencias Clave (Antecedentes, Inducción, Seguridad Social) -->
-                        <div class="flex flex-wrap items-center gap-2 pt-0.5" x-show="puedeVerAntecedentes || puedeVerInduccion || puedeVerSeguridadSocial">
+                        <!-- Fila de Auditorías y Vigencias Clave (Tratamiento de Datos, Antecedentes, Inducción, Seguridad Social) -->
+                        <div class="flex flex-wrap items-center gap-2 pt-0.5">
                           <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-1">
                             <i class="fa-solid fa-shield-halved text-[11px] text-blue-500 dark:text-blue-400"></i>
                             <span>Auditoría:</span>
                           </span>
+
+                          <!-- Chip y Acciones de Tratamiento de Datos (Ley 1581) -->
+                          <div class="inline-flex items-center gap-1.5 flex-wrap">
+                            <span class="btn-datos-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all shadow-2xs select-none"
+                              :class="{
+                                'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700/60': persona.estado_datos === 'AUTORIZADO',
+                                'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-700/60': persona.estado_datos !== 'AUTORIZADO' && persona.estado_datos !== 'RECHAZADO',
+                                'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-700/60': persona.estado_datos === 'RECHAZADO'
+                              }"
+                              :title="persona.estado_datos === 'AUTORIZADO' ? ('Autorización de tratamiento de datos firmada ' + (persona.fecha_respuesta_datos ? formatearFechaHora(persona.fecha_respuesta_datos) : '')) : (persona.estado_datos === 'RECHAZADO' ? 'El titular rechazó la autorización de tratamiento de datos' : 'Aún no ha diligenciado la autorización de tratamiento de datos')">
+                              <i class="fa-solid text-[11px]"
+                                :class="{
+                                  'fa-file-shield text-emerald-600 dark:text-emerald-400': persona.estado_datos === 'AUTORIZADO',
+                                  'fa-clock text-amber-600 dark:text-amber-400': persona.estado_datos !== 'AUTORIZADO' && persona.estado_datos !== 'RECHAZADO',
+                                  'fa-file-circle-xmark text-rose-600 dark:text-rose-400': persona.estado_datos === 'RECHAZADO'
+                                }"></i>
+                              <span>Tratamiento Datos</span>
+                              <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold border ml-0.5"
+                                :class="{
+                                  'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200': persona.estado_datos === 'AUTORIZADO',
+                                  'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/60 dark:text-amber-200': persona.estado_datos !== 'AUTORIZADO' && persona.estado_datos !== 'RECHAZADO',
+                                  'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-900/60 dark:text-rose-200': persona.estado_datos === 'RECHAZADO'
+                                }"
+                                x-text="persona.estado_datos === 'AUTORIZADO' ? 'Autorizado' : (persona.estado_datos === 'RECHAZADO' ? 'Rechazado' : 'Pendiente')"></span>
+                            </span>
+
+                            <!-- Botones de Acción si el Tratamiento de Datos está pendiente -->
+                            <template x-if="persona.estado_datos !== 'AUTORIZADO' && persona.token_autorizacion">
+                              <div class="inline-flex items-center gap-1">
+                                <button type="button" @click="reenviarCorreoAutorizacionDatos(persona)" :disabled="persona._reenviandoCorreo"
+                                  class="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                                  title="Reenviar correo electrónico">
+                                  <i class="fa-solid fa-paper-plane text-[10px]" :class="persona._reenviandoCorreo ? 'fa-spin' : ''"></i>
+                                  <span x-text="persona._reenviandoCorreo ? 'Enviando...' : 'Reenviar'"></span>
+                                </button>
+                              </div>
+                            </template>
+                          </div>
 
                           <!-- Botón / Chip de Antecedentes y Vigencia (Solo para SCR y roles superiores) -->
                           <button type="button" x-show="puedeVerAntecedentes" @click="abrirHistorialModal(persona)"
@@ -999,11 +1090,12 @@
                       <div class="space-y-1.5" x-show="(rolActual === 'SST' || rolActual === 'GESCO') && misPlantasDictaminables.length > 1">
                         <label class="form-label text-xs font-bold text-slate-800 flex items-center gap-1.5">
                           <i class="fa-solid fa-industry text-amber-600"></i>
-                          <span>Planta a dictaminar *</span>
+                          <span>Plantas a dictaminar *</span>
                         </label>
                         <select x-model="plantaSeleccionadaDictamen" class="input-field w-full rounded-xl p-2.5 text-xs bg-white border-slate-300">
+                          <option value="todas" x-text="'✨ Todas mis plantas asignadas (' + misPlantasDictaminables.map(p => p.nombre).join(', ') + ')'"></option>
                           <template x-for="p in misPlantasDictaminables" :key="p.id">
-                            <option :value="p.id" x-text="p.nombre"></option>
+                            <option :value="p.id" x-text="'Solo ' + p.nombre"></option>
                           </template>
                         </select>
                       </div>
@@ -1148,7 +1240,7 @@
                             <i class="fa-solid fa-circle-check text-xs" x-show="dictamenForm.decision === 'aprobar'"></i>
                             <i class="fa-solid fa-circle-xmark text-xs" x-show="dictamenForm.decision === 'rechazar'"></i>
                             <i class="fa-solid fa-rotate-left text-xs" x-show="dictamenForm.decision === 'devolver'"></i>
-                            <span x-text="editandoRevision ? 'Guardar Cambios de Revisión' : (dictamenForm.decision === 'preaprobar' ? 'Registrar Pre-Aprobación' : (dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : (dictamenForm.decision === 'devolver' ? 'Devolver para Corrección' : 'Aprobar Solicitud')))"></span>
+                            <span x-text="editandoRevision ? 'Guardar Cambios de Revisión' : (dictamenForm.decision === 'preaprobar' ? 'Registrar Pre-Aprobación' : (dictamenForm.decision === 'rechazar' ? 'Confirmar Rechazo' : (dictamenForm.decision === 'devolver' ? 'Devolver para Corrección' : ((plantaSeleccionadaDictamen === 'todas' && misPlantasDictaminables.length > 1) ? 'Aprobar Todas mis Plantas' : 'Aprobar Solicitud'))))"></span>
                           </span>
                         </template>
                       </button>
@@ -1165,7 +1257,7 @@
                       <p class="text-[11px] text-emerald-700 font-medium p-2 rounded-lg bg-emerald-50 border border-emerald-200" 
                         x-show="miPlantaYaFirmada">
                         <i class="fa-solid fa-check mr-1"></i>
-                        Ya has emitido dictamen para tu planta en esta solicitud.
+                        Ya has emitido dictamen para tus plantas asignadas en esta solicitud.
                       </p>
                       <p class="text-[11px] text-amber-700 dark:text-amber-300 font-medium p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50" 
                         x-show="(rolActual === 'SST' || rolActual === 'GESCO') && !tienePlantaAsignadaParaSolicitud">

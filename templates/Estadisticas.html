@@ -301,34 +301,43 @@
           ============================================================= -->
           <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             
-            <!-- KPI 1: Personas Únicas Globales (Verde Esmeralda Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+            <!-- KPI 1: Personas Únicas Aprobadas (Verde Esmeralda Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl"
+              title="Cantidad de personas físicas únicas con solicitud APROBADA">
               <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-users text-xl"></i>
+                <i class="fa-solid fa-user-check text-xl"></i>
               </div>
               <div class="flex-1">
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Personas</p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Personas Aprobadas</p>
                 <p class="gauge-value text-2xl font-semibold neon-value"
                   x-text="cargando ? '...' : (kpis.total_personas_unicas_periodo || 0)">
                 </p>
+                <span class="text-[11px] text-[var(--text-muted)] block mt-0.5"
+                  x-text="(kpis.total_personas_unicas_periodo === 1) ? '1 persona con ingreso avalado' : ((kpis.total_personas_unicas_periodo || 0) + ' personas con ingreso avalado')">
+                </span>
               </div>
             </div>
 
-            <!-- KPI 2: Total Ingresos Acumulados (Cian Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+            <!-- KPI 2: Personas en Espera de Ingreso / Solicitudes No Aprobadas (Cian Neón) -->
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl"
+              title="Personas en solicitudes que no han sido aprobadas aún (enviadas, en revisión o por aprobar)">
               <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-id-card-clip text-xl"></i>
+                <i class="fa-solid fa-user-clock text-xl"></i>
               </div>
               <div class="flex-1">
-                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">Ingresos Programados</p>
+                <p class="text-xs text-[var(--text-muted)] neon-label font-medium leading-tight">En Espera de Ingreso</p>
                 <p class="gauge-value text-2xl font-semibold neon-value"
-                  x-text="cargando ? '...' : (kpis.total_ingresos_acumulados || 0)">
+                  x-text="cargando ? '...' : (kpis.total_personas_en_espera || 0)">
                 </p>
+                <span class="text-[11px] text-[var(--text-muted)] block mt-0.5"
+                  x-text="(kpis.total_personas_en_espera === 1) ? '1 persona en solicitud sin aprobar' : ((kpis.total_personas_en_espera || 0) + ' personas en solicitudes sin aprobar')">
+                </span>
               </div>
             </div>
 
             <!-- KPI 3: Promedio Diario (Violeta Neón) -->
-            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-milpa rounded-xl">
+            <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-milpa rounded-xl"
+              title="Promedio de entradas diarias estimadas según el total de días del rango">
               <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
                 <i class="fa-solid fa-chart-simple text-xl"></i>
               </div>
@@ -337,6 +346,9 @@
                 <p class="gauge-value text-2xl font-semibold neon-value"
                   x-text="cargando ? '...' : ((kpis.promedio_diario || 0) + ' /día')">
                 </p>
+                <span class="text-[11px] text-[var(--text-muted)] block mt-0.5">
+                  afluencia diaria esperada
+                </span>
               </div>
             </div>
 
@@ -684,7 +696,25 @@
                     <span x-text="(p.nombre_completo || '?').charAt(0).toUpperCase()"></span>
                   </div>
                   <div class="min-w-0">
-                    <h4 class="text-sm font-bold text-[var(--paper-ink)] truncate" x-text="p.nombre_completo"></h4>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h4 class="text-sm font-bold text-[var(--paper-ink)] truncate" x-text="p.nombre_completo"></h4>
+                      <!-- Badge Estado Autorización / Habeas Data -->
+                      <template x-if="p.autorizado && p.estado_datos === 'AUTORIZADO'">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" title="Ingreso autorizado y tratamiento de datos aprobado">
+                          <i class="fa-solid fa-circle-check text-[10px]"></i> Autorizado
+                        </span>
+                      </template>
+                      <template x-if="p.autorizado && p.estado_datos !== 'AUTORIZADO' && p.estado_datos !== 'RECHAZADO'">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Pendiente: Aún no ha aprobado el tratamiento de datos personales">
+                          <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Pendiente datos
+                        </span>
+                      </template>
+                      <template x-if="!p.autorizado || p.estado_datos === 'RECHAZADO'">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30" :title="p.estado_datos === 'RECHAZADO' ? 'Tratamiento de datos rechazado' : 'No autorizado'">
+                          <i class="fa-solid fa-circle-xmark text-[10px]"></i> No autorizado
+                        </span>
+                      </template>
+                    </div>
                     <p class="text-xs text-[var(--paper-muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
                       <span class="font-mono font-semibold text-[var(--paper-ink)]" x-text="p.tipo_doc + ': ' + p.identificacion"></span>
                       <span>•</span>

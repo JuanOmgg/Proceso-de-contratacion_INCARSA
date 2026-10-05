@@ -7,8 +7,9 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/superadmin-panel.js') }}?v=3.7"></script>
+  <script src="{{ url_for('static', path='js/superadmin-panel.js') }}?v=3.8"></script>
 {% endblock %}
+
 
 {% block content %}
 <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
@@ -54,8 +55,16 @@
           </div>
 
           <!-- Estado Global Rápido -->
-          <div class="flex items-center gap-3">
-            <div class="px-4 py-2 rounded-xl border flex items-center gap-3 text-xs font-medium"
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Badge 2FA -->
+            <div class="px-3.5 py-2 rounded-xl border flex items-center gap-2.5 text-xs font-medium transition-all"
+              :class="dosPasos.activo ? 'bg-sky-500/10 border-sky-500/30 text-sky-400' : 'bg-slate-800/80 border-slate-700 text-slate-400'">
+              <i class="fa-solid fa-shield-halved text-xs" :class="dosPasos.activo ? 'text-sky-400' : 'text-slate-500'"></i>
+              <span x-text="dosPasos.activo ? '2FA ACTIVO (POR CORREO)' : '2FA DESACTIVADO'"></span>
+            </div>
+
+            <!-- Badge Mantenimiento -->
+            <div class="px-3.5 py-2 rounded-xl border flex items-center gap-3 text-xs font-medium"
               :class="mantenimiento.activo ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'">
               <span class="relative flex h-2.5 w-2.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
@@ -67,6 +76,67 @@
             </div>
           </div>
         </div>
+
+        <!-- ============================================================
+           SECCIÓN: DIRECTIVAS DE SEGURIDAD - VERIFICACIÓN EN 2 PASOS (2FA)
+        ============================================================= -->
+        <section id="seccion-seguridad-2fa" class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl relative overflow-hidden space-y-4">
+          <!-- Efecto sutil de fondo neón -->
+          <div class="absolute -right-10 -bottom-10 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none transition-all duration-300"
+            :class="dosPasos.activo ? 'bg-sky-500' : 'bg-slate-700'"></div>
+
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 relative z-10">
+            <div class="space-y-2 max-w-2xl">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shadow-md transition-colors"
+                  :class="dosPasos.activo ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-bold font-display text-[var(--text-primary)]">
+                      Verificación en 2 Pasos (2FA) por Correo
+                    </h2>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      :class="dosPasos.activo ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'">
+                      Seguridad de Acceso
+                    </span>
+                  </div>
+                  <span class="text-xs font-semibold"
+                    :class="dosPasos.activo ? 'text-sky-400' : 'text-slate-400'"
+                    x-text="dosPasos.activo ? '• Exigido para todos los usuarios del sistema' : '• Desactivado (acceso directo con correo y contraseña)'"></span>
+                </div>
+              </div>
+              <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+                Cuando esta opción se encuentra <strong class="text-sky-400">ACTIVADA</strong>,  obliga a los usuarios del sistema a autenticarse mediante el correo electrónico y un código de verificación.
+              </p>
+            </div>
+
+            <!-- Switch de Verificación en 2 Pasos -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 bg-[var(--table-header,#0f172a)]/80 p-4 rounded-xl border border-[var(--border-color,#334155)] shadow-inner flex-shrink-0">
+              <div class="text-right sm:text-left">
+                <span class="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">Estado 2FA</span>
+                <span class="text-sm font-bold flex items-center gap-1.5"
+                  :class="dosPasos.activo ? 'text-sky-400' : 'text-slate-400'">
+                  <i class="fa-solid fa-circle text-[8px]" :class="dosPasos.activo ? 'animate-pulse text-sky-400' : 'text-slate-500'"></i>
+                  <span x-text="dosPasos.activo ? '2FA ACTIVADO' : '2FA DESACTIVADO'"></span>
+                </span>
+              </div>
+
+              <button type="button"
+                @click="toggleDosPasos(!dosPasos.activo)"
+                :disabled="dosPasos.guardando"
+                class="relative inline-flex h-8 w-16 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-md"
+                :class="dosPasos.activo ? 'bg-sky-600' : 'bg-slate-700'">
+                <span class="sr-only">Toggle verificación 2 pasos</span>
+                <span
+                  aria-hidden="true"
+                  class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white switch-thumb-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                  :class="dosPasos.activo ? 'translate-x-8' : 'translate-x-0'"></span>
+              </button>
+            </div>
+          </div>
+        </section>
 
         <!-- ============================================================
            SECCIÓN 1: MODO MANTENIMIENTO AVANZADO (GENERAL Y POR MÓDULOS)

@@ -3,7 +3,7 @@
 {% block title %}Solicitudes · PSI {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/solicitudes-listados.js') }}?v=3.5"></script>
+  <script src="{{ url_for('static', path='js/solicitudes-listados.js') }}?v=4.3"></script>
 {% endblock %}
 
 {% block content %}
@@ -222,7 +222,7 @@
                       <td class="px-4 py-3 text-center whitespace-nowrap">
                         <span class="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-[var(--text-muted)] select-none">
                           <i class="fa-regular fa-calendar text-[11px] text-[var(--signal-500)]"></i>
-                          <span x-text="s.fecha_registro || '—'"></span>
+                          <span x-text="s.fecha_registro && s.fecha_registro !== '—' ? s.fecha_registro : (s.fecha_creacion_corta || (s.fecha_creacion ? String(s.fecha_creacion).split(',')[0].split(' ')[0] : (s.fecha_ingreso || '—')))"></span>
                         </span>
                       </td>
 
@@ -306,7 +306,7 @@
                   <option value="10">10</option>
                   <option value="25">25</option>
                 </select>
-                <span>registros</span>
+                <span>registros · <strong class="text-[var(--text-primary)] font-semibold" x-text="rangoMostrado"></strong></span>
               </div>
               <div class="flex items-center gap-2">
                 <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn"
@@ -455,14 +455,26 @@
                                   <td class="px-2.5 py-2 text-center font-mono ticket-td-code" x-text="p.identificacion || '-'"></td>
                                   <td class="px-2.5 py-2 text-center ticket-td-text" x-text="p.cargo || '-'"></td>
                                   <td class="px-2.5 py-2 text-center">
-                                    <template x-if="p.autorizado == 1 || p.autorizado === true || p.autorizado === '1'">
-                                      <span class="inline-flex items-center justify-center ticket-status-auth" title="Autorizado">
+                                    <!-- 1. VERDE: Autorizado completo (ingreso avalado + datos aprobados) -->
+                                    <template x-if="(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos === 'AUTORIZADO'">
+                                      <span class="inline-flex items-center justify-center ticket-status-auth cursor-help"
+                                        title="Autorizado: Ingreso avalado y tratamiento de datos aprobado">
                                         <i class="fa-solid fa-circle-check text-base"></i>
                                       </span>
                                     </template>
-                                    <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1')">
+
+                                    <!-- 2. AMARILLO: Autorizado pero PENDIENTE de tratamiento de datos -->
+                                    <template x-if="(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos !== 'AUTORIZADO' && p.estado_datos !== 'RECHAZADO'">
+                                      <span class="inline-flex items-center justify-center ticket-status-warn cursor-help"
+                                        title="Pendiente: Aún no ha aprobado el tratamiento de datos personales (Ley 1581/2012)">
+                                        <i class="fa-solid fa-circle-exclamation text-base"></i>
+                                      </span>
+                                    </template>
+
+                                    <!-- 3. ROJO: No autorizado (o rechazó tratamiento de datos) -->
+                                    <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') || p.estado_datos === 'RECHAZADO'">
                                       <span class="inline-flex items-center justify-center ticket-status-unauth cursor-help"
-                                        :title="p.motivo ? ('No Autorizado: ' + p.motivo) : 'No autorizado'">
+                                        :title="p.motivo ? ('No Autorizado: ' + p.motivo) : (p.estado_datos === 'RECHAZADO' ? 'No Autorizado: Tratamiento de datos rechazado por el titular' : 'No autorizado')">
                                         <i class="fa-solid fa-circle-xmark text-base"></i>
                                       </span>
                                     </template>
@@ -555,7 +567,7 @@
                         <div class="flex items-center gap-2 text-[10.5px]">
                           <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.personas?.length > 0">
                             <i class="fa-solid fa-user-check text-[10px] text-[#2f8f5b] mr-0.5"></i>
-                            <span x-text="(selected?.personas || []).filter(p => p.autorizado == 1 || p.autorizado === true || p.autorizado === '1').length + '/' + (selected?.personas?.length || 0) + ' personas aut.'"></span>
+                            <span x-text="(selected?.personas || []).filter(p => (p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos === 'AUTORIZADO').length + '/' + (selected?.personas?.length || 0) + ' personas aut.'"></span>
                           </span>
                           <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.vehiculos?.length > 0">
                             <i class="fa-solid fa-car-side text-[10px] text-[#2f8f5b] mr-0.5"></i>
@@ -850,7 +862,7 @@
           
           <!-- Opción 1: Solicitud Interna Directa -->
           <div @click="modalTipoSolicitudOpen = false; window.location.href = '/solicitudes/nueva'"
-            class="group p-5 rounded-2xl bg-slate-50 hover:bg-orange-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-orange-500/80 dark:border-slate-700 dark:hover:border-orange-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-orange-500/15 hover:scale-[1.02]">
+            class="modal-tipo-solicitud-card modal-tipo-card-interno group p-5 rounded-2xl bg-slate-50 hover:bg-orange-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-orange-500/80 dark:border-slate-700 dark:hover:border-orange-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-orange-500/15 hover:scale-[1.02]">
             <div>
               <div class="flex items-center justify-between mb-3">
                 <div class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-all">
@@ -873,25 +885,25 @@
 
           <!-- Opción 2: Formulario Temporal a Terceros -->
           <div @click="modalTipoSolicitudOpen = false; $dispatch('open-token-formulario-modal', { tab: 'crear' })"
-            class="group p-5 rounded-2xl bg-slate-50 hover:bg-cyan-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-[#0C767D]/80 dark:border-slate-700 dark:hover:border-cyan-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-cyan-500/15 hover:scale-[1.02]">
+            class="modal-tipo-solicitud-card modal-tipo-card-terceros group p-5 rounded-2xl bg-slate-50 hover:bg-red-50/60 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 border-2 border-slate-200 hover:border-red-500/80 dark:border-slate-700 dark:hover:border-red-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-md hover:shadow-red-500/15 hover:scale-[1.02]">
             <div>
               <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-xl bg-[#0C767D]/15 dark:bg-cyan-500/20 border border-[#0C767D]/30 dark:border-cyan-500/40 flex items-center justify-center text-[#0C767D] dark:text-cyan-400 group-hover:bg-[#0C767D] group-hover:text-white transition-all">
+                <div class="w-10 h-10 rounded-xl bg-red-500/15 dark:bg-red-500/20 border border-red-500/30 dark:border-red-500/40 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all">
                   <i class="fa-solid fa-ticket-simple text-base"></i>
                 </div>
-                <span class="text-[10px] uppercase tracking-wider font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">Con Pase</span>
+                <span class="text-[10px] uppercase tracking-wider font-black px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800/80">Con Pase</span>
               </div>
-              <h4 class="font-black text-sm text-slate-900 dark:text-white group-hover:text-[#0C767D] dark:group-hover:text-cyan-300 transition-colors mb-1.5">
+              <h4 class="font-black text-sm text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors mb-1.5">
                 Pase para Terceros
               </h4>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Generar un enlace público tipo pase con tiempo límite para que la empresa contratista llene la información externamente.
               </p>
-              <div class="mt-2.5 text-[11px] font-medium text-cyan-900 dark:text-cyan-300 bg-cyan-100/70 dark:bg-cyan-950/40 p-2 rounded-lg border border-cyan-200 dark:border-cyan-900/50">
-                Llegará como <strong class="text-[#0C767D] dark:text-cyan-200 font-bold">PRE-ENVIADO</strong> para tu revisión previa.
+              <div class="mt-2.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-red-50/80 dark:bg-red-950/30 p-2 rounded-lg border border-red-200 dark:border-red-900/50">
+                Llegará como <strong class="text-red-600 dark:text-red-400 font-bold">PRE-ENVIADO</strong> para tu revisión previa.
               </div>
             </div>
-            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#0C767D] dark:text-cyan-400 group-hover:translate-x-1 transition-transform">
+            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform">
               <span>Configurar pase</span>
               <i class="fa-solid fa-arrow-right text-xs"></i>
             </div>
@@ -903,7 +915,7 @@
         <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
           <span>¿Ya emitiste un pase anteriormente?</span>
           <button type="button" @click="modalTipoSolicitudOpen = false; $dispatch('open-token-formulario-modal', { tab: 'historial' })"
-            class="text-[#0C767D] dark:text-cyan-400 hover:text-cyan-500 font-bold flex items-center gap-1.5 transition-colors cursor-pointer">
+            class="text-red-600 dark:text-red-400 hover:text-red-500 font-bold flex items-center gap-1.5 transition-colors cursor-pointer">
             <i class="fa-solid fa-clock-rotate-left"></i>
             <span>Ver historial de pases</span>
           </button>

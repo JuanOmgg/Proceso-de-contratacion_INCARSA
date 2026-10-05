@@ -31,6 +31,8 @@ document.addEventListener('alpine:init', () => {
     kpis: {
       total_personas_unicas_periodo: 0,
       total_ingresos_acumulados: 0,
+      total_personas_en_espera: 0,
+      total_solicitudes_en_espera: 0,
       promedio_diario: 0,
       dias_consultados: 0,
       dia_pico: { fecha: null, total: 0 },

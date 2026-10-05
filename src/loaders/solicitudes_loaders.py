@@ -1,4 +1,5 @@
 import re
+import math
 import json
 import secrets
 import string
@@ -209,6 +210,44 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
                     # Preparar IDs de personas como string CSV
                     personas_ids = solicitud.get("personas_ids", [])
+                    if isinstance(personas_ids, (str, int)):
+                        personas_ids = [int(x.strip()) for x in str(personas_ids).split(",") if x.strip().isdigit()]
+                    elif isinstance(personas_ids, list):
+                        personas_ids = [int(p) for p in personas_ids if str(p).isdigit()]
+                    else:
+                        personas_ids = []
+
+                    # Si personas_ids vino vacío o faltan personas, resolverlas del array 'personas'
+                    personas_in = solicitud.get("personas") or solicitud.get("ingresantes") or []
+                    if personas_in:
+                        for p_item in personas_in:
+                            p_id = None
+                            if isinstance(p_item, int):
+                                p_id = p_item
+                            elif isinstance(p_item, dict):
+                                cand_p = p_item.get("id_persona") or p_item.get("id")
+                                if cand_p and str(cand_p).isdigit() and int(cand_p) > 0:
+                                    p_id = int(cand_p)
+                                elif p_item.get("identificacion") or p_item.get("numDoc"):
+                                    doc_cand = str(p_item.get("identificacion") or p_item.get("numDoc")).strip()
+                                    cursor.execute("SELECT id FROM personas WHERE identificacion = %s LIMIT 1", (doc_cand,))
+                                    p_found = cursor.fetchone()
+                                    if p_found:
+                                        p_id = p_found["id"]
+                                    else:
+                                        nom_p = str(p_item.get("nombre") or p_item.get("nombres") or "Personal").strip()
+                                        ape_p = str(p_item.get("apellido") or p_item.get("apellidos") or "").strip()
+                                        tipo_doc_p = str(p_item.get("tipo_doc") or p_item.get("tipoDoc") or "CC").strip()
+                                        cargo_p = str(p_item.get("cargo") or "Personal").strip()
+                                        correo_p = str(p_item.get("correo") or "").strip().lower() or f"contacto_{doc_cand}@temporal.com"
+                                        cursor.execute("""
+                                            INSERT INTO personas (nombre, apellido, tipo_doc, identificacion, cargo, correo)
+                                            VALUES (%s, %s, %s, %s, %s, %s)
+                                        """, (nom_p, ape_p, tipo_doc_p, doc_cand, cargo_p, correo_p))
+                                        p_id = cursor.lastrowid
+                            if p_id and p_id not in personas_ids:
+                                personas_ids.append(p_id)
+
                     str_personas_ids = ",".join(map(str, personas_ids)) if personas_ids else ""
 
                     # Preparar IDs de vehículos como string CSV
@@ -644,27 +683,34 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 solicitud["vehiculos"] = vehiculos
 
                 # 5. Obtener ingresantes (personas) via tabla intermedia 'ingresantes'
-                cursor.execute(
-                    """
-                    SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, p.correo,
-                           COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
-                           i.token_autorizacion,
-                           COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
-                           i.fecha_respuesta_datos,
-                           a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
-                           ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
-                           ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
-                    FROM ingresantes i
-                    INNER JOIN personas p ON i.id_persona = p.id
-                    LEFT JOIN antecedentes a ON a.id_persona = p.id
-                    LEFT JOIN inducciones ind ON ind.id_persona = p.id
-                    WHERE i.id_solicitud = %s
-                    """,
-                    (real_id,),
-                )
-                personas = cursor.fetchall() or []
+                personas = []
+                try:
+                    cursor.execute(
+                        """
+                        SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, p.correo,
+                               COALESCE(i.autorizado, 1) AS autorizado, i.motivo,
+                               i.token_autorizacion,
+                               COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
+                               i.fecha_respuesta_datos,
+                               i.denegado_por,
+                               CONCAT(u_den.nombres, ' ', u_den.apellidos) AS denegado_por_nombre,
+                               a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
+                               ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
+                               ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
+                        FROM ingresantes i
+                        INNER JOIN personas p ON i.id_persona = p.id
+                        LEFT JOIN usuarios u_den ON i.denegado_por = u_den.id
+                        LEFT JOIN antecedentes a ON a.id_persona = p.id
+                        LEFT JOIN inducciones ind ON ind.id_persona = p.id
+                        WHERE i.id_solicitud = %s
+                        """,
+                        (real_id,),
+                    )
+                    personas = cursor.fetchall() or []
+                except Exception as e_ing_get:
+                    print(f"[AVISO] Error al consultar ingresantes para solicitud #{real_id}: {e_ing_get}")
 
-                # Fallback de personas vía personas_ids
+                # Fallback de personas vía personas_ids si ingresantes está vacía
                 if not personas and solicitud.get("personas_ids"):
                     try:
                         raw_pids = str(solicitud["personas_ids"]).replace("[", "").replace("]", "").split(",")
@@ -673,8 +719,9 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                             fmt = ",".join(["%s"] * len(p_ids))
                             cursor.execute(
                                 f"""
-                                SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo,
+                                SELECT p.id, p.nombre, p.apellido, p.tipo_doc, p.identificacion, p.cargo, p.correo,
                                        1 AS autorizado, NULL AS motivo,
+                                       'PENDIENTE' AS estado_datos, NULL AS token_autorizacion, NULL AS fecha_respuesta_datos,
                                        a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
                                        ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
                                        ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
@@ -687,11 +734,16 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                             )
                             personas = cursor.fetchall() or []
                     except Exception as e_pers:
-                        print(f"⚠️ Error al resolver personas_ids de respaldo: {e_pers}")
+                        print(f"[AVISO] Error al resolver personas_ids de respaldo: {e_pers}")
 
                 for p in personas:
                     p["autorizado"] = bool(p.get("autorizado", True))
                     p["motivo"] = p.get("motivo") or ""
+                    p["estado_datos"] = str(p.get("estado_datos") or "PENDIENTE").strip().upper()
+                    if p.get("fecha_respuesta_datos"):
+                        p["fecha_respuesta_datos"] = str(p["fecha_respuesta_datos"])
+                    else:
+                        p["fecha_respuesta_datos"] = None
                     if p.get("fecha_consulta"):
                         p["fecha_consulta"] = str(p["fecha_consulta"]).split(" ")[0]
                     else:
@@ -767,7 +819,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 return {"exito": True, "datos": solicitud}
 
     except Exception as e:
-        print(f"❌ Error en GET_solicitud_bd #{solicitud_id}: {e}")
+        print(f"[ERROR] Error en GET_solicitud_bd #{solicitud_id}: {e}")
         return {"exito": False, "mensaje": f"Error al consultar la solicitud: {e}"}
 
 def NOTIFICAR_edicion_sst_gesco_db(
@@ -878,92 +930,119 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             nombre_revisor = nombre_real
 
                 # Si no viene id_planta y es SST o GESCO, resolver de visita o plantas_ids
-                if (not id_planta or id_planta == 0) and rol in ("SST", "GESCO"):
-                    cursor.execute("SELECT id_planta FROM visita WHERE id_solicitud = %s LIMIT 1", (real_id,))
-                    v_p = cursor.fetchone()
-                    if v_p:
-                        id_planta = v_p["id_planta"]
-                    else:
+                plantas_ids_input = dictamen.get("plantas_ids")
+                es_edicion = bool(dictamen.get("es_edicion"))
+
+                # 1.1 Determinar lista de plantas a dictaminar
+                plantas_objetivo = []
+                if es_edicion and id_planta is not None:
+                    try:
+                        plantas_objetivo = [int(id_planta)]
+                    except (ValueError, TypeError):
+                        pass
+
+                if not plantas_objetivo and isinstance(plantas_ids_input, list) and len(plantas_ids_input) > 0:
+                    plantas_objetivo = [int(p) for p in plantas_ids_input if str(p).isdigit()]
+
+                if not plantas_objetivo and id_planta and str(id_planta).strip().lower() not in ("todas", "all", "none", "null") and str(id_planta).strip().isdigit():
+                    plantas_objetivo = [int(id_planta)]
+
+                if not plantas_objetivo and rol in ("SST", "GESCO"):
+                    # Si no viene una sola planta específica o viene "todas":
+                    # Obtener todas las plantas de la solicitud que coincidan con las plantas asignadas al usuario
+                    cursor.execute("SELECT DISTINCT id_planta FROM visita WHERE id_solicitud = %s", (real_id,))
+                    v_rows = cursor.fetchall() or []
+                    sol_plantas_visita = [r["id_planta"] for r in v_rows if r.get("id_planta")]
+
+                    if not sol_plantas_visita:
                         cursor.execute("SELECT plantas_ids FROM solicitudes WHERE id = %s", (real_id,))
-                        sol_p = cursor.fetchone()
-                        if sol_p and sol_p.get("plantas_ids"):
-                            p_list = [int(x.strip()) for x in str(sol_p["plantas_ids"]).replace("[","").replace("]","").split(",") if x.strip().isdigit()]
-                            if p_list:
-                                id_planta = p_list[0]
+                        sol_p_row = cursor.fetchone()
+                        if sol_p_row and sol_p_row.get("plantas_ids"):
+                            sol_plantas_visita = [int(x.strip()) for x in str(sol_p_row["plantas_ids"]).replace("[","").replace("]","").split(",") if x.strip().isdigit()]
 
-                # Verificar si ya existía una revisión previa para este rol (visto bueno previo)
-                habia_visto_bueno_previo = False
-                if id_planta is None:
-                    cursor.execute(
-                        "SELECT id, decision FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
-                        (real_id, rol)
-                    )
-                    rev_existente = cursor.fetchone()
-                    if rev_existente and rev_existente.get("decision"):
-                        habia_visto_bueno_previo = True
-                else:
-                    cursor.execute(
-                        "SELECT id, decision FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta = %s AND UPPER(rol) = %s",
-                        (real_id, id_planta, rol)
-                    )
-                    rev_existente = cursor.fetchone()
-                    if rev_existente and rev_existente.get("decision"):
-                        habia_visto_bueno_previo = True
-
-                # 2. Insertar o actualizar en solicitud_revisiones
-                if id_planta is None:
-                    cursor.execute(
-                        "SELECT id FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
-                        (real_id, rol)
-                    )
-                    rev_existente = cursor.fetchone()
-                    if rev_existente:
-                        cursor.execute(
-                            """
-                            UPDATE solicitud_revisiones
-                            SET id_usuario = %s, nombre_revisor = %s, decision = %s,
-                                motivo_rechazo = %s, observacion = %s, fecha_revision = NOW()
-                            WHERE id = %s
-                            """,
-                            (id_usuario, nombre_revisor, decision, motivo_rechazo, observacion, rev_existente["id"])
-                        )
+                    if id_usuario:
+                        cursor.execute("SELECT id_planta FROM usuario_plantas WHERE id_usuario = %s", (id_usuario,))
+                        u_plantas_rows = cursor.fetchall() or []
+                        user_plantas_set = {int(pr["id_planta"]) for pr in u_plantas_rows if pr.get("id_planta")}
+                        
+                        coincidentes = [pid for pid in sol_plantas_visita if pid in user_plantas_set]
+                        plantas_objetivo = coincidentes if coincidentes else sol_plantas_visita
                     else:
+                        plantas_objetivo = sol_plantas_visita
+
+                if not plantas_objetivo:
+                    plantas_objetivo = [None]
+
+                # 2. Insertar o actualizar en solicitud_revisiones para cada planta objetivo
+                sql_upsert_planta = """
+                    INSERT INTO solicitud_revisiones (
+                        id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                        decision, motivo_rechazo, observacion, fecha_revision
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        id_usuario = VALUES(id_usuario),
+                        nombre_revisor = VALUES(nombre_revisor),
+                        decision = VALUES(decision),
+                        motivo_rechazo = VALUES(motivo_rechazo),
+                        observacion = VALUES(observacion),
+                        fecha_revision = NOW()
+                """
+
+                for pid in plantas_objetivo:
+                    if pid is None:
                         cursor.execute(
-                            """
-                            INSERT INTO solicitud_revisiones (
-                                id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
-                                decision, motivo_rechazo, observacion, fecha_revision
-                            ) VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, NOW())
-                            """,
-                            (real_id, rol, id_usuario, nombre_revisor, decision, motivo_rechazo, observacion)
+                            "SELECT id FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
+                            (real_id, rol)
                         )
-                else:
-                    sql_upsert = """
-                        INSERT INTO solicitud_revisiones (
-                            id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
-                            decision, motivo_rechazo, observacion, fecha_revision
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                        ON DUPLICATE KEY UPDATE
-                            id_usuario = VALUES(id_usuario),
-                            nombre_revisor = VALUES(nombre_revisor),
-                            decision = VALUES(decision),
-                            motivo_rechazo = VALUES(motivo_rechazo),
-                            observacion = VALUES(observacion),
-                            fecha_revision = NOW()
-                    """
-                    cursor.execute(sql_upsert, (
-                        real_id, id_planta, rol, id_usuario, nombre_revisor,
-                        decision, motivo_rechazo, observacion
-                    ))
+                        rev_existente = cursor.fetchone()
+                        if rev_existente:
+                            cursor.execute(
+                                """
+                                UPDATE solicitud_revisiones
+                                SET id_usuario = %s, nombre_revisor = %s, decision = %s,
+                                    motivo_rechazo = %s, observacion = %s, fecha_revision = NOW()
+                                WHERE id = %s
+                                """,
+                                (id_usuario, nombre_revisor, decision, motivo_rechazo, observacion, rev_existente["id"])
+                            )
+                        else:
+                            cursor.execute(
+                                """
+                                INSERT INTO solicitud_revisiones (
+                                    id_solicitud, id_planta, rol, id_usuario, nombre_revisor,
+                                    decision, motivo_rechazo, observacion, fecha_revision
+                                ) VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, NOW())
+                                """,
+                                (real_id, rol, id_usuario, nombre_revisor, decision, motivo_rechazo, observacion)
+                            )
+                    else:
+                        cursor.execute(sql_upsert_planta, (
+                            real_id, pid, rol, id_usuario, nombre_revisor,
+                            decision, motivo_rechazo, observacion
+                        ))
 
                 # 2.1 Sincronizar autorizaciones individuales de personas (ingresantes)
                 personas_input = dictamen.get("personas")
-                es_scr_o_superior = rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN")
+                id_usuario_actual = dictamen.get("id_usuario")
+                id_rol_user = dictamen.get("id_rol")
+                es_admin_o_super = (id_rol_user in (1, 2)) or (rol in ("ADMIN", "ADMINISTRADOR", "SUPERADMIN"))
+                es_superadmin = (id_rol_user == 2) or (rol == "SUPERADMIN")
+                sol_estado_prev = str(sol.get("estado") or "").strip().upper()
+                es_finalizada = sol_estado_prev in ("APROBADO", "FINALIZADO", "RECHAZADO")
                 hubo_cambio_personas_aut = False
+                reautorizaciones_dictamen = []
 
                 if personas_input and isinstance(personas_input, list):
-                    cursor.execute("SELECT id_persona, COALESCE(autorizado, 1) AS autorizado FROM ingresantes WHERE id_solicitud = %s", (real_id,))
-                    ingresantes_db = {int(r["id_persona"]): bool(r["autorizado"]) for r in (cursor.fetchall() or []) if r.get("id_persona") is not None}
+                    cursor.execute("""
+                        SELECT i.id_persona, COALESCE(i.autorizado, 1) AS autorizado,
+                               i.denegado_por, CONCAT(u.nombres, ' ', u.apellidos) AS denegado_por_nombre,
+                               p.nombre, p.apellido
+                        FROM ingresantes i
+                        LEFT JOIN personas p ON i.id_persona = p.id
+                        LEFT JOIN usuarios u ON i.denegado_por = u.id
+                        WHERE i.id_solicitud = %s
+                    """, (real_id,))
+                    ingresantes_db = {int(r["id_persona"]): r for r in (cursor.fetchall() or []) if r.get("id_persona") is not None}
 
                     for p_item in personas_input:
                         if not isinstance(p_item, dict):
@@ -979,25 +1058,71 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         p_aut = bool(p_item.get("autorizado", True))
                         p_motivo = p_item.get("motivo") or p_item.get("motivo_rechazo") or None
 
-                        # Regla de negocio: GESCO, SST, SCR y roles superiores PUEDEN autorizar personas
-                        # incluso si estaban sin autorización en una revisión previa.
-                        if p_id in ingresantes_db and not ingresantes_db[p_id]:
-                            if not (es_scr_o_superior or rol in ("SST", "GESCO")):
-                                p_aut = False
+                        estado_prev = True
+                        denegado_por_prev = None
+                        nom_p = f"Persona #{p_id}"
+                        if p_id in ingresantes_db:
+                            reg_prev = ingresantes_db[p_id]
+                            estado_prev = bool(reg_prev["autorizado"])
+                            denegado_por_prev = reg_prev.get("denegado_por")
+                            nom_p = f"{reg_prev.get('nombre', '')} {reg_prev.get('apellido', '')}".strip() or nom_p
 
-                        if p_id in ingresantes_db and ingresantes_db[p_id] != p_aut:
+                            # REGLA 2: Si la revisión ya finalizó, quienes hayan finalizado con autorización no pueden ser editados a no autorizado A MENOS que sea admin o superadmin
+                            if es_finalizada and estado_prev is True and p_aut is False:
+                                if not es_admin_o_super:
+                                    p_aut = True  # Mantener autorizado si no es admin
+
+                            # REGLA 1: Si estaba denegada en BD, SOLO quien la denegó (o superadmin) puede volver a autorizarla
+                            if estado_prev is False and p_aut is True:
+                                if denegado_por_prev is not None and id_usuario_actual is not None:
+                                    if int(denegado_por_prev) != int(id_usuario_actual) and not es_superadmin:
+                                        p_aut = False  # Bloqueado para otros usuarios
+                                    else:
+                                        reautorizaciones_dictamen.append(nom_p)
+                                else:
+                                    reautorizaciones_dictamen.append(nom_p)
+
+                        if p_id in ingresantes_db and estado_prev != p_aut:
                             hubo_cambio_personas_aut = True
+
+                        if p_aut:
+                            nuevo_denegado_por = None
+                            nuevo_motivo = None
+                        else:
+                            nuevo_denegado_por = denegado_por_prev if (estado_prev is False and denegado_por_prev) else id_usuario_actual
+                            nuevo_motivo = p_motivo
 
                         cursor.execute(
                             """
-                            INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo)
-                            VALUES (%s, %s, %s, %s)
+                            INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo, denegado_por)
+                            VALUES (%s, %s, %s, %s, %s)
                             ON DUPLICATE KEY UPDATE
                                 autorizado = VALUES(autorizado),
-                                motivo = VALUES(motivo)
+                                motivo = VALUES(motivo),
+                                denegado_por = VALUES(denegado_por)
                             """,
-                            (real_id, p_id, 1 if p_aut else 0, p_motivo)
+                            (real_id, p_id, 1 if p_aut else 0, nuevo_motivo, nuevo_denegado_por)
                         )
+
+                    # Notificar si hubo reautorización por parte de quien negó el acceso
+                    for nom_reaut in reautorizaciones_dictamen:
+                        tit_reaut = f"Reautorización de personal en {cod_sol}"
+                        msg_reaut = f"{nombre_revisor or rol} ha vuelto a autorizar el ingreso de {nom_reaut} en la solicitud {cod_sol}."
+                        id_creador_d = sol.get("diligenciado_por")
+                        if id_creador_d:
+                            cursor.execute("""
+                                INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                                VALUES (%s, %s, %s, 'info', %s)
+                            """, (id_creador_d, tit_reaut, msg_reaut, f"/solicitudes/revision/{cod_sol}"))
+                            notification_broadcaster.notificar_nueva({
+                                "titulo": tit_reaut,
+                                "mensaje": msg_reaut,
+                                "tipo": "info",
+                                "enlace": f"/solicitudes/revision/{cod_sol}",
+                                "fecha_creacion": datetime.now().isoformat(),
+                                "leido": False,
+                                "id_usuario": id_creador_d
+                            }, target_user_id=id_creador_d)
 
                 # 2.2 Sincronizar autorizaciones individuales de vehículos (Veh_ingreso)
                 vehiculos_input = dictamen.get("vehiculos")
@@ -1553,12 +1678,22 @@ def ACTUALIZAR_autorizacion_personas_db(solicitud_id: Any, payload: dict) -> dic
                 # 2. Actualizar ingresantes
                 hubo_cambios = False
                 nombres_modificados = []
+                personas_reautorizadas = []
+
+                estado_sol = str(sol.get("estado") or "").strip().upper()
+                es_finalizada = estado_sol in ("APROBADO", "FINALIZADO", "RECHAZADO")
+                id_rol_user = payload.get("id_rol")
+                es_admin_o_super = (id_rol_user in (1, 2)) or (rol in ("ADMIN", "ADMINISTRADOR", "SUPERADMIN"))
+                es_superadmin = (id_rol_user == 2) or (rol == "SUPERADMIN")
 
                 cursor.execute(
                     """
-                    SELECT i.id_persona, COALESCE(i.autorizado, 1) AS autorizado, p.nombre, p.apellido 
+                    SELECT i.id_persona, COALESCE(i.autorizado, 1) AS autorizado,
+                           i.denegado_por, CONCAT(u.nombres, ' ', u.apellidos) AS denegado_por_nombre,
+                           p.nombre, p.apellido 
                     FROM ingresantes i 
                     LEFT JOIN personas p ON i.id_persona = p.id 
+                    LEFT JOIN usuarios u ON i.denegado_por = u.id
                     WHERE i.id_solicitud = %s
                     """,
                     (real_id,)
@@ -1581,22 +1716,91 @@ def ACTUALIZAR_autorizacion_personas_db(solicitud_id: Any, payload: dict) -> dic
 
                     if p_id in ing_db:
                         estado_prev = bool(ing_db[p_id]["autorizado"])
+                        denegado_por_prev = ing_db[p_id].get("denegado_por")
+                        nom_completo = f"{ing_db[p_id].get('nombre', '')} {ing_db[p_id].get('apellido', '')}".strip() or f"Persona #{p_id}"
+                        nom_denego = ing_db[p_id].get("denegado_por_nombre") or "otro revisor"
+
+                        # REGLA 2: Si la revisión ya finalizó, quienes hayan finalizado con autorización no pueden ser editados a no autorizado A MENOS que sea rol admin o superadmin
+                        if es_finalizada and estado_prev is True and p_aut is False:
+                            if not es_admin_o_super:
+                                return {
+                                    "exito": False,
+                                    "mensaje": f"El proceso de revisión ya ha finalizado. No puedes revocar la autorización de {nom_completo} (solo Administrador o Superadmin pueden hacerlo)."
+                                }
+
+                        # REGLA 1: Si un usuario no autoriza a una persona, otros usuarios no pueden reautorizarla, SOLO la persona que negó el acceso puede volver a autorizar
+                        if estado_prev is False and p_aut is True:
+                            if denegado_por_prev is not None and id_usuario is not None:
+                                if int(denegado_por_prev) != int(id_usuario) and not es_superadmin:
+                                    return {
+                                        "exito": False,
+                                        "mensaje": f"No puedes autorizar a {nom_completo}: el acceso fue denegado por {nom_denego}. Solo la persona que denegó el acceso puede volver a autorizar su ingreso."
+                                    }
+                                else:
+                                    personas_reautorizadas.append(nom_completo)
+                            else:
+                                personas_reautorizadas.append(nom_completo)
+
                         if estado_prev != p_aut:
                             hubo_cambios = True
-                            nom_completo = f"{ing_db[p_id].get('nombre', '')} {ing_db[p_id].get('apellido', '')}".strip()
                             estado_txt = "Autorizado" if p_aut else "No Autorizado"
-                            nombres_modificados.append(f"{nom_completo or f'ID {p_id}'} ({estado_txt})")
+                            nombres_modificados.append(f"{nom_completo} ({estado_txt})")
+
+                    if p_aut:
+                        nuevo_denegado_por = None
+                        nuevo_motivo = None
+                    else:
+                        nuevo_denegado_por = denegado_por_prev if (estado_prev is False and denegado_por_prev) else id_usuario
+                        nuevo_motivo = p_motivo
 
                     cursor.execute(
                         """
-                        INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo)
-                        VALUES (%s, %s, %s, %s)
+                        INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo, denegado_por)
+                        VALUES (%s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                             autorizado = VALUES(autorizado),
-                            motivo = VALUES(motivo)
+                            motivo = VALUES(motivo),
+                            denegado_por = VALUES(denegado_por)
                         """,
-                        (real_id, p_id, 1 if p_aut else 0, p_motivo)
+                        (real_id, p_id, 1 if p_aut else 0, nuevo_motivo, nuevo_denegado_por)
                     )
+
+                # Notificar si hubo reautorizaciones específicas
+                for nom_reaut in personas_reautorizadas:
+                    tit_reaut = f"Reautorización de personal en {cod_sol}"
+                    msg_reaut = f"{nombre_revisor or rol} ha vuelto a autorizar el ingreso de {nom_reaut} en la solicitud {cod_sol}."
+                    id_creador_d = sol.get("diligenciado_por")
+                    if id_creador_d:
+                        cursor.execute("""
+                            INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace)
+                            VALUES (%s, %s, %s, 'info', %s)
+                        """, (id_creador_d, tit_reaut, msg_reaut, f"/solicitudes/revision/{cod_sol}"))
+                        notification_broadcaster.notificar_nueva({
+                            "titulo": tit_reaut,
+                            "mensaje": msg_reaut,
+                            "tipo": "info",
+                            "enlace": f"/solicitudes/revision/{cod_sol}",
+                            "fecha_creacion": datetime.now().isoformat(),
+                            "leido": False,
+                            "id_usuario": id_creador_d
+                        }, target_user_id=id_creador_d)
+
+                    cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) IN ('SCR', 'ADMINISTRADOR', 'SUPERADMIN', 'SST', 'GESCO', 'EQUIPO SCR')")
+                    roles_notif = cursor.fetchall() or []
+                    for r_row in roles_notif:
+                        cursor.execute("""
+                            INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
+                            VALUES (%s, %s, %s, 'info', %s)
+                        """, (r_row["id"], tit_reaut, msg_reaut, f"/solicitudes/revision/{cod_sol}"))
+                        notification_broadcaster.notificar_nueva({
+                            "titulo": tit_reaut,
+                            "mensaje": msg_reaut,
+                            "tipo": "info",
+                            "enlace": f"/solicitudes/revision/{cod_sol}",
+                            "fecha_creacion": datetime.now().isoformat(),
+                            "leido": False,
+                            "rol_destino": r_row["id"]
+                        }, target_role_id=r_row["id"])
 
                 # 3. Notificar a SCR y roles superiores (ADMINISTRADOR, SUPERADMIN)
                 if nombres_modificados:
@@ -1839,7 +2043,12 @@ def GET_ALL_solicitudes_bd(
     only_active: Optional[bool] = None, 
     id_usuario: Optional[int] = None,
     diligenciado_por: Optional[int] = None,
-    excluir_inactivas_vencidas: bool = False
+    excluir_inactivas_vencidas: bool = False,
+    page: Optional[int] = None,
+    limit: Optional[int] = None,
+    search: Optional[str] = None,
+    estado_filtro: Optional[str] = None,
+    empresa_filtro: Optional[str] = None
 ):
 
     try:
@@ -1884,7 +2093,7 @@ def GET_ALL_solicitudes_bd(
                         p_ids = [int(pr["id_planta"]) for pr in p_rows if pr.get("id_planta")]
                         if not p_ids:
                             # Usuario SST/GESCO sin plantas asignadas: no ve ninguna solicitud
-                            return {"exito": True, "datos": [], "mensaje": "Usuario sin plantas asignadas."}
+                            return {"exito": True, "datos": [], "total": 0, "total_paginas": 1, "page": page or 1, "limit": limit or 10, "metricas": {"total": 0, "activas": 0, "inactivas": 0, "pre_enviado": 0}, "mensaje": "Usuario sin plantas asignadas."}
                         
                         # Filtrar solicitudes que contengan al menos una de las plantas asignadas
                         in_list = ",".join(map(str, p_ids))
@@ -1896,7 +2105,135 @@ def GET_ALL_solicitudes_bd(
                             )
                         """)
 
+                # Calcular métricas globales para tarjetas sobre el scope base del usuario
+                metricas = {"total": 0, "activas": 0, "inactivas": 0, "pre_enviado": 0}
+                is_paginated = (page is not None and limit is not None and int(page) >= 1 and int(limit) >= 1)
+                if is_paginated:
+                    where_base_metrics = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+                    try:
+                        cursor.execute(f"""
+                            SELECT 
+                                COUNT(DISTINCT so.id) AS total,
+                                SUM(CASE WHEN {is_active_expr} = 1 THEN 1 ELSE 0 END) AS activas,
+                                SUM(CASE WHEN {is_active_expr} = 0 THEN 1 ELSE 0 END) AS inactivas,
+                                SUM(CASE WHEN UPPER(so.estado) = 'PRE-ENVIADO' THEN 1 ELSE 0 END) AS pre_enviado
+                            FROM solicitudes so
+                            {where_base_metrics}
+                        """)
+                        m_row = cursor.fetchone()
+                        if m_row:
+                            metricas["total"] = int(m_row.get("total") or 0)
+                            metricas["activas"] = int(m_row.get("activas") or 0)
+                            metricas["inactivas"] = int(m_row.get("inactivas") or 0)
+                            metricas["pre_enviado"] = int(m_row.get("pre_enviado") or 0)
+                    except Exception as e_m:
+                        print(f"[AVISO] Error calculando metricas de solicitudes: {e_m}")
+
+                # Filtros adicionales de tabla
+                params_filter = []
+                if estado_filtro:
+                    est = str(estado_filtro).strip().lower()
+                    if est == "activos":
+                        condiciones.append(f"{is_active_expr} = 1")
+                    elif est == "inactivos":
+                        condiciones.append(f"{is_active_expr} = 0")
+                    elif est == "pre-enviado":
+                        condiciones.append("UPPER(so.estado) = 'PRE-ENVIADO'")
+                    elif est not in ("todos", ""):
+                        condiciones.append("UPPER(so.estado) = %s")
+                        params_filter.append(est.upper())
+
+                if empresa_filtro and str(empresa_filtro).strip():
+                    condiciones.append("LOWER(e.nombre_empresa) = %s")
+                    params_filter.append(str(empresa_filtro).strip().lower())
+
+                if search and str(search).strip():
+                    s_clean = f"%{str(search).strip().lower()}%"
+                    condiciones.append("""
+                        (
+                            LOWER(so.codigo) LIKE %s OR 
+                            CAST(so.id AS CHAR) LIKE %s OR 
+                            LOWER(e.nombre_empresa) LIKE %s OR 
+                            LOWER(ec.nombre) LIKE %s OR 
+                            LOWER(CONCAT(u.nombres, ' ', u.apellidos)) LIKE %s OR 
+                            LOWER(so.actividad) LIKE %s
+                        )
+                    """)
+                    params_filter.extend([s_clean, s_clean, s_clean, s_clean, s_clean, s_clean])
+
                 where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+
+                total_count = 0
+                page_ids = []
+
+                if is_paginated:
+                    page = int(page)
+                    limit = int(limit)
+                    offset = max(0, (page - 1) * limit)
+
+                    # 1. Total filtrado
+                    count_sql = f"""
+                        SELECT COUNT(DISTINCT so.id) AS total_count
+                        FROM solicitudes so
+                        INNER JOIN usuarios u ON so.diligenciado_por = u.id
+                        INNER JOIN empresa e ON so.empresa_origen = e.id
+                        INNER JOIN emp_contratista ec ON so.empresa_contratista = ec.id
+                        LEFT JOIN visita v ON v.id_solicitud = so.id
+                        LEFT JOIN planta p ON v.id_planta = p.id
+                        {where_clause}
+                    """
+                    cursor.execute(count_sql, tuple(params_filter))
+                    c_row = cursor.fetchone()
+                    total_count = int((c_row or {}).get("total_count") or 0)
+
+                    if total_count == 0:
+                        return {
+                            "exito": True,
+                            "datos": [],
+                            "total": 0,
+                            "total_paginas": 1,
+                            "page": page,
+                            "limit": limit,
+                            "metricas": metricas,
+                            "mensaje": "No se encontraron solicitudes."
+                        }
+
+                    # 2. Obtener solo los IDs de la página actual (Optimización Deferred Join O(1))
+                    ids_sql = f"""
+                        SELECT so.id
+                        FROM solicitudes so
+                        INNER JOIN usuarios u ON so.diligenciado_por = u.id
+                        INNER JOIN empresa e ON so.empresa_origen = e.id
+                        INNER JOIN emp_contratista ec ON so.empresa_contratista = ec.id
+                        LEFT JOIN visita v ON v.id_solicitud = so.id
+                        LEFT JOIN planta p ON v.id_planta = p.id
+                        {where_clause}
+                        GROUP BY so.id
+                        ORDER BY so.id DESC
+                        LIMIT %s OFFSET %s
+                    """
+                    cursor.execute(ids_sql, tuple(params_filter + [limit, offset]))
+                    id_rows = cursor.fetchall() or []
+                    page_ids = [r["id"] for r in id_rows if r.get("id")]
+                    if not page_ids:
+                        return {
+                            "exito": True,
+                            "datos": [],
+                            "total": total_count,
+                            "total_paginas": max(1, math.ceil(total_count / limit)),
+                            "page": page,
+                            "limit": limit,
+                            "metricas": metricas,
+                            "mensaje": "Página fuera de rango."
+                        }
+
+                    # Consulta rápida por los IDs exactos de la página actual
+                    ids_str = ",".join(map(str, page_ids))
+                    query_where = f"WHERE so.id IN ({ids_str})"
+                    params_main = ()
+                else:
+                    query_where = where_clause
+                    params_main = tuple(params_filter)
 
                 query = f"""
                     SELECT
@@ -1927,7 +2264,9 @@ def GET_ALL_solicitudes_bd(
                                 per.tipo_doc,
                                 per.identificacion,
                                 per.cargo,
-                                IFNULL(ing.autorizado, '')
+                                IFNULL(ing.autorizado, ''),
+                                IFNULL(ing.motivo, ''),
+                                COALESCE(ing.estado_datos, 'PENDIENTE')
                             )
                             SEPARATOR '###'
                         ) AS personas,
@@ -1970,12 +2309,12 @@ def GET_ALL_solicitudes_bd(
                     LEFT JOIN Veh_ingreso vi ON vi.id_solicitud = so.id
                     LEFT JOIN vehiculos vh ON vi.id_vehiculo = vh.id
 
-                    {where_clause}
+                    {query_where}
                     GROUP BY so.id
                     ORDER BY so.id DESC
                 """
 
-                cursor.execute(query)
+                cursor.execute(query, params_main)
 
                 datos = cursor.fetchall()  
 
@@ -2004,11 +2343,23 @@ def GET_ALL_solicitudes_bd(
                                         'identificacion': partes[3] or None,
                                         'cargo': partes[4] or None,
                                         'autorizado': partes[5] or None,
+                                        'motivo': partes[6] if len(partes) > 6 else '',
+                                        'estado_datos': (partes[7] if len(partes) > 7 else 'PENDIENTE').strip().upper() or 'PENDIENTE',
                                     })
                                 val_personas = personas_list
                         
                         if isinstance(val_personas, list):
                             row['personas'] = [p for p in val_personas if p is not None]
+
+                    if isinstance(row, dict) and (not row.get('personas') or len(row['personas']) == 0) and row.get('personas_ids'):
+                        try:
+                            p_ids = [int(x.strip()) for x in str(row['personas_ids']).split(',') if x.strip().isdigit()]
+                            if p_ids:
+                                fmt_p = ','.join(['%s'] * len(p_ids))
+                                cursor.execute(f"SELECT id, CONCAT(COALESCE(apellido, ''), ' ', COALESCE(nombre, '')) AS ap_nombre, tipo_doc, identificacion, cargo, 1 AS autorizado, '' AS motivo, 'PENDIENTE' AS estado_datos FROM personas WHERE id IN ({fmt_p})", tuple(p_ids))
+                                row['personas'] = cursor.fetchall() or []
+                        except Exception:
+                            pass
 
                     if isinstance(row, dict) and 'vehiculos' in row:
                         val_vehiculos = row['vehiculos']
@@ -2141,10 +2492,22 @@ def GET_ALL_solicitudes_bd(
                     for row in datos:
                         row["revisiones"] = revs_por_sol.get(row["id"], [])
                 except Exception as e_rev:
-                    print(f"⚠️ Aviso al cargar revisiones en GET_ALL_solicitudes_bd: {e_rev}")
+                    print(f"[AVISO] Aviso al cargar revisiones en GET_ALL_solicitudes_bd: {e_rev}")
                             
-                print(f"📦 [LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
+                print(f"[LOADER] Se recuperaron {len(datos)} solicitudes de la base de datos.")
         
+                if is_paginated:
+                    return {
+                        "exito": True,
+                        "datos": datos,
+                        "total": total_count,
+                        "total_paginas": max(1, math.ceil(total_count / limit)),
+                        "page": page,
+                        "limit": limit,
+                        "metricas": metricas,
+                        "mensaje": "Solicitudes recuperadas exitosamente."
+                    }
+
                 return {
                     "exito": True,
                     "datos": datos,
@@ -2152,7 +2515,7 @@ def GET_ALL_solicitudes_bd(
                 }
 
     except Exception as e:
-        print(f"❌ [LOADER Error] Error consultando solicitudes: {e}")
+        print(f"[LOADER Error] Error consultando solicitudes: {e}")
         return {
             "exito": False,
             "mensaje": f"Error al consultar la base de datos: {str(e)}",
@@ -2932,6 +3295,21 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
 # AUTORIZACIÓN DE TRATAMIENTO DE DATOS PERSONALES (LEY 1581 DE 2012)
 # ==============================================================================
 
+def OBTENER_correo_institucional_empresa(nombre_empresa: str) -> str:
+    """
+    Retorna el correo institucional oficial para trámites de Habeas Data
+    y atención al titular según la empresa mandante / origen.
+    """
+    nom = str(nombre_empresa or "").strip().upper()
+    if "MILPA" in nom:
+        return "cimilpa@milpa.com.co"
+    if "CARBOINSA" in nom:
+        return "carboinsasas@carboinsa.com.co"
+    if "UNIMINAS" in nom:
+        return "uniminas@uniminas.com.co"
+    return "incarsasas@incarsa.com.co"
+
+
 def GET_detalle_autorizacion_datos_db(token: str) -> dict:
     """
     Consulta los datos del integrante y la solicitud asociada a un token de autorización.
@@ -2991,6 +3369,9 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         cursor.execute(f"SELECT nombre FROM planta WHERE id IN ({format_strings})", tuple(p_ids))
                         plantas_nombres = [pr["nombre"] for pr in cursor.fetchall() if pr.get("nombre")]
 
+                empresa_origen_nombre = row.get("empresa_origen") or "INCARSA S.A.S."
+                correo_institucional = OBTENER_correo_institucional_empresa(empresa_origen_nombre)
+
                 nombre_completo = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
                 return {
                     "exito": True,
@@ -3009,7 +3390,8 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         "codigo_radicado": row.get("codigo_radicado") or "",
                         "empresa_contratista": row.get("empresa_contratista") or "",
                         "empresa_contratista_nit": row.get("empresa_contratista_nit") or "",
-                        "empresa_origen": row.get("empresa_origen") or "INCARSA S.A.S.",
+                        "empresa_origen": empresa_origen_nombre,
+                        "correo_institucional": correo_institucional,
                         "plantas": plantas_nombres,
                         "plantas_texto": ", ".join(plantas_nombres) if plantas_nombres else "",
                         "fecha_inicio": str(row.get("fecha_inicio") or ""),

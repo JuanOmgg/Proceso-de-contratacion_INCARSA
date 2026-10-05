@@ -55,6 +55,25 @@
         return new Date(y, m, d, hh, mm, ss);
       }
 
+      // Formato español texto: "29 Sep 2026" o "29 septiembre 2026"
+      const matchEsp = raw.match(/^(\d{1,2})\s+([a-zA-ZáéíóúñÁÉÍÓÚÑ]{3,12})\s+(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
+      if (matchEsp) {
+        const d = parseInt(matchEsp[1], 10);
+        const mesTexto = matchEsp[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 3);
+        const mesesMap = { ene: 0, feb: 1, mar: 2, abr: 3, may: 4, jun: 5, jul: 6, ago: 7, sep: 8, oct: 9, nov: 10, dic: 11 };
+        const m = mesesMap[mesTexto] !== undefined ? mesesMap[mesTexto] : -1;
+        const y = parseInt(matchEsp[3], 10);
+        if (m !== -1) {
+          let hh = matchEsp[4] !== undefined ? parseInt(matchEsp[4], 10) : 0;
+          const mm = matchEsp[5] !== undefined ? parseInt(matchEsp[5], 10) : 0;
+          const ss = matchEsp[6] !== undefined ? parseInt(matchEsp[6], 10) : 0;
+          const ampm = (matchEsp[7] || '').toUpperCase();
+          if (ampm === 'PM' && hh < 12) hh += 12;
+          if (ampm === 'AM' && hh === 12) hh = 0;
+          return new Date(y, m, d, hh, mm, ss);
+        }
+      }
+
       // Fallback genérico de Date
       const dGen = new Date(raw);
       return isNaN(dGen.getTime()) ? null : dGen;
@@ -99,12 +118,15 @@
    * Ej: "2026-09-24" -> "24 Sep 2026"
    */
   function formatearFechaCorta(fechaStr) {
-    if (!fechaStr || fechaStr === '—' || fechaStr === '-' || fechaStr === 'None' || fechaStr === 'null') {
+    if (!fechaStr || fechaStr === '—' || fechaStr === '-' || fechaStr === 'None' || fechaStr === 'null' || fechaStr === 'undefined') {
       return '—';
     }
 
     const d = parsearFechaLocal(fechaStr);
-    if (!d) return String(fechaStr);
+    if (!d) {
+      const limpia = String(fechaStr).split('T')[0].split(',')[0].split(' ')[0].trim();
+      return (limpia && limpia !== 'null' && limpia !== 'undefined') ? limpia : '—';
+    }
 
     const dia = String(d.getDate()).padStart(2, '0');
     const mes = MESES_CORTOS[d.getMonth()] || '';

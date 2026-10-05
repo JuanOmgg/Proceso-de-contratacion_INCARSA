@@ -404,6 +404,19 @@ function procesamientoBoard() {
         this.filtroActivo = "activos";
       }
 
+      window.addEventListener("sesion-actualizada-en-caliente", (e) => {
+        if (e.detail) {
+          this.usuarioSesion = e.detail;
+          this.userId = e.detail.id;
+          this.userRole = e.detail.rol || "";
+          this.getSolicitudes();
+        }
+      });
+
+      window.addEventListener("solicitudes-recargar", () => {
+        this.getSolicitudes();
+      });
+
       await this.getSolicitudes();
     },
 

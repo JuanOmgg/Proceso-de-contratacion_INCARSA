@@ -49,9 +49,10 @@ def GET_estadisticas_ingresos_plantas_db(
         if fecha_inicio > fecha_fin:
             fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
 
-        # 2. Construir la consulta SQL para traer todas las solicitudes activas en el rango (excluyendo rechazadas)
+        # 2. Construir la consulta SQL para traer todas las solicitudes en el rango (excluyendo rechazadas)
+        # Incluye tanto solicitudes activas vigentes como solicitudes activas/programadas que aún no entran en vigencia
         filtros_sql = [
-            "s.is_active = 1",
+            "(s.is_active = 1 OR s.fecha_fin >= CURDATE())",
             "s.fecha_inicio <= %(fecha_fin)s",
             "s.fecha_fin >= %(fecha_inicio)s",
             "s.estado != 'RECHAZADO'"
@@ -117,6 +118,8 @@ def GET_estadisticas_ingresos_plantas_db(
             }
 
         todas_personas_periodo = set()
+        personas_en_espera_periodo = set()
+        solicitudes_en_espera_periodo = set()
         plantas_acumulado: Dict[int, Dict[str, Any]] = {}
 
         # 4. Asignar cada fila a los días correspondientes dentro de su vigencia
@@ -144,6 +147,9 @@ def GET_estadisticas_ingresos_plantas_db(
                         "total_visitas": 0
                     }
                 plantas_acumulado[pid]["personas_unicas"].add(persona_id)
+            else:
+                personas_en_espera_periodo.add(persona_id)
+                solicitudes_en_espera_periodo.add(solicitud_id)
 
             # Acotar al rango seleccionado
             d_start = max(fecha_inicio, f_ini)
@@ -256,6 +262,8 @@ def GET_estadisticas_ingresos_plantas_db(
         kpis = {
             "total_personas_unicas_periodo": len(todas_personas_periodo),
             "total_ingresos_acumulados": total_ingresos_acumulados,
+            "total_personas_en_espera": len(personas_en_espera_periodo),
+            "total_solicitudes_en_espera": len(solicitudes_en_espera_periodo),
             "promedio_diario": promedio_diario,
             "dias_consultados": dias_totales,
             "dia_pico": {
@@ -306,7 +314,7 @@ def GET_detalle_personas_dia_planta_db(
     """
     try:
         filtros_sql = [
-            "s.is_active = 1",
+            "(s.is_active = 1 OR s.fecha_fin >= CURDATE())",
             "%(fecha)s BETWEEN s.fecha_inicio AND s.fecha_fin",
             "v.id_planta = %(id_planta)s",
             "i.autorizado = 1"
@@ -331,7 +339,9 @@ def GET_detalle_personas_dia_planta_db(
                 p.cargo,
                 COALESCE(ec.nombre, 'Sin contratista') AS empresa_contratista,
                 s.codigo AS radicado,
-                s.id AS id_solicitud
+                s.id AS id_solicitud,
+                COALESCE(i.autorizado, 1) AS autorizado,
+                COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos
             FROM personas p
             JOIN ingresantes i ON p.id = i.id_persona
             JOIN solicitudes s ON i.id_solicitud = s.id
@@ -363,8 +373,16 @@ def GET_detalle_personas_dia_planta_db(
                     "identificacion": str(row["identificacion"]),
                     "cargo": row["cargo"],
                     "empresa_contratista": row["empresa_contratista"],
+                    "autorizado": int(row.get("autorizado", 1)),
+                    "estado_datos": row.get("estado_datos", "PENDIENTE"),
                     "radicados": set()
                 }
+            else:
+                if not row.get("autorizado", 1):
+                    personas_map[pid]["autorizado"] = 0
+                if row.get("estado_datos") != "AUTORIZADO":
+                    personas_map[pid]["estado_datos"] = row.get("estado_datos", "PENDIENTE")
+
             if row.get("radicado"):
                 personas_map[pid]["radicados"].add(row["radicado"])
 
@@ -378,6 +396,8 @@ def GET_detalle_personas_dia_planta_db(
                 "identificacion": pdata["identificacion"],
                 "cargo": pdata["cargo"],
                 "empresa_contratista": pdata["empresa_contratista"],
+                "autorizado": pdata["autorizado"],
+                "estado_datos": pdata["estado_datos"],
                 "radicados": rads,
                 "total_solicitudes": len(rads)
             })

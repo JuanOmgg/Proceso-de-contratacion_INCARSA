@@ -326,14 +326,26 @@
                                   <td class="px-2.5 py-2 text-center font-mono ticket-td-code" x-text="p.identificacion || '-'"></td>
                                   <td class="px-2.5 py-2 text-center ticket-td-text" x-text="p.cargo || '-'"></td>
                                   <td class="px-2.5 py-2 text-center">
-                                    <template x-if="p.autorizado == 1 || p.autorizado === true || p.autorizado === '1'">
-                                      <span class="inline-flex items-center justify-center ticket-status-auth" title="Autorizado">
+                                    <!-- 1. VERDE: Autorizado completo (ingreso avalado + datos aprobados) -->
+                                    <template x-if="(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos === 'AUTORIZADO'">
+                                      <span class="inline-flex items-center justify-center ticket-status-auth cursor-help"
+                                        title="Autorizado: Ingreso avalado y tratamiento de datos aprobado">
                                         <i class="fa-solid fa-circle-check text-base"></i>
                                       </span>
                                     </template>
-                                    <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1')">
+
+                                    <!-- 2. AMARILLO: Autorizado pero PENDIENTE de tratamiento de datos -->
+                                    <template x-if="(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos !== 'AUTORIZADO' && p.estado_datos !== 'RECHAZADO'">
+                                      <span class="inline-flex items-center justify-center ticket-status-warn cursor-help"
+                                        title="Pendiente: Aún no ha aprobado el tratamiento de datos personales (Ley 1581/2012)">
+                                        <i class="fa-solid fa-circle-exclamation text-base"></i>
+                                      </span>
+                                    </template>
+
+                                    <!-- 3. ROJO: No autorizado (o rechazó tratamiento de datos) -->
+                                    <template x-if="!(p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') || p.estado_datos === 'RECHAZADO'">
                                       <span class="inline-flex items-center justify-center ticket-status-unauth cursor-help"
-                                        :title="p.motivo ? ('No Autorizado: ' + p.motivo) : 'No autorizado'">
+                                        :title="p.motivo ? ('No Autorizado: ' + p.motivo) : (p.estado_datos === 'RECHAZADO' ? 'No Autorizado: Tratamiento de datos rechazado por el titular' : 'No autorizado')">
                                         <i class="fa-solid fa-circle-xmark text-base"></i>
                                       </span>
                                     </template>
@@ -426,7 +438,7 @@
                         <div class="flex items-center gap-2 text-[10.5px]">
                           <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.personas?.length > 0">
                             <i class="fa-solid fa-user-check text-[10px] text-[#2f8f5b] mr-0.5"></i>
-                            <span x-text="(selected?.personas || []).filter(p => p.autorizado == 1 || p.autorizado === true || p.autorizado === '1').length + '/' + (selected?.personas?.length || 0) + ' personas aut.'"></span>
+                            <span x-text="(selected?.personas || []).filter(p => (p.autorizado == 1 || p.autorizado === true || p.autorizado === '1') && p.estado_datos === 'AUTORIZADO').length + '/' + (selected?.personas?.length || 0) + ' personas aut.'"></span>
                           </span>
                           <span class="font-medium text-[var(--paper-ink)]" x-show="selected?.vehiculos?.length > 0">
                             <i class="fa-solid fa-car-side text-[10px] text-[#2f8f5b] mr-0.5"></i>

@@ -6,11 +6,27 @@ function formatearFechaHoraEspanol(fechaStr) {
 }
 
 function formatearFechaCorta(fechaStr) {
+    if (!fechaStr || fechaStr === '—' || fechaStr === '-' || fechaStr === 'null' || fechaStr === 'None' || fechaStr === 'undefined') return '—';
     if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
-        return window.Fechas.formatearCorta(fechaStr);
+        const res = window.Fechas.formatearCorta(fechaStr);
+        if (res && res !== '—') return res;
     }
-    if (!fechaStr || fechaStr === '—' || fechaStr === 'null' || fechaStr === 'None') return '—';
-    return String(fechaStr).split('T')[0].split(' ')[0];
+    const clean = String(fechaStr).split('T')[0].split(',')[0].split(' ')[0].trim();
+    return clean || '—';
+}
+
+let _hoyCacheTimestamp = 0;
+let _hoyCacheValue = 0;
+function getHoyTimestamp() {
+    const now = Date.now();
+    if (_hoyCacheValue && (now - _hoyCacheTimestamp < 60000)) {
+        return _hoyCacheValue;
+    }
+    const h = new Date();
+    h.setHours(0, 0, 0, 0);
+    _hoyCacheTimestamp = now;
+    _hoyCacheValue = h.getTime();
+    return _hoyCacheValue;
 }
 
 function esInactivaVencida(s) {
@@ -38,11 +54,8 @@ function esInactivaVencida(s) {
 
     if (!fechaFinDate || isNaN(fechaFinDate.getTime())) return false;
 
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
     fechaFinDate.setHours(0, 0, 0, 0);
-
-    return fechaFinDate.getTime() < hoy.getTime();
+    return fechaFinDate.getTime() < getHoyTimestamp();
 }
 
 function generarCodigoAlfanumerico(id) {
@@ -79,11 +92,18 @@ function normalizarSolicitud(s) {
         cadenaPlanta = s.plantas;
     }
 
-    // Cargar observaciones guardadas localmente si no vienen en la API
+    // Cargar observaciones guardadas localmente (usando caché para evitar cientos de lecturas a localStorage)
     let observacionesGuardadas = {};
-    try {
-        observacionesGuardadas = JSON.parse(localStorage.getItem("incarsa_observaciones_solicitudes") || "{}");
-    } catch (e) {}
+    if (window._cachedObservacionesLocal !== undefined && window._cachedObservacionesLocal !== null) {
+        observacionesGuardadas = window._cachedObservacionesLocal;
+    } else {
+        try {
+            observacionesGuardadas = JSON.parse(localStorage.getItem("incarsa_observaciones_solicitudes") || "{}");
+            window._cachedObservacionesLocal = observacionesGuardadas;
+        } catch (e) {
+            observacionesGuardadas = {};
+        }
+    }
 
     const observacionVal = s.observacion || s.observaciones || observacionesGuardadas[s.id] || "";
     const codigoVal = s.codigo || s.codigo_radicado || generarCodigoAlfanumerico(s.id);
@@ -179,6 +199,7 @@ function normalizarSolicitud(s) {
                 const cargo = parts[4];
                 const autorizado = parts[5];
                 const motivo = parts[6] || "";
+                const estado_datos = parts[7] || "PENDIENTE";
                 return {
                     id,
                     ap_nombre,
@@ -187,7 +208,8 @@ function normalizarSolicitud(s) {
                     identificacion,
                     cargo,
                     autorizado: autorizado !== '0' && autorizado !== 0 && autorizado !== false && autorizado !== 'false',
-                    motivo: motivo || ""
+                    motivo: motivo || "",
+                    estado_datos: String(estado_datos || "PENDIENTE").trim().toUpperCase()
                 };
             });
         } else {
@@ -207,7 +229,8 @@ function normalizarSolicitud(s) {
             identificacion: p.identificacion || "—",
             cargo: p.cargo || "Operario",
             autorizado: p.autorizado !== '0' && p.autorizado !== 0 && p.autorizado !== false && p.autorizado !== 'false',
-            motivo: p.motivo || p.motivo_rechazo || ""
+            motivo: p.motivo || p.motivo_rechazo || "",
+            estado_datos: String(p.estado_datos || "PENDIENTE").trim().toUpperCase()
         }));
     }
 
@@ -251,15 +274,18 @@ function normalizarSolicitud(s) {
         fecha_salida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
         fechaIngreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
         fechaSalida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
-        fecha_creacion_raw: s.fecha_creacion,
-        fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion),
-        fecha_registro: formatearFechaCorta(s.fecha_registro || s.fecha_creacion || s.created_at),
+        fecha_creacion_raw: s.fecha_creacion_raw || s.fecha_creacion,
+        fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion_raw || s.fecha_creacion),
+        fecha_creacion_corta: formatearFechaCorta(s.fecha_creacion_raw || s.fecha_creacion),
+        fecha_registro: formatearFechaCorta(s.fecha_registro || s.fecha_creacion_raw || s.fecha_creacion || s.created_at || s.fecha_ingreso || s.fecha_inicio),
         estado: (s.estado || "ENVIADO").toUpperCase(),
         riesgo: s.nivel_de_riesgo || s.nivelRiesgo || s.riesgo || "—",
         actividad: s.actividad || "—",
         diligenciador: diligenciadorNombre,
         diligenciado_por: (s.diligenciado_por !== undefined && s.diligenciado_por !== null && !isNaN(Number(s.diligenciado_por))) ? Number(s.diligenciado_por) : (s.id_diligenciador ? Number(s.id_diligenciador) : null),
         is_active: s.is_active,
+        esVencida: esInactivaVencida(s),
+        es_vencida: esInactivaVencida(s),
         vehiculos: listaVehiculos,
         computos: listaComputos,
         personas: listaPersonas,
@@ -272,21 +298,32 @@ function solicitudesCards() {
     return {
         solActivas: 0,
         solInactivas: 0,
+        totalRegistros: 0,
         cargando: true,
+        _tieneMetricasServidor: false,
 
         init() {
             window.addEventListener("solicitudes-updated", (e) => {
                 const list = e.detail || [];
-                this.actualizarConteo(list);
+                if (!this._tieneMetricasServidor) {
+                    this.actualizarConteo(list);
+                }
             });
-            this.cargarInicial();
+
+            window.addEventListener("solicitudes-metrics-updated", (e) => {
+                const m = e.detail;
+                if (m) {
+                    this._tieneMetricasServidor = true;
+                    this.solActivas = Number(m.activas || 0);
+                    this.solInactivas = Number(m.inactivas || 0);
+                    this.totalRegistros = Number(m.total || (this.solActivas + this.solInactivas));
+                    this.cargando = false;
+                }
+            });
         },
 
         get esAdmin() {
-            let sesion = null;
-            try {
-                sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-            } catch (e) {}
+            const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
             const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
             const rolId = Number(sesion ? (sesion.id_rol || sesion.rol_id) : 0);
             return rolId === 1 || rolId === 2 || rolTexto.includes("ADMIN");
@@ -294,17 +331,14 @@ function solicitudesCards() {
 
         actualizarConteo(lista) {
             let filtrada = lista;
-            let sesion = null;
-            try {
-                sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-            } catch (e) {}
+            const sesion = (typeof getAuthSession === "function") ? getAuthSession() : null;
             const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
-            const rolId = Number(sesion ? sesion.id_rol : 0);
+            const rolId = Number(sesion ? (sesion.id_rol || sesion.rol_id) : 0);
             const esAdminUser = rolId === 1 || rolId === 2 || rolTexto.includes("ADMIN");
 
             // Si el usuario no es admin ni superadmin, omitir solicitudes inactivas por vencimiento
             if (!esAdminUser) {
-                filtrada = filtrada.filter(s => !esInactivaVencida(s));
+                filtrada = filtrada.filter(s => !(s.esVencida !== undefined ? s.esVencida : esInactivaVencida(s)));
             }
 
             const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
@@ -321,40 +355,12 @@ function solicitudesCards() {
             }
             this.solActivas = filtrada.filter(s => s.is_active === 1 || s.is_active === true || s.is_active === "1").length;
             this.solInactivas = filtrada.filter(s => s.is_active === 0 || s.is_active === false || s.is_active === "0").length;
+            this.totalRegistros = this.solActivas + this.solInactivas;
             this.cargando = false;
         },
 
-        async cargarInicial() {
-            this.cargando = true;
-            try {
-                let sesion = null;
-                try {
-                    sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-                } catch (e) {}
-
-                let url = `${API.solicitudes}/getall`;
-                const rolTextoInicial = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
-                const rolIdInicial = Number(sesion ? sesion.id_rol : 0);
-                const esSstGescoInicial = rolTextoInicial.includes("SST") || rolTextoInicial.includes("GESCO") || rolIdInicial === 6 || rolIdInicial === 7;
-                if (sesion && sesion.id && esSstGescoInicial) {
-                    url += `?id_usuario=${sesion.id}`;
-                }
-
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Error ${response.status}`);
-                const data = await response.json();
-                const solicitud = Array.isArray(data) ? data : (data.datos || []);
-                this.actualizarConteo(solicitud);
-            } catch (error) {
-                console.error("Error al cargar tarjetas de solicitudes:", error);
-                this.solActivas = 0;
-                this.solInactivas = 0;
-            } finally {
-                this.cargando = false;
-            }
-        },
-
         get totalSolicitudes() {
+            if (this.totalRegistros > 0) return this.totalRegistros;
             return this.solActivas + this.solInactivas;
         }
     };
@@ -370,8 +376,10 @@ function solicitudesTable() {
         filtroEmpresa: "",
         filtroEstado: "todos",
 
-        pageSize: 5,
+        pageSize: 10,
         currentPage: 1,
+        totalRegistros: 0,
+        totalPaginasServidor: 1,
         cargando: true,
 
         // Modal Detalle
@@ -483,9 +491,37 @@ function solicitudesTable() {
                 this.getSolicitudes()
             ]);
 
-            this.$watch("search", () => (this.currentPage = 1));
-            this.$watch("filtroEmpresa", () => (this.currentPage = 1));
-            this.$watch("filtroEstado", () => (this.currentPage = 1));
+            // Escuchar sincronización de sesión y recarga de solicitudes en caliente vía SSE
+            window.addEventListener("sesion-actualizada-en-caliente", () => {
+                this.currentPage = 1;
+                this.getSolicitudes();
+            });
+
+            window.addEventListener("solicitudes-recargar", () => {
+                this.getSolicitudes();
+            });
+
+            // Búsqueda con debounce en servidor (300ms)
+            let searchTimeout = null;
+            this.$watch("search", () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.currentPage = 1;
+                    this.getSolicitudes();
+                }, 300);
+            });
+            this.$watch("filtroEmpresa", () => {
+                this.currentPage = 1;
+                this.getSolicitudes();
+            });
+            this.$watch("filtroEstado", () => {
+                this.currentPage = 1;
+                this.getSolicitudes();
+            });
+            this.$watch("pageSize", () => {
+                this.currentPage = 1;
+                this.getSolicitudes();
+            });
         },
 
         notificarCambio() {
@@ -500,27 +536,51 @@ function solicitudesTable() {
                     sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
                 } catch (e) {}
 
-                let url = `${API.solicitudes}/getall`;
+                let url = `${API.solicitudes}/getall?page=${this.currentPage}&limit=${this.pageSize}`;
+                if (this.search && this.search.trim()) {
+                    url += `&search=${encodeURIComponent(this.search.trim())}`;
+                }
+                if (this.filtroEstado && this.filtroEstado !== "todos") {
+                    url += `&estado=${encodeURIComponent(this.filtroEstado)}`;
+                }
+                if (this.filtroEmpresa && this.filtroEmpresa.trim()) {
+                    url += `&empresa=${encodeURIComponent(this.filtroEmpresa.trim())}`;
+                }
+
                 const rolTexto = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
-                const rolId = Number(sesion ? sesion.id_rol : 0);
+                const rolId = Number(sesion ? (sesion.id_rol || sesion.rol_id) : 0);
                 const esSstGesco = rolTexto.includes("SST") || rolTexto.includes("GESCO") || rolId === 6 || rolId === 7;
                 if (sesion && sesion.id && esSstGesco) {
-                    url += `?id_usuario=${sesion.id}`;
+                    url += `&id_usuario=${sesion.id}`;
                 }
                 const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolTexto.includes("SOLICITANTE") || rolId === 5;
                 if (sesion && sesion.id && esGestionDoc) {
-                    url += `${url.includes('?') ? '&' : '?'}diligenciado_por=${sesion.id}`;
+                    url += `&diligenciado_por=${sesion.id}`;
                 }
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Error ${response.status}`);
                 const data = await response.json();
-                const lista = Array.isArray(data) ? data : (data.datos || []);
-                this.solicitudes = lista.map(s => normalizarSolicitud(s));
+
+                if (data && data.datos && Array.isArray(data.datos)) {
+                    this.solicitudes = data.datos.map(s => normalizarSolicitud(s));
+                    this.totalRegistros = Number(data.total || this.solicitudes.length);
+                    this.totalPaginasServidor = Number(data.total_paginas || Math.max(1, Math.ceil(this.totalRegistros / this.pageSize)));
+                    if (data.metricas) {
+                        window.dispatchEvent(new CustomEvent("solicitudes-metrics-updated", { detail: data.metricas }));
+                    }
+                } else {
+                    const lista = Array.isArray(data) ? data : (data.datos || []);
+                    this.solicitudes = lista.map(s => normalizarSolicitud(s));
+                    this.totalRegistros = this.solicitudes.length;
+                    this.totalPaginasServidor = Math.max(1, Math.ceil(this.totalRegistros / this.pageSize));
+                }
                 this.notificarCambio();
             } catch (error) {
                 console.error("Error al cargar solicitudes:", error);
                 this.solicitudes = [];
+                this.totalRegistros = 0;
+                this.totalPaginasServidor = 1;
             } finally {
                 this.cargando = false;
             }
@@ -565,62 +625,7 @@ function solicitudesTable() {
         },
 
         get solicitudFiltrados() {
-            const text = this.search.trim().toLowerCase();
-            const esAdminUser = this.esAdmin;
-
-            return this.solicitudes.filter(s => {
-                // Si el usuario no es admin ni superadmin, no enlistar solicitudes inactivas por vencimiento
-                if (!esAdminUser && esInactivaVencida(s)) {
-                    return false;
-                }
-                const idNum = s.id != null ? String(s.id).trim() : "";
-                const idPad = idNum ? idNum.padStart(4, "0") : "";
-                const radCode = idNum ? `rad-${idPad}` : "";
-                const radShort = idNum ? `rad-${idNum}` : "";
-                const textClean = text.replace(/[\s\-_]/g, "");
-
-                const matchCodigo = !text ||
-                    (s.codigo || "").toLowerCase().includes(text) ||
-                    radCode.includes(text) ||
-                    radShort.includes(text) ||
-                    idNum.includes(text) ||
-                    idPad.includes(text) ||
-                    (textClean && radCode.replace(/[\s\-_]/g, "").includes(textClean));
-
-                // Búsqueda en múltiples campos incluyendo código, fecha de registro y observaciones
-                const matchTexto = matchCodigo ||
-                    (s.fecha_registro || "").toLowerCase().includes(text) ||
-                    (s.observaciones || "").toLowerCase().includes(text) ||
-                    (s.nombre_empresa || "").toLowerCase().includes(text) ||
-                    (s.nombre_emContratista || "").toLowerCase().includes(text) ||
-                    (s.diligenciador || "").toLowerCase().includes(text) ||
-                    (s.actividad || "").toLowerCase().includes(text) ||
-                    (s.planta || "").toLowerCase().includes(text) ||
-                    (s.estado || "").toLowerCase().includes(text);
-
-                // Filtro por empresa seleccionada
-                const matchEmpresa = !this.filtroEmpresa || 
-                    (s.nombre_empresa || "").toLowerCase() === this.filtroEmpresa.toLowerCase();
-
-                // Filtro por estado activo/inactivo/pre-enviado
-                const esActivo = (s.is_active === 1 || s.is_active === true || s.is_active === "1");
-                const matchEstado =
-                    this.filtroEstado === "todos" ||
-                    (this.filtroEstado === "activos" && esActivo) ||
-                    (this.filtroEstado === "inactivos" && !esActivo) ||
-                    (this.filtroEstado === "pre-enviado" && (s.estado || "").toUpperCase() === "PRE-ENVIADO");
-
-                // Filtro estricto de plantas para SST / GESCO: solo ver solicitudes con plantas relacionadas
-                if (this.esRolConPlantas) {
-                    const misPlantas = this.plantasUsuario;
-                    if (!misPlantas || misPlantas.length === 0) return false;
-                    if (!Array.isArray(s.plantas_ids) || s.plantas_ids.length === 0) return false;
-                    const coincide = s.plantas_ids.some(pid => misPlantas.includes(Number(pid)));
-                    if (!coincide) return false;
-                }
-
-                return matchTexto && matchEmpresa && matchEstado;
-            });
+            return this.solicitudes;
         },
 
         get puedeGenerarFormularioTemporal() {
@@ -647,7 +652,9 @@ function solicitudesTable() {
 
         get sesionUsuario() {
             try {
-                return JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+                return (typeof getAuthSession === "function")
+                    ? getAuthSession()
+                    : JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
             } catch (e) {
                 return null;
             }
@@ -676,19 +683,18 @@ function solicitudesTable() {
         },
 
         get totalPaginas() {
-            return Math.max(1, Math.ceil(this.solicitudFiltrados.length / this.pageSize));
+            return this.totalPaginasServidor || 1;
         },
 
         get solicitudesPagina() {
-            const start = (this.currentPage - 1) * this.pageSize;
-            return this.solicitudFiltrados.slice(start, start + this.pageSize);
+            return this.solicitudes;
         },
 
         get rangoMostrado() {
-            if (this.solicitudFiltrados.length === 0) return "0 de 0";
+            if (!this.totalRegistros || this.totalRegistros === 0) return "0 de 0";
             const start = (this.currentPage - 1) * this.pageSize + 1;
-            const end = Math.min(this.currentPage * this.pageSize, this.solicitudFiltrados.length);
-            return `${start}–${end} de ${this.solicitudFiltrados.length}`;
+            const end = Math.min(this.currentPage * this.pageSize, this.totalRegistros);
+            return `${start}–${end} de ${this.totalRegistros}`;
         },
 
         // ---------------------------------------------------
@@ -748,10 +754,11 @@ function solicitudesTable() {
                 this.solicitudes[idx].observacion = nuevaObs;
             }
 
-            // 2. Persistir en localStorage
+            // 2. Persistir en localStorage e invalidar caché
             try {
                 const guardadas = JSON.parse(localStorage.getItem("incarsa_observaciones_solicitudes") || "{}");
                 guardadas[solId] = nuevaObs;
+                window._cachedObservacionesLocal = guardadas;
                 localStorage.setItem("incarsa_observaciones_solicitudes", JSON.stringify(guardadas));
             } catch (e) {}
 
@@ -940,10 +947,8 @@ function solicitudesTable() {
             } catch (e) {
                 console.warn("No se pudo eliminar en backend:", e);
             }
-            this.solicitudes = this.solicitudes.filter(s => s.id !== id);
-            this.notificarCambio();
             this.cancelarEliminar();
-            if (this.currentPage > this.totalPaginas) this.currentPage = this.totalPaginas;
+            await this.getSolicitudes();
         },
 
         // ---------------------------------------------------
@@ -951,15 +956,23 @@ function solicitudesTable() {
         // ---------------------------------------------------
         resetPage() {
             this.currentPage = 1;
+            this.getSolicitudes();
         },
         goToPage(n) {
-            if (n >= 1 && n <= this.totalPaginas) this.currentPage = n;
+            if (n >= 1 && n <= this.totalPaginas) {
+                this.currentPage = n;
+                this.getSolicitudes();
+            }
         },
         prevPage() {
-            this.goToPage(this.currentPage - 1);
+            if (this.currentPage > 1) {
+                this.goToPage(this.currentPage - 1);
+            }
         },
         nextPage() {
-            this.goToPage(this.currentPage + 1);
+            if (this.currentPage < this.totalPaginas) {
+                this.goToPage(this.currentPage + 1);
+            }
         },
 
         limpiarFiltros() {
@@ -967,6 +980,7 @@ function solicitudesTable() {
             this.filtroEstado = "todos";
             this.search = "";
             this.currentPage = 1;
+            this.getSolicitudes();
         }
     };
 }

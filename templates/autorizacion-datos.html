@@ -374,7 +374,7 @@
           <template x-for="emp in ['INCARSA S.A.S.', 'MILPA S.A.', 'CARBOINSA S.A.S.', 'UNIMINAS S.A.S']" :key="emp">
             <button 
               type="button" 
-              @click="datos.empresa_origen = emp; openEmpresas = false" 
+              @click="datos.empresa_origen = emp; datos.correo_institucional = obtenerCorreoEmpresa(emp); openEmpresas = false" 
               :class="datos.empresa_origen === emp ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'"
               class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer">
               <span x-text="emp"></span>
@@ -441,17 +441,23 @@
       </div>
       <!-- Título Principal -->
       <h1 class="text-xl sm:text-2xl font-bold font-brand tracking-tight text-white flex items-center justify-center gap-2">
-        <span class="text-sky-400 font-extrabold tracking-wide" x-text="datos.empresa_origen || 'INCARSA'"></span>
+        <span class="text-sky-400 font-extrabold tracking-wide" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></span>
         <span class="text-sky-500/60 font-light">·</span>
         <!-- Subtítulo del Header -->
         <span class="text-slate-200 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
       </h1>
-      <!-- Metadata / Ley -->
-      <p class="text-xs sm:text-sm text-slate-400 mt-1.5 flex items-center justify-center gap-1.5 flex-wrap">
-        <span>Autorización de Tratamiento de Datos Personales</span>
-        <span class="hidden sm:inline text-slate-600">—</span>
-        <span class="text-sky-300 font-semibold px-2 py-0.5 rounded text-xs" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);">Ley 1581 de 2012</span>
-      </p>
+      <!-- Metadata / Formato Oficial FR_SLV_016 -->
+      <div class="flex items-center justify-center gap-2 mt-2 flex-wrap text-xs text-slate-400">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold text-sky-300" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.3);">
+          <i class="fa-solid fa-file-shield text-[10px]"></i> Código: FR_SLV_016
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="text-slate-300 font-medium">Versión: 00</span>
+        <span class="text-slate-600">•</span>
+        <span class="text-slate-300 font-medium">Vigencia: 16/01/2025</span>
+        <span class="text-slate-600">•</span>
+        <span class="text-sky-300 font-semibold px-2 py-0.5 rounded text-[11px]" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);">Ley 1581 de 2012</span>
+      </div>
     </header>
 
     <!-- Estado: Cargando -->
@@ -594,7 +600,7 @@
         </span>
         <h2 class="text-xl sm:text-2xl font-bold text-rose-300 font-brand mt-1">Tratamiento No Autorizado</h2>
         <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
-          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-300 font-mono px-2 py-0.5 rounded" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);" x-text="datos.codigo_radicado"></strong>.
+          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-300 font-mono font-bold" x-text="datos.codigo_radicado"></strong>.
         </p>
       </div>
 
@@ -682,134 +688,219 @@
           </span>
         </h3>
 
-        <!-- Caja de Texto Legal con Variedad de Colores y Secciones -->
-        <div class="legal-scroll h-64 overflow-y-auto bg-[#08090f] rounded-xl p-5 border border-slate-800 text-xs space-y-3.5 leading-relaxed">
-          <!-- Título del Documento Legal con Cinta Azul -->
-          <div class="bg-gradient-to-r from-sky-950/50 to-indigo-950/30 border-l-4 border-sky-400 p-2.5 rounded-r-lg">
-            <p class="text-xs sm:text-sm font-bold text-sky-200 tracking-wide flex items-center gap-2">
-              <i class="fa-solid fa-shield-halved text-sky-400"></i>
-              <span>AUTORIZACIÓN PREVIA, EXPRESA E INFORMADA PARA EL TRATAMIENTO DE DATOS PERSONALES</span>
-            </p>
+        <!-- Caja de Texto Legal con Variedad de Colores y Secciones alineada al Formato FR_SLV_016 -->
+        <div class="legal-scroll h-80 overflow-y-auto bg-[#08090f] rounded-xl p-5 border border-slate-800 text-xs space-y-4 leading-relaxed">
+          
+          <!-- Encabezado Oficial del Formato FR_SLV_016 -->
+          <div class="rounded-xl p-3.5 border border-sky-500/30" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%);">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-sky-500/20 pb-2.5 mb-2.5">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-file-shield text-sky-400 text-base"></i>
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-sky-200 tracking-wide">
+                    AUTORIZACIÓN TRATAMIENTO DE DATOS PERSONALES
+                  </h4>
+                  <p class="text-[10.5px] text-slate-400">
+                    Procesos de Selección, Vinculación, Contratación y Acceso a Instalaciones
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                <span class="bg-sky-950/90 text-sky-300 font-bold px-2 py-0.5 rounded border border-sky-400/40">Código: FR_SLV_016</span>
+                <span class="bg-slate-900/90 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">Versión: 00</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+              <span>Responsable: <strong class="text-white" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> · NIT: <strong class="text-sky-300 font-mono">830.078.829-5</strong></span>
+              <span class="text-slate-400">Fecha de entrada en vigencia: <strong class="text-slate-200 font-medium">16 de enero de 2025</strong></span>
+            </div>
           </div>
 
-          <!-- Párrafo Legal con Empresa(s) Dinámicas según la Solicitud -->
+          <!-- Párrafo 1: Autorización Base e Identificación de la Organización -->
           <p class="text-slate-300">
-            En cumplimiento de lo dispuesto en la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline font-semibold transition-colors">Ley 1581 de 2012</a>, el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline font-semibold transition-colors">Decreto Reglamentario 1377 de 2013</a> y demás normas concordantes sobre el régimen general de protección de datos personales en la República de Colombia, de manera libre, voluntaria, previa, explícita e inequívoca, autorizo a 
-            <!-- Caso 1: Ambas empresas presentes y distintas -->
-            <template x-if="datos.empresa_origen && datos.empresa_contratista && datos.empresa_origen !== datos.empresa_contratista">
-              <span>
-                <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15" x-text="datos.empresa_origen"></strong>
-                <span class="text-slate-400 text-xs"> (empresa contratante / titular de instalaciones)</span>
-                <span> y a la empresa contratista </span>
-                <strong class="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/25" x-text="datos.empresa_contratista"></strong>
-              </span>
-            </template>
-            <!-- Caso 2: Solo empresa origen -->
-            <template x-if="datos.empresa_origen && (!datos.empresa_contratista || datos.empresa_origen === datos.empresa_contratista)">
-              <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15" x-text="datos.empresa_origen"></strong>
-            </template>
-            <!-- Caso 3: Solo empresa contratista -->
-            <template x-if="!datos.empresa_origen && datos.empresa_contratista">
-              <strong class="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/25" x-text="datos.empresa_contratista"></strong>
-            </template>
-            <!-- Fallback seguro -->
-            <template x-if="!datos.empresa_origen && !datos.empresa_contratista">
-              <strong class="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15">INCARSA S.A.S.</strong>
-            </template>
-            <span> para que de manera individual o conjunta recolecten, almacenen, usen, circulen, supriman y en general den tratamiento a mis datos personales.</span>
+            Autorizo a la sociedad <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong>, identificada con el <strong class="text-sky-300 font-mono font-bold">NIT No. 830.078.829-5</strong> en adelante la <strong class="text-white font-bold">“Organización”</strong>
+            <template x-if="datos.empresa_contratista && datos.empresa_origen !== datos.empresa_contratista">
+              <span> (y de manera concurrente a la empresa contratista <strong class="text-amber-300 font-bold" x-text="datos.empresa_contratista"></strong>)</span>
+            </template>,
+            para que trate mi información personal de acuerdo con el <strong class="text-sky-300 font-medium">“Manual de Políticas de Tratamiento de la Información de Datos Personales”</strong>, y que me dio a conocer antes de recolectar mis datos personales en el presente proceso.
           </p>
 
-          <!-- Subtítulo de Sección 1: Esmeralda -->
+          <!-- Párrafo 2: Puesta de Presente y Manifestación Voluntaria -->
+          <p class="text-slate-300">
+            Manifiesto que la presente autorización me fue solicitada y puesta de presente antes de entregar mis datos en la solicitud y, la cual se suscribe de forma libre, informada y voluntaria una vez leída en su totalidad.
+          </p>
+
+          <!-- Tabla de Datos del Titular según formato FR_SLV_016 -->
+          <div class="rounded-xl overflow-hidden border border-slate-700/80 bg-slate-900/70 my-2">
+            <div class="bg-slate-800/80 px-3 py-1.5 text-[11px] font-bold text-sky-300 uppercase tracking-wider flex items-center justify-between border-b border-slate-700/80">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-id-card text-sky-400 text-xs"></i>
+                <span>Información del Titular (Formato FR_SLV_016)</span>
+              </span>
+              <span class="font-mono text-[10px] text-slate-400" x-text="'Radicado: ' + datos.codigo_radicado"></span>
+            </div>
+            <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px]">
+              <div>
+                <span class="text-slate-400 text-[10.5px] block font-medium">NOMBRES Y APELLIDOS:</span>
+                <strong class="text-white font-semibold" x-text="datos.nombre_completo"></strong>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[10.5px] block font-medium">DOCUMENTO DE IDENTIFICACIÓN:</span>
+                <strong class="text-white font-mono font-semibold" x-text="(datos.tipo_doc || 'C.C.') + ' ' + (datos.cedula || datos.identificacion || 'No registrado')"></strong>
+              </div>
+              <div x-show="datos.cargo">
+                <span class="text-slate-400 text-[10.5px] block font-medium">CARGO / ESPECIALIDAD:</span>
+                <strong class="text-emerald-300 font-medium" x-text="datos.cargo"></strong>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[10.5px] block font-medium">EMPRESA CONTRATISTA:</span>
+                <strong class="text-amber-300 font-medium" x-text="datos.empresa_contratista || 'Personal Directo / No aplica'"></strong>
+              </div>
+              <div x-show="datos.plantas_texto">
+                <span class="text-slate-400 text-[10.5px] block font-medium">PLANTA(S) DESTINO / SEDES:</span>
+                <strong class="text-sky-300 font-medium" x-text="datos.plantas_texto"></strong>
+              </div>
+              <div>
+                <span class="text-slate-400 text-[10.5px] block font-medium">CORREO / NOTIFICACIÓN:</span>
+                <span class="text-slate-300 font-mono text-[11px]" x-text="datos.correo || 'Registrado en sistema'"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Declaración del Proceso -->
+          <p class="text-slate-300">
+            Mediante el presente documento manifiesto, comprendo y acepto que el proceso al interior de la <strong class="text-white">Organización</strong> contiene una serie de etapas técnicas, administrativas y de seguridad que son indispensables para validar la idoneidad, requisitos de la función, protocolos de prevención y estándares operacionales en instalaciones industriales.
+          </p>
+
+          <!-- Sección 1: Finalidades según Ley 1581 de 2012 (Texto íntegro FR_SLV_016) -->
           <p class="font-bold text-emerald-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
             <i class="fa-solid fa-circle-check text-emerald-400 text-[11px]"></i>
-            <span>1. Finalidades del Tratamiento:</span>
+            <span>1. Finalidades del Tratamiento (Ley Estatutaria 1581 de 2012):</span>
           </p>
-          <!-- Viñetas de Lista con Iconos Esmeralda -->
+          <p class="text-slate-300">
+            Adicionalmente, y de acuerdo con la <strong class="text-white">Ley Estatutaria 1581 de 2012</strong> y el <strong class="text-white">Decreto Reglamentario 1377 de 2013</strong> autorizo, como titular de los datos personales, que éstos sean incorporados en una base de datos responsabilidad de la <strong class="text-white">Organización</strong> siendo tratados con la finalidad de:
+          </p>
           <ul class="space-y-1.5 pl-1 text-slate-300">
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Validar, verificar y autorizar el control de acceso físico a las instalaciones y plantas de <strong class="text-white font-medium" x-text="datos.empresa_origen || 'LA COMPAÑÍA'"></strong><span x-show="datos.plantas_texto" class="text-sky-300" x-text="' (' + datos.plantas_texto + ')'"></span>.</span>
+              <span><strong>Procedimientos administrativos y operativos:</strong> Tramitar solicitudes, emitir radicados, gestionar credenciales de acceso y archivar soportes requeridos.</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Gestionar el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) y el Plan de Prevención de Riesgos Laborales.</span>
+              <span><strong>Gestión de personal y contratistas:</strong> Coordinación, promoción, selección y control de contratistas, conductores, visitantes y colaboradores.</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Verificar la vigencia y suficiencia de la afiliación a la Administradora de Riesgos Laborales (ARL), EPS y Fondo de Pensiones.</span>
+              <span><strong>Verificación de datos, referencias e idoneidad:</strong> Comprobación de veracidad de la información aportada, referencias laborales/personales, certificados de aptitud médica y antecedentes.</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Monitoreo por circuito cerrado de televisión (CCTV) y control de portería por motivos de seguridad física de las personas e infraestructura.</span>
+              <span><strong>Seguridad Social Integral:</strong> Verificar la vigencia ininterrumpida y suficiencia de la afiliación a la Administradora de Riesgos Laborales (ARL), EPS y Fondo de Pensiones.</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Atención, evacuación o reporte ante situaciones de emergencia, accidentes o incidentes laborales.</span>
+              <span><strong>Seguridad física y videovigilancia (CCTV):</strong> Monitoreo constante para salvaguardar la vida e integridad física de las personas, bienes e infraestructura.</span>
             </li>
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Cumplimiento de obligaciones legales, auditorías de calidad y requerimientos de autoridades competentes.</span>
+              <span><strong>Seguridad y Salud en el Trabajo (SST):</strong> Prevención de riesgos laborales, reporte oportuno ante incidentes o accidentes y coordinación de evacuaciones o emergencias.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
+              <span><strong>Transmisión y/o transferencia de datos:</strong> Transmisión y/o transferencia de datos a terceros que administren o manejen bases de datos de información pública, empresas cliente o autoridades administrativas y judiciales competentes.</span>
             </li>
           </ul>
 
-          <!-- Subtítulo de Sección 2: Ámbar -->
+          <!-- Sección 2: Datos Sensibles y Biométricos -->
           <p class="font-bold text-amber-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
             <i class="fa-solid fa-fingerprint text-amber-400 text-[11px]"></i>
-            <span>2. Datos Sensibles y Biométricos:</span>
-          </p>
-          <div class="rounded-lg text-amber-100/90 leading-relaxed" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); padding: 12px;">
-            Se me ha informado expresamente que el suministro de datos sensibles (tales como imágenes de videovigilancia, datos biométricos de registro dactilar o facial, o certificados de aptitud médica laboral) tiene carácter facultativo; sin embargo, reconozco que son indispensables para los protocolos de seguridad industrial y control de acceso estricto a las plantas de producción.
-          </div>
-
-          <!-- Subtítulo de Sección 3: Sky Blue -->
-          <p class="font-bold text-sky-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
-            <i class="fa-solid fa-scale-balanced text-sky-400 text-[11px]"></i>
-            <span>3. Derechos del Titular (Habeas Data):</span>
+            <span>2. Tratamiento de Datos Sensibles y Biometría:</span>
           </p>
           <p class="text-slate-300">
-            Como titular de los datos personales, se me ha informado que me asisten los derechos previstos en el Artículo 8 de la Ley 1581 de 2012, especialmente:
+            De conformidad con el Artículo 6 de la Ley 1581 de 2012, se me ha informado expresamente que el suministro de datos sensibles (tales como imágenes de videovigilancia, datos biométricos de registro dactilar o facial, o certificados de aptitud médica laboral) tiene carácter facultativo; sin embargo, reconozco que son indispensables para los protocolos de seguridad industrial y control de acceso estricto a las plantas de producción.
           </p>
-          <ul class="space-y-1.5 pl-1 text-slate-300">
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Conocer, actualizar y rectificar mis datos personales frente a LA COMPAÑÍA.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Solicitar prueba de la autorización otorgada.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Ser informado sobre el uso que se le ha dado a mis datos personales previa solicitud.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-check text-sky-400 text-[11px] mt-0.5 shrink-0"></i>
-              <span>Revocar la autorización y/o solicitar la supresión del dato cuando no medie un deber legal o contractual que obligue a conservarlo.</span>
-            </li>
-          </ul>
 
-          <!-- Subtítulo de Sección 4: Índigo / Violeta -->
+          <!-- Sección 3: Declaración de Veracidad y Comprobación Sin Restricción (Texto FR_SLV_016) -->
           <p class="font-bold text-indigo-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
-            <i class="fa-solid fa-headset text-indigo-400 text-[11px]"></i>
-            <span>4. Canales de Atención Institucional:</span>
+            <i class="fa-solid fa-shield-halved text-indigo-400 text-[11px]"></i>
+            <span>3. Declaración de Exactitud, Veracidad y Facultad de Comprobación:</span>
           </p>
           <p class="text-slate-300">
-            Para el ejercicio de los derechos de Habeas Data, LA COMPAÑÍA dispone del correo electrónico institucional de atención y sus oficinas principales, donde se atenderán consultas y reclamos en los términos fijados por la legislación vigente.
+            Manifiesto que toda la información suministrada en esta solicitud y en toda la documentación aportada para efectos del proceso del cual estoy participando es <strong>exacta, veraz y completa</strong>, la cual puede ser comprobada de cualquier forma y en cualquier momento por parte de la Organización para lo cual desde ya lo autorizo <strong>sin ningún tipo de restricción</strong>.
           </p>
+
+          <!-- Sección 4: Ausencia de Relación Laboral Directa (Texto FR_SLV_016 Pág. 1-2) -->
+          <p class="font-bold text-rose-300 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-briefcase text-rose-400 text-[11px]"></i>
+            <span>4. Delimitación de Relación y Ausencia de Vínculo Laboral:</span>
+          </p>
+          <p class="text-slate-300">
+            Por último, manifiesto de manera expresa, que el hecho de registrarme o participar en el proceso de solicitud, autorización o ingreso ante la Organización, <strong class="text-white">en modo alguno implica el que se haya configurado una relación laboral entre las partes</strong>, ni tampoco implica obligatoriedad alguna en cabeza de la Organización, de tener efectivamente que suscribir un contrato de trabajo con el firmante ni autorizar el acceso si no se cumplen integralmente los requerimientos técnicos y de seguridad.
+          </p>
+
+          <!-- Sección 5: Canales de Atención Institucional -->
+          <p class="font-bold text-sky-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-headset text-sky-400 text-[11px]"></i>
+            <span>5. Canales de Atención Institucional:</span>
+          </p>
+          <p class="text-slate-300 leading-relaxed">
+            Para el ejercicio de los derechos de Habeas Data, <strong class="text-white font-medium" x-text="datos.empresa_origen || 'LA COMPAÑÍA'"></strong> dispone del correo electrónico institucional de atención 
+            <a :href="'mailto:' + correoInstitucional" 
+              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-400/35 hover:border-sky-400/60 font-mono text-[11.5px] font-bold no-underline transition-all duration-150 shadow-xs align-middle select-all"
+              title="Clic para enviar correo institucional">
+              <i class="fa-regular fa-envelope text-[11px] text-sky-400"></i>
+              <span x-text="correoInstitucional"></span>
+            </a> 
+            y sus oficinas principales, donde se atenderán consultas y reclamos en los términos fijados por la legislación vigente.
+          </p>
+
         </div>
 
-        <!-- Checkbox de Aceptación Expresa con Borde y Fondo Azul Marino Distintivo -->
-        <div class="mt-5 rounded-xl" style="background: linear-gradient(90deg, rgba(30, 58, 138, 0.22) 0%, rgba(49, 46, 129, 0.12) 50%, transparent 100%); border: 1px solid rgba(59, 130, 246, 0.25); padding: 14px;">
-          <label class="flex items-start gap-3 cursor-pointer select-none">
-            <input type="checkbox" x-model="aceptaTerminos" class="mt-1 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer">
-            <span class="text-xs sm:text-sm text-slate-200 font-medium leading-snug">
-              Declaro que he leído de manera completa este documento, comprendo los alcances de la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> y <strong class="text-white font-extrabold px-1.5 py-0.5 rounded" style="background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.3);">autorizo de manera libre y expresa el tratamiento de mis datos personales</strong> para el ingreso y permanencia en las instalaciones de <strong class="text-white font-bold" x-text="datos.empresa_origen || 'la empresa'"></strong>.
-            </span>
-          </label>
+        <!-- 3 Casillas de Verificación: Leído, Valido y Autorizo -->
+        <div class="mt-5 space-y-2.5">
+          <p class="text-[11px] font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5 px-1">
+            <i class="fa-solid fa-list-check text-sky-400"></i>
+            <span>Confirmación de Conformidad y Consentimiento:</span>
+          </p>
+
+          <!-- 1. LEÍDO -->
+          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
+            :class="checkLeido ? 'border-sky-500/60 bg-sky-950/25' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+            @click="checkLeido = !checkLeido">
+            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
+              <input type="checkbox" x-model="checkLeido" 
+                class="mt-0.5 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
+              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
+                <strong class="text-sky-300 font-bold">1. Leído:</strong> He leído integramente la informacion proporcionada en los terminos y condiciones de la autorizacion de manejo de datos reflejados previamente.
+              </span>
+            </label>
+          </div>
+
+          <!-- 2. VALIDO -->
+          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
+            :class="checkValido ? 'border-sky-500/60 bg-sky-950/25' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+            @click="checkValido = !checkValido">
+            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
+              <input type="checkbox" x-model="checkValido" 
+                class="mt-0.5 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
+              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
+                <strong class="text-sky-300 font-bold">2. Valido:</strong> Valido y comprendo los alcances legales de la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> y el <span class="text-sky-300 font-semibold">Decreto 1377 de 2013</span>, así como mis derechos como titular de la información.
+              </span>
+            </label>
+          </div>
+
+          <!-- 3. AUTORIZO -->
+          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
+            :class="checkAutorizo ? 'border-emerald-500/60 bg-emerald-950/20' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+            @click="checkAutorizo = !checkAutorizo">
+            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
+              <input type="checkbox" x-model="checkAutorizo" 
+                class="mt-0.5 w-4 h-4 rounded border-emerald-500/50 bg-[#0d1117] text-emerald-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
+              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
+                <strong class="text-emerald-400 font-bold">3. Autorizo:</strong> Autorizo de manera libre, previa, expresa e informada el tratamiento de mis datos personales a favor de <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> para fines de ingreso, permanencia y trámites operacionales.
+              </span>
+            </label>
+          </div>
         </div>
 
         <!-- Botones de Acción con Jerarquía y Colores Diferenciados -->
@@ -864,7 +955,25 @@
         error: false,
         errorTitulo: "",
         errorMensaje: "",
-        aceptaTerminos: false,
+        checkLeido: false,
+        checkValido: false,
+        checkAutorizo: false,
+        get aceptaTerminos() {
+          return Boolean(this.checkLeido && this.checkValido && this.checkAutorizo);
+        },
+        get correoInstitucional() {
+          if (this.datos.correo_institucional && !this.esPreview) {
+            return this.datos.correo_institucional;
+          }
+          return this.obtenerCorreoEmpresa(this.datos.empresa_origen);
+        },
+        obtenerCorreoEmpresa(nombreEmpresa) {
+          const emp = String(nombreEmpresa || '').toUpperCase();
+          if (emp.includes('MILPA')) return 'cimilpa@milpa.com.co';
+          if (emp.includes('CARBOINSA')) return 'carboinsasas@carboinsa.com.co';
+          if (emp.includes('UNIMINAS')) return 'uniminas@uniminas.com.co';
+          return 'incarsasas@incarsa.com.co';
+        },
         datos: {
           nombre_completo: "",
           tipo_doc: "C.C.",
@@ -874,6 +983,7 @@
           correo: "",
           codigo_radicado: "",
           empresa_origen: "INCARSA S.A.S.",
+          correo_institucional: "incarsasas@incarsa.com.co",
           empresa_contratista: "",
           plantas_texto: "",
           estado_datos: "PENDIENTE",
@@ -896,6 +1006,7 @@
               correo: "diego.cardozo@ejemplo.com",
               codigo_radicado: "RAD-LGKS84",
               empresa_origen: "INCARSA S.A.S.",
+              correo_institucional: "incarsasas@incarsa.com.co",
               empresa_contratista: "AGRÍCOLA & SERVICIOS INDUSTRIALES S.A.S.",
               plantas_texto: "PLANTA 1 INCARSA",
               estado_datos: "PENDIENTE",
@@ -955,7 +1066,9 @@
 
         cambiarADecision() {
           this.datos.estado_datos = "PENDIENTE";
-          this.aceptaTerminos = false;
+          this.checkLeido = false;
+          this.checkValido = false;
+          this.checkAutorizo = false;
         },
 
         async abrirModalRechazo() {

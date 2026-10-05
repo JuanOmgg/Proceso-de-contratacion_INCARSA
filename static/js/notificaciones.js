@@ -396,6 +396,61 @@ window.NotificacionesRealtime = (function() {
                 } catch(err) {}
             });
 
+            eventSource.addEventListener("solicitudes_recargar", (e) => {
+                try {
+                    window.dispatchEvent(new CustomEvent("solicitudes-recargar"));
+                } catch(err) {}
+            });
+
+            eventSource.addEventListener("usuario_actualizado", (e) => {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    const uData = parsed.data || parsed;
+                    console.log("⚡ [SSE] Perfil de usuario actualizado en caliente:", uData);
+
+                    let sesion = null;
+                    try {
+                        sesion = JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+                    } catch (err) {}
+
+                    if (sesion && Number(sesion.id) === Number(uData.id_usuario)) {
+                        let modificado = false;
+                        if (uData.plantas_ids !== undefined) {
+                            sesion.plantas_ids = uData.plantas_ids.map(Number);
+                            modificado = true;
+                        }
+                        if (uData.plantas !== undefined) {
+                            sesion.plantas = uData.plantas;
+                            modificado = true;
+                        }
+                        if (uData.id_rol !== undefined && Number(sesion.id_rol) !== Number(uData.id_rol)) {
+                            sesion.id_rol = uData.id_rol;
+                            sesion.rol = uData.rol || sesion.rol;
+                            modificado = true;
+                        }
+
+                        if (modificado) {
+                            sessionStorage.setItem("incarsa_session", JSON.stringify(sesion));
+                            if (localStorage.getItem("incarsa_session")) {
+                                localStorage.setItem("incarsa_session", JSON.stringify(sesion));
+                            }
+                            if (typeof invalidateAuthCache === "function") invalidateAuthCache();
+
+                            window.dispatchEvent(new CustomEvent("sesion-actualizada-en-caliente", { detail: sesion }));
+                            window.dispatchEvent(new CustomEvent("solicitudes-recargar"));
+
+                            mostrarToastNotificacion({
+                                titulo: "Zonas de Trabajo Actualizadas",
+                                mensaje: "El administrador ha actualizado tus plantas asignadas. Tus permisos de revisión se han sincronizado de forma simultánea.",
+                                tipo: "info"
+                            });
+                        }
+                    }
+                } catch(err) {
+                    console.error("Error al procesar usuario_actualizado por SSE:", err);
+                }
+            });
+
             eventSource.onerror = function() {
                 activo = false;
                 if (eventSource) {

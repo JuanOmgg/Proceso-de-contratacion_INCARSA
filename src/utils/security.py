@@ -79,6 +79,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             detail="Token inválido o expirado. Por favor, inicia sesión nuevamente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    if payload.get("tipo") == "2fa_pending":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Autenticación incompleta. Debes completar la verificación en 2 pasos.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     # Asegurar conveniencia de acceso al id del usuario
     if "sub" in payload and "id" not in payload:

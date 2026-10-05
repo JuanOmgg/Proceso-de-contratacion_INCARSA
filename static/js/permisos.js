@@ -113,8 +113,11 @@
       'personas': true,
       'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
       'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),
-      'seguridad_social': ['ADMINISTRADOR', 'SST'].includes(miRol),
+      'seguridad_social': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR'].includes(miRol),
       'inducciones': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SST'].includes(miRol),
+      'estadisticas': ['ADMINISTRADOR', 'SCR', 'GESCO', 'SST'].includes(miRol),
+      'formulario_temporal': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE', 'GESTION DOCUMENTAL', 'GESTIÓN DOCUMENTAL'].includes(miRol),
+      'revision_solicitud': ['ADMINISTRADOR', 'SCR', 'GESCO', 'SST', 'VIGILANTE'].includes(miRol),
       'correspondencias': true,
       'nueva_correspondencia': true,
       'superadmin': miRol === 'SUPERADMIN'
@@ -259,6 +262,9 @@
       const esNuevaSolicitud = path === '/solicitudes/nueva' || path.includes('formulario-solicitudes') || path.includes('solicitudes-formulario');
       const esProcesamiento = path === '/procesamiento' || path.startsWith('/procesamiento/');
       const esAntecedentes = path === '/antecedentes' || path.startsWith('/antecedentes/');
+      const esInducciones = path === '/inducciones' || path.startsWith('/inducciones/');
+      const esSeguridadSocial = path === '/seguridad-social' || path === '/seguridadsocial' || path.startsWith('/seguridadsocial/');
+      const esEstadisticas = path === '/estadisticas' || path.startsWith('/estadisticas/');
       const esSuperAdmin = path === '/superadmin' || path.startsWith('/superadmin/');
 
       function checkRuta() {
@@ -276,6 +282,15 @@
         }
         if (esAntecedentes) {
           return puedeModulo('antecedentes');
+        }
+        if (esInducciones) {
+          return puedeModulo('inducciones');
+        }
+        if (esSeguridadSocial) {
+          return puedeModulo('seguridad_social');
+        }
+        if (esEstadisticas) {
+          return puedeModulo('estadisticas');
         }
         if (esSuperAdmin) {
           return puedeModulo('superadmin');
