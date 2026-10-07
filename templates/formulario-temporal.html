@@ -1020,7 +1020,10 @@
           </div>
           <div class="col-span-2">
             <label class="block text-slate-300 font-semibold mb-1">Número de Identificación: <span class="text-red-400">*</span></label>
-            <input type="text" x-model="nuevaPersona.numDoc" placeholder="Ej: 1032456789"
+            <input type="text" inputmode="numeric" pattern="[0-9]*"
+              x-model="nuevaPersona.numDoc"
+              @input="nuevaPersona.numDoc = (nuevaPersona.numDoc || '').replace(/\D/g, '')"
+              placeholder="Ej: 1032456789"
               class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-mono"
               :class="personaModalErrors.numDoc ? 'border-red-500' : 'border-slate-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.numDoc" x-text="personaModalErrors.numDoc"></p>

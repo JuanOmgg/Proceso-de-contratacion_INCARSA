@@ -159,7 +159,7 @@ def generar_html_autorizacion_datos(
                       {nombre_display}
                     </div>
                     <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">
-                      🏢 {emp_display}
+                      EMPRESA CONTRATISTA: {emp_display}
                     </div>
                   </td>
                   <td align="right" style="vertical-align: middle; padding-left: 12px;">

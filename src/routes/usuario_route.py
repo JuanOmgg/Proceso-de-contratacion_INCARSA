@@ -150,10 +150,11 @@ def Delete_user(id_user: int, current_user: dict = Depends(require_permission("u
     id_rol_actual = usuario_data.get("id_rol")
     mi_rol = current_user.get("rol", "").strip().upper()
 
-    if (nombre_rol_actual in ("ADMINISTRADOR", "SUPERADMIN") or id_rol_actual in (1, 2)) and mi_rol != "SUPERADMIN":
+    # Regla: La eliminación de usuarios es exclusiva de SUPERADMIN
+    if mi_rol != "SUPERADMIN":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo un usuario con rol SUPERADMIN puede eliminar usuarios administradores.",
+            detail="La eliminación de usuarios es una acción reservada exclusivamente para el rol SUPERADMIN. Desactive la cuenta si desea restringir su acceso.",
         )
 
     print(f"[DELETE] Eliminando usuario #{id_user} de la base de datos...")

@@ -4,264 +4,9 @@
  */
 
 
-// ---------------------------------------------------------
-// Helper: normaliza solicitudes del backend al formato estándar
-// ---------------------------------------------------------
-function formatearFechaHoraEspanol(fechaStr) {
-  if (window.Fechas && typeof window.Fechas.formatearFechaHora === 'function') {
-    return window.Fechas.formatearFechaHora(fechaStr);
-  }
-  if (!fechaStr || fechaStr === '—' || fechaStr === '-') return '—';
-  try {
-    const str = String(fechaStr).trim();
-    const partes = str.replace('T', ' ').split(' ');
-    const fPartes = partes[0].split('-');
-    if (fPartes.length === 3) {
-      const anio = fPartes[0];
-      const mesIdx = parseInt(fPartes[1], 10) - 1;
-      const dia = fPartes[2].padStart(2, '0');
-      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const mesNombre = meses[mesIdx] || fPartes[1];
+// Helpers centralizados: normalizarSolicitud, generarCodigoAlfanumerico y formatearFechaCorta
+// se encuentran definidos y expuestos globalmente en /static/js/config.js
 
-      if (partes[1]) {
-        const hPartes = partes[1].split(':');
-        let h = parseInt(hPartes[0], 10);
-        const m = (hPartes[1] || '00').padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12;
-        h = h ? h : 12;
-        const horaFinal = `${String(h).padStart(2, '0')}:${m} ${ampm}`;
-        return `${dia} ${mesNombre} ${anio}, ${horaFinal}`;
-      }
-      return `${dia} ${mesNombre} ${anio}`;
-    }
-    return fechaStr;
-  } catch (e) {
-    return fechaStr;
-  }
-}
-
-function formatearFechaCorta(fechaStr) {
-  if (!fechaStr || fechaStr === '—' || fechaStr === '-' || fechaStr === 'null' || fechaStr === 'None' || fechaStr === 'undefined') return '—';
-  if (window.Fechas && typeof window.Fechas.formatearCorta === 'function') {
-    const res = window.Fechas.formatearCorta(fechaStr);
-    if (res && res !== '—') return res;
-  }
-  try {
-    const str = String(fechaStr).trim().split('T')[0].split(',')[0].split(' ')[0];
-    const fPartes = str.split('-');
-    if (fPartes.length === 3) {
-      const anio = fPartes[0];
-      const mesIdx = parseInt(fPartes[1], 10) - 1;
-      const dia = fPartes[2].padStart(2, '0');
-      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const mesNombre = meses[mesIdx] || fPartes[1];
-      return `${dia} ${mesNombre} ${anio}`;
-    }
-    return str || '—';
-  } catch (e) {
-    return fechaStr;
-  }
-}
-
-function normalizarSolicitud(s) {
-  if (!s) return {};
-
-  // Formatear plantas como cadena legible
-  let cadenaPlanta = "—";
-  if (Array.isArray(s.plantas) && s.plantas.length > 0) {
-    cadenaPlanta = s.plantas.map(p => (typeof p === "object" ? (p.nombre || p.nombre_planta || p.planta) : p)).filter(Boolean).join(", ");
-  } else if (typeof s.planta === "string" && s.planta.trim() !== "") {
-    cadenaPlanta = s.planta;
-  } else if (typeof s.plantas === "string" && s.plantas.trim() !== "") {
-    cadenaPlanta = s.plantas;
-  }
-
-  let listaComputos = [];
-  if (typeof s.computos === 'string' && s.computos.trim() !== '') {
-    listaComputos = s.computos.split('###').map(c => {
-      const [id, marca, modelo, serie] = c.split('|||');
-      return { id, marca, modelo, serie };
-    });
-  } else if (Array.isArray(s.computos)) {
-    listaComputos = s.computos;
-  }
-
-  let listaVehiculos = [];
-  if (typeof s.vehiculos === 'string' && s.vehiculos.trim() !== '') {
-    listaVehiculos = s.vehiculos.split('###').map(v => {
-      const partes = v.split('|||');
-      const id = partes[0];
-      const tipo = partes[1] || "Vehículo";
-      const placa = partes[2] || "—";
-      const licencia_doc = partes[3] || "";
-      const aut = partes[4];
-      const mot = partes[5] || "";
-      return {
-        id,
-        tipo,
-        placa,
-        licencia_doc,
-        licencia: licencia_doc,
-        autorizado: aut !== '0' && aut !== 0 && aut !== false && aut !== 'false',
-        motivo: mot
-      };
-    });
-  } else if (Array.isArray(s.vehiculos) || Array.isArray(s.vehiculo)) {
-    const rawV = Array.isArray(s.vehiculos) ? s.vehiculos : s.vehiculo;
-    listaVehiculos = rawV.map(v => ({
-      id: v.id || v.id_vehiculo,
-      tipo: v.tipo || "Vehículo",
-      placa: v.placa || "—",
-      conductor: v.conductor || "",
-      licencia_doc: v.licencia_doc || v.licencia || "",
-      licencia: v.licencia_doc || v.licencia || "",
-      autorizado: v.autorizado !== '0' && v.autorizado !== 0 && v.autorizado !== false && v.autorizado !== 'false',
-      motivo: v.motivo || v.motivo_rechazo || ""
-    }));
-  }
-
-  try {
-    const storageKeyVeh = `incarsa_solicitud_${s.id}_vehiculos`;
-    const localVeh = JSON.parse(localStorage.getItem(storageKeyVeh) || "null");
-    if (Array.isArray(localVeh) && localVeh.length > 0) {
-      listaVehiculos = listaVehiculos.map(lv => {
-        const match = localVeh.find(v => String(v.id) === String(lv.id) || (v.placa && v.placa === lv.placa));
-        if (match) {
-          return {
-            ...lv,
-            autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
-            motivo: match.motivo_rechazo || match.motivo || lv.motivo || ""
-          };
-        }
-        return lv;
-      });
-    }
-  } catch (e) {}
-  
-  let listaPersonas = [];
-  if (typeof s.personas === 'string' && s.personas.trim() !== '') {
-    if (s.personas.includes('|||') || s.personas.includes('###')) {
-      listaPersonas = s.personas.split('###').map(p => {
-        const parts = p.split('|||');
-        const id = parts[0];
-        const ap_nombre = parts[1];
-        const tipo_doc = parts[2];
-        const identificacion = parts[3];
-        const cargo = parts[4];
-        const autorizado = parts[5];
-        const motivo = parts[6] || "";
-        const estado_datos = parts[7] || "PENDIENTE";
-        return {
-          id,
-          ap_nombre,
-          nombre: ap_nombre,
-          tipo_doc,
-          identificacion,
-          cargo,
-          autorizado: autorizado !== '0' && autorizado !== 0 && autorizado !== false && autorizado !== 'false',
-          motivo: motivo || "",
-          estado_datos: String(estado_datos || "PENDIENTE").trim().toUpperCase()
-        };
-      });
-    } else {
-      try {
-        listaPersonas = JSON.parse(s.personas);
-      } catch (e) {
-        listaPersonas = [];
-      }
-    }
-  } else if (Array.isArray(s.personas) || Array.isArray(s.ingresantes)) {
-    const rawP = Array.isArray(s.personas) ? s.personas : s.ingresantes;
-    listaPersonas = rawP.map(p => ({
-      id: p.id,
-      ap_nombre: p.ap_nombre || `${p.nombre || ''} ${p.apellido || ''}`.trim() || p.nombre || "Contratista",
-      nombre: p.nombre || p.ap_nombre || "Contratista",
-      tipo_doc: p.tipo_doc || "CC",
-      identificacion: p.identificacion || "—",
-      cargo: p.cargo || "Operario",
-      autorizado: p.autorizado !== '0' && p.autorizado !== 0 && p.autorizado !== false && p.autorizado !== 'false',
-      motivo: p.motivo || p.motivo_rechazo || "",
-      estado_datos: String(p.estado_datos || "PENDIENTE").trim().toUpperCase()
-    }));
-  }
-
-  try {
-    const storageKey = `incarsa_solicitud_${s.id}_personas`;
-    const localPersonas = JSON.parse(localStorage.getItem(storageKey) || "null");
-    if (Array.isArray(localPersonas) && localPersonas.length > 0) {
-      listaPersonas = listaPersonas.map(lp => {
-        const match = localPersonas.find(p => String(p.id) === String(lp.id) || (p.identificacion && p.identificacion === lp.identificacion));
-        if (match) {
-          return {
-            ...lp,
-            autorizado: match.autorizado !== '0' && match.autorizado !== 0 && match.autorizado !== false && match.autorizado !== 'false',
-            motivo: match.motivo_rechazo || match.motivo || lp.motivo || ""
-          };
-        }
-        return lp;
-      });
-    }
-  } catch (e) {}
-
-  let listaRevisiones = [];
-  if (Array.isArray(s.revisiones)) {
-    listaRevisiones = s.revisiones;
-  } else {
-    try {
-      const storageKeyRev = `incarsa_revisiones_${s.id}`;
-      const guardado = JSON.parse(localStorage.getItem(storageKeyRev) || "null");
-      if (guardado) {
-        if (Array.isArray(guardado.historial)) {
-          listaRevisiones = guardado.historial;
-        } else if (Array.isArray(guardado)) {
-          listaRevisiones = guardado;
-        }
-      }
-    } catch (e) {}
-  }
-
-  const nombreEmpresaOrigen = s.nombre_empresa || s.empresa_origen || s.empresaOrigen || "INCARSA";
-  const nombreContratista = s.nombre_emContratista || s.empresa_contratista || s.contratista || "—";
-  const diligenciadorNombre = s.diligenciador || (typeof s.diligenciado_por === "string" ? s.diligenciado_por : null) || s.diligenciadoPor || "Administrador";
-  const diligenciadoPorId = (s.diligenciado_por !== undefined && s.diligenciado_por !== null && !isNaN(Number(s.diligenciado_por)))
-    ? Number(s.diligenciado_por)
-    : (s.id_diligenciador ? Number(s.id_diligenciador) : null);
-  const codigoVal = s.codigo || s.codigo_radicado || `RAD-${s.id}`;
-
-  return {
-    id: s.id,
-    codigo: codigoVal,
-    codigo_radicado: codigoVal,
-    nombre_empresa: nombreEmpresaOrigen,
-    nombre_emContratista: nombreContratista,
-    planta: cadenaPlanta,
-    plantas: cadenaPlanta,
-    fecha_ingreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
-    fecha_salida: formatearFechaCorta(s.fecha_salida || s.fecha_fin || s.fechaSalida),
-    fechaIngreso: formatearFechaCorta(s.fecha_ingreso || s.fecha_inicio || s.fechaIngreso),
-    fecha_creacion_raw: s.fecha_creacion_raw || s.fecha_creacion,
-    fecha_creacion: formatearFechaHoraEspanol(s.fecha_creacion_raw || s.fecha_creacion),
-    fecha_creacion_corta: formatearFechaCorta(s.fecha_creacion_raw || s.fecha_creacion),
-    fecha_registro: formatearFechaCorta(s.fecha_registro || s.fecha_creacion_raw || s.fecha_creacion || s.created_at || s.fecha_ingreso || s.fecha_inicio),
-    estado: (s.estado || "ENVIADO").toUpperCase(),
-    diligenciador: diligenciadorNombre,
-    diligenciado_por: diligenciadoPorId,
-    observaciones: s.observaciones || s.observacion || "",
-    // campos del modal detalle
-    empresaOrigen: nombreEmpresaOrigen,
-    empresa_origen: nombreEmpresaOrigen,
-    contratista: nombreContratista,
-    empresa_contratista: nombreContratista,
-    riesgo: s.nivel_de_riesgo || s.nivelRiesgo || s.riesgo || "—",
-    actividad: s.actividad || "—",
-    is_active: s.is_active,
-    vehiculos: listaVehiculos || [],
-    computos: listaComputos || [],
-    personas: listaPersonas || [],
-    revisiones: listaRevisiones || []
-  };
-}
 
 function esSolicitudActiva(s) {
   if (!s) return false;
@@ -390,8 +135,13 @@ function solicitudesTable() {
     // Modal state
     viewModalOpen: false,
     deleteModalOpen: false,
+    showDeleteModal: false,
+    qrModalOpen: false,
+    copiadoToast: false,
     selected: null,
+    selectedQr: null,
     pendingDeleteId: null,
+    solicitudAEliminar: null,
 
     puedeAccion(mod, acc) {
       // Dependencia reactiva para Alpine.js
@@ -478,18 +228,7 @@ function solicitudesTable() {
     },
 
     estadoClass(estado) {
-      const map = {
-        "ENVIADO": "status-enviado",
-        "EN REVISIÓN": "status-revision",
-        "EN REVISION": "status-revision",
-        "DEVUELTO PARA CORRECCIÓN": "status-devuelto",
-        "DEVUELTO": "status-devuelto",
-        "POR APROBAR": "status-aprobar",
-        "APROBADO": "status-aprobado",
-        "PRE-APROBADO": "status-aprobado",
-        "RECHAZADO": "status-rechazado"
-      };
-      return map[(estado || "").toUpperCase()] || "status-enviado";
+      return (typeof window.estadoClass === 'function') ? window.estadoClass(estado) : 'status-enviado';
     },
 
     get filtered() {
@@ -561,26 +300,112 @@ function solicitudesTable() {
       this.selected = null;
     },
 
+    copiarTexto(texto) {
+      if (!texto) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(() => {
+          this.copiadoToast = true;
+          setTimeout(() => { this.copiadoToast = false; }, 2000);
+        }).catch(() => {});
+      } else {
+        const input = document.createElement('textarea');
+        input.value = texto;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        this.copiadoToast = true;
+        setTimeout(() => { this.copiadoToast = false; }, 2000);
+      }
+    },
+
+    openQrModal(solicitud) {
+      if (!solicitud) return;
+      this.selectedQr = solicitud;
+      this.qrModalOpen = true;
+    },
+
+    cerrarQrModal() {
+      this.qrModalOpen = false;
+      this.selectedQr = null;
+    },
+
+    descargarQr() {
+      if (!this.selectedQr) return;
+      const codigo = this.selectedQr.codigo || ('RAD-' + this.selectedQr.id);
+      const a = document.createElement('a');
+      a.href = `/api/v1/solicitudes/${encodeURIComponent(codigo)}/qr`;
+      a.download = `QR-${codigo}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
+
+    async copiarEnlaceQr() {
+      if (!this.selectedQr) return;
+      const codigo = this.selectedQr.codigo || ('RAD-' + this.selectedQr.id);
+      const url = `${window.location.origin}/verificar/${encodeURIComponent(codigo)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        this.copiadoToast = true;
+        setTimeout(() => (this.copiadoToast = false), 2500);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        this.copiadoToast = true;
+        setTimeout(() => (this.copiadoToast = false), 2500);
+      }
+    },
+
     editSolicitud(solicitud) {
       const code = (solicitud && (solicitud.codigo || solicitud.id)) || '';
       window.location.href = `/solicitudes/editar/${code}`;
     },
 
     confirmDelete(solicitud) {
-      this.pendingDeleteId = solicitud.id;
+      this.pendingDeleteId = solicitud?.id || null;
+      this.solicitudAEliminar = solicitud;
       this.deleteModalOpen = true;
+      this.showDeleteModal = true;
+    },
+
+    confirmarEliminar(solicitud) {
+      this.confirmDelete(solicitud);
     },
 
     cancelDelete() {
       this.pendingDeleteId = null;
+      this.solicitudAEliminar = null;
       this.deleteModalOpen = false;
+      this.showDeleteModal = false;
     },
 
-    executeDelete() {
-      this.solicitudes = this.solicitudes.filter(s => s.id !== this.pendingDeleteId);
+    cancelarEliminar() {
+      this.cancelDelete();
+    },
+
+    async executeDelete() {
+      if (!this.pendingDeleteId && !this.solicitudAEliminar) return;
+      const id = this.pendingDeleteId || this.solicitudAEliminar?.id;
+      this.solicitudes = this.solicitudes.filter(s => s.id !== id);
       this.deleteModalOpen = false;
+      this.showDeleteModal = false;
       this.pendingDeleteId = null;
-      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+      this.solicitudAEliminar = null;
+      if (this.currentPage > this.totalPages) this.currentPage = Math.max(1, this.totalPages);
+      try {
+        await fetch(`${API.solicitudes}/${id}`, { method: "DELETE" });
+      } catch (e) {
+        console.warn("No se pudo eliminar en backend:", e);
+      }
+    },
+
+    eliminarSolicitud() {
+      return this.executeDelete();
     }
   };
 }

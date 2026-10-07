@@ -17,3 +17,4 @@ cryptography==50.0.1
 SQLAlchemy==2.0.52
 alembic==1.19.1
 qrcode[pil]==8.2
+reportlab==5.0.1

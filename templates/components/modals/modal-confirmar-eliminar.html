@@ -1,0 +1,99 @@
+<!-- ============================================================
+   MODAL: Confirmar eliminación (Componente Unificado - Alertas Ticket)
+   Soporta tipos: 'solicitud', 'usuario', 'correspondencia', 'persona'
+============================================================= -->
+{% set tipo = modal_delete_tipo | default('solicitud') %}
+
+<div x-show="(typeof deleteModalOpen !== 'undefined' && deleteModalOpen) || (typeof showDeleteModal !== 'undefined' && showDeleteModal)" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+  @keydown.escape.window="(typeof cancelDelete === 'function' ? cancelDelete() : (typeof cancelarEliminar === 'function' ? cancelarEliminar() : null))">
+  
+  <div x-show="(typeof deleteModalOpen !== 'undefined' && deleteModalOpen) || (typeof showDeleteModal !== 'undefined' && showDeleteModal)" x-transition
+    @click.outside="(typeof cancelDelete === 'function' ? cancelDelete() : (typeof cancelarEliminar === 'function' ? cancelarEliminar() : null))"
+    class="modal-panel w-full max-w-sm my-auto p-7 text-center relative">
+    
+    <!-- Contenido y Estampa según el tipo de entidad a eliminar -->
+    {% if tipo == 'solicitud' %}
+      <div class="modal-stamp danger">
+        <i class="fa-solid fa-xmark text-2xl text-[var(--paper-err)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar solicitud?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        Esta acción no se puede deshacer. ¿Deseas eliminar la solicitud de forma permanente?
+      </p>
+
+    {% elif tipo == 'usuario' %}
+      <div class="modal-stamp warning">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar usuario?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        ¿Seguro que deseas eliminar a <br>
+        <span class="font-semibold text-[var(--paper-ink)]"
+          x-text="(typeof usuarioAEliminar !== 'undefined' && usuarioAEliminar) ? ((usuarioAEliminar.nombres || '') + ' ' + (usuarioAEliminar.apellidos || '')).trim() : ''"></span>?<br>
+        Esta acción no se puede deshacer y podría traer consecuencias en las solicitudes registradas.
+      </p>
+
+    {% elif tipo == 'correspondencia' %}
+      <div class="modal-stamp warning">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar correspondencia?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        ¿Seguro que deseas eliminar el radicado <br>
+        <span class="font-bold text-[var(--paper-ink)] font-mono text-base"
+          x-text="(typeof itemAEliminar !== 'undefined' && itemAEliminar) ? (itemAEliminar.radicado || ('#' + itemAEliminar.id)) : ''"></span>?<br>
+        Esta acción es irreversible y eliminará el registro de la base de datos.
+      </p>
+
+    {% elif tipo == 'persona' %}
+      <div class="modal-stamp warning">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar persona?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        ¿Seguro que deseas eliminar a <br>
+        <strong class="font-semibold text-[var(--paper-ink)]"
+          x-text="(typeof personaEliminar !== 'undefined' && personaEliminar) ? ((personaEliminar.nombre || '') + ' ' + (personaEliminar.apellido || '')).trim() : ''"></strong>?<br>
+        Esta acción no se puede deshacer y podría afectar el histórico de solicitudes vinculadas.
+      </p>
+
+    {% else %}
+      <div class="modal-stamp danger">
+        <i class="fa-solid fa-xmark text-2xl text-[var(--paper-err)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Confirmar eliminación?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        Esta acción no se puede deshacer. ¿Deseas eliminar el registro de forma permanente?
+      </p>
+    {% endif %}
+
+    <!-- Botones de Acción (Cancelar / Confirmar) -->
+    <div class="flex items-center justify-center gap-3">
+      <button type="button" 
+        @click="(typeof cancelDelete === 'function' ? cancelDelete() : (typeof cancelarEliminar === 'function' ? cancelarEliminar() : null))" 
+        class="modal-btn-cancel flex-1 cursor-pointer"
+        :disabled="typeof eliminando !== 'undefined' ? eliminando : false">
+        Cancelar
+      </button>
+      
+      <button type="button" 
+        {% if tipo == 'usuario' %}
+        @click="typeof eliminarUsuario === 'function' ? eliminarUsuario() : (typeof executeDelete === 'function' ? executeDelete() : null)"
+        {% elif tipo == 'persona' %}
+        @click="typeof eliminarPersona === 'function' ? eliminarPersona() : (typeof executeDelete === 'function' ? executeDelete() : null)"
+        {% elif tipo == 'correspondencia' %}
+        @click="typeof eliminarCorrespondencia === 'function' ? eliminarCorrespondencia() : (typeof executeDelete === 'function' ? executeDelete() : null)"
+        {% else %}
+        @click="typeof eliminarSolicitud === 'function' ? eliminarSolicitud() : (typeof executeDelete === 'function' ? executeDelete() : null)"
+        {% endif %}
+        class="modal-btn-confirm flex-1 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+        :disabled="typeof eliminando !== 'undefined' ? eliminando : false">
+        <span x-text="(typeof eliminando !== 'undefined' && eliminando) ? 'Eliminando...' : 'Eliminar'">Eliminar</span>
+      </button>
+    </div>
+
+    <!-- Borde dentado característico de ticket -->
+    <div class="modal-serrated"></div>
+  </div>
+</div>

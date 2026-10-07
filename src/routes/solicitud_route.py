@@ -2,10 +2,12 @@ import os
 import shutil
 import uuid
 import io
+from datetime import datetime
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, Query, Depends, Request, Response, Body
 from src.utils.file_manager import guardar_documento_seguro
+from src.services.certificado_datos_service import GENERAR_pdf_certificado_datos
 from src.loaders.solicitudes_loaders import (
     DELETE_solicitud_bd,
     GET_solicitud_bd,
@@ -36,7 +38,8 @@ from src.schemas.solicitud_schema import (
     CrearTokenFormularioInput,
 )
 from src.transformers import transformar_solicitud, transformar_solicitud_patch
-from src.utils.security import get_current_user, require_role, require_permission
+from src.utils.security import PARSEAR_dispositivo_user_agent
+from src.utils.security import get_current_user, require_role, require_permission, decode_access_token
 from src.loaders.notificacion_loader import marcar_leida_por_solicitud_db
 from typing import List, Dict, Any, Optional
 
@@ -594,10 +597,15 @@ def REGISTRAR_respuesta_autorizacion(token: str, datos: RespuestaAutorizacionInp
     else:
         ip_origen = "Desconocida"
 
+    # Determinar Dispositivo / Navegador de la firma
+    ua_raw = request.headers.get("User-Agent", "")
+    dispositivo = PARSEAR_dispositivo_user_agent(ua_raw, client_hint_model=datos.dispositivo_cliente)
+
     resultado = REGISTRAR_respuesta_autorizacion_datos_db(
         token=token,
         acepto=datos.acepto,
         ip=ip_origen,
+        dispositivo=dispositivo,
         motivo_rechazo=datos.motivo_rechazo
     )
 
@@ -607,6 +615,112 @@ def REGISTRAR_respuesta_autorizacion(token: str, datos: RespuestaAutorizacionInp
             detail=resultado.get("mensaje", "No se pudo registrar la respuesta de autorización.")
         )
     return resultado
+
+
+@router.get("/publico/autorizacion-datos/{token}/certificado-pdf")
+def DESCARGAR_certificado_autorizacion_pdf(token: str, request: Request):
+    """
+    Ruta de descarga de Certificado Oficial en PDF de Autorización de
+    Tratamiento de Datos Personales (Formato FR_SLV_016 / Ley 1581 de 2012).
+    
+    - Si la petición proviene de un usuario interno autenticado en el sistema (Revisor / SST / SuperAdmin):
+      Genera la Copia de Control y Auditoría Interna con Dirección IP y Dispositivo completos.
+    - Si la petición es del titular o público general (sin sesión activa):
+      Genera el Certificado del Titular con trazabilidad técnica protegida bajo custodia institucional.
+    """
+    tok_clean = str(token or "").strip()
+    if not tok_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token de autorización no proporcionado."
+        )
+
+    # Determinar si quien solicita el PDF es un usuario interno con sesión activa en INCARSA
+    usuario_autenticado = False
+    token_jwt = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token_jwt = auth_header.split(" ", 1)[1].strip()
+    elif "token" in request.cookies:
+        token_jwt = request.cookies.get("token")
+    elif "incarsa_token" in request.cookies:
+        token_jwt = request.cookies.get("incarsa_token")
+    elif "access_token" in request.cookies:
+        token_jwt = request.cookies.get("access_token")
+
+    if token_jwt:
+        payload_user = decode_access_token(token_jwt)
+        if payload_user and payload_user.get("tipo") != "2fa_pending":
+            usuario_autenticado = True
+
+    # Parámetro explicito para simulación / preview (?modo=interno o ?modo=auditoria)
+    param_modo = (request.query_params.get("modo") or request.query_params.get("vista") or "").lower()
+
+    # Modo simulación / previsualización SuperAdmin
+    if tok_clean.lower() in ("demo", "preview") or "preview" in tok_clean.lower():
+        # En preview: por defecto es Titular (público); si se especifica ?modo=interno es Control Interno
+        es_interno = param_modo in ("interno", "auditoria", "admin")
+
+        mock_datos = {
+            "token": "PREVIEW-DEMO-LEY-1581-FR-SLV-016",
+            "estado_datos": "AUTORIZADO",
+            "fecha_respuesta_datos": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "ip_datos": "186.29.14.88",
+            "dispositivo_datos": "PC (Windows) · Google Chrome",
+            "nombre_completo": "Diego Alejandro Cardozo Ramírez",
+            "tipo_doc": "C.C.",
+            "identificacion": "1.049.620.314",
+            "cargo": "Supervisor de Operaciones y Mantenimiento",
+            "correo": "diego.cardozo@ejemplo.com",
+            "codigo_radicado": "RAD-LGKS84",
+            "empresa_contratista": "AGRÍCOLA & SERVICIOS INDUSTRIALES S.A.S.",
+            "empresa_origen": "INCARSA S.A.S.",
+            "correo_institucional": "incarsasas@incarsa.com.co",
+            "plantas_texto": "PLANTA 1 INCARSA"
+        }
+        base_url = str(request.base_url).rstrip("/")
+        pdf_bytes = GENERAR_pdf_certificado_datos(mock_datos, base_url=base_url, es_interno=es_interno)
+        tipo_nombre = "CONTROL_INTERNO_" if es_interno else ""
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="Certificado_Tratamiento_Datos_{tipo_nombre}RAD-LGKS84_1049620314.pdf"',
+                "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+
+    resultado = GET_detalle_autorizacion_datos_db(tok_clean)
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=resultado.get("mensaje", "Enlace de autorización no encontrado o no válido.")
+        )
+
+    datos = resultado["datos"]
+    base_url = str(request.base_url).rstrip("/")
+    # Solo entrega copia de control interno si se solicita y el usuario está autenticado
+    es_interno = usuario_autenticado and (param_modo in ("interno", "auditoria", "admin"))
+    pdf_bytes = GENERAR_pdf_certificado_datos(datos, base_url=base_url, es_interno=es_interno)
+
+    radicado = str(datos.get("codigo_radicado") or "RAD").replace(" ", "_")
+    ident = str(datos.get("identificacion") or "DOC").replace(".", "").replace(" ", "_")
+    tipo_nombre = "CONTROL_INTERNO_" if es_interno else ""
+    filename = f"Certificado_Tratamiento_Datos_{tipo_nombre}{radicado}_{ident}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 
 
 @router.post("/{solicitud_id}/personas/{persona_id}/reenviar-autorizacion", status_code=status.HTTP_200_OK)

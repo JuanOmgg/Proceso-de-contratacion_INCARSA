@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 import os
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -584,6 +584,15 @@ async def get_autorizacion_datos_page(request: Request, token: str = ""):
     )
 
 
+@app.get("/autorizacion-datos/{token}/certificado-pdf")
+async def get_autorizacion_datos_certificado_redirect(token: str):
+    tok = token.strip() if token else "preview"
+    return RedirectResponse(
+        url=f"/api/v1/solicitudes/publico/autorizacion-datos/{tok}/certificado-pdf",
+        status_code=302
+    )
+
+
 @app.get("/formulario-temporal/{token}")
 @app.get("/formulario-temporal")
 async def get_formulario_temporal_page(request: Request, token: str = ""):
@@ -698,7 +707,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 if __name__ == "__main__":
-    host = os.getenv("HOST", "127.0.0.1")
+    host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
     reload_env = os.getenv("RELOAD", "True").lower() in ("true", "1", "yes")
     uvicorn.run("main:app", host=host, port=port, reload=reload_env)

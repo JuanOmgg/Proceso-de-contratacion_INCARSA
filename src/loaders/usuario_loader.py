@@ -455,19 +455,34 @@ def DELETE_user_db(id_user: int) -> dict:
                         "mensaje": "La cuenta con rol SUPERADMIN está protegida y no puede ser eliminada.",
                     }
 
-                cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
+                try:
+                    cursor.execute("DELETE FROM usuarios_plantas WHERE id_usuario = %s", (id_user,))
+                    cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
 
-                if cursor.rowcount == 0:
+                    if cursor.rowcount == 0:
+                        return {
+                            "exito": False,
+                            "mensaje": f"[ERROR] El usuario con ID #{id_user} no existe.",
+                        }
+                    conexion.commit()
                     return {
-                        "exito": False,
-                        "mensaje": f"[ERROR] El usuario con ID #{id_user} no existe.",
+                        "exito": True,
+                        "mensaje": f"[OK] Usuario con ID {id_user} eliminado correctamente de la base de datos.",
                     }
-                conexion.commit()
-
-        return {
-            "exito": True,
-            "mensaje": f"[OK] Usuario con ID {id_user} eliminado correctamente.",
-        }            
+                except Exception as db_err:
+                    err_str = str(db_err).lower()
+                    if "1451" in err_str or "foreign key constraint" in err_str or "constraint" in err_str:
+                        # Si tiene solicitudes u otros registros asociados por auditoría, aplicar soft delete automático
+                        cursor.execute("DELETE FROM usuarios_plantas WHERE id_usuario = %s", (id_user,))
+                        cursor.execute("UPDATE usuarios SET is_active = 0 WHERE id = %s", (id_user,))
+                        conexion.commit()
+                        print(f"[USUARIOS] Usuario #{id_user} desactivado permanentemente (posee registros históricos vinculados).")
+                        return {
+                            "exito": True,
+                            "mensaje": f"[AVISO] El usuario #{id_user} tiene solicitudes registradas en su historial. Por integridad de auditoría, ha sido desactivado permanentemente del sistema.",
+                            "desactivado_por_fk": True,
+                        }
+                    raise db_err
 
     except Exception as e:
         print(f"[ERROR] Error al eliminar el usuario {id_user}: {e}")

@@ -692,6 +692,8 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                                i.token_autorizacion,
                                COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
                                i.fecha_respuesta_datos,
+                               i.ip_datos,
+                               i.dispositivo_datos,
                                i.denegado_por,
                                CONCAT(u_den.nombres, ' ', u_den.apellidos) AS denegado_por_nombre,
                                a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
@@ -814,6 +816,17 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                 for r in raw_revs:
                     if r.get("fecha_revision"):
                         r["fecha_revision"] = str(r["fecha_revision"])
+                    obs_txt = r.get("observacion") or ""
+                    es_pre = bool(solicitud.get("pre_aprobado")) or ("PRE-APROBADO" in obs_txt)
+                    if str(solicitud.get("estado", "")).upper() == "APROBADO" and str(r.get("rol", "")).upper() == "SCR":
+                        if str(r.get("decision", "")).upper() == "PREAPROBADO":
+                            r["decision"] = "APROBADO"
+                    if str(r.get("rol", "")).upper() == "SCR" and es_pre:
+                        r["es_preaprobado"] = True
+                    # Limpiar texto de autogeneración si estaba en la observación para mantener la UI limpia
+                    r["observacion"] = obs_txt.replace("[Aprobación definitiva automática por SCR a través del PRE-APROBADO.]", "") \
+                                              .replace("Aprobación definitiva automática por SCR a través del PRE-APROBADO.", "") \
+                                              .strip()
                 solicitud["revisiones"] = raw_revs
 
                 return {"exito": True, "datos": solicitud}
@@ -1273,12 +1286,32 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                             """,
                             (obs_pre, real_id)
                         )
-                elif rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN") or (id_planta is None and decision == "APROBADO"):
+                elif rol in ("SCR", "SUPERADMIN", "ADMINISTRADOR", "ADMIN"):
                     nuevo_estado = "APROBADO"
                     cursor.execute(
                         "UPDATE solicitudes SET estado = 'APROBADO' WHERE id = %s",
                         (real_id,)
                     )
+                    # Sincronizar revisión de SCR si existía pre-aprobación previa
+                    cursor.execute(
+                        """
+                        SELECT id FROM solicitud_revisiones 
+                        WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = 'SCR'
+                        LIMIT 1
+                        """,
+                        (real_id,)
+                    )
+                    rev_scr_exist = cursor.fetchone()
+                    if rev_scr_exist:
+                        cursor.execute(
+                            """
+                            UPDATE solicitud_revisiones
+                            SET decision = 'APROBADO',
+                                fecha_revision = NOW()
+                            WHERE id = %s
+                            """,
+                            (rev_scr_exist["id"],)
+                        )
                     # Desactivar botones de confirmación en notificaciones previas de esta solicitud
                     cod_sol_clean = sol.get("codigo") or f"RAD-{real_id:04d}"
                     cursor.execute(
@@ -1338,17 +1371,15 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 (real_id,)
                             )
                             rev_scr_exist = cursor.fetchone()
-                            obs_auto = "Aprobación definitiva automática por SCR a través del PRE-APROBADO."
                             if rev_scr_exist:
                                 cursor.execute(
                                     """
                                     UPDATE solicitud_revisiones
                                     SET decision = 'APROBADO',
-                                        observacion = CONCAT(IFNULL(observacion, ''), '\n', %s),
                                         fecha_revision = NOW()
                                     WHERE id = %s
                                     """,
-                                    (f"[{obs_auto}]", rev_scr_exist["id"])
+                                    (rev_scr_exist["id"],)
                                 )
                             else:
                                 cursor.execute(
@@ -2490,7 +2521,20 @@ def GET_ALL_solicitudes_bd(
                         revs_por_sol[sid].append(r)
                     
                     for row in datos:
-                        row["revisiones"] = revs_por_sol.get(row["id"], [])
+                        revs = revs_por_sol.get(row["id"], [])
+                        sol_pre = bool(row.get("pre_aprobado"))
+                        for r in revs:
+                            obs_txt = r.get("observacion") or ""
+                            es_pre = sol_pre or ("PRE-APROBADO" in obs_txt)
+                            if str(row.get("estado", "")).upper() == "APROBADO" and str(r.get("rol", "")).upper() == "SCR":
+                                if str(r.get("decision", "")).upper() == "PREAPROBADO":
+                                    r["decision"] = "APROBADO"
+                            if str(r.get("rol", "")).upper() == "SCR" and es_pre:
+                                r["es_preaprobado"] = True
+                            r["observacion"] = obs_txt.replace("[Aprobación definitiva automática por SCR a través del PRE-APROBADO.]", "") \
+                                                      .replace("Aprobación definitiva automática por SCR a través del PRE-APROBADO.", "") \
+                                                      .strip()
+                        row["revisiones"] = revs
                 except Exception as e_rev:
                     print(f"[AVISO] Aviso al cargar revisiones en GET_ALL_solicitudes_bd: {e_rev}")
                             
@@ -2629,7 +2673,7 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                     if isinstance(lista_p, list):
                         # 1. Preservar estado y token de ingresantes previos
                         cursor.execute("""
-                            SELECT id_persona, token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, motivo_rechazo_datos
+                            SELECT id_persona, token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, dispositivo_datos, motivo_rechazo_datos
                             FROM ingresantes
                             WHERE id_solicitud = %s
                         """, (real_id,))
@@ -2672,6 +2716,7 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                     est_d = prev.get("estado_datos") or "PENDIENTE"
                                     f_resp = prev.get("fecha_respuesta_datos")
                                     ip_d = prev.get("ip_datos")
+                                    disp_d = prev.get("dispositivo_datos")
                                     m_rec = prev.get("motivo_rechazo_datos")
                                 else:
                                     # Nueva persona agregada a la solicitud
@@ -2679,6 +2724,7 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                     est_d = "PENDIENTE"
                                     f_resp = None
                                     ip_d = None
+                                    disp_d = None
                                     m_rec = None
                                     cursor.execute("SELECT nombre, apellido, correo FROM personas WHERE id = %s", (p_id_int,))
                                     row_pn = cursor.fetchone()
@@ -2692,15 +2738,15 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                             "token": tok_p
                                         })
 
-                                valores_ing.append((real_id, p_id_int, aut_val, mot, tok_p, est_d, f_resp, ip_d, m_rec))
+                                valores_ing.append((real_id, p_id_int, aut_val, mot, tok_p, est_d, f_resp, ip_d, disp_d, m_rec))
 
                         if valores_ing:
                             cursor.executemany(
                                 """
                                 INSERT INTO ingresantes (
                                     id_solicitud, id_persona, autorizado, motivo,
-                                    token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, motivo_rechazo_datos
-                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    token_autorizacion, estado_datos, fecha_respuesta_datos, ip_datos, dispositivo_datos, motivo_rechazo_datos
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                 """,
                                 valores_ing,
                             )
@@ -3327,6 +3373,8 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         i.token_autorizacion,
                         COALESCE(i.estado_datos, 'PENDIENTE') AS estado_datos,
                         i.fecha_respuesta_datos,
+                        i.ip_datos,
+                        i.dispositivo_datos,
                         i.motivo_rechazo_datos,
                         p.id AS persona_id,
                         p.nombre,
@@ -3379,6 +3427,8 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         "token": row["token_autorizacion"],
                         "estado_datos": row["estado_datos"],
                         "fecha_respuesta_datos": str(row["fecha_respuesta_datos"]) if row["fecha_respuesta_datos"] else "",
+                        "ip_datos": row.get("ip_datos") or "No registrada",
+                        "dispositivo_datos": row.get("dispositivo_datos") or "Dispositivo Web Seguro",
                         "motivo_rechazo_datos": row.get("motivo_rechazo_datos") or "",
                         "persona_id": row["persona_id"],
                         "nombre_completo": nombre_completo,
@@ -3407,7 +3457,13 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
         }
 
 
-def REGISTRAR_respuesta_autorizacion_datos_db(token: str, acepto: bool, ip: str = None, motivo_rechazo: str = None) -> dict:
+def REGISTRAR_respuesta_autorizacion_datos_db(
+    token: str,
+    acepto: bool,
+    ip: str = None,
+    dispositivo: str = None,
+    motivo_rechazo: str = None
+) -> dict:
     """
     Registra de manera formal e inmutable la aceptación o rechazo
     de la autorización de datos personales bajo la Ley 1581 de 2012.
@@ -3438,9 +3494,10 @@ def REGISTRAR_respuesta_autorizacion_datos_db(token: str, acepto: bool, ip: str 
                     SET estado_datos = %s,
                         fecha_respuesta_datos = NOW(),
                         ip_datos = %s,
+                        dispositivo_datos = %s,
                         motivo_rechazo_datos = %s
                     WHERE token_autorizacion = %s
-                """, (nuevo_estado, ip or "", motivo_rechazo or None, tok_clean))
+                """, (nuevo_estado, ip or "", dispositivo or "", motivo_rechazo or None, tok_clean))
                 conexion.commit()
 
                 ahora_fmt = datetime.now().strftime("%d/%m/%Y %I:%M:%S %p")

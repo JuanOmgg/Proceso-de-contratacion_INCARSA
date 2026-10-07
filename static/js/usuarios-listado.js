@@ -87,6 +87,7 @@ function usuariosTable() {
     // Eliminación
     // ---------------------------------------------------
     showDeleteModal: false,
+    deleteModalOpen: false,
     usuarioAEliminar: null,
 
     // ---------------------------------------------------
@@ -202,9 +203,18 @@ function usuariosTable() {
       return pages;
     },
 
-    // ---------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------
+    get esSuperAdmin() {
+      try {
+        const sesion = (typeof getAuthSession === "function") ? getAuthSession() : 
+                       JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
+        const miRol = String(sesion?.rol || sesion?.nombre_rol || "").trim().toUpperCase();
+        const idRol = Number(sesion?.id_rol || sesion?.rol_id || 0);
+        return miRol === "SUPERADMIN" || idRol === 2;
+      } catch (e) {
+        return false;
+      }
+    },
+
     puedeGestionar(usuario) {
       if (!usuario) return false;
       const rolTarget = String(usuario.rol || usuario.nombre_rol || "").trim().toUpperCase();
@@ -212,19 +222,11 @@ function usuariosTable() {
       const esAdminTarget = rolTarget === "ADMINISTRADOR" || idRol === 1 || rolTarget === "SUPERADMIN" || idRol === 2;
       
       // Los roles regulares (GESCO, SST, VIGILANTE, GESTIÓN DOCUMENTAL, SCR, etc.)
-      // SIEMPRE pueden ser gestionados (editados, eliminados, activados/desactivados) por el Administrador
+      // pueden ser editados y activados/desactivados por el Administrador
       if (!esAdminTarget) return true;
 
       // Si el usuario en la fila es un Administrador, función ÚNICA de SUPERADMIN
-      let miRol = "";
-      try {
-        const sesion = (typeof getAuthSession === "function") ? getAuthSession() : 
-                       JSON.parse(sessionStorage.getItem("incarsa_session") || localStorage.getItem("incarsa_session") || "null");
-        miRol = String(sesion?.rol || "").trim().toUpperCase();
-      } catch (e) {
-        miRol = "";
-      }
-      return miRol === "SUPERADMIN";
+      return this.esSuperAdmin;
     },
     rolNombre(idRolONombre) {
       if (!idRolONombre && idRolONombre !== 0) return "—";
@@ -373,55 +375,73 @@ function usuariosTable() {
     },
 
     confirmarEliminar(usuario) {
-      if (!this.puedeGestionar(usuario)) {
+      if (!this.esSuperAdmin) {
         if (typeof window.showToast === "function") {
-          window.showToast("Solo un usuario con rol SUPERADMIN puede eliminar administradores.", "warning");
+          window.showToast("La eliminación de cuentas es una función exclusiva del rol SUPERADMIN. Desactive la cuenta si desea suspender su acceso.", "warning");
         } else {
-          alert("Solo un usuario con rol SUPERADMIN puede eliminar administradores.");
+          alert("La eliminación de cuentas es una función exclusiva del rol SUPERADMIN.");
         }
         return;
       }
       this.usuarioAEliminar = usuario;
       this.showDeleteModal = true;
+      this.deleteModalOpen = true;
+    },
+    confirmDelete(usuario) {
+      this.confirmarEliminar(usuario);
     },
     cancelarEliminar() {
       this.usuarioAEliminar = null;
       this.showDeleteModal = false;
+      this.deleteModalOpen = false;
+    },
+    cancelDelete() {
+      this.cancelarEliminar();
+    },
+    executeDelete() {
+      return this.eliminarUsuario();
     },
     async eliminarUsuario() {
       if (!this.usuarioAEliminar) return;
-      if (!this.puedeGestionar(this.usuarioAEliminar)) {
+      if (!this.esSuperAdmin) {
         if (typeof window.showToast === "function") {
-          window.showToast("Solo un usuario con rol SUPERADMIN puede eliminar administradores.", "error");
+          window.showToast("Solo un usuario con rol SUPERADMIN puede eliminar usuarios.", "error");
         } else {
-          alert("Solo un usuario con rol SUPERADMIN puede eliminar administradores.");
+          alert("Solo un usuario con rol SUPERADMIN puede eliminar usuarios.");
         }
         this.cancelarEliminar();
         return;
       }
       const id = this.usuarioAEliminar.id;
       
+      // Cerrar modal de inmediato reseteando todas las banderas
+      this.cancelarEliminar();
+
       // Eliminación optimista local
       this.usuarios = this.usuarios.filter(u => u.id !== id);
       this.notificarCambio();
-      this.showDeleteModal = false;
-      this.usuarioAEliminar = null;
       if (this.currentPage > this.totalPaginas) this.currentPage = Math.max(1, this.totalPaginas);
 
       try {
         const res = await fetch(`${API.usuarios}/${id}`, {
           method: "DELETE"
         });
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          console.warn(`Error al eliminar usuario en backend (HTTP ${res.status}):`, errData);
+          console.warn(`Error al eliminar usuario en backend (HTTP ${res.status}):`, data);
           if (typeof window.showToast === "function") {
-            window.showToast(errData.detail || "No se pudo eliminar el usuario.", "error");
+            window.showToast(data.detail || "No se pudo eliminar el usuario.", "error");
+          }
+          await this.getUsers();
+        } else if (data.desactivado_por_fk) {
+          if (typeof window.showToast === "function") {
+            window.showToast(data.mensaje || "El usuario posee solicitudes históricas; fue desactivado permanentemente para proteger la trazabilidad.", "info");
           }
           await this.getUsers();
         }
       } catch (err) {
         console.error("Error en DELETE de usuario:", err);
+        await this.getUsers();
       }
     }
   };

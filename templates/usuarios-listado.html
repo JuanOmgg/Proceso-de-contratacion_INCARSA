@@ -228,10 +228,10 @@
                           </a>
                           
                           <button type="button" 
-                            x-show="puedeGestionar(usuario) && puedeAccion('usuarios', 'eliminar')"
+                            x-show="esSuperAdmin && puedeGestionar(usuario) && puedeAccion('usuarios', 'eliminar')"
                             @click="confirmarEliminar(usuario)" 
                             class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
-                            data-tooltip="Eliminar usuario">
+                            data-tooltip="Eliminar usuario (Solo SUPERADMIN)">
                             <i class="fa-solid fa-trash-can"></i>
                           </button>
 
@@ -253,33 +253,7 @@
             </p>
 
             <!-- ===== Paginación ===== -->
-            <div
-              class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm">
-              <div class="flex items-center gap-2 text-[var(--text-muted)]">
-                <span>Mostrar</span>
-                <select x-model.number="pageSize" @change="resetPage()"
-                  class="input-field rounded-md px-2 py-1 text-sm">
-                  <option value="5">5</option>
-                  <option value="8">8</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                </select>
-                <span>registros</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn"
-                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
-                  <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <span class="text-[var(--text-muted)]">Página <span x-text="currentPage"
-                    class="font-semibold text-[var(--text-primary)]"></span> de <span
-                    x-text="totalPaginas"></span></span>
-                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
-                  class="action-icon-btn" :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
-                  <i class="fa-solid fa-chevron-right"></i>
-                </button>
-              </div>
-            </div>
+            {% include 'components/pagination.html' %}
           </div>
       </main>
 
@@ -439,34 +413,9 @@
         </div>
       </div>
 
-      <!-- ============================================================
-         MODAL: Confirmar eliminación (Estilo Alertas Ticket)
-      ============================================================= -->
-      <div x-show="showDeleteModal" x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-        @keydown.escape.window="cancelarEliminar()">
-        <div x-show="showDeleteModal" class="modal-panel w-full max-w-sm p-7 text-center" @click.outside="cancelarEliminar()">
-          <div class="modal-stamp warning">
-            <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
-          </div>
-          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar usuario?</h3>
-          <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
-            ¿Seguro que deseas eliminar a <br>
-            <span class="font-semibold text-[var(--paper-ink)]"
-              x-text="usuarioAEliminar ? (usuarioAEliminar.nombres + ' ' + usuarioAEliminar.apellidos) : ''"></span>?<br>
-            Esta acción no se puede deshacer y podría traer consecuencias en las solicitudes registradas.
-          </p>
-          <div class="flex items-center justify-center gap-3">
-            <button type="button" @click="cancelarEliminar()" class="modal-btn-cancel flex-1">
-              Cancelar
-            </button>
-            <button type="button" @click="eliminarUsuario()" class="modal-btn-confirm flex-1">
-              Eliminar
-            </button>
-          </div>
-          <div class="modal-serrated"></div>
-        </div>
-      </div>
+      <!-- Modal: Confirmar eliminación (Modular) -->
+      {% set modal_delete_tipo = 'usuario' %}
+      {% include 'components/modals/modal-confirmar-eliminar.html' %}
 
       <!-- ============================================================
          MODAL: Plantas Asignadas del usuario (Ticket Style)

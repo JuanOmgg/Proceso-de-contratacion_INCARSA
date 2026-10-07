@@ -1,0 +1,192 @@
+<!-- ============================================================
+   MODAL DE INSPECCIÓN DETALLADA DE PERSONAS POR DÍA (ESTILO TICKET)
+============================================================= -->
+<div x-show="modalDetalleAbierto" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop overflow-y-auto"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  @keydown.escape.window="cerrarDetalle()">
+
+  <div class="modal-panel modal-ticket w-full max-w-3xl pt-7 px-6 sm:px-8 pb-9 relative text-left my-auto"
+    @click.outside="cerrarDetalle()"
+    x-transition:enter="transition ease-out duration-300 transform"
+    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+    x-transition:leave="transition ease-in duration-200 transform"
+    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+    x-transition:leave-end="opacity-0 translate-y-4 scale-95">
+
+    <!-- Botón de Cerrar Superior Derecho -->
+    <button type="button" @click="cerrarDetalle()"
+      class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
+      title="Cerrar modal">
+      <i class="fa-solid fa-xmark text-base"></i>
+    </button>
+
+    <!-- Encabezado estilo Ticket -->
+    <div class="modal-ticket-header text-center pb-4 mb-4 border-b border-dashed border-[var(--paper-shadow)] relative">
+      <div class="modal-stamp info mb-2.5">
+        <i class="fa-solid fa-users-line text-2xl text-[var(--paper-info)]"></i>
+      </div>
+      <h2 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] tracking-tight mb-1">
+        Personas Autorizadas
+      </h2>
+      <div class="flex items-center justify-center gap-2 mt-2 flex-wrap">
+        <span class="status-pill inline-flex select-none font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 text-xs px-2.5 py-0.5 rounded-full">
+          <i class="fa-solid fa-user-check mr-1.5 text-emerald-600 dark:text-emerald-400"></i>
+          <span x-text="detalleHeader.total_personas + ' únicas'"></span>
+        </span>
+        <span class="text-xs font-mono font-bold text-[var(--paper-muted)] bg-[#efe9dc] dark:bg-white/10 px-2.5 py-0.5 rounded-md border border-[var(--paper-shadow)]"
+          x-text="detalleHeader.fecha_formateada"></span>
+        <span class="text-xs text-[var(--paper-muted)] font-semibold inline-flex items-center gap-1" x-show="detalleHeader.planta">
+          <i class="fa-solid fa-location-dot text-cyan-600 dark:text-cyan-400 text-[10px]"></i>
+          <span class="text-cyan-700 dark:text-cyan-300" x-text="detalleHeader.planta"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Filtro y Nota Informativa -->
+    <div class="space-y-3 mb-3">
+      <div class="p-2.5 rounded-xl bg-[#efe9dc]/50 dark:bg-white/[0.03] border border-[var(--paper-shadow)] text-xs text-[var(--paper-muted)] flex items-center gap-2">
+        <i class="fa-solid fa-circle-info text-emerald-600 dark:text-emerald-400 text-sm flex-shrink-0"></i>
+        <span>Cada persona figura una sola vez en este reporte, aunque esté asignada en múltiples solicitudes.</span>
+      </div>
+
+      <div class="relative w-full">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--paper-muted)] pointer-events-none"></i>
+        <input type="search" x-model="searchPersonaModal" @input="paginaModal = 1" name="search_personas_modal" id="search_personas_modal"
+          placeholder="Filtrar por nombre, identificación, cargo o radicado..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
+          class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-slate-900/90 border border-[var(--paper-shadow)] dark:border-white/10 text-[var(--paper-ink)] dark:text-white placeholder-[var(--paper-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+      </div>
+    </div>
+
+    <!-- Contenido: Lista de Personas en formato Ticket con scroll contenido -->
+    <div id="lista_personas_modal_scroll" class="max-h-[300px] sm:max-h-[340px] overflow-y-auto custom-scroll pr-1.5 space-y-2.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3 my-2.5">
+      
+      <template x-if="cargandoDetalle">
+        <div class="py-12 text-center text-[var(--paper-muted)]">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500 mb-2"></i>
+          <p class="text-xs font-medium">Cargando personal autorizado...</p>
+        </div>
+      </template>
+
+      <template x-if="!cargandoDetalle && personasDetalleFiltradas.length === 0">
+        <div class="py-10 px-4 text-center rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.02] border border-[var(--paper-shadow)] text-[var(--paper-muted)]">
+          <i class="fa-solid fa-user-slash text-2xl mb-2 text-[var(--paper-muted)] opacity-60"></i>
+          <p class="text-xs font-semibold text-[var(--paper-ink)]">No se encontraron personas</p>
+          <p class="text-[11px] text-[var(--paper-muted)] mt-0.5">No hay resultados para el término de búsqueda ingresado.</p>
+        </div>
+      </template>
+
+      <template x-for="p in personasDetallePaginadas" :key="p.id_persona">
+        <div class="p-3.5 rounded-xl bg-[#efe9dc]/40 dark:bg-white/[0.03] border border-[var(--paper-shadow)] hover:border-emerald-500/40 hover:bg-[#efe9dc]/70 dark:hover:bg-white/[0.06] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          
+          <!-- Datos Personales -->
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm flex-shrink-0 shadow-xs">
+              <span x-text="(p.nombre_completo || '?').charAt(0).toUpperCase()"></span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-bold text-[var(--paper-ink)] truncate" x-text="p.nombre_completo"></h4>
+                <!-- Badge Estado Autorización / Habeas Data -->
+                <template x-if="p.autorizado && p.estado_datos === 'AUTORIZADO'">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" title="Ingreso autorizado y tratamiento de datos aprobado">
+                    <i class="fa-solid fa-circle-check text-[10px]"></i> Autorizado
+                  </span>
+                </template>
+                <template x-if="p.autorizado && p.estado_datos !== 'AUTORIZADO' && p.estado_datos !== 'RECHAZADO'">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Pendiente: Aún no ha aprobado el tratamiento de datos personales">
+                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Pendiente datos
+                  </span>
+                </template>
+                <template x-if="!p.autorizado || p.estado_datos === 'RECHAZADO'">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30" :title="p.estado_datos === 'RECHAZADO' ? 'Tratamiento de datos rechazado' : 'No autorizado'">
+                    <i class="fa-solid fa-circle-xmark text-[10px]"></i> No autorizado
+                  </span>
+                </template>
+              </div>
+              <p class="text-xs text-[var(--paper-muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
+                <span class="font-mono font-semibold text-[var(--paper-ink)]" x-text="p.tipo_doc + ': ' + p.identificacion"></span>
+                <span>•</span>
+                <span class="font-medium text-[var(--paper-ink)]/80" x-text="p.cargo || 'Sin cargo'"></span>
+              </p>
+              <p class="text-[11px] text-[var(--paper-muted)] mt-1 flex items-center gap-1.5">
+                <i class="fa-regular fa-building text-[10px] text-cyan-600 dark:text-cyan-400"></i>
+                <span class="font-medium truncate" x-text="p.empresa_contratista"></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Solicitudes / Radicados en los que participa -->
+          <div class="flex flex-col sm:items-end gap-1.5 flex-shrink-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-[var(--paper-muted)] flex items-center gap-1">
+              <i class="fa-solid fa-file-signature text-emerald-600 dark:text-emerald-400"></i>
+              <span>Radicados (<span x-text="p.total_solicitudes || (p.radicados ? p.radicados.length : 0)"></span>):</span>
+            </div>
+            <div class="flex flex-wrap gap-1 sm:justify-end">
+              <template x-for="rad in p.radicados" :key="rad">
+                <span class="radicado-tag px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#efe9dc] dark:bg-white/10 text-emerald-700 dark:text-emerald-300 border border-[var(--paper-shadow)] shadow-xs"
+                  x-text="rad"></span>
+              </template>
+            </div>
+          </div>
+
+        </div>
+      </template>
+
+    </div>
+
+    <!-- Barra de Paginación del Modal -->
+    <div class="pt-2.5 pb-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-[var(--paper-muted)]"
+      x-show="!cargandoDetalle && personasDetalleFiltradas.length > 0">
+      <div class="flex items-center gap-1.5">
+        <span>Mostrando</span>
+        <span class="font-bold text-[var(--paper-ink)]" x-text="rangoPersonasModal"></span>
+        <span>de</span>
+        <span class="font-bold text-[var(--paper-ink)]" x-text="personasDetalleFiltradas.length"></span>
+        <span>personas</span>
+      </div>
+
+      <div class="flex items-center gap-1.5" x-show="totalPaginasModal > 1">
+        <button type="button" @click="paginaAnteriorModal()" :disabled="paginaModal === 1"
+          class="px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] bg-[#efe9dc]/60 dark:bg-white/[0.05] hover:bg-[#efe9dc] dark:hover:bg-white/10 text-[var(--paper-ink)] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-chevron-left text-[10px]"></i>
+          <span class="text-[11px] font-semibold">Anterior</span>
+        </button>
+        
+        <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+          x-text="paginaModal + ' / ' + totalPaginasModal"></span>
+
+        <button type="button" @click="paginaSiguienteModal()" :disabled="paginaModal === totalPaginasModal"
+          class="px-2.5 py-1 rounded-lg border border-[var(--paper-shadow)] bg-[#efe9dc]/60 dark:bg-white/[0.05] hover:bg-[#efe9dc] dark:hover:bg-white/10 text-[var(--paper-ink)] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer">
+          <span class="text-[11px] font-semibold">Siguiente</span>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer del Modal Ticket -->
+    <div class="pt-2 border-t border-[var(--paper-shadow)] flex items-center justify-end">
+      <button type="button" @click="cerrarDetalle()"
+        class="modal-btn-cancel px-6 py-2 text-xs sm:text-sm font-semibold cursor-pointer">
+        Cerrar
+      </button>
+    </div>
+
+    <!-- Dientes inferiores de corte estilo ticket -->
+    <div class="modal-serrated"></div>
+
+  </div>
+</div>

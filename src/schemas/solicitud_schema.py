@@ -154,6 +154,7 @@ class DictamenInput(BaseModel):
 class RespuestaAutorizacionInput(BaseModel):
     acepto: bool
     motivo_rechazo: Optional[str] = None
+    dispositivo_cliente: Optional[str] = None
 
 
 class CrearTokenFormularioInput(BaseModel):

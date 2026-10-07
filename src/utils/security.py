@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 import jwt
@@ -144,3 +145,104 @@ def require_permission(modulo: str | list[str], accion: str):
             )
         return current_user
     return permission_checker
+
+
+def PARSEAR_dispositivo_user_agent(ua_string: str | None, client_hint_model: str | None = None) -> str:
+    """
+    Convierte la cadena User-Agent HTTP y/o Client Hints en una descripción forense
+    y legible del dispositivo (marca, modelo y plataforma) y navegador para
+    constancias legales y auditorías de firma digital (Ley 527/1999 & Ley 1581/2012).
+    """
+    if not ua_string or not str(ua_string).strip():
+        if client_hint_model and str(client_hint_model).strip():
+            return f"Móvil ({client_hint_model.strip()}) · Navegador Web"
+        return "Dispositivo Web Seguro"
+
+    ua = str(ua_string)
+    ua_lower = ua.lower()
+
+    # 1. Plataforma y Fabricante
+    if "iphone" in ua_lower:
+        plataforma = "Móvil Apple (iPhone)"
+    elif "ipad" in ua_lower:
+        plataforma = "Tablet Apple (iPad)"
+    elif "macintosh" in ua_lower or "mac os x" in ua_lower or "mac os" in ua_lower:
+        plataforma = "PC Apple (macOS)"
+    elif "windows" in ua_lower:
+        win_ver = "11/10" if "nt 10.0" in ua_lower else "Windows"
+        plataforma = f"PC (Windows {win_ver})"
+    elif "android" in ua_lower:
+        # Detectar modelo de dispositivo (primero client hint, luego User-Agent)
+        modelo = str(client_hint_model or "").strip()
+        if not modelo:
+            m = re.search(r'android\s+[\d\.]+;\s*([^;\)]+)', ua, re.IGNORECASE)
+            if m:
+                raw_m = m.group(1).split('Build')[0].strip('; )(')
+                if raw_m and raw_m.lower() not in ('k', 'mobile', 'wv', 'none'):
+                    modelo = raw_m
+
+        m_lower = (modelo or ua_lower).lower()
+
+        # Si el modelo vino como huella de hardware GPU (contexto HTTP sin Client Hints)
+        if modelo.startswith("GPU:"):
+            gpu_name = modelo.replace("GPU:", "").strip()
+            gpu_lower = gpu_name.lower()
+            if "xclipse" in gpu_lower:
+                plataforma = f"Móvil Samsung Galaxy (Exynos · {gpu_name})"
+            elif "mali-g78" in gpu_lower:
+                plataforma = f"Móvil Samsung / ARM ({gpu_name})"
+            elif "adreno" in gpu_lower:
+                plataforma = f"Móvil Android (Qualcomm · {gpu_name})"
+            elif "mali" in gpu_lower:
+                plataforma = f"Móvil Android (ARM · {gpu_name})"
+            elif "powervr" in gpu_lower:
+                plataforma = f"Móvil Android (PowerVR · {gpu_name})"
+            else:
+                plataforma = f"Móvil Android ({gpu_name})"
+        elif any(x in m_lower for x in ["sm-", "samsung", "galaxy", "gt-", "sch-", "sgh-"]):
+            plataforma = f"Móvil Samsung ({modelo})" if modelo else "Móvil Samsung"
+        elif any(x in m_lower for x in ["redmi", "xiaomi", "poco", "mi ", "210", "220", "230", "240", "m20", "m21"]):
+            plataforma = f"Móvil Xiaomi ({modelo})" if modelo else "Móvil Xiaomi (Redmi / POCO)"
+        elif any(x in m_lower for x in ["moto", "motorola", "xt"]):
+            plataforma = f"Móvil Motorola ({modelo})" if modelo else "Móvil Motorola"
+        elif "pixel" in m_lower:
+            plataforma = f"Móvil Google ({modelo})" if modelo else "Móvil Google Pixel"
+        elif any(x in m_lower for x in ["huawei", "honor", "vog-", "clt-", "mar-", "ane-", "pot-"]):
+            plataforma = f"Móvil Huawei ({modelo})" if modelo else "Móvil Huawei"
+        elif any(x in m_lower for x in ["oppo", "cph"]):
+            plataforma = f"Móvil OPPO ({modelo})" if modelo else "Móvil OPPO"
+        elif any(x in m_lower for x in ["vivo", "v2"]):
+            plataforma = f"Móvil Vivo ({modelo})" if modelo else "Móvil Vivo"
+        elif any(x in m_lower for x in ["realme", "rmx"]):
+            plataforma = f"Móvil Realme ({modelo})" if modelo else "Móvil Realme"
+        elif any(x in m_lower for x in ["infinix", "tecno"]):
+            plataforma = f"Móvil Transsion ({modelo})" if modelo else "Móvil Infinix / Tecno"
+        elif "oneplus" in m_lower:
+            plataforma = f"Móvil OnePlus ({modelo})" if modelo else "Móvil OnePlus"
+        else:
+            plataforma = f"Móvil Android ({modelo})" if modelo else "Móvil (Android)"
+    elif "linux" in ua_lower:
+        plataforma = "PC (Linux)"
+    elif "cros" in ua_lower:
+        plataforma = "PC (ChromeOS)"
+    else:
+        plataforma = f"Dispositivo ({client_hint_model})" if client_hint_model else "Dispositivo Web"
+
+    # 2. Navegador Web
+    if "samsungbrowser" in ua_lower:
+        navegador = "Samsung Internet"
+    elif "edg/" in ua_lower or "edge/" in ua_lower:
+        navegador = "Microsoft Edge"
+    elif "opr/" in ua_lower or "opera" in ua_lower:
+        navegador = "Opera"
+    elif "chrome/" in ua_lower and "chromium" not in ua_lower:
+        navegador = "Google Chrome"
+    elif "safari/" in ua_lower and "chrome" not in ua_lower and "chromium" not in ua_lower:
+        navegador = "Safari"
+    elif "firefox/" in ua_lower:
+        navegador = "Firefox"
+    else:
+        navegador = "Navegador Web"
+
+    return f"{plataforma} · {navegador}"
+

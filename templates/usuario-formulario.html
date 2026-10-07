@@ -110,8 +110,11 @@
               </div>
               <div>
                 <label class="form-label">Número de documento*</label>
-                <input type="text" x-model="form.num_documento" placeholder="N° documento"
-                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
+                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                  x-model="form.num_documento"
+                  @input="form.num_documento = (form.num_documento || '').replace(/\D/g, '')"
+                  placeholder="N° documento"
+                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm font-mono"
                   :class="errors.num_documento ? 'has-error' : ''">
                 <p class="form-error" x-show="errors.num_documento" x-text="errors.num_documento"></p>
               </div>

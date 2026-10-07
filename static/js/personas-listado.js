@@ -65,6 +65,7 @@ function personasTable() {
 
     // Modal de Eliminación
     showDeleteModal: false,
+    deleteModalOpen: false,
     personaEliminar: null,
 
     // ---------------------------------------------------
@@ -468,8 +469,20 @@ function personasTable() {
         return;
       }
 
-      // Validación de documento de identidad único
-      const numDoc = String(this.form.identificacion || "").trim();
+      // Validación de documento de identidad (solo números)
+      const numDoc = String(this.form.identificacion || '').replace(/\D/g, '').trim();
+      this.form.identificacion = numDoc;
+
+      if (!numDoc) {
+        this.mensajeError = "Por favor ingresa un número de documento válido.";
+        return;
+      }
+
+      if (!/^\d+$/.test(numDoc)) {
+        this.mensajeError = "El número de documento solo debe contener números (sin puntos ni comas).";
+        return;
+      }
+
       const numDocNormalizado = numDoc.toLowerCase();
       const yaExiste = (this.personas || []).some(p => {
         if (this.editandoId && String(p.id) === String(this.editandoId)) return false;
@@ -596,22 +609,37 @@ function personasTable() {
     confirmarEliminar(p) {
       this.personaEliminar = p;
       this.showDeleteModal = true;
+      this.deleteModalOpen = true;
+    },
+
+    confirmDelete(p) {
+      this.confirmarEliminar(p);
     },
 
     cancelarEliminar() {
       this.personaEliminar = null;
       this.showDeleteModal = false;
+      this.deleteModalOpen = false;
+    },
+
+    cancelDelete() {
+      this.cancelarEliminar();
+    },
+
+    executeDelete() {
+      return this.eliminarPersona();
     },
 
     async eliminarPersona() {
       if (!this.personaEliminar) return;
       const id = this.personaEliminar.id;
 
+      // Cerrar modal de inmediato reseteando todas las banderas
+      this.cancelarEliminar();
+
       // Eliminación optimista local
       this.personas = this.personas.filter(p => p.id !== id);
       this.notificarCambio();
-      this.showDeleteModal = false;
-      this.personaEliminar = null;
 
       if (this.currentPage > this.totalPaginas) {
         this.currentPage = Math.max(1, this.totalPaginas);
@@ -625,9 +653,11 @@ function personasTable() {
         }
         if (!res.ok) {
           console.warn(`Aviso: DELETE en servidor respondió ${res.status}`);
+          await this.getPersonas();
         }
       } catch (err) {
         console.error("Error al eliminar persona en backend:", err);
+        await this.getPersonas();
       }
     }
   };

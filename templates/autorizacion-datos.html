@@ -327,7 +327,7 @@
   <!-- Token y Modo Previsualización inyectados por FastAPI -->
   <script>
     window.__TOKEN_AUTORIZACION__ = "{{ token if token is defined else '' }}";
-    window.__ES_PREVIEW__ = {{ 'true' if es_preview is defined and es_preview else 'false' }};
+    window.__ES_PREVIEW__ = "{{ 'true' if es_preview is defined and es_preview else 'false' }}" === "true";
   </script>
 
   <!-- Barra Flotante de Previsualización SuperAdmin -->
@@ -579,6 +579,18 @@
           <span class="font-bold text-emerald-300 block text-xs sm:text-sm">Ingreso Habilitado en Portería</span>
           <span class="text-slate-300">Presente su documento de identidad original en la portería física de <strong class="text-white font-semibold" x-text="datos.empresa_origen || 'INCARSA'"></strong>. Su autorización ha sido sincronizada con el control de acceso SG-SST.</span>
         </div>
+      </div>
+
+      <!-- Botón de Descarga del Certificado / Soporte Legal en PDF -->
+      <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a :href="'/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(token || 'preview') + '/certificado-pdf'"
+          target="_blank"
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-emerald-950/50 hover:shadow-emerald-900/70 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer border border-emerald-400/40"
+          title="Descargar Certificado Oficial en PDF (Formato FR_SLV_016 / SG-SST / SIC)">
+          <i class="fa-solid fa-file-pdf text-base text-emerald-200"></i>
+          <span>Descargar Certificado Oficial en PDF (SST / SIC)</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[11px] opacity-75 ml-1"></i>
+        </a>
       </div>
 
       <!-- Enlace para volver a probar en modo SuperAdmin -->
@@ -1124,10 +1136,18 @@
                 title: '¡Autorización Exitosa!',
                 text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
                 icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Descargar Certificado PDF',
+                cancelButtonText: 'Continuar',
                 customClass: { popup: 'swal-dark-mono' },
                 background: '#141416',
                 color: '#9ca3af',
-                confirmButtonColor: '#2e2e33'
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#28282d'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  window.open('/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(this.token || 'preview') + '/certificado-pdf', '_blank');
+                }
               });
             } else {
               await Swal.fire({
@@ -1144,6 +1164,35 @@
             return;
           }
 
+          // Captura forense de alta entropía del dispositivo (Client Hints + GPU WebGL Fallback)
+          let modeloCliente = '';
+          try {
+            if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+              const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
+              if (hints && hints.model) {
+                modeloCliente = String(hints.model).trim();
+              }
+            }
+          } catch (eHint) {}
+
+          // Si por estar en contexto HTTP (o navegador sin Client Hints) no se obtuvo el modelo exacto,
+          // extraer la huella de hardware de la GPU (WebGL) y resolución física del dispositivo
+          if (!modeloCliente) {
+            try {
+              const canvas = document.createElement('canvas');
+              const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+              if (gl) {
+                const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                if (dbg) {
+                  const gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '';
+                  if (gpu && !gpu.includes('SwiftShader') && !gpu.includes('llvmpipe')) {
+                    modeloCliente = 'GPU: ' + gpu.trim();
+                  }
+                }
+              }
+            } catch (eGpu) {}
+          }
+
           try {
             const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}/responder`, {
               method: 'POST',
@@ -1152,7 +1201,8 @@
               },
               body: JSON.stringify({
                 acepto: acepto,
-                motivo_rechazo: motivo
+                motivo_rechazo: motivo,
+                dispositivo_cliente: modeloCliente || null
               })
             });
 
@@ -1181,10 +1231,18 @@
                 title: '¡Autorización Exitosa!',
                 text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
                 icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Descargar Certificado PDF',
+                cancelButtonText: 'Continuar',
                 customClass: { popup: 'swal-dark-mono' },
                 background: '#141416',
                 color: '#9ca3af',
-                confirmButtonColor: '#2e2e33'
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#2e2e33'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  window.open('/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(this.token) + '/certificado-pdf', '_blank');
+                }
               });
             } else {
               Swal.fire({

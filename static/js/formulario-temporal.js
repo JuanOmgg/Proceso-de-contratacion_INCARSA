@@ -524,16 +524,23 @@ function formularioTemporal(tokenInicial) {
 
     async guardarPersonaModal() {
       this.personaModalErrors = {};
+      const numDocLimpio = String(this.nuevaPersona.numDoc || '').replace(/\D/g, '').trim();
+      this.nuevaPersona.numDoc = numDocLimpio;
+
       if (!this.nuevaPersona.nombres.trim()) this.personaModalErrors.nombres = 'Ingresa los nombres.';
       if (!this.nuevaPersona.apellidos.trim()) this.personaModalErrors.apellidos = 'Ingresa los apellidos.';
-      if (!this.nuevaPersona.numDoc.trim()) this.personaModalErrors.numDoc = 'Ingresa el número de documento.';
+      if (!numDocLimpio) {
+        this.personaModalErrors.numDoc = 'Ingresa el número de documento.';
+      } else if (!/^\d+$/.test(numDocLimpio)) {
+        this.personaModalErrors.numDoc = 'El documento solo debe contener números (sin puntos ni comas).';
+      }
       if (!this.nuevaPersona.cargo.trim()) this.personaModalErrors.cargo = 'Ingresa el cargo.';
       if (!this.nuevaPersona.correo.trim() || !this.nuevaPersona.correo.includes('@')) {
         this.personaModalErrors.correo = 'Ingresa un correo electrónico válido.';
       }
 
       // Validar que no exista otra persona con el mismo documento en la solicitud activa
-      const numDocTrim = (this.nuevaPersona.numDoc || '').trim();
+      const numDocTrim = numDocLimpio;
       if (numDocTrim) {
         const esDuplicado = (this.personas || []).some((p, idx) => {
           const docP = String(p.numDoc || p.identificacion || '').trim();
@@ -557,7 +564,7 @@ function formularioTemporal(tokenInicial) {
           nombre: this.nuevaPersona.nombres.trim(),
           apellido: this.nuevaPersona.apellidos.trim(),
           tipo_doc: this.nuevaPersona.tipoDoc,
-          identificacion: this.nuevaPersona.numDoc.trim(),
+          identificacion: numDocLimpio,
           cargo: this.nuevaPersona.cargo.trim(),
           correo: this.nuevaPersona.correo.trim(),
           observacion: this.nuevaPersona.observacion.trim(),

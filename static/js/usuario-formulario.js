@@ -251,7 +251,7 @@ function usuarioForm() {
       const nombres = String(this.form.nombres || "").trim();
       const apellidos = String(this.form.apellidos || "").trim();
       const tipo_documento = String(this.form.tipo_documento || "").trim();
-      const num_documento = String(this.form.num_documento || "").trim();
+      const num_documento = String(this.form.num_documento || "").replace(/\D/g, "").trim();
       const num_telefono = String(this.form.num_telefono || "").trim();
       const correo = String(this.form.correo || "").trim();
       const id_rol = Number(this.form.rol);
@@ -364,9 +364,11 @@ function usuarioForm() {
       if (!apellidos) this.errors.apellidos = "Este campo es obligatorio.";
       if (!tipo_documento) this.errors.tipo_documento = "Este campo es necesario.";
 
-      // Validación de documento
+      // Validación de documento (solo dígitos)
       if (!num_documento) {
         this.errors.num_documento = "Ingresa un número de documento.";
+      } else if (!/^\d+$/.test(num_documento)) {
+        this.errors.num_documento = "El número de documento solo debe contener números (sin puntos ni comas).";
       } else {
         const documentoDuplicado = this.allUsers.some(
           u => String(u.num_documento || u.identificacion || "").trim() === num_documento && 

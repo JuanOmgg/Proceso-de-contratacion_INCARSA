@@ -253,17 +253,32 @@ function correspondenciaTable() {
         // Eliminación
         // ---------------------------------------------------
         showDeleteModal: false,
+        deleteModalOpen: false,
         itemAEliminar: null,
         eliminando: false,
 
         confirmarEliminar(item) {
             this.itemAEliminar = item;
             this.showDeleteModal = true;
+            this.deleteModalOpen = true;
+        },
+
+        confirmDelete(item) {
+            this.confirmarEliminar(item);
         },
 
         cancelarEliminar() {
             this.itemAEliminar = null;
             this.showDeleteModal = false;
+            this.deleteModalOpen = false;
+        },
+
+        cancelDelete() {
+            this.cancelarEliminar();
+        },
+
+        executeDelete() {
+            return this.eliminarCorrespondencia();
         },
 
         async eliminarCorrespondencia() {
@@ -282,10 +297,11 @@ function correspondenciaTable() {
                     throw new Error(data.detail || data.mensaje || "Error al eliminar correspondencia.");
                 }
 
+                // Cerrar modal inmediatamente reseteando todas las banderas
+                this.cancelarEliminar();
+
                 // Eliminación optimista
                 this.correspondencias = this.correspondencias.filter(c => c.id !== id);
-                this.showDeleteModal = false;
-                this.itemAEliminar = null;
 
                 if (this.currentPage > this.totalPaginas) {
                     this.currentPage = Math.max(1, this.totalPaginas);

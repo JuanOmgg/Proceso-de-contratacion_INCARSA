@@ -304,18 +304,7 @@ function solicitudWizard() {
     solicitudOriginal: null,
 
     estadoClass(estado) {
-      const map = {
-        "ENVIADO": "status-enviado",
-        "EN REVISIÓN": "status-revision",
-        "EN REVISION": "status-revision",
-        "DEVUELTO PARA CORRECCIÓN": "status-devuelto",
-        "DEVUELTO": "status-devuelto",
-        "POR APROBAR": "status-aprobar",
-        "APROBADO": "status-aprobado",
-        "PRE-APROBADO": "status-aprobado",
-        "RECHAZADO": "status-rechazado"
-      };
-      return map[(estado || "").toUpperCase()] || "status-enviado";
+      return (typeof window.estadoClass === 'function') ? window.estadoClass(estado) : 'status-enviado';
     },
 
     get esSuperAdmin() {
@@ -1601,7 +1590,11 @@ function solicitudWizard() {
 
       if (!apellidos) this.personaModalErrors.apellidos = "Ingresa los apellidos.";
       if (!nombres) this.personaModalErrors.nombres = "Ingresa los nombres.";
-      if (!numDoc) this.personaModalErrors.numDoc = "Ingresa el número de documento.";
+      if (!numDoc) {
+        this.personaModalErrors.numDoc = "Ingresa el número de documento.";
+      } else if (!/^\d+$/.test(numDoc)) {
+        this.personaModalErrors.numDoc = "El documento solo debe contener números (sin puntos ni comas).";
+      }
       if (!cargo) this.personaModalErrors.cargo = "Ingresa el cargo.";
       if (!correo) {
         this.personaModalErrors.correo = "Ingresa el correo electrónico.";
@@ -1644,7 +1637,7 @@ function solicitudWizard() {
       const apellidos = String(this.nuevaPersona.apellidos || "").trim();
       const nombreCompleto = `${nombres} ${apellidos}`.trim();
       const tipoDoc = this.nuevaPersona.tipoDoc || "CC";
-      const numDoc = String(this.nuevaPersona.numDoc || "").trim();
+      const numDoc = String(this.nuevaPersona.numDoc || "").replace(/\D/g, "").trim();
       const cargo = String(this.nuevaPersona.cargo || "").trim();
       const correo = String(this.nuevaPersona.correo || "").trim().toLowerCase();
       const observacion = String(this.nuevaPersona.observacion || "").trim();

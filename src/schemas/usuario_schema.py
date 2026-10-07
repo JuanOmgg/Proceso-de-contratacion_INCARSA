@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict, Field
+from pydantic import BaseModel, EmailStr, field_serializer, field_validator, ConfigDict, Field
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 
@@ -12,6 +12,16 @@ class UsuarioInput(BaseModel):
     contrasena: str
     id_rol: int
     plantas_ids: Optional[List[int]] = Field(default_factory=list)
+
+    @field_validator('num_documento')
+    @classmethod
+    def validar_num_documento(cls, v: str) -> str:
+        if v is not None:
+            v_str = str(v).strip()
+            if '.' in v_str or ',' in v_str or not v_str.isdigit():
+                raise ValueError("El número de documento no debe contener puntos ni comas, solo números.")
+            return v_str
+        return v
 
 # Modelo individual para la lectura del usuario
 class UsuarioData(BaseModel):
@@ -55,3 +65,13 @@ class UpdateUsuarioInput(BaseModel):
     id_rol: Optional[int] = None
     is_active: Optional[bool] = None
     plantas_ids: Optional[List[int]] = None
+
+    @field_validator('num_documento')
+    @classmethod
+    def validar_num_documento(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v_str = str(v).strip()
+            if '.' in v_str or ',' in v_str or not v_str.isdigit():
+                raise ValueError("El número de documento no debe contener puntos ni comas, solo números.")
+            return v_str
+        return v

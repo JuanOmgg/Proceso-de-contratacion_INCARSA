@@ -1,0 +1,37 @@
+<!-- ============================================================
+   COMPONENTE COMPARTIDO: Paginación de Tabla
+   Compatible con Alpine.js (currentPage, totalPaginas/totalPages, pageSize, goToPage, resetPage)
+============================================================= -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-muted)]">
+  <div class="flex items-center gap-2">
+    <span>Mostrar</span>
+    <select x-model.number="pageSize" @change="resetPage()" class="input-field rounded-md px-2 py-1 text-xs sm:text-sm border border-[var(--border-subtle)]">
+      <option value="5">5</option>
+      <option value="8">8</option>
+      <option value="10">10</option>
+      <option value="15">15</option>
+      <option value="25">25</option>
+      <option value="30">30</option>
+    </select>
+    <span>registros</span>
+    <template x-if="typeof rangoMostrado !== 'undefined' && rangoMostrado">
+      <span class="text-[var(--text-muted)] font-medium">· <strong class="text-[var(--text-primary)] font-semibold" x-text="rangoMostrado"></strong></span>
+    </template>
+  </div>
+  
+  <div class="flex items-center gap-2">
+    <button type="button" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn px-2 py-1 rounded-md cursor-pointer"
+      :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''" title="Página anterior">
+      <i class="fa-solid fa-chevron-left text-xs"></i>
+    </button>
+    
+    <span class="text-[var(--text-muted)] select-none">
+      Página <span x-text="currentPage" class="font-semibold text-[var(--text-primary)]"></span> de <span x-text="typeof totalPaginas !== 'undefined' ? totalPaginas : (typeof totalPages !== 'undefined' ? totalPages : 1)"></span>
+    </span>
+    
+    <button type="button" @click="goToPage(currentPage + 1)" :disabled="currentPage === (typeof totalPaginas !== 'undefined' ? totalPaginas : (typeof totalPages !== 'undefined' ? totalPages : 1))" class="action-icon-btn px-2 py-1 rounded-md cursor-pointer"
+      :class="currentPage === (typeof totalPaginas !== 'undefined' ? totalPaginas : (typeof totalPages !== 'undefined' ? totalPages : 1)) ? 'opacity-40 cursor-not-allowed' : ''" title="Página siguiente">
+      <i class="fa-solid fa-chevron-right text-xs"></i>
+    </button>
+  </div>
+</div>

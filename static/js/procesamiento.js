@@ -540,14 +540,7 @@ function procesamientoBoard() {
     },
 
     estadoClass(estado) {
-      const map = {
-        "ENVIADO": "status-enviado",
-        "EN REVISIÓN": "status-revision",
-        "POR APROBAR": "status-aprobar",
-        "APROBADO": "status-aprobado",
-        "RECHAZADO": "status-rechazado"
-      };
-      return map[estado] || "status-enviado";
+      return (typeof window.estadoClass === 'function') ? window.estadoClass(estado) : 'status-enviado';
     },
 
     // Índice de la etapa actual dentro del flujo (0-3).

@@ -247,33 +247,7 @@
             </p>
 
             <!-- ===== Paginación ===== -->
-            <div
-              class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-sm">
-              <div class="flex items-center gap-2 text-[var(--text-muted)]">
-                <span>Mostrar</span>
-                <select x-model.number="pageSize" @change="resetPage()"
-                  class="input-field rounded-md px-2 py-1 text-sm">
-                  <option value="5">5</option>
-                  <option value="8">8</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                </select>
-                <span>registros</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="action-icon-btn"
-                  :class="currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''">
-                  <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <span class="text-[var(--text-muted)]">Página <span x-text="currentPage"
-                    class="font-semibold text-[var(--text-primary)]"></span> de <span
-                    x-text="totalPaginas"></span></span>
-                <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPaginas"
-                  class="action-icon-btn" :class="currentPage === totalPaginas ? 'opacity-40 cursor-not-allowed' : ''">
-                  <i class="fa-solid fa-chevron-right"></i>
-                </button>
-              </div>
-            </div>
+            {% include 'components/pagination.html' %}
           </div>
 
         </div>
@@ -283,34 +257,9 @@
       {% set footer_modulo = 'Módulo de Registro de Correspondencia' %}
       {% include 'pages/footer.html' %}
 
-      <!-- ============================================================
-         MODAL: Confirmar eliminación (Estilo Alertas Ticket)
-      ============================================================= -->
-      <div x-show="showDeleteModal" x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-        @keydown.escape.window="cancelarEliminar()">
-        <div x-show="showDeleteModal" class="modal-panel w-full max-w-sm p-7 text-center" @click.outside="cancelarEliminar()">
-          <div class="modal-stamp warning">
-            <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
-          </div>
-          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar correspondencia?</h3>
-          <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
-            ¿Seguro que deseas eliminar el radicado <br>
-            <span class="font-bold text-[var(--paper-ink)] font-mono text-base"
-              x-text="itemAEliminar ? (itemAEliminar.radicado || ('#' + itemAEliminar.id)) : ''"></span>?<br>
-            Esta acción es irreversible y eliminará el registro de la base de datos.
-          </p>
-          <div class="flex items-center justify-center gap-3">
-            <button type="button" @click="cancelarEliminar()" class="modal-btn-cancel flex-1" :disabled="eliminando">
-              Cancelar
-            </button>
-            <button type="button" @click="eliminarCorrespondencia()" class="modal-btn-confirm flex-1 bg-red-600 hover:bg-red-700 text-white" :disabled="eliminando">
-              <span x-text="eliminando ? 'Eliminando...' : 'Eliminar'"></span>
-            </button>
-          </div>
-          <div class="modal-serrated"></div>
-        </div>
-      </div>
+      <!-- Modal: Confirmar eliminación (Modular) -->
+      {% set modal_delete_tipo = 'correspondencia' %}
+      {% include 'components/modals/modal-confirmar-eliminar.html' %}
 
       <!-- ============================================================
          MODAL: Editar Correspondencia

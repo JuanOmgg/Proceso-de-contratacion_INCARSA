@@ -61,6 +61,8 @@ document.addEventListener('alpine:init', () => {
     },
     personasDetalle: [],
     searchPersonaModal: '',
+    paginaModal: 1,
+    porPaginaModal: 3,
 
     // Instancias de Chart.js y Flatpickr
     chartTendencia: null,
@@ -421,6 +423,7 @@ document.addEventListener('alpine:init', () => {
       };
       this.personasDetalle = [];
       this.searchPersonaModal = '';
+      this.paginaModal = 1;
       this.modalDetalleAbierto = true;
       this.cargandoDetalle = true;
 
@@ -445,6 +448,8 @@ document.addEventListener('alpine:init', () => {
 
     cerrarDetalle() {
       this.modalDetalleAbierto = false;
+      this.paginaModal = 1;
+      this.searchPersonaModal = '';
     },
 
     get personasDetalleFiltradas() {
@@ -459,6 +464,46 @@ document.addEventListener('alpine:init', () => {
         (p.empresa_contratista && p.empresa_contratista.toLowerCase().includes(q)) ||
         (p.radicados && p.radicados.some(rad => rad.toLowerCase().includes(q)))
       );
+    },
+
+    get totalPaginasModal() {
+      return Math.max(1, Math.ceil(this.personasDetalleFiltradas.length / this.porPaginaModal));
+    },
+
+    get personasDetallePaginadas() {
+      if (this.paginaModal > this.totalPaginasModal) {
+        this.paginaModal = this.totalPaginasModal;
+      }
+      const inicio = (this.paginaModal - 1) * this.porPaginaModal;
+      return this.personasDetalleFiltradas.slice(inicio, inicio + this.porPaginaModal);
+    },
+
+    get rangoPersonasModal() {
+      if (this.personasDetalleFiltradas.length === 0) return '0';
+      const inicio = (this.paginaModal - 1) * this.porPaginaModal + 1;
+      const fin = Math.min(this.paginaModal * this.porPaginaModal, this.personasDetalleFiltradas.length);
+      return `${inicio} - ${fin}`;
+    },
+
+    paginaSiguienteModal() {
+      if (this.paginaModal < this.totalPaginasModal) {
+        this.paginaModal++;
+        this.scrollArribaModal();
+      }
+    },
+
+    paginaAnteriorModal() {
+      if (this.paginaModal > 1) {
+        this.paginaModal--;
+        this.scrollArribaModal();
+      }
+    },
+
+    scrollArribaModal() {
+      setTimeout(() => {
+        const el = document.getElementById('lista_personas_modal_scroll');
+        if (el) el.scrollTop = 0;
+      }, 10);
     },
 
     // ----------------------------------------------------
