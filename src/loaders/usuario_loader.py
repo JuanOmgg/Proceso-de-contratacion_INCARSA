@@ -456,7 +456,7 @@ def DELETE_user_db(id_user: int) -> dict:
                     }
 
                 try:
-                    cursor.execute("DELETE FROM usuarios_plantas WHERE id_usuario = %s", (id_user,))
+                    cursor.execute("DELETE FROM usuario_plantas WHERE id_usuario = %s", (id_user,))
                     cursor.execute("DELETE FROM usuarios WHERE id = %s", (id_user,)) #verifica si existe
 
                     if cursor.rowcount == 0:
@@ -473,7 +473,7 @@ def DELETE_user_db(id_user: int) -> dict:
                     err_str = str(db_err).lower()
                     if "1451" in err_str or "foreign key constraint" in err_str or "constraint" in err_str:
                         # Si tiene solicitudes u otros registros asociados por auditoría, aplicar soft delete automático
-                        cursor.execute("DELETE FROM usuarios_plantas WHERE id_usuario = %s", (id_user,))
+                        cursor.execute("DELETE FROM usuario_plantas WHERE id_usuario = %s", (id_user,))
                         cursor.execute("UPDATE usuarios SET is_active = 0 WHERE id = %s", (id_user,))
                         conexion.commit()
                         print(f"[USUARIOS] Usuario #{id_user} desactivado permanentemente (posee registros históricos vinculados).")
