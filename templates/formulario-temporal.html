@@ -1,71 +1,60 @@
-<!DOCTYPE html>
-<html lang="es" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Formulario de Ingreso para Terceros · PSI INCARSA</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link rel="stylesheet" href="/static/css/formulario-temporal.css">
-  <script src="/static/js/formulario-temporal.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
-</head>
-<body class="min-h-screen flex flex-col justify-between py-6 px-3 sm:px-6 lg:px-8 antialiased" x-data="formularioTemporal('{{ token }}')" x-init="init()">
+{% extends 'pages/base_forms.html' %}
 
-  <!-- Cabecera / Marca INCARSA -->
-  <header class="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-900/40 flex-shrink-0">
-        <i class="fa-solid fa-file-signature text-white text-lg"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-lg text-white tracking-tight flex items-center gap-2">
-          PSI INCARSA
-          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-950 text-purple-300 border border-purple-800">Formulario Externo</span>
-        </h1>
-        <p class="text-xs text-slate-400">Portal de diligenciamiento para empresas contratistas y terceros</p>
-      </div>
-    </div>
+{% block title%}Formulario de Ingreso{% endblock %}
 
-    <!-- Indicador de vencimiento -->
-    <div x-show="tokenValido && metadata" x-cloak
-      class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm self-stretch sm:self-auto justify-between sm:justify-start">
-      <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs flex-shrink-0">
-        <i class="fa-regular fa-clock"></i>
-      </div>
-      <div class="text-left sm:text-right">
-        <span class="text-[10px] text-slate-400 block font-medium uppercase tracking-wider leading-none mb-0.5">Vencimiento del pase</span>
-        <span class="text-xs font-mono text-amber-400 font-semibold" x-text="metadata?.fecha_expiracion ? formatearFechaHora(metadata.fecha_expiracion) : 'Enlace activo'"></span>
-      </div>
-    </div>
-  </header>
+{% block extra_head %}
+{% endblock %}
 
-  <!-- Contenido Principal -->
-  <main class="max-w-6xl w-full mx-auto flex-1 mb-8">
+{% block extra_js %}
+<script src="{{ url_for('static', path='js/formulario-temporal.js') }}?v=3.5"></script>
+{% endblock %}
+
+{% block header_width %}max-w-6xl{% endblock %}
+{% block footer_width %}max-w-6xl{% endblock %}
+
+{% block body_attrs %}x-data="formularioTemporal('{{ token }}')" x-init="init()" x-cloak{% endblock %}
+
+{% block icon_form %}<i class="fa-solid fa-file-signature"></i>{% endblock %}
+{% block title_form %}<span>Formulario de Ingreso</span>{% endblock %}
+{% block description %}Portal de diligenciamiento para empresas contratistas y terceros{% endblock %}
+{% block badge_form %}Temporal{% endblock %}
+
+{% block header_extra %}
+<!-- Indicador de vencimiento -->
+<div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800 shadow-sm self-stretch sm:self-auto justify-between sm:justify-start">
+  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs flex-shrink-0">
+    <i class="fa-regular fa-clock"></i>
+  </div>
+  <div class="text-left sm:text-right">
+    <span class="text-[10px] text-zinc-400 block font-medium uppercase tracking-wider leading-none mb-0.5">Vencimiento del pase</span>
+    <span class="text-xs font-mono text-amber-400 font-semibold"
+          x-text="metadata && metadata.fecha_expiracion ? formatearFechaHora(metadata.fecha_expiracion) : (cargando ? 'Validando...' : '24 horas de vigencia')">
+      Enlace activo
+    </span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Contenido Principal -->
+<main class="max-w-6xl w-full mx-auto flex-1 mb-8">
 
     <!-- ESTADO 1: CARGANDO TOKEN -->
     <div x-show="cargando" class="glass-card rounded-2xl p-12 text-center shadow-2xl">
-      <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500 mb-4"></i>
-      <h2 class="text-lg font-bold text-white">Validando enlace seguro...</h2>
-      <p class="text-xs text-slate-400 mt-1">Por favor espera un momento mientras cargamos el formulario.</p>
+      <i class="fa-solid fa-spinner fa-spin text-3xl role-spinner mb-3"></i>
+      <h2 class="text-lg font-bold font-brand text-white">Validando enlace seguro...</h2>
+      <p class="text-xs text-zinc-400 mt-1">Por favor espera un momento mientras cargamos el formulario.</p>
     </div>
 
     <!-- ESTADO 2: TOKEN INVÁLIDO, EXPIRADO O REVOCADO -->
-    <div x-show="!cargando && !tokenValido" x-cloak class="glass-card rounded-2xl p-8 sm:p-12 text-center shadow-2xl border-red-500/20 max-w-lg mx-auto">
-      <div class="w-16 h-16 rounded-full bg-red-950/60 border border-red-500/30 flex items-center justify-center mx-auto text-red-400 text-2xl mb-4">
+    <div x-show="!cargando && !tokenValido" x-cloak class="glass-card rounded-2xl p-8 sm:p-12 text-center shadow-2xl border-rose-500/30 max-w-lg mx-auto">
+      <div class="w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400 text-2xl mb-4 shadow-lg shadow-rose-500/10">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <h2 class="text-xl font-bold text-white mb-2">Enlace no disponible</h2>
-      <p class="text-sm text-slate-300 leading-relaxed mb-6" x-text="mensajeError || 'El enlace no es válido o ha expirado.'"></p>
-      <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 text-center space-y-1.5 mb-6">
-        <p><strong class="text-slate-300">¿Qué puedo hacer?</strong></p>
+      <h2 class="text-xl font-bold font-brand text-white mb-2">Enlace no disponible</h2>
+      <p class="text-sm text-zinc-300 leading-relaxed mb-6" x-text="mensajeError || 'El enlace no es válido o ha expirado.'"></p>
+      <div class="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs text-zinc-400 text-center space-y-1.5 mb-6">
+        <p><strong class="text-zinc-300">¿Qué puedo hacer?</strong></p>
         <p>Comunícate con el <strong>Solicitante</strong> que te proporcionó este formulario para que genere un nuevo enlace activo.</p>
       </div>
     </div>
@@ -74,25 +63,25 @@
     <div x-show="!cargando && tokenValido && !solicitudExitosa" x-cloak class="space-y-6">
 
       <!-- Banner de bienvenida / solicitante responsable -->
-      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-purple-500/20 bg-gradient-to-r from-purple-950/20 to-transparent">
+      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-[var(--role-border)] bg-[var(--role-tint-bg)]">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 flex-shrink-0">
+          <div class="w-9 h-9 rounded-xl role-icon-box flex items-center justify-center text-sm flex-shrink-0">
             <i class="fa-solid fa-user-shield text-sm"></i>
           </div>
           <div>
-            <span class="text-[11px] text-slate-400 font-medium block">Solicitante Responsable en PSI:</span>
-            <strong class="text-sm text-purple-300 font-semibold" x-text="metadata?.solicitante_nombre || 'Solicitante PSI'"></strong>
+            <span class="text-[11px] role-text-accent font-medium block">Solicitante Responsable en PSI:</span>
+            <strong class="text-sm text-white font-bold" x-text="metadata?.solicitante_nombre || 'Solicitante PSI'"></strong>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <!-- Vencimiento del formulario -->
           <div class="text-xs text-amber-300 bg-amber-950/40 px-3 py-1.5 rounded-lg border border-amber-500/30 flex items-center gap-1.5" x-show="metadata?.fecha_expiracion">
             <i class="fa-regular fa-clock text-amber-400 text-xs"></i>
-            <span>Vence: <strong class="font-mono text-amber-300" x-text="formatearFechaHora(metadata.fecha_expiracion)"></strong></span>
+            <span>Vence: <strong class="font-mono text-amber-300" x-text="formatearFechaHora(metadata?.fecha_expiracion)"></strong></span>
           </div>
-          <div class="text-xs text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
-            <i class="fa-solid fa-info-circle text-purple-400 mr-1"></i>
-            Tu envío entrará en revisión preliminar (<strong class="text-purple-300">PRE-ENVIADO</strong>).
+          <div class="text-xs text-zinc-400 bg-zinc-900/60 px-3 py-1.5 rounded-lg border border-zinc-800">
+            <i class="fa-solid fa-info-circle role-text-accent mr-1"></i>
+            Tu envío entrará en revisión preliminar (<span class="role-badge px-2 py-0.5 rounded-full font-bold text-[10px]">PRE-ENVIADO</span>).
           </div>
         </div>
       </div>
@@ -100,67 +89,67 @@
       <!-- Barra de progreso / Pasos -->
       <div class="glass-card rounded-2xl p-2.5 sm:p-3.5">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 text-center text-xs font-semibold">
-          <button type="button" @click="paso = 1" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-            :class="paso === 1 ? 'bg-purple-600 text-white shadow-md' : (paso > 1 ? 'text-emerald-400 bg-emerald-950/30 border border-emerald-900/40' : 'text-slate-500 hover:text-slate-400 bg-slate-900/40')">
+          <button type="button" @click="paso = 1" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 font-brand"
+            :class="paso === 1 ? 'btn-brand text-white shadow-md font-bold' : (paso > 1 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 font-bold' : 'text-zinc-400 hover:text-zinc-200 bg-zinc-900/60 border border-zinc-800')">
             <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-              :class="paso === 1 ? 'bg-white/20 text-white' : (paso > 1 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500')">1</span>
+              :class="paso === 1 ? 'bg-white/20 text-white' : (paso > 1 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-500')">1</span>
             <span class="truncate">Datos Solicitud</span>
           </button>
-          <button type="button" @click="paso = 2" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-            :class="paso === 2 ? 'bg-purple-600 text-white shadow-md' : (paso > 2 ? 'text-emerald-400 bg-emerald-950/30 border border-emerald-900/40' : 'text-slate-500 hover:text-slate-400 bg-slate-900/40')">
+          <button type="button" @click="paso = 2" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 font-brand"
+            :class="paso === 2 ? 'btn-brand text-white shadow-md font-bold' : (paso > 2 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 font-bold' : 'text-zinc-400 hover:text-zinc-200 bg-zinc-900/60 border border-zinc-800')">
             <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-              :class="paso === 2 ? 'bg-white/20 text-white' : (paso > 2 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500')">2</span>
+              :class="paso === 2 ? 'bg-white/20 text-white' : (paso > 2 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-500')">2</span>
             <span class="truncate">Ingresantes (<span x-text="personas.length"></span>)</span>
           </button>
-          <button type="button" @click="paso = 3" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-            :class="paso === 3 ? 'bg-purple-600 text-white shadow-md' : (paso > 3 ? 'text-emerald-400 bg-emerald-950/30 border border-emerald-900/40' : 'text-slate-500 hover:text-slate-400 bg-slate-900/40')">
+          <button type="button" @click="paso = 3" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 font-brand"
+            :class="paso === 3 ? 'btn-brand text-white shadow-md font-bold' : (paso > 3 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 font-bold' : 'text-zinc-400 hover:text-zinc-200 bg-zinc-900/60 border border-zinc-800')">
             <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-              :class="paso === 3 ? 'bg-white/20 text-white' : (paso > 3 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500')">3</span>
+              :class="paso === 3 ? 'bg-white/20 text-white' : (paso > 3 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-500')">3</span>
             <span class="truncate">Vehículos y Cómputo</span>
           </button>
-          <button type="button" @click="paso = 4" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-            :class="paso === 4 ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-400 bg-slate-900/40'">
+          <button type="button" @click="paso = 4" class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 font-brand"
+            :class="paso === 4 ? 'btn-brand text-white shadow-md font-bold' : 'text-zinc-400 hover:text-zinc-200 bg-zinc-900/60 border border-zinc-800'">
             <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-              :class="paso === 4 ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-500'">4</span>
+              :class="paso === 4 ? 'bg-white/20 text-white' : 'bg-zinc-800 text-zinc-500'">4</span>
             <span class="truncate">Resumen y Envío</span>
           </button>
         </div>
       </div>
 
       <!-- PASO 1: DATOS GENERALES -->
-      <div x-show="paso === 1" class="glass-card rounded-2xl p-5 sm:p-7 md:p-8 space-y-6">
-        <h2 class="font-bold text-base sm:text-lg text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-          <i class="fa-solid fa-briefcase text-purple-400"></i> Información de la Empresa y la Actividad
+      <div x-show="paso === 1" class="glass-card rounded-2xl p-5 sm:p-7 md:p-8 space-y-8">
+        <h2 class="font-bold font-brand text-base sm:text-lg text-white border-b border-zinc-800 pb-4 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-briefcase role-text-accent"></i> Información de la Empresa y la Actividad
         </h2>
 
-        <div class="space-y-5">
+        <div class="space-y-8 sm:space-y-9">
           <!-- Empresa Contratista (Fijada y predefinida desde el pase temporal emitido por el Solicitante - No editable) -->
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-semibold text-slate-300">
+            <div class="flex items-center justify-between mb-2.5">
+              <label class="block text-xs font-semibold text-zinc-300">
                 Empresa Contratista: <span class="text-red-400">*</span>
               </label>
-              <span class="text-[10px] text-purple-300/80 font-medium flex items-center gap-1">
+              <span class="text-[10px] role-text-accent/80 font-medium flex items-center gap-1">
                 <i class="fa-solid fa-lock text-[9px]"></i> Asignada por el Solicitante
               </span>
             </div>
 
             <!-- Tarjeta Fija de Contratista Asignada -->
-            <div class="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div class="company-card-box flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-purple-600/30 border border-purple-500/40 flex items-center justify-center text-purple-300 flex-shrink-0">
-                  <i class="fa-solid fa-building-circle-check text-sm"></i>
+                <div class="w-8 h-8 rounded-lg role-icon-box flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fa-solid fa-building-circle-check"></i>
                 </div>
                 <div class="truncate">
                   <strong class="block text-xs text-white font-bold truncate" x-text="getContratistaNombre() || 'Cargando empresa contratista...'"></strong>
-                  <span class="text-[10px] text-purple-300 font-mono" x-show="getContratistaNit()" x-text="'NIT: ' + getContratistaNit()"></span>
+                  <span class="text-[10px] text-zinc-400 font-mono" x-show="getContratistaNit()" x-text="'NIT: ' + getContratistaNit()"></span>
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-950/70 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 flex-shrink-0" x-show="metadata?.fecha_expiracion">
-                  <i class="fa-regular fa-clock text-[10px] text-amber-400"></i> Vence: <span class="font-mono" x-text="formatearFechaHora(metadata.fecha_expiracion)"></span>
+                  <i class="fa-regular fa-clock text-[10px] text-amber-400"></i> Vence: <span class="font-mono" x-text="formatearFechaHora(metadata?.fecha_expiracion)"></span>
                 </span>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-900/60 text-purple-200 border border-purple-700/60 flex items-center gap-1.5 flex-shrink-0">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold role-badge flex items-center gap-1.5 flex-shrink-0">
                   <i class="fa-solid fa-lock text-[9px]"></i> Asignada en pase
                 </span>
               </div>
@@ -175,8 +164,8 @@
 
           <!-- Nivel de Riesgo (3 Botones interactivos) -->
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-semibold text-slate-300">
+            <div class="flex items-center justify-between mb-2.5">
+              <label class="block text-xs font-semibold text-zinc-300">
                 Nivel de riesgo de la actividad: <span class="text-red-400">*</span>
               </label>
               <span class="text-[11px] font-bold"
@@ -187,124 +176,188 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <!-- BAJO -->
               <button type="button" @click="form.nivel_riesgo = 'BAJO'"
-                class="p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative select-none"
-                :class="form.nivel_riesgo === 'BAJO'
-                  ? 'bg-emerald-950/50 border-emerald-500 text-white shadow-lg shadow-emerald-950/60 ring-1 ring-emerald-500/40'
-                  : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300'">
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.nivel_riesgo === 'BAJO' ? 'is-selected-bajo text-white' : 'text-zinc-400'">
                 <div class="flex items-center justify-between w-full mb-1.5">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full"
-                      :class="form.nivel_riesgo === 'BAJO' ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-emerald-600/40'"></span>
+                      :class="form.nivel_riesgo === 'BAJO' ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-emerald-500/40'"></span>
                     <span class="font-bold text-sm tracking-wide"
-                      :class="form.nivel_riesgo === 'BAJO' ? 'text-emerald-300' : 'text-slate-300'">BAJO</span>
+                      :class="form.nivel_riesgo === 'BAJO' ? 'text-emerald-300' : 'text-zinc-300'">BAJO</span>
                   </div>
                   <i class="fa-solid fa-circle-check text-emerald-400 text-sm" x-show="form.nivel_riesgo === 'BAJO'"></i>
                 </div>
                 <p class="text-[11px] leading-snug"
-                  :class="form.nivel_riesgo === 'BAJO' ? 'text-emerald-200/90' : 'text-slate-500'">
+                  :class="form.nivel_riesgo === 'BAJO' ? 'text-emerald-200/90' : 'text-zinc-500'">
                   Riesgo I · Administrativo, comercial o consultivo sin trabajo de campo
                 </p>
               </button>
 
               <!-- MEDIO -->
               <button type="button" @click="form.nivel_riesgo = 'MEDIO'"
-                class="p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative select-none"
-                :class="form.nivel_riesgo === 'MEDIO'
-                  ? 'bg-amber-950/50 border-amber-500 text-white shadow-lg shadow-amber-950/60 ring-1 ring-amber-500/40'
-                  : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300'">
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.nivel_riesgo === 'MEDIO' ? 'is-selected-medio text-white' : 'text-zinc-400'">
                 <div class="flex items-center justify-between w-full mb-1.5">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full"
-                      :class="form.nivel_riesgo === 'MEDIO' ? 'bg-amber-400 shadow-sm shadow-amber-400' : 'bg-amber-600/40'"></span>
+                      :class="form.nivel_riesgo === 'MEDIO' ? 'bg-amber-400 shadow-sm shadow-amber-400' : 'bg-amber-500/40'"></span>
                     <span class="font-bold text-sm tracking-wide"
-                      :class="form.nivel_riesgo === 'MEDIO' ? 'text-amber-300' : 'text-slate-300'">MEDIO</span>
+                      :class="form.nivel_riesgo === 'MEDIO' ? 'text-amber-300' : 'text-zinc-300'">MEDIO</span>
                   </div>
                   <i class="fa-solid fa-circle-check text-amber-400 text-sm" x-show="form.nivel_riesgo === 'MEDIO'"></i>
                 </div>
                 <p class="text-[11px] leading-snug"
-                  :class="form.nivel_riesgo === 'MEDIO' ? 'text-amber-200/90' : 'text-slate-500'">
+                  :class="form.nivel_riesgo === 'MEDIO' ? 'text-amber-200/90' : 'text-zinc-500'">
                   Riesgo II o III · Inspecciones, logística, mantenimiento liviano o talleres
                 </p>
               </button>
 
               <!-- ALTO -->
               <button type="button" @click="form.nivel_riesgo = 'ALTO'"
-                class="p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative select-none"
-                :class="form.nivel_riesgo === 'ALTO'
-                  ? 'bg-rose-950/50 border-rose-500 text-white shadow-lg shadow-rose-950/60 ring-1 ring-rose-500/40'
-                  : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300'">
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.nivel_riesgo === 'ALTO' ? 'is-selected-alto text-white' : 'text-zinc-400'">
                 <div class="flex items-center justify-between w-full mb-1.5">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full"
-                      :class="form.nivel_riesgo === 'ALTO' ? 'bg-rose-400 shadow-sm shadow-rose-400' : 'bg-rose-600/40'"></span>
+                      :class="form.nivel_riesgo === 'ALTO' ? 'bg-rose-400 shadow-sm shadow-rose-400' : 'bg-rose-500/40'"></span>
                     <span class="font-bold text-sm tracking-wide"
-                      :class="form.nivel_riesgo === 'ALTO' ? 'text-rose-300' : 'text-slate-300'">ALTO</span>
+                      :class="form.nivel_riesgo === 'ALTO' ? 'text-rose-300' : 'text-zinc-300'">ALTO</span>
                   </div>
                   <i class="fa-solid fa-circle-check text-rose-400 text-sm" x-show="form.nivel_riesgo === 'ALTO'"></i>
                 </div>
                 <p class="text-[11px] leading-snug"
-                  :class="form.nivel_riesgo === 'ALTO' ? 'text-rose-200/90' : 'text-slate-500'">
+                  :class="form.nivel_riesgo === 'ALTO' ? 'text-rose-200/90' : 'text-zinc-500'">
                   Riesgo IV o V · Alturas, espacios confinados, caliente o energías peligrosas
                 </p>
               </button>
             </div>
           </div>
 
+          <!-- Tipo de contratista / ingreso (Contratista, Proveedor, Visita) -->
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <label class="block text-xs font-semibold text-zinc-300">
+                Tipo de contratista / ingreso: <span class="text-red-400">*</span>
+              </label>
+              <span class="text-[11px] font-bold role-text-accent"
+                x-text="'Seleccionado: ' + (form.tipo_personal || 'Contratista')"></span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- Contratista -->
+              <button type="button" @click="form.tipo_personal = 'Contratista'"
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.tipo_personal === 'Contratista' ? 'is-selected-brand text-white' : 'text-zinc-400'">
+                <div class="flex items-center justify-between w-full mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full"
+                      :class="form.tipo_personal === 'Contratista' ? 'bg-[var(--role-primary)] shadow-sm shadow-[var(--role-glow)]' : 'bg-zinc-700'"></span>
+                    <span class="font-bold text-sm tracking-wide"
+                      :class="form.tipo_personal === 'Contratista' ? 'role-text-accent' : 'text-zinc-300'">CONTRATISTA</span>
+                  </div>
+                  <i class="fa-solid fa-circle-check role-text-accent text-sm" x-show="form.tipo_personal === 'Contratista'"></i>
+                </div>
+                <p class="text-[11px] leading-snug"
+                  :class="form.tipo_personal === 'Contratista' ? 'text-zinc-200/90' : 'text-zinc-500'">
+                  Ejecución de obras, labores técnicas especializadas o prestación de servicios.
+                </p>
+              </button>
+
+              <!-- Proveedor -->
+              <button type="button" @click="form.tipo_personal = 'Proveedor'"
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.tipo_personal === 'Proveedor' ? 'is-selected-brand text-white' : 'text-zinc-400'">
+                <div class="flex items-center justify-between w-full mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full"
+                      :class="form.tipo_personal === 'Proveedor' ? 'bg-[var(--role-primary)] shadow-sm shadow-[var(--role-glow)]' : 'bg-zinc-700'"></span>
+                    <span class="font-bold text-sm tracking-wide"
+                      :class="form.tipo_personal === 'Proveedor' ? 'role-text-accent' : 'text-zinc-300'">PROVEEDOR</span>
+                  </div>
+                  <i class="fa-solid fa-circle-check role-text-accent text-sm" x-show="form.tipo_personal === 'Proveedor'"></i>
+                </div>
+                <p class="text-[11px] leading-snug"
+                  :class="form.tipo_personal === 'Proveedor' ? 'text-zinc-200/90' : 'text-zinc-500'">
+                  Entrega, suministro o retiro de insumos, materiales, equipos o repuestos.
+                </p>
+              </button>
+
+              <!-- Visita -->
+              <button type="button" @click="form.tipo_personal = 'Visita'"
+                class="selection-card text-left flex flex-col justify-between"
+                :class="form.tipo_personal === 'Visita' ? 'is-selected-brand text-white' : 'text-zinc-400'">
+                <div class="flex items-center justify-between w-full mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full"
+                      :class="form.tipo_personal === 'Visita' ? 'bg-[var(--role-primary)] shadow-sm shadow-[var(--role-glow)]' : 'bg-zinc-700'"></span>
+                    <span class="font-bold text-sm tracking-wide"
+                      :class="form.tipo_personal === 'Visita' ? 'role-text-accent' : 'text-zinc-300'">VISITA</span>
+                  </div>
+                  <i class="fa-solid fa-circle-check role-text-accent text-sm" x-show="form.tipo_personal === 'Visita'"></i>
+                </div>
+                <p class="text-[11px] leading-snug"
+                  :class="form.tipo_personal === 'Visita' ? 'text-zinc-200/90' : 'text-zinc-500'">
+                  Reuniones técnicas, auditorías, acompañamiento o recorridos institucionales.
+                </p>
+              </button>
+            </div>
+          </div>
+
           <!-- Fechas de Ingreso y Salida con Calendarios Flatpickr -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label class="block text-xs font-bold text-zinc-300 mb-2">
                 Fecha de ingreso estimada: <span class="text-red-400">*</span>
               </label>
               <div class="relative">
                 <input type="text" x-ref="fechaIngresoInput"
                   placeholder="Seleccionar fecha de ingreso"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-sm">
-                <i class="fa-regular fa-calendar-plus absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400 text-sm pointer-events-none"></i>
+                  class="w-full bg-zinc-900 border border-zinc-700 rounded-xl input-with-icon-left pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] cursor-pointer shadow-sm">
+                <i class="fa-regular fa-calendar-plus absolute left-3.5 top-1/2 -translate-y-1/2 role-text-accent text-sm pointer-events-none"></i>
               </div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label class="block text-xs font-bold text-zinc-300 mb-2">
                 Fecha de salida estimada: <span class="text-red-400">*</span>
               </label>
               <div class="relative">
                 <input type="text" x-ref="fechaSalidaInput"
                   placeholder="Seleccionar fecha de salida"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-sm">
-                <i class="fa-regular fa-calendar-check absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400 text-sm pointer-events-none"></i>
+                  class="w-full bg-zinc-900 border border-zinc-700 rounded-xl input-with-icon-left pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] cursor-pointer shadow-sm">
+                <i class="fa-regular fa-calendar-check absolute left-3.5 top-1/2 -translate-y-1/2 role-text-accent text-sm pointer-events-none"></i>
               </div>
             </div>
           </div>
 
           <!-- Plantas autorizadas organizadas por Empresa -->
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="block text-xs font-semibold text-slate-300">
+            <div class="flex items-center justify-between mb-2.5">
+              <label class="block text-xs font-semibold text-zinc-300">
                 Plantas de ingreso a visitar según Empresa: <span class="text-red-400">*</span>
               </label>
               <span class="text-xs font-semibold"
-                :class="form.plantas.length > 0 ? 'text-purple-300' : 'text-slate-500'">
+                :class="form.plantas.length > 0 ? 'role-text-accent' : 'text-zinc-500'">
                 <span x-text="form.plantas.length"></span> planta<span x-show="form.plantas.length !== 1">s</span> seleccionada<span x-show="form.plantas.length !== 1">s</span>
               </span>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-3.5">
               <template x-for="emp in catalogos.empresas" :key="emp.id">
-                <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all space-y-2.5">
+                <div class="company-card-box space-y-2.5">
                   <!-- Encabezado de Empresa con contador y acción rápida -->
-                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                    <div class="flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-md bg-purple-950/80 border border-purple-800/60 flex items-center justify-center text-purple-300 text-xs">
+                  <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg role-icon-box flex items-center justify-center text-xs">
                         <i class="fa-solid fa-industry"></i>
                       </div>
                       <span class="text-xs font-bold text-white uppercase tracking-wider" x-text="emp.nombre"></span>
                       <span class="text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
-                        :class="conteoPlantasEmpresa(emp) > 0 ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-slate-800/80 text-slate-500'"
+                        :class="conteoPlantasEmpresa(emp) > 0 ? 'role-badge' : 'bg-zinc-800 text-zinc-400'"
                         x-text="conteoPlantasEmpresa(emp) + ' seleccionada(s)'"></span>
                     </div>
 
                     <button type="button" @click="toggleTodasPlantas(emp)"
-                      class="text-[11px] font-semibold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-purple-950/40">
+                      class="text-[11px] font-semibold role-text-accent hover:underline transition-colors cursor-pointer flex items-center gap-1.5 px-2 py-1">
                       <i class="fa-solid fa-list-check text-[10px]"></i>
                       <span x-text="emp.plantas && emp.plantas.length > 0 && emp.plantas.every(p => form.plantas.includes(p.id)) ? 'Desmarcar todas' : 'Marcar todas'"></span>
                     </button>
@@ -314,39 +367,66 @@
                   <div class="flex flex-wrap gap-2 pt-0.5">
                     <template x-for="p in emp.plantas" :key="p.id">
                       <button type="button" @click="togglePlanta(p.id)"
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 select-none"
-                        :class="isPlantaSelected(p.id)
-                          ? 'bg-purple-900/50 border-purple-500 text-white font-semibold shadow-sm ring-1 ring-purple-500/30'
-                          : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'">
-                        <i class="text-[11px]" :class="isPlantaSelected(p.id) ? 'fa-solid fa-circle-check text-purple-400' : 'fa-regular fa-circle text-slate-600'"></i>
+                        class="plant-chip"
+                        :class="isPlantaSelected(p.id) ? 'is-selected' : ''">
+                        <i class="text-[11px]" :class="isPlantaSelected(p.id) ? 'fa-solid fa-circle-check role-text-accent' : 'fa-regular fa-circle text-zinc-500'"></i>
                         <span x-text="p.nombre"></span>
                       </button>
                     </template>
                     <template x-if="!emp.plantas || emp.plantas.length === 0">
-                      <span class="text-xs text-slate-500 italic py-1">Sin plantas registradas para esta empresa.</span>
+                      <div class="w-full text-xs text-zinc-500 italic py-2 px-3 rounded-lg bg-zinc-950/40 border border-dashed border-zinc-800/80">
+                        Sin plantas registradas para esta empresa.
+                      </div>
                     </template>
                   </div>
                 </div>
               </template>
 
               <template x-if="!catalogos.empresas || catalogos.empresas.length === 0">
-                <div class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                <div class="p-6 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl bg-zinc-950/40">
                   Cargando empresas y plantas disponibles...
                 </div>
               </template>
             </div>
           </div>
+
+          <!-- Descripción de la Actividad -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-2.5">Descripción de la Actividad: <span class="text-red-400">*</span></label>
+            <textarea x-model="form.actividad" rows="3" placeholder="Describe brevemente las labores técnicas, mantenimientos o visitas que se realizarán..."
+              class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"></textarea>
+          </div>
         </div>
 
-        <!-- Descripción de la Actividad -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Descripción de la Actividad: <span class="text-red-400">*</span></label>
-          <textarea x-model="form.actividad" rows="3" placeholder="Describe brevemente las labores técnicas, mantenimientos o visitas que se realizarán..."
-            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:border-purple-500"></textarea>
+        <!-- Banner Descarga de Formato de Herramientas y Equipos para Portería (FR-SCR-042) -->
+        <div class="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center flex-shrink-0 text-lg">
+              <i class="fa-solid fa-toolbox"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-xs sm:text-sm font-bold text-white">
+                  Formato de ingreso de herramientas/equipos <strong style="color: #ec3883;">(obligatorio para el ingreso de los elementos)</strong>
+                </h4>
+                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  FR-SCR-042
+                </span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mt-1 leading-snug">
+                Descarga el formato oficial para el ingreso de herramientas, materiales o equipos y preséntalo en portería (Dejar una copia firmada).
+              </p>
+            </div>
+          </div>
+          <a href="/api/sistema/formato-herramientas" download
+             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white shadow-lg shadow-emerald-950/50 transition-all flex-shrink-0 cursor-pointer self-stretch sm:self-auto justify-center">
+            <i class="fa-solid fa-file-excel text-sm"></i>
+            <span>Descargar Formato</span>
+          </a>
         </div>
 
         <div class="flex justify-end pt-3">
-          <button type="button" @click="validarPaso1() && (paso = 2)" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+          <button type="button" @click="validarPaso1() && (paso = 2)" class="btn-brand w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer">
             <span>Siguiente: Personas</span> <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
@@ -354,50 +434,50 @@
 
       <!-- PASO 2: PERSONAS INGRESANTES -->
       <div x-show="paso === 2" class="glass-card rounded-2xl p-5 sm:p-7 md:p-8 space-y-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
           <div>
-            <h2 class="font-bold text-base text-white flex items-center gap-2">
-              <i class="fa-solid fa-users text-purple-400"></i> Personas Ingresantes
+            <h2 class="font-bold font-brand text-base text-white flex items-center gap-2">
+              <i class="fa-solid fa-users role-text-accent"></i> Personas Ingresantes
             </h2>
-            <p class="text-xs text-slate-400">Busca personal existente o registra nuevos ingresantes con su documentación.</p>
+            <p class="text-xs text-zinc-400">Busca personal existente o registra nuevos ingresantes con su documentación.</p>
           </div>
-          <button type="button" @click="openPersonaModal()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer flex-shrink-0">
+          <button type="button" @click="openPersonaModal()" class="btn-brand px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer flex-shrink-0">
             <i class="fa-solid fa-user-plus text-[11px]"></i> <span>Registrar nueva persona</span>
           </button>
         </div>
 
         <!-- Buscador de Personas Registradas -->
         <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs"></i>
           <input type="search" x-model="personaSearchQuery"
             placeholder="Buscar por nombre o documento de identidad..."
-            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+            class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
         </div>
 
         <!-- Resultados de búsqueda de Personas -->
-        <div x-show="personaSearchQuery.trim() !== ''" x-cloak class="space-y-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-          <div class="text-[11px] font-semibold text-purple-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div x-show="personaSearchQuery.trim() !== ''" x-cloak class="space-y-2 p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/80">
+          <div class="text-[11px] font-semibold role-text-accent uppercase tracking-wider mb-2 flex items-center justify-between">
             <span>Resultados encontrados (<span x-text="personasFiltradas().length"></span>)</span>
-            <span class="text-slate-500 font-normal lowercase">haz clic para agregar</span>
+            <span class="text-zinc-500 font-normal lowercase">haz clic para agregar</span>
           </div>
 
           <div class="space-y-2" x-show="personasFiltradas().length > 0">
             <template x-for="p in personasFiltradas()" :key="p.id || p.identificacion || p.numDoc">
-              <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-purple-600/50 flex items-center justify-between gap-3 transition-all group">
+              <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 hover:border-[var(--role-primary)] flex items-center justify-between gap-3 transition-all group">
                 <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-purple-950/80 border border-purple-800/50 flex items-center justify-center text-purple-300 text-xs flex-shrink-0">
+                  <div class="w-8 h-8 rounded-lg role-icon-box flex items-center justify-center role-text-accent text-xs flex-shrink-0">
                     <i class="fa-solid fa-user"></i>
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs font-bold text-white truncate" x-text="p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim()"></p>
-                    <p class="text-[11px] text-slate-400 truncate" x-text="(p.tipoDoc || p.tipo_doc || 'CC') + ' ' + (p.numDoc || p.identificacion) + ' · ' + (p.cargo || 'Personal') + (p.correo ? (' · ' + p.correo) : '')"></p>
+                    <p class="text-[11px] text-zinc-400 truncate" x-text="(p.tipoDoc || p.tipo_doc || 'CC') + ' ' + (p.numDoc || p.identificacion) + ' · ' + (p.cargo || 'Personal') + (p.correo ? (' · ' + p.correo) : '')"></p>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <!-- Botón Editar Persona -->
                   <button type="button" @click="openEditPersonaModal(p)"
-                    class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-purple-300 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-400 hover:role-text-accent transition-colors cursor-pointer"
                     title="Editar datos y documentos de la persona">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
@@ -405,7 +485,7 @@
                   <!-- Botón Seleccionar / Agregada -->
                   <button type="button" @click="agregarPersonaDesdeBusqueda(p)" :disabled="personaYaAgregada(p.identificacion || p.numDoc)"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                    :class="personaYaAgregada(p.identificacion || p.numDoc) ? 'bg-slate-800 text-emerald-400 border border-emerald-800/40 cursor-not-allowed opacity-80' : 'bg-purple-600 hover:bg-purple-500 text-white'">
+                    :class="personaYaAgregada(p.identificacion || p.numDoc) ? 'bg-slate-800 text-emerald-400 border border-emerald-800/40 cursor-not-allowed opacity-80' : 'btn-brand'">
                     <i :class="personaYaAgregada(p.identificacion || p.numDoc) ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
                     <span x-text="personaYaAgregada(p.identificacion || p.numDoc) ? 'Agregada' : 'Seleccionar'"></span>
                   </button>
@@ -414,9 +494,9 @@
             </template>
           </div>
 
-          <div x-show="personasFiltradas().length === 0" class="p-4 text-center text-xs text-slate-400">
+          <div x-show="personasFiltradas().length === 0" class="p-4 text-center text-xs text-zinc-400">
             No se encontró persona con esas características.
-            <button type="button" @click="openPersonaModal()" class="text-purple-400 hover:text-purple-300 font-bold underline ml-1 cursor-pointer">
+            <button type="button" @click="openPersonaModal()" class="role-text-accent hover:role-text-accent font-bold underline ml-1 cursor-pointer">
               Regístrala aquí
             </button>
           </div>
@@ -425,33 +505,33 @@
         <!-- Lista de Personas Agregadas a la Solicitud -->
         <div class="space-y-3 pt-2">
           <div class="flex items-center justify-between" x-show="personas.length > 0">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400">
               Personas en la solicitud (<span x-text="personas.length"></span>)
             </h3>
           </div>
 
           <template x-for="(p, idx) in personas" :key="idx">
-            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700 transition-all">
+            <div class="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-zinc-700 transition-all">
               <div class="space-y-1.5 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <strong class="text-sm text-white" x-text="p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim()"></strong>
-                  <span class="text-[11px] font-mono text-purple-300 px-2 py-0.5 rounded-md bg-purple-950/60 border border-purple-800/40" x-text="(p.tipoDoc || p.tipo_doc || 'CC') + ' ' + (p.numDoc || p.identificacion)"></span>
+                  <span class="text-[11px] font-mono role-text-accent px-2 py-0.5 rounded-md role-badge" x-text="(p.tipoDoc || p.tipo_doc || 'CC') + ' ' + (p.numDoc || p.identificacion)"></span>
                 </div>
-                <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
-                  <span><i class="fa-solid fa-briefcase text-slate-500 mr-1"></i> Cargo: <span class="text-slate-300" x-text="p.cargo || '—'"></span></span>
-                  <span><i class="fa-solid fa-envelope text-slate-500 mr-1"></i> <span class="text-slate-300" x-text="p.correo || 'Sin correo'"></span></span>
+                <div class="text-xs text-zinc-400 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><i class="fa-solid fa-briefcase text-zinc-500 mr-1"></i> Cargo: <span class="text-zinc-300" x-text="p.cargo || '—'"></span></span>
+                  <span><i class="fa-solid fa-envelope text-zinc-500 mr-1"></i> <span class="text-zinc-300" x-text="p.correo || 'Sin correo'"></span></span>
                   <template x-if="p.observacion">
-                    <span><i class="fa-solid fa-note-sticky text-slate-500 mr-1"></i> <span class="text-slate-400 italic" x-text="p.observacion"></span></span>
+                    <span><i class="fa-solid fa-note-sticky text-zinc-500 mr-1"></i> <span class="text-zinc-400 italic" x-text="p.observacion"></span></span>
                   </template>
                 </div>
 
                 <!-- Botón para ver documentos en modal -->
                 <div class="pt-1">
                   <button type="button" @click="abrirModalDocsPersona(p)"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-950/40 hover:bg-purple-950/80 text-purple-300 border border-purple-800/50 transition-all cursor-pointer">
-                    <i class="fa-solid fa-folder-open text-purple-400 text-xs"></i>
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold sim-btn-secondary transition-all cursor-pointer">
+                    <i class="fa-solid fa-folder-open role-text-accent text-xs"></i>
                     <span>Ver documentos adjuntos</span>
-                    <span class="px-1.5 py-0.2 rounded-full bg-purple-900/80 text-[10px] font-bold text-white"
+                    <span class="px-1.5 py-0.2 rounded-full role-badge text-[10px] font-bold"
                       x-text="(p.documentos ? p.documentos.length : 0)"></span>
                   </button>
                 </div>
@@ -459,7 +539,7 @@
 
               <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                 <button type="button" @click="openEditPersonaModal(p, idx)"
-                  class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+                  class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 hover:text-white transition-all cursor-pointer"
                   title="Editar persona y documentos">
                   <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
@@ -472,17 +552,17 @@
             </div>
           </template>
 
-          <div x-show="personas.length === 0" class="p-8 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+          <div x-show="personas.length === 0" class="p-8 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
             No has agregado personas aún. Busca personal arriba o haz clic en "Registrar nueva persona" para comenzar.
           </div>
         </div>
 
-        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-slate-800/80">
-          <button type="button" @click="paso = 1" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2">
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-zinc-800/80">
+          <button type="button" @click="paso = 1" class="px-5 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 hover:text-white font-semibold text-xs border border-zinc-700/60 transition-all cursor-pointer flex items-center justify-center gap-2">
             <i class="fa-solid fa-arrow-left"></i> Anterior
           </button>
           <button type="button" @click="personas.length > 0 ? (paso = 3) : Swal.fire({ icon: 'warning', title: 'Persona requerida', text: 'Debes agregar al menos una persona ingresante para continuar.' })"
-            class="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+            class="btn-brand px-6 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer">
             <span>Siguiente: Vehículos</span> <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
@@ -490,53 +570,53 @@
 
       <!-- PASO 3: VEHÍCULOS -->
       <div x-show="paso === 3" class="glass-card rounded-2xl p-5 sm:p-7 md:p-8 space-y-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
           <div>
-            <h2 class="font-bold text-base text-white flex items-center gap-2">
-              <i class="fa-solid fa-truck text-purple-400"></i> Vehículos Autorizados (Opcional)
+            <h2 class="font-bold font-brand text-base text-white flex items-center gap-2">
+              <i class="fa-solid fa-truck role-text-accent"></i> Vehículos Autorizados (Opcional)
             </h2>
-            <p class="text-xs text-slate-400">Ingrese los vehiculos con los que se ingresarán si es el caso.</p>
+            <p class="text-xs text-zinc-400">Ingrese los vehiculos con los que se ingresarán si es el caso.</p>
           </div>
-          <button type="button" @click="openVehiculoModal()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer flex-shrink-0">
+          <button type="button" @click="openVehiculoModal()" class="btn-brand px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer flex-shrink-0">
             <i class="fa-solid fa-car-side text-[11px]"></i> <span>Registrar nuevo vehículo</span>
           </button>
         </div>
 
         <!-- Buscador de Vehículos Registrados -->
         <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs"></i>
           <input type="search" x-model="vehiculoSearchQuery"
             placeholder="Buscar por placa, tipo o conductor..."
-            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+            class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
         </div>
 
         <!-- Resultados de búsqueda de Vehículos -->
-        <div x-show="vehiculoSearchQuery.trim() !== ''" x-cloak class="space-y-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-          <div class="text-[11px] font-semibold text-purple-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div x-show="vehiculoSearchQuery.trim() !== ''" x-cloak class="space-y-2 p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/80">
+          <div class="text-[11px] font-semibold role-text-accent uppercase tracking-wider mb-2 flex items-center justify-between">
             <span>Resultados encontrados (<span x-text="vehiculosFiltrados().length"></span>)</span>
-            <span class="text-slate-500 font-normal lowercase">haz clic para agregar</span>
+            <span class="text-zinc-500 font-normal lowercase">haz clic para agregar</span>
           </div>
 
           <div class="space-y-2" x-show="vehiculosFiltrados().length > 0">
             <template x-for="v in vehiculosFiltrados()" :key="v.id || v.placa">
-              <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-purple-600/50 flex items-center justify-between gap-3 transition-all group">
+              <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 hover:border-[var(--role-primary)] flex items-center justify-between gap-3 transition-all group">
                 <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-purple-950/80 border border-purple-800/50 flex items-center justify-center text-purple-300 text-xs flex-shrink-0">
+                  <div class="w-8 h-8 rounded-lg role-icon-box flex items-center justify-center role-text-accent text-xs flex-shrink-0">
                     <i class="fa-solid fa-truck-pickup"></i>
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="font-mono font-bold text-xs text-purple-300 uppercase" x-text="v.placa"></span>
-                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700" x-text="v.tipo || v.tipo_vehiculo || 'Camioneta'"></span>
+                      <span class="font-mono font-bold text-xs role-text-accent uppercase" x-text="v.placa"></span>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-zinc-300 border border-zinc-700" x-text="v.tipo || v.tipo_vehiculo || 'Camioneta'"></span>
                     </div>
-                    <p class="text-[11px] text-slate-400 truncate mt-0.5" x-text="v.conductor ? ('Conductor: ' + v.conductor) : 'Sin conductor asignado'"></p>
+                    <p class="text-[11px] text-zinc-400 truncate mt-0.5" x-text="v.conductor ? ('Conductor: ' + v.conductor) : 'Sin conductor asignado'"></p>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <!-- Botón Editar Vehículo -->
                   <button type="button" @click="openEditVehiculoModal(v)"
-                    class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-purple-300 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-400 hover:role-text-accent transition-colors cursor-pointer"
                     title="Editar vehículo y documentación">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
@@ -544,7 +624,7 @@
                   <!-- Botón Seleccionar / Agregado -->
                   <button type="button" @click="agregarVehiculoDesdeBusqueda(v)" :disabled="vehiculoYaAgregado(v.placa)"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                    :class="vehiculoYaAgregado(v.placa) ? 'bg-slate-800 text-emerald-400 border border-emerald-800/40 cursor-not-allowed opacity-80' : 'bg-purple-600 hover:bg-purple-500 text-white'">
+                    :class="vehiculoYaAgregado(v.placa) ? 'bg-slate-800 text-emerald-400 border border-emerald-800/40 cursor-not-allowed opacity-80' : 'btn-brand'">
                     <i :class="vehiculoYaAgregado(v.placa) ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
                     <span x-text="vehiculoYaAgregado(v.placa) ? 'Agregado' : 'Seleccionar'"></span>
                   </button>
@@ -553,9 +633,9 @@
             </template>
           </div>
 
-          <div x-show="vehiculosFiltrados().length === 0" class="p-4 text-center text-xs text-slate-400">
+          <div x-show="vehiculosFiltrados().length === 0" class="p-4 text-center text-xs text-zinc-400">
             No se encontró vehículo con esa placa.
-            <button type="button" @click="openVehiculoModal()" class="text-purple-400 hover:text-purple-300 font-bold underline ml-1 cursor-pointer">
+            <button type="button" @click="openVehiculoModal()" class="role-text-accent hover:role-text-accent font-bold underline ml-1 cursor-pointer">
               Regístralo aquí
             </button>
           </div>
@@ -564,25 +644,25 @@
         <!-- Lista de Vehículos Agregados a la Solicitud -->
         <div class="space-y-3 pt-2">
           <div class="flex items-center justify-between" x-show="vehiculos.length > 0">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400">
               Vehículos en la solicitud (<span x-text="vehiculos.length"></span>)
             </h3>
           </div>
 
           <template x-for="(v, idx) in vehiculos" :key="idx">
-            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700 transition-all">
+            <div class="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-zinc-700 transition-all">
               <div class="space-y-2 min-w-0 flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <strong class="text-sm font-mono text-purple-300 px-2.5 py-0.5 rounded-md bg-purple-950/80 border border-purple-800/50 uppercase" x-text="v.placa"></strong>
-                  <span class="text-xs text-slate-300 font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-300" x-text="v.tipo || v.tipo_vehiculo || 'Camioneta'"></span>
+                  <strong class="text-sm font-mono role-text-accent px-2.5 py-0.5 rounded-md role-badge uppercase" x-text="v.placa"></strong>
+                  <span class="text-xs text-zinc-300 font-medium px-2 py-0.5 rounded bg-slate-800 text-zinc-300" x-text="v.tipo || v.tipo_vehiculo || 'Camioneta'"></span>
                 </div>
 
                 <!-- Selector de conductor de las personas agregadas -->
                 <div class="flex items-center gap-2 text-xs">
-                  <label class="text-slate-400 font-semibold flex-shrink-0">Conductor:</label>
+                  <label class="text-zinc-400 font-semibold flex-shrink-0">Conductor:</label>
                   <template x-if="personas.length > 0">
                     <select :value="v.id_persona || ''" @change="asignarConductorVehiculo(v, $event)"
-                      class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:border-purple-500 max-w-xs">
+                      class="bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] max-w-xs">
                       <option value="">-- Seleccionar de personas de la solicitud --</option>
                       <template x-for="p in personas" :key="p.id || p.numDoc || p.identificacion">
                         <option :value="p.id" :selected="v.id_persona && String(v.id_persona) === String(p.id)"
@@ -591,17 +671,17 @@
                     </select>
                   </template>
                   <template x-if="personas.length === 0">
-                    <span class="text-slate-400 italic" x-text="v.conductor || 'Sin conductor asignado'"></span>
+                    <span class="text-zinc-400 italic" x-text="v.conductor || 'Sin conductor asignado'"></span>
                   </template>
                 </div>
 
                 <!-- Chips de documentos del vehículo y botón de visor -->
                 <div class="flex flex-wrap items-center gap-2 pt-1">
                   <button type="button" @click="abrirModalDocsVehiculo(v)"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-950/40 hover:bg-purple-950/80 text-purple-300 border border-purple-800/50 transition-all cursor-pointer">
-                    <i class="fa-solid fa-folder-open text-purple-400 text-xs"></i>
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold sim-btn-secondary transition-all cursor-pointer">
+                    <i class="fa-solid fa-folder-open role-text-accent text-xs"></i>
                     <span>Ver documentos adjuntos</span>
-                    <span class="px-1.5 py-0.2 rounded-full bg-purple-900/80 text-[10px] font-bold text-white"
+                    <span class="px-1.5 py-0.2 rounded-full role-badge text-[10px] font-bold"
                       x-text="(v.documentos ? v.documentos.length : 0) + (v.licencia_doc ? 1 : 0)"></span>
                   </button>
                 </div>
@@ -609,7 +689,7 @@
 
               <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                 <button type="button" @click="openEditVehiculoModal(v, idx)"
-                  class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+                  class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 hover:text-white transition-all cursor-pointer"
                   title="Editar vehículo y documentación">
                   <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
@@ -622,43 +702,43 @@
             </div>
           </template>
 
-          <div x-show="vehiculos.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+          <div x-show="vehiculos.length === 0" class="p-6 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
             No se han registrado vehículos. Puedes continuar si no requieren ingreso vehicular.
           </div>
         </div>
 
         <!-- SECCIÓN: EQUIPOS DE CÓMPUTO -->
-        <div class="pt-6 border-t border-slate-800 space-y-4">
+        <div class="pt-6 border-t border-zinc-800 space-y-4">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                <i class="fa-solid fa-laptop text-purple-400"></i> Equipos de Cómputo (Opcional)
+              <h3 class="font-bold font-brand text-sm text-white flex items-center gap-2">
+                <i class="fa-solid fa-laptop role-text-accent"></i> Equipos de Cómputo (Opcional)
               </h3>
-              <p class="text-xs text-slate-400">Registra computadores portátiles, tablets u otros equipos tecnológicos que ingresarán.</p>
+              <p class="text-xs text-zinc-400">Registra computadores portátiles, tablets u otros equipos tecnológicos que ingresarán.</p>
             </div>
             <button type="button" @click="addEquipo()"
-              class="px-3.5 py-1.5 rounded-xl bg-purple-950/80 border border-purple-800 hover:bg-purple-900 text-purple-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+              class="px-3.5 py-1.5 rounded-xl role-badge hover:bg-zinc-800 role-text-accent text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
               <i class="fa-solid fa-plus text-[10px]"></i> <span>Agregar equipo</span>
             </button>
           </div>
 
           <div class="space-y-2.5">
             <template x-for="(eq, eqIdx) in equipos" :key="eqIdx">
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                 <div class="w-full sm:w-1/3">
-                  <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Marca</label>
+                  <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Marca</label>
                   <input type="text" x-model="eq.marca" placeholder="Ej: Lenovo, Dell, HP..."
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                 </div>
                 <div class="w-full sm:w-1/3">
-                  <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Modelo</label>
+                  <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Modelo</label>
                   <input type="text" x-model="eq.modelo" placeholder="Ej: ThinkPad T14, Latitude..."
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                 </div>
                 <div class="w-full sm:w-1/3">
-                  <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">N° de Serie</label>
+                  <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">N° de Serie</label>
                   <input type="text" x-model="eq.serie" placeholder="Ej: SN-12345678..."
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono placeholder-slate-500 focus:border-purple-500">
+                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                 </div>
                 <button type="button" @click="removeEquipo(eqIdx)"
                   class="p-2 rounded-lg bg-red-950/40 hover:bg-red-900 text-red-400 hover:text-red-200 transition-all cursor-pointer flex-shrink-0 self-end sm:self-center sm:mt-4"
@@ -668,17 +748,17 @@
               </div>
             </template>
 
-            <div x-show="equipos.length === 0" class="p-4 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+            <div x-show="equipos.length === 0" class="p-4 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
               No se han registrado equipos de cómputo. Si los ingresantes no portan equipos, puedes continuar sin agregar.
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-slate-800/80">
-          <button type="button" @click="paso = 2" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2">
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-zinc-800/80">
+          <button type="button" @click="paso = 2" class="px-5 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 hover:text-white font-semibold text-xs border border-zinc-700/60 transition-all cursor-pointer flex items-center justify-center gap-2">
             <i class="fa-solid fa-arrow-left"></i> Anterior
           </button>
-          <button type="button" @click="paso = 4" class="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+          <button type="button" @click="paso = 4" class="btn-brand px-6 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer">
             <span>Siguiente: Revisar y Enviar</span> <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
@@ -686,74 +766,81 @@
 
       <!-- PASO 4: RESUMEN Y ENVÍO -->
       <div x-show="paso === 4" class="glass-card rounded-2xl p-5 sm:p-7 md:p-8 space-y-6">
-        <h2 class="font-bold text-base sm:text-lg text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-          <i class="fa-solid fa-clipboard-check text-purple-400"></i> Resumen de la Solicitud antes del Envío
+        <h2 class="font-bold font-brand text-base sm:text-lg text-white border-b border-zinc-800 pb-3 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check role-text-accent"></i> Resumen de la Solicitud antes del Envío
         </h2>
 
         <!-- Resumen General -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
-          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5">
-            <p><strong class="text-slate-400">Actividad:</strong> <span class="text-white block mt-0.5 leading-relaxed" x-text="form.actividad"></span></p>
-            <div class="flex items-center gap-2">
-              <strong class="text-slate-400">Nivel de riesgo:</strong> 
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                :class="form.nivel_riesgo === 'BAJO' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : (form.nivel_riesgo === 'MEDIO' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-rose-950 text-rose-300 border border-rose-800')"
-                x-text="form.nivel_riesgo"></span>
+          <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
+            <p><strong class="text-zinc-400">Actividad:</strong> <span class="text-white block mt-0.5 leading-relaxed" x-text="form.actividad"></span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-1.5">
+                <strong class="text-zinc-400">Tipo:</strong>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold role-badge"
+                  x-text="form.tipo_personal || 'Contratista'"></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <strong class="text-zinc-400">Riesgo:</strong> 
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                  :class="form.nivel_riesgo === 'BAJO' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : (form.nivel_riesgo === 'MEDIO' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-rose-950 text-rose-300 border border-rose-800')"
+                  x-text="form.nivel_riesgo"></span>
+              </div>
             </div>
-            <p><strong class="text-slate-400">Vigencia estimada:</strong> 
-              <span class="text-white block mt-0.5 font-semibold text-purple-200" x-text="formatearFechaLarga(form.fecha_ingreso) + ' — ' + formatearFechaLarga(form.fecha_salida)"></span>
+            <p><strong class="text-zinc-400">Vigencia estimada:</strong> 
+              <span class="text-white block mt-0.5 font-semibold text-zinc-200" x-text="formatearFechaLarga(form.fecha_ingreso) + ' — ' + formatearFechaLarga(form.fecha_salida)"></span>
             </p>
           </div>
 
-          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5">
-            <p><strong class="text-slate-400">Empresa contratista:</strong> 
+          <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
+            <p><strong class="text-zinc-400">Empresa contratista:</strong> 
               <span class="text-white ml-1 font-semibold" x-text="getContratistaNombre()"></span>
-              <span class="text-[11px] text-purple-300 font-mono ml-1.5" x-show="getContratistaNit()" x-text="'(NIT: ' + getContratistaNit() + ')'"></span>
+              <span class="text-[11px] role-text-accent font-mono ml-1.5" x-show="getContratistaNit()" x-text="'(NIT: ' + getContratistaNit() + ')'"></span>
             </p>
             <p x-show="metadata?.fecha_expiracion">
-              <strong class="text-slate-400">Vencimiento del formulario:</strong>
-              <span class="text-amber-300 font-mono font-semibold ml-1" x-text="formatearFechaHora(metadata.fecha_expiracion)"></span>
+              <strong class="text-zinc-400">Vencimiento del formulario:</strong>
+              <span class="text-amber-300 font-mono font-semibold ml-1" x-text="formatearFechaHora(metadata?.fecha_expiracion)"></span>
             </p>
             <div class="grid grid-cols-3 gap-2 py-1 text-center font-mono">
-              <div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800">
-                <span class="text-[10px] text-slate-400 block uppercase">Personas</span>
-                <span class="text-sm font-bold text-purple-300" x-text="personas.length"></span>
+              <div class="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800">
+                <span class="text-[10px] text-zinc-400 block uppercase">Personas</span>
+                <span class="text-sm font-bold role-text-accent" x-text="personas.length"></span>
               </div>
-              <div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800">
-                <span class="text-[10px] text-slate-400 block uppercase">Vehículos</span>
-                <span class="text-sm font-bold text-purple-300" x-text="vehiculos.length"></span>
+              <div class="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800">
+                <span class="text-[10px] text-zinc-400 block uppercase">Vehículos</span>
+                <span class="text-sm font-bold role-text-accent" x-text="vehiculos.length"></span>
               </div>
-              <div class="p-2 rounded-lg bg-slate-950/80 border border-slate-800">
-                <span class="text-[10px] text-slate-400 block uppercase">Cómputo</span>
-                <span class="text-sm font-bold text-purple-300" x-text="equipos.length"></span>
+              <div class="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800">
+                <span class="text-[10px] text-zinc-400 block uppercase">Cómputo</span>
+                <span class="text-sm font-bold role-text-accent" x-text="equipos.length"></span>
               </div>
             </div>
 
             <!-- Plantas agrupadas por empresa -->
             <div class="pt-1">
-              <strong class="text-slate-400 block text-xs mb-1.5">
+              <strong class="text-zinc-400 block text-xs mb-1.5">
                 Plantas a visitar por empresa (<span x-text="form.plantas.length"></span>):
               </strong>
               <div class="space-y-2 max-h-44 overflow-y-auto custom-scroll pr-1">
                 <template x-for="emp in getPlantasAgrupadasPorEmpresa()" :key="emp.id">
-                  <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <div class="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
                     <div class="flex items-center gap-1.5 mb-1.5">
-                      <i class="fa-solid fa-building text-purple-400 text-xs"></i>
+                      <i class="fa-solid fa-building role-text-accent text-xs"></i>
                       <span class="font-bold text-xs text-white" x-text="emp.nombre"></span>
-                      <span class="text-[10px] text-purple-300 font-semibold px-1.5 py-0.2 rounded bg-purple-950/80 border border-purple-800/60 ml-auto"
+                      <span class="text-[10px] role-text-accent font-semibold px-1.5 py-0.2 rounded role-badge/60 ml-auto"
                         x-text="emp.plantas.length + (emp.plantas.length === 1 ? ' planta' : ' plantas')"></span>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
                       <template x-for="p in emp.plantas" :key="p.id">
-                        <span class="px-2 py-0.5 rounded-md bg-purple-950/60 border border-purple-800/80 text-[11px] text-purple-200 flex items-center gap-1">
-                          <i class="fa-solid fa-industry text-[9px] text-purple-400"></i>
+                        <span class="px-2 py-0.5 rounded-md role-badge text-[11px] text-zinc-200 flex items-center gap-1">
+                          <i class="fa-solid fa-industry text-[9px] role-text-accent"></i>
                           <span x-text="p.nombre"></span>
                         </span>
                       </template>
                     </div>
                   </div>
                 </template>
-                <div x-show="getPlantasAgrupadasPorEmpresa().length === 0" class="text-xs text-slate-500 italic">
+                <div x-show="getPlantasAgrupadasPorEmpresa().length === 0" class="text-xs text-zinc-500 italic">
                   Ninguna planta seleccionada.
                 </div>
               </div>
@@ -764,17 +851,17 @@
         <!-- TABLA: PERSONAS INGRESANTES REGISTRADAS -->
         <div class="space-y-3 pt-2">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <i class="fa-solid fa-users text-purple-400"></i> Personas Ingresantes Registradas (<span x-text="personas.length"></span>)
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-users role-text-accent"></i> Personas Ingresantes Registradas (<span x-text="personas.length"></span>)
             </h3>
-            <button type="button" @click="paso = 2" class="text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer">
+            <button type="button" @click="paso = 2" class="text-xs role-text-accent hover:role-text-accent font-semibold cursor-pointer">
               <i class="fa-solid fa-pen-to-square text-[10px]"></i> Modificar personas
             </button>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 custom-scroll">
+          <div class="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/60 custom-scroll">
             <table class="w-full text-xs text-left">
-              <thead class="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
+              <thead class="bg-zinc-950/80 text-zinc-400 font-semibold border-b border-zinc-800 uppercase tracking-wider text-[10px]">
                 <tr>
                   <th class="py-2.5 px-3 text-center w-10">#</th>
                   <th class="py-2.5 px-3">Nombres y Apellidos</th>
@@ -787,30 +874,30 @@
               <tbody class="divide-y divide-slate-800/80 text-slate-200">
                 <template x-for="(p, idx) in personas" :key="idx">
                   <tr class="hover:bg-slate-800/40 transition">
-                    <td class="py-2.5 px-3 text-center font-bold text-slate-500" x-text="idx + 1"></td>
+                    <td class="py-2.5 px-3 text-center font-bold text-zinc-500" x-text="idx + 1"></td>
                     <td class="py-2.5 px-3 font-semibold text-white">
                       <span x-text="p.nombres || `${p.nombre || ''} ${p.apellido || ''}`.trim()"></span>
                     </td>
-                    <td class="py-2.5 px-3 font-mono text-[11px] text-purple-300" x-text="(p.tipoDoc || 'CC') + ' ' + (p.numDoc || p.identificacion || '')"></td>
-                    <td class="py-2.5 px-3 text-slate-300" x-text="p.cargo || 'Personal'"></td>
-                    <td class="py-2.5 px-3 text-slate-400 truncate max-w-[180px]" x-text="p.correo || '—'"></td>
+                    <td class="py-2.5 px-3 font-mono text-[11px] role-text-accent" x-text="(p.tipoDoc || 'CC') + ' ' + (p.numDoc || p.identificacion || '')"></td>
+                    <td class="py-2.5 px-3 text-zinc-300" x-text="p.cargo || 'Personal'"></td>
+                    <td class="py-2.5 px-3 text-zinc-400 truncate max-w-[180px]" x-text="p.correo || '—'"></td>
                     <td class="py-2.5 px-3 text-center">
                       <template x-if="p.documentos && p.documentos.length > 0">
                         <button type="button" @click="abrirModalDocsPersona(p)"
-                          class="px-2.5 py-1 rounded-lg bg-purple-950/80 border border-purple-800/80 hover:bg-purple-900 text-purple-300 text-[11px] font-semibold inline-flex items-center gap-1.5 transition cursor-pointer">
+                          class="px-2.5 py-1 rounded-lg role-badge hover:bg-zinc-800 role-text-accent text-[11px] font-semibold inline-flex items-center gap-1.5 transition cursor-pointer">
                           <i class="fa-solid fa-file-lines text-[10px]"></i>
                           <span>Ver docs</span>
-                          <span class="px-1.5 py-0.2 rounded-full bg-purple-900 text-[10px] font-bold text-white" x-text="p.documentos.length"></span>
+                          <span class="px-1.5 py-0.2 rounded-full role-badge text-[10px] font-bold" x-text="p.documentos.length"></span>
                         </button>
                       </template>
                       <template x-if="!p.documentos || p.documentos.length === 0">
-                        <span class="text-slate-500 italic text-[11px]">Sin docs</span>
+                        <span class="text-zinc-500 italic text-[11px]">Sin docs</span>
                       </template>
                     </td>
                   </tr>
                 </template>
                 <tr x-show="personas.length === 0">
-                  <td colspan="6" class="py-4 text-center text-slate-500 italic">No se registraron personas.</td>
+                  <td colspan="6" class="py-4 text-center text-zinc-500 italic">No se registraron personas.</td>
                 </tr>
               </tbody>
             </table>
@@ -820,17 +907,17 @@
         <!-- TABLA: VEHÍCULOS AUTORIZADOS REGISTRADOS (Si existen) -->
         <div class="space-y-3 pt-1" x-show="vehiculos.length > 0">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <i class="fa-solid fa-truck text-purple-400"></i> Vehículos Autorizados (<span x-text="vehiculos.length"></span>)
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-truck role-text-accent"></i> Vehículos Autorizados (<span x-text="vehiculos.length"></span>)
             </h3>
-            <button type="button" @click="paso = 3" class="text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer">
+            <button type="button" @click="paso = 3" class="text-xs role-text-accent hover:role-text-accent font-semibold cursor-pointer">
               <i class="fa-solid fa-pen-to-square text-[10px]"></i> Modificar vehículos
             </button>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 custom-scroll">
+          <div class="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/60 custom-scroll">
             <table class="w-full text-xs text-left">
-              <thead class="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
+              <thead class="bg-zinc-950/80 text-zinc-400 font-semibold border-b border-zinc-800 uppercase tracking-wider text-[10px]">
                 <tr>
                   <th class="py-2.5 px-3">Placa & Tipo</th>
                   <th class="py-2.5 px-3">Conductor Asignado</th>
@@ -842,28 +929,28 @@
                 <template x-for="(v, vIdx) in vehiculos" :key="vIdx">
                   <tr class="hover:bg-slate-800/40 transition">
                     <td class="py-2.5 px-3">
-                      <strong class="font-mono text-purple-300 font-bold uppercase mr-1.5" x-text="v.placa"></strong>
-                      <span class="text-slate-400 text-[11px]" x-text="'(' + (v.tipo || 'Camioneta') + ')'"></span>
+                      <strong class="font-mono role-text-accent font-bold uppercase mr-1.5" x-text="v.placa"></strong>
+                      <span class="text-zinc-400 text-[11px]" x-text="'(' + (v.tipo || 'Camioneta') + ')'"></span>
                     </td>
-                    <td class="py-2.5 px-3 text-slate-300" x-text="v.conductor || 'Sin conductor asignado'"></td>
+                    <td class="py-2.5 px-3 text-zinc-300" x-text="v.conductor || 'Sin conductor asignado'"></td>
                     <td class="py-2.5 px-3">
                       <span x-show="v.licencia_doc" class="text-emerald-400 text-[11px] font-mono flex items-center gap-1">
                         <i class="fa-solid fa-id-card text-[10px]"></i> Adjunta
                       </span>
-                      <span x-show="!v.licencia_doc" class="text-slate-500 italic text-[11px]">No adjunta</span>
+                      <span x-show="!v.licencia_doc" class="text-zinc-500 italic text-[11px]">No adjunta</span>
                     </td>
                     <td class="py-2.5 px-3 text-center">
                       <template x-if="v.licencia_doc || (v.documentos && v.documentos.length > 0)">
                         <button type="button" @click="abrirModalDocsVehiculo(v)"
-                          class="px-2.5 py-1 rounded-lg bg-purple-950/80 border border-purple-800/80 hover:bg-purple-900 text-purple-300 text-[11px] font-semibold inline-flex items-center gap-1.5 transition cursor-pointer">
+                          class="px-2.5 py-1 rounded-lg role-badge hover:bg-zinc-800 role-text-accent text-[11px] font-semibold inline-flex items-center gap-1.5 transition cursor-pointer">
                           <i class="fa-solid fa-folder-open text-[10px]"></i>
                           <span>Ver docs</span>
-                          <span class="px-1.5 py-0.2 rounded-full bg-purple-900 text-[10px] font-bold text-white"
+                          <span class="px-1.5 py-0.2 rounded-full role-badge text-[10px] font-bold"
                             x-text="(v.documentos ? v.documentos.length : 0) + (v.licencia_doc ? 1 : 0)"></span>
                         </button>
                       </template>
                       <template x-if="!v.licencia_doc && (!v.documentos || v.documentos.length === 0)">
-                        <span class="text-slate-500 italic text-[11px]">Sin docs</span>
+                        <span class="text-zinc-500 italic text-[11px]">Sin docs</span>
                       </template>
                     </td>
                   </tr>
@@ -876,23 +963,23 @@
         <!-- LISTA: EQUIPOS DE CÓMPUTO REGISTRADOS (Si existen) -->
         <div class="space-y-3 pt-1" x-show="equipos.length > 0">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <i class="fa-solid fa-laptop text-purple-400"></i> Equipos de Cómputo Registrados (<span x-text="equipos.length"></span>)
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-laptop role-text-accent"></i> Equipos de Cómputo Registrados (<span x-text="equipos.length"></span>)
             </h3>
-            <button type="button" @click="paso = 3" class="text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer">
+            <button type="button" @click="paso = 3" class="text-xs role-text-accent hover:role-text-accent font-semibold cursor-pointer">
               <i class="fa-solid fa-pen-to-square text-[10px]"></i> Modificar equipos
             </button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             <template x-for="(eq, eqIdx) in equipos" :key="eqIdx">
-              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-purple-950/80 border border-purple-800/50 flex items-center justify-center text-purple-300 text-xs flex-shrink-0">
+              <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg role-icon-box flex items-center justify-center role-text-accent text-xs flex-shrink-0">
                   <i class="fa-solid fa-laptop"></i>
                 </div>
                 <div class="min-w-0 flex-1 text-xs">
                   <p class="font-bold text-white truncate" x-text="(eq.marca || 'Marca') + ' · ' + (eq.modelo || 'Modelo')"></p>
-                  <p class="font-mono text-[11px] text-slate-400 truncate">Serie: <span class="text-purple-300" x-text="eq.serie || 'S/N'"></span></p>
+                  <p class="font-mono text-[11px] text-zinc-400 truncate">Serie: <span class="role-text-accent" x-text="eq.serie || 'S/N'"></span></p>
                 </div>
               </div>
             </template>
@@ -902,9 +989,9 @@
         <!-- Cláusulas de Veracidad y Tratamiento de Datos Personales -->
         <div class="space-y-3 pt-2">
           <!-- Declaración de Veracidad -->
-          <div class="p-4 rounded-xl bg-purple-950/30 border border-purple-500/30 text-xs text-slate-300">
+          <div class="p-4 rounded-xl bg-zinc-900/80 border border-zinc-700/60 text-xs text-zinc-300">
             <div class="flex items-start gap-2.5">
-              <input type="checkbox" id="aceptoTerminos" x-model="aceptoTerminos" class="mt-0.5 rounded border-slate-700 text-purple-600 focus:ring-purple-500 cursor-pointer">
+              <input type="checkbox" id="aceptoTerminos" x-model="aceptoTerminos" class="mt-0.5 rounded border-zinc-700 accent-[var(--role-primary)] cursor-pointer">
               <label for="aceptoTerminos" class="leading-relaxed cursor-pointer select-none">
                 <strong class="text-white block mb-0.5">Declaración de veracidad y seguridad social:</strong>
                 Declaro que la información suministrada es verídica y que los documentos aportados corresponden a personal afiliado legalmente al sistema de seguridad social integral, cumpliendo con las normas de seguridad y salud en el trabajo de MILPA S.A. <span class="text-red-400 font-bold">*</span>
@@ -913,24 +1000,24 @@
           </div>
 
           <!-- Permiso de Tratamiento de Datos Personales -->
-          <div class="p-4 rounded-xl bg-purple-950/30 border border-purple-500/30 text-xs text-slate-300">
+          <div class="p-4 rounded-xl bg-zinc-900/80 border border-zinc-700/60 text-xs text-zinc-300">
             <div class="flex items-start gap-2.5">
-              <input type="checkbox" id="aceptoTratamientoDatos" x-model="aceptoTratamientoDatos" class="mt-0.5 rounded border-slate-700 text-purple-600 focus:ring-purple-500 cursor-pointer">
+              <input type="checkbox" id="aceptoTratamientoDatos" x-model="aceptoTratamientoDatos" class="mt-0.5 rounded border-zinc-700 accent-[var(--role-primary)] cursor-pointer">
               <label for="aceptoTratamientoDatos" class="leading-relaxed cursor-pointer select-none">
                 <strong class="text-white block mb-0.5">Autorización de tratamiento de datos personales:</strong>
-                En cumplimiento de la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" @click.stop class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Ley 1581 de 2012</a> y el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" @click.stop class="text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">Decreto 1377 de 2013</a>, autorizo de manera previa, expresa e informada a <strong>MILPA S.A.</strong> para recolectar, almacenar y tratar los datos personales y documentación sensible adjuntada en esta solicitud, con la finalidad exclusiva de gestionar el control de acceso, verificación de seguridad y permanencia en las plantas industriales. <span class="text-red-400 font-bold">*</span>
+                En cumplimiento de la <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer" @click.stop class="role-text-accent hover:role-text-accent underline font-semibold transition-colors">Ley 1581 de 2012</a> y el <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=53646" target="_blank" rel="noopener noreferrer" @click.stop class="role-text-accent hover:role-text-accent underline font-semibold transition-colors">Decreto 1377 de 2013</a>, autorizo de manera previa, expresa e informada a <strong>MILPA S.A.</strong> para recolectar, almacenar y tratar los datos personales y documentación sensible adjuntada en esta solicitud, con la finalidad exclusiva de gestionar el control de acceso, verificación de seguridad y permanencia en las plantas industriales. <span class="text-red-400 font-bold">*</span>
               </label>
             </div>
           </div>
 
           <!-- Aviso Obligatorio Ley 1581 para Ingreso a Planta -->
-          <div class="p-4 rounded-xl text-left bg-amber-500/10 border border-amber-500/30 border-l-4 border-l-amber-500 shadow-xs">
+          <div class="aviso-ingreso-planta p-4 rounded-xl text-left shadow-xs">
             <div class="flex items-start gap-3">
-              <i class="fa-solid fa-shield-halved text-amber-400 text-lg mt-0.5 shrink-0"></i>
-              <div class="text-xs leading-relaxed text-slate-200">
-                <strong class="text-amber-300 font-bold block mb-1">Aviso Obligatorio para Ingreso a Planta:</strong>
-                <span>Debe comentarle a las personas registradas en esta solicitud que deben <strong>revisar su correo electrónico</strong> <span class="text-rose-300">(en la bandeja de spam si no lo encuentra)</span> y formalizar la <strong>autorización de tratamiento de datos personales (Ley 1581 de 2012)</strong>.</span>
-                <div class="mt-2 text-rose-300 font-semibold flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved aviso-icono-escudo text-lg mt-0.5 shrink-0"></i>
+              <div class="aviso-cuerpo text-xs leading-relaxed">
+                <strong class="aviso-titulo font-bold block mb-1">Aviso Obligatorio para Ingreso a Planta:</strong>
+                <span>Debe comentarle a las personas registradas en esta solicitud que deben <strong>revisar su correo electrónico</strong> <span class="aviso-spam">(en la bandeja de spam si no lo encuentra)</span> y formalizar la <strong>autorización de tratamiento de datos personales (Ley 1581 de 2012)</strong>.</span>
+                <div class="aviso-porteria mt-2 flex items-center gap-1.5">
                   <i class="fa-solid fa-ban text-xs"></i>
                   <span>Sin esta autorización activa no podrán ingresar físicamente por portería.</span>
                 </div>
@@ -939,12 +1026,12 @@
           </div>
         </div>
 
-        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-slate-800">
-          <button type="button" @click="paso = 3" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2">
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-3 border-t border-zinc-800">
+          <button type="button" @click="paso = 3" class="px-5 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 hover:text-white font-semibold text-xs border border-zinc-700/60 transition-all cursor-pointer flex items-center justify-center gap-2">
             <i class="fa-solid fa-arrow-left"></i> Modificar datos
           </button>
           <button type="button" @click="enviarFormulario()" :disabled="!aceptoTerminos || !aceptoTratamientoDatos || enviando"
-            class="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            class="btn-brand px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
             <i class="fa-solid fa-paper-plane" x-show="!enviando"></i>
             <i class="fa-solid fa-spinner fa-spin" x-show="enviando"></i>
             <span x-text="enviando ? 'Radicando solicitud...' : 'Confirmar y Enviar Solicitud'"></span>
@@ -960,32 +1047,32 @@
         <i class="fa-solid fa-circle-check"></i>
       </div>
       <h2 class="text-2xl font-bold text-white mb-2">¡Solicitud Radicada con Éxito!</h2>
-      <p class="text-sm text-slate-300 mb-4">Tu solicitud ha sido recibida en estado <strong class="text-purple-400">PRE-ENVIADO</strong>.</p>
+      <p class="text-sm text-zinc-300 mb-4">Tu solicitud ha sido recibida en estado <strong class="role-text-accent">PRE-ENVIADO</strong>.</p>
       
-      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono text-purple-300 text-center mb-5">
-        <span class="text-[11px] text-slate-500 block uppercase mb-1">Radicado generado:</span>
+      <div class="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs font-mono role-text-accent text-center mb-5">
+        <span class="text-[11px] text-zinc-500 block uppercase mb-1">Radicado generado:</span>
         <strong class="text-lg font-bold" x-text="codigoGenerado || 'RAD-0000'"></strong>
       </div>
 
-      <p class="text-[11px] text-slate-500">Ya puedes cerrar esta ventana con tranquilidad.</p>
+      <p class="text-[11px] text-zinc-500">Ya puedes cerrar esta ventana con tranquilidad.</p>
     </div>
 
   </main>
 
   <!-- MODAL: REGISTRAR / EDITAR PERSONA -->
   <div x-show="showPersonaModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-    <div class="glass-card w-full max-w-2xl p-5 sm:p-7 rounded-2xl shadow-2xl relative my-auto border border-purple-500/30" @click.outside="closePersonaModal()">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+    <div class="glass-card w-full max-w-2xl p-5 sm:p-7 rounded-2xl shadow-2xl relative my-auto border border-zinc-700/80" @click.outside="closePersonaModal()">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-800/60 flex items-center justify-center text-purple-300 text-base shadow-sm">
+          <div class="w-10 h-10 rounded-xl role-icon-box flex items-center justify-center role-text-accent text-base shadow-sm">
             <i class="fa-solid" :class="isEditingPersona ? 'fa-user-pen' : 'fa-user-plus'"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base text-white" x-text="isEditingPersona ? 'Editar persona' : 'Registrar nueva persona'"></h3>
-            <p class="text-xs text-slate-400" x-text="isEditingPersona ? 'Actualiza los datos personales y documentos requeridos' : 'Información personal y documentos requeridos'"></p>
+            <h3 class="font-bold font-brand text-base text-white" x-text="isEditingPersona ? 'Editar persona' : 'Registrar nueva persona'"></h3>
+            <p class="text-xs text-zinc-400" x-text="isEditingPersona ? 'Actualiza los datos personales y documentos requeridos' : 'Información personal y documentos requeridos'"></p>
           </div>
         </div>
-        <button type="button" @click="closePersonaModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button type="button" @click="closePersonaModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-slate-800 transition">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
@@ -993,87 +1080,87 @@
       <div class="space-y-3.5 text-xs max-h-[72vh] overflow-y-auto custom-scroll pr-1">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Nombres: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Nombres: <span class="text-red-400">*</span></label>
             <input type="text" x-model="nuevaPersona.nombres" placeholder="Ej: Carlos Andrés"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-              :class="personaModalErrors.nombres ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"
+              :class="personaModalErrors.nombres ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.nombres" x-text="personaModalErrors.nombres"></p>
           </div>
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Apellidos: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Apellidos: <span class="text-red-400">*</span></label>
             <input type="text" x-model="nuevaPersona.apellidos" placeholder="Ej: Gómez Pérez"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-              :class="personaModalErrors.apellidos ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"
+              :class="personaModalErrors.apellidos ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.apellidos" x-text="personaModalErrors.apellidos"></p>
           </div>
         </div>
 
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Tipo Doc: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Tipo Doc: <span class="text-red-400">*</span></label>
             <select x-model="nuevaPersona.tipoDoc"
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-purple-500">
+              class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
               <template x-for="t in tiposDocPersona" :key="t">
                 <option :value="t" x-text="t"></option>
               </template>
             </select>
           </div>
           <div class="col-span-2">
-            <label class="block text-slate-300 font-semibold mb-1">Número de Identificación: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Número de Identificación: <span class="text-red-400">*</span></label>
             <input type="text" inputmode="numeric" pattern="[0-9]*"
               x-model="nuevaPersona.numDoc"
               @input="nuevaPersona.numDoc = (nuevaPersona.numDoc || '').replace(/\D/g, '')"
               placeholder="Ej: 1032456789"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-mono"
-              :class="personaModalErrors.numDoc ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] font-mono"
+              :class="personaModalErrors.numDoc ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.numDoc" x-text="personaModalErrors.numDoc"></p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Cargo / Especialidad: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Cargo / Especialidad: <span class="text-red-400">*</span></label>
             <input type="text" x-model="nuevaPersona.cargo" placeholder="Ej: Técnico Electricista"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500"
-              :class="personaModalErrors.cargo ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"
+              :class="personaModalErrors.cargo ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.cargo" x-text="personaModalErrors.cargo"></p>
           </div>
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Correo Electrónico: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Correo Electrónico: <span class="text-red-400">*</span></label>
             <input type="email" x-model="nuevaPersona.correo" placeholder="ingresante@empresa.com"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500"
-              :class="personaModalErrors.correo ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"
+              :class="personaModalErrors.correo ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="personaModalErrors.correo" x-text="personaModalErrors.correo"></p>
           </div>
         </div>
 
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Observación adicional (Opcional):</label>
+          <label class="block text-zinc-300 font-semibold mb-1">Observación adicional (Opcional):</label>
           <input type="text" x-model="nuevaPersona.observacion" placeholder="Detalle o nota médica/técnica opcional..."
-            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+            class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
         </div>
 
         <!-- SECCIÓN 1 A N: DOCUMENTOS ADJUNTOS -->
-        <div class="pt-3 border-t border-slate-800 space-y-3">
+        <div class="pt-3 border-t border-zinc-800 space-y-3">
           <div class="flex items-center justify-between">
             <div>
               <label class="block text-slate-200 font-bold text-xs">Documentos adjuntos de la persona:</label>
-              <p class="text-[11px] text-slate-400">Adjunta certificados, ARL, seguridad social o exámenes ocupacionales</p>
+              <p class="text-[11px] text-zinc-400">Adjunta certificados, ARL, seguridad social o exámenes ocupacionales</p>
             </div>
             <button type="button" @click="addDocumentoPersona()"
-              class="px-3 py-1.5 rounded-lg bg-purple-950 border border-purple-800/80 hover:bg-purple-900 text-purple-300 font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
+              class="px-3 py-1.5 rounded-lg role-badge hover:bg-zinc-800 role-text-accent font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
               <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
             </button>
           </div>
 
           <div class="space-y-2.5">
             <template x-for="(doc, dIdx) in nuevaPersona.documentos" :key="dIdx">
-              <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <!-- Selector de Tipo de Documento -->
                   <div class="w-full sm:w-1/2">
                     <select x-model="doc.tipo_doc"
-                      class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:border-purple-500">
+                      class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                       <template x-for="t in tiposDocAdjuntoPersona" :key="t">
                         <option :value="t" x-text="t"></option>
                       </template>
@@ -1082,10 +1169,10 @@
 
                   <!-- Input file / botón subir -->
                   <div class="flex-1 relative flex items-center min-w-0">
-                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-700 hover:border-purple-500 rounded-lg px-3 py-2 text-xs bg-slate-900 transition">
-                      <span class="truncate" :class="doc.nombre_archivo ? 'text-emerald-400 font-medium' : 'text-slate-400'"
+                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-zinc-700 hover:border-[var(--role-primary)] rounded-lg px-3 py-2 text-xs bg-zinc-900 transition">
+                      <span class="truncate" :class="doc.nombre_archivo ? 'text-emerald-400 font-medium' : 'text-zinc-400'"
                         x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF/Img)...'"></span>
-                      <i class="fa-solid fa-cloud-arrow-up text-purple-400 ml-2 text-xs flex-shrink-0"></i>
+                      <i class="fa-solid fa-cloud-arrow-up role-text-accent ml-2 text-xs flex-shrink-0"></i>
                       <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoPersonaFile($event, dIdx)" class="hidden">
                     </label>
                   </div>
@@ -1100,7 +1187,7 @@
                 <!-- Input si seleccionó 'Otro documento' -->
                 <div x-show="doc.tipo_doc === 'Otro documento'" class="pt-1">
                   <input type="text" x-model="doc.tipo_doc_otro" placeholder="Especifica qué tipo de documento es (ej: Inducción, Certificado OIT...)"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                 </div>
               </div>
             </template>
@@ -1108,13 +1195,13 @@
         </div>
       </div>
 
-      <div class="flex justify-end gap-3 mt-5 pt-3 border-t border-slate-800">
+      <div class="flex justify-end gap-3 mt-5 pt-3 border-t border-zinc-800">
         <button type="button" @click="closePersonaModal()" :disabled="guardandoPersona"
-          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-zinc-300 text-xs font-semibold cursor-pointer">
           Cancelar
         </button>
         <button type="button" @click="guardarPersonaModal()" :disabled="guardandoPersona"
-          class="px-6 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2 cursor-pointer">
+          class="btn-brand px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
           <i class="fa-solid fa-spinner fa-spin text-xs" x-show="guardandoPersona"></i>
           <span x-text="guardandoPersona ? 'Guardando...' : (isEditingPersona ? 'Guardar cambios' : 'Guardar persona')"></span>
         </button>
@@ -1124,18 +1211,18 @@
 
   <!-- MODAL: REGISTRAR / EDITAR VEHÍCULO -->
   <div x-show="showVehiculoModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-    <div class="glass-card w-full max-w-2xl p-5 sm:p-7 rounded-2xl shadow-2xl relative my-auto border border-purple-500/30" @click.outside="closeVehiculoModal()">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+    <div class="glass-card w-full max-w-2xl p-5 sm:p-7 rounded-2xl shadow-2xl relative my-auto border border-zinc-700/80" @click.outside="closeVehiculoModal()">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-800/60 flex items-center justify-center text-purple-300 text-base shadow-sm">
+          <div class="w-10 h-10 rounded-xl role-icon-box flex items-center justify-center role-text-accent text-base shadow-sm">
             <i class="fa-solid" :class="isEditingVehiculo ? 'fa-pen-to-square' : 'fa-truck-pickup'"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base text-white" x-text="isEditingVehiculo ? 'Editar vehículo' : 'Registrar nuevo vehículo'"></h3>
-            <p class="text-xs text-slate-400" x-text="isEditingVehiculo ? 'Actualiza los datos del automotor y su documentación' : 'Datos del automotor, conductor y documentación'"></p>
+            <h3 class="font-bold font-brand text-base text-white" x-text="isEditingVehiculo ? 'Editar vehículo' : 'Registrar nuevo vehículo'"></h3>
+            <p class="text-xs text-zinc-400" x-text="isEditingVehiculo ? 'Actualiza los datos del automotor y su documentación' : 'Datos del automotor, conductor y documentación'"></p>
           </div>
         </div>
-        <button type="button" @click="closeVehiculoModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button type="button" @click="closeVehiculoModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-slate-800 transition">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
@@ -1143,9 +1230,9 @@
       <div class="space-y-3.5 text-xs max-h-[72vh] overflow-y-auto custom-scroll pr-1">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Tipo de Vehículo: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Tipo de Vehículo: <span class="text-red-400">*</span></label>
             <select x-model="nuevoVehiculo.tipo"
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-purple-500">
+              class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
               <template x-for="t in tiposVehiculo" :key="t">
                 <option :value="t" x-text="t"></option>
               </template>
@@ -1153,22 +1240,22 @@
           </div>
 
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Placa del Vehículo: <span class="text-red-400">*</span></label>
+            <label class="block text-zinc-300 font-semibold mb-1">Placa del Vehículo: <span class="text-red-400">*</span></label>
             <input type="text" x-model="nuevoVehiculo.placa"
               @input="nuevoVehiculo.placa = nuevoVehiculo.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')"
               placeholder="Ej: ABC123"
-              class="w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white uppercase font-mono font-bold placeholder-slate-500 focus:border-purple-500"
-              :class="vehiculoModalErrors.placa ? 'border-red-500' : 'border-slate-700'">
+              class="w-full bg-zinc-900 border rounded-xl p-2.5 text-xs text-white uppercase font-mono font-bold placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]"
+              :class="vehiculoModalErrors.placa ? 'border-red-500' : 'border-zinc-700'">
             <p class="text-[10px] text-red-400 mt-0.5" x-show="vehiculoModalErrors.placa" x-text="vehiculoModalErrors.placa"></p>
           </div>
         </div>
 
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Conductor asignado:</label>
+          <label class="block text-zinc-300 font-semibold mb-1">Conductor asignado:</label>
           <template x-if="personas.length > 0">
             <select x-model="nuevoVehiculo.id_persona"
               @change="const match = personas.find(p => String(p.id) === String($event.target.value)); if (match) nuevoVehiculo.conductor = match.nombres || `${match.nombre || ''} ${match.apellido || ''}`.trim();"
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-purple-500">
+              class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
               <option value="">-- Seleccionar de las personas agregadas --</option>
               <template x-for="p in personas" :key="p.id || p.numDoc || p.identificacion">
                 <option :value="p.id" x-text="(p.nombres || `${p.nombre || ''} ${p.apellido || ''}`).trim() + ' (' + (p.cargo || 'Personal') + ')'"></option>
@@ -1177,48 +1264,48 @@
           </template>
           <template x-if="personas.length === 0">
             <input type="text" x-model="nuevoVehiculo.conductor" placeholder="Nombre completo del conductor..."
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+              class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
           </template>
         </div>
 
         <!-- Licencia de Conducción -->
-        <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+        <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="block text-slate-300 font-bold text-xs flex items-center gap-1.5">
-              <i class="fa-solid fa-id-card text-purple-400"></i> Licencia de conducción del conductor
+            <label class="block text-zinc-300 font-bold text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-id-card role-text-accent"></i> Licencia de conducción del conductor
             </label>
-            <span class="text-[10px] text-slate-500">Opcional</span>
+            <span class="text-[10px] text-zinc-500">Opcional</span>
           </div>
 
-          <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-700 hover:border-purple-500 rounded-lg px-3 py-2 text-xs bg-slate-900 transition">
-            <span class="truncate" :class="nuevoVehiculo.licencia_doc ? 'text-emerald-400 font-medium' : 'text-slate-400'"
+          <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-zinc-700 hover:border-[var(--role-primary)] rounded-lg px-3 py-2 text-xs bg-zinc-900 transition">
+            <span class="truncate" :class="nuevoVehiculo.licencia_doc ? 'text-emerald-400 font-medium' : 'text-zinc-400'"
               x-text="nuevoVehiculo.licencia_doc || 'Adjuntar licencia de conducción (PDF/Foto)...'"></span>
-            <i class="fa-solid fa-cloud-arrow-up text-purple-400 ml-2 text-xs flex-shrink-0"></i>
+            <i class="fa-solid fa-cloud-arrow-up role-text-accent ml-2 text-xs flex-shrink-0"></i>
             <input type="file" accept="application/pdf,.pdf,image/*" @change="handleLicenciaVehiculoFile($event)" class="hidden">
           </label>
         </div>
 
         <!-- SECCIÓN 1 A N: DOCUMENTOS VEHICULARES -->
-        <div class="pt-3 border-t border-slate-800 space-y-3">
+        <div class="pt-3 border-t border-zinc-800 space-y-3">
           <div class="flex items-center justify-between">
             <div>
               <label class="block text-slate-200 font-bold text-xs">Documentos del vehículo (SOAT, Tecnomecánica):</label>
-              <p class="text-[11px] text-slate-400">Adjunta o actualiza la documentación requerida para ingreso a planta</p>
+              <p class="text-[11px] text-zinc-400">Adjunta o actualiza la documentación requerida para ingreso a planta</p>
             </div>
             <button type="button" @click="addDocumentoVehiculo()"
-              class="px-3 py-1.5 rounded-lg bg-purple-950 border border-purple-800/80 hover:bg-purple-900 text-purple-300 font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
+              class="px-3 py-1.5 rounded-lg role-badge hover:bg-zinc-800 role-text-accent font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
               <i class="fa-solid fa-plus text-[10px]"></i> Adjuntar otro
             </button>
           </div>
 
           <div class="space-y-2.5">
             <template x-for="(doc, dIdx) in nuevoVehiculo.documentos" :key="dIdx">
-              <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <!-- Selector de Tipo de Documento -->
                   <div class="w-full sm:w-1/2">
                     <select x-model="doc.tipo_doc"
-                      class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:border-purple-500">
+                      class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-white focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                       <template x-for="t in tiposDocAdjuntoVehiculo" :key="t">
                         <option :value="t" x-text="t"></option>
                       </template>
@@ -1227,10 +1314,10 @@
 
                   <!-- Input file / botón subir -->
                   <div class="flex-1 relative flex items-center min-w-0">
-                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-slate-700 hover:border-purple-500 rounded-lg px-3 py-2 text-xs bg-slate-900 transition">
-                      <span class="truncate" :class="doc.nombre_archivo ? 'text-emerald-400 font-medium' : 'text-slate-400'"
+                    <label class="w-full cursor-pointer flex items-center justify-between border border-dashed border-zinc-700 hover:border-[var(--role-primary)] rounded-lg px-3 py-2 text-xs bg-zinc-900 transition">
+                      <span class="truncate" :class="doc.nombre_archivo ? 'text-emerald-400 font-medium' : 'text-zinc-400'"
                         x-text="doc.nombre_archivo || 'Seleccionar archivo (PDF/Img)...'"></span>
-                      <i class="fa-solid fa-cloud-arrow-up text-purple-400 ml-2 text-xs flex-shrink-0"></i>
+                      <i class="fa-solid fa-cloud-arrow-up role-text-accent ml-2 text-xs flex-shrink-0"></i>
                       <input type="file" accept="application/pdf,.pdf,image/*" @change="handleDocumentoVehiculoFile($event, dIdx)" class="hidden">
                     </label>
                   </div>
@@ -1245,7 +1332,7 @@
                 <!-- Input si seleccionó 'Otro documento' -->
                 <div x-show="doc.tipo_doc === 'Otro documento'" class="pt-1">
                   <input type="text" x-model="doc.tipo_doc_otro" placeholder="Especifica qué tipo de documento es..."
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-purple-500">
+                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)]">
                 </div>
               </div>
             </template>
@@ -1253,13 +1340,13 @@
         </div>
       </div>
 
-      <div class="flex justify-end gap-3 mt-5 pt-3 border-t border-slate-800">
+      <div class="flex justify-end gap-3 mt-5 pt-3 border-t border-zinc-800">
         <button type="button" @click="closeVehiculoModal()" :disabled="guardandoVehiculo"
-          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-zinc-300 text-xs font-semibold cursor-pointer">
           Cancelar
         </button>
         <button type="button" @click="guardarVehiculoModal()" :disabled="guardandoVehiculo"
-          class="px-6 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2 cursor-pointer">
+          class="btn-brand px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
           <i class="fa-solid fa-spinner fa-spin text-xs" x-show="guardandoVehiculo"></i>
           <span x-text="guardandoVehiculo ? 'Guardando...' : (isEditingVehiculo ? 'Guardar cambios' : 'Guardar vehículo')"></span>
         </button>
@@ -1269,34 +1356,34 @@
 
   <!-- MODAL: VISOR DE DOCUMENTOS ADJUNTOS -->
   <div x-show="modalDocsOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-    <div class="glass-card w-full max-w-lg p-6 rounded-2xl shadow-2xl relative my-auto border border-purple-500/30" @click.outside="cerrarModalDocs()">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+    <div class="glass-card w-full max-w-lg p-6 rounded-2xl shadow-2xl relative my-auto border border-zinc-700/80" @click.outside="cerrarModalDocs()">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-800/60 flex items-center justify-center text-purple-300 text-base shadow-sm">
+          <div class="w-10 h-10 rounded-xl role-icon-box flex items-center justify-center role-text-accent text-base shadow-sm">
             <i class="fa-solid" :class="modalDocsIcon || 'fa-folder-open'"></i>
           </div>
           <div class="min-w-0">
-            <h3 class="font-bold text-base text-white truncate" x-text="modalDocsTitle"></h3>
-            <p class="text-xs text-slate-400 truncate" x-text="modalDocsSubtitle"></p>
+            <h3 class="font-bold font-brand text-base text-white truncate" x-text="modalDocsTitle"></h3>
+            <p class="text-xs text-zinc-400 truncate" x-text="modalDocsSubtitle"></p>
           </div>
         </div>
-        <button type="button" @click="cerrarModalDocs()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button type="button" @click="cerrarModalDocs()" class="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-slate-800 transition">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
 
       <div class="space-y-2.5 max-h-[60vh] overflow-y-auto custom-scroll pr-1">
         <template x-for="(doc, idx) in modalDocsList" :key="idx">
-          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition">
+          <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between gap-3 hover:border-zinc-700 transition">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-purple-400 text-xs flex-shrink-0">
+              <div class="w-8 h-8 rounded-lg bg-slate-800 border border-zinc-700 flex items-center justify-center role-text-accent text-xs flex-shrink-0">
                 <i class="fa-solid" :class="doc.nombre && doc.nombre.toLowerCase().endsWith('.pdf') ? 'fa-file-pdf text-red-400' : 'fa-file-image text-blue-400'"></i>
               </div>
               <div class="min-w-0">
                 <p class="text-xs font-bold text-white truncate" x-text="doc.tipo"></p>
-                <p class="text-[11px] text-slate-400 truncate font-mono" x-text="doc.nombre"></p>
+                <p class="text-[11px] text-zinc-400 truncate font-mono" x-text="doc.nombre"></p>
                 <template x-if="doc.vigencia">
-                  <span class="inline-block mt-0.5 text-[10px] text-purple-300 font-semibold px-1.5 py-0.2 rounded bg-purple-950/70 border border-purple-800/40">
+                  <span class="inline-block mt-0.5 text-[10px] role-text-accent font-semibold px-1.5 py-0.2 rounded role-badge">
                     Vigencia: <span x-text="doc.vigencia"></span>
                   </span>
                 </template>
@@ -1305,30 +1392,29 @@
 
             <template x-if="doc.url">
               <a :href="doc.url" target="_blank"
-                class="px-3 py-1.5 rounded-lg bg-purple-950 border border-purple-800/80 hover:bg-purple-900 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition flex-shrink-0">
+                class="px-3 py-1.5 rounded-lg role-badge hover:bg-zinc-800 role-text-accent text-xs font-semibold flex items-center gap-1.5 transition flex-shrink-0">
                 <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Ver
               </a>
             </template>
           </div>
         </template>
 
-        <div x-show="modalDocsList.length === 0" class="p-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+        <div x-show="modalDocsList.length === 0" class="p-6 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
           No hay documentos adjuntos registrados.
         </div>
       </div>
 
-      <div class="flex justify-end pt-4 mt-4 border-t border-slate-800">
-        <button type="button" @click="cerrarModalDocs()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+      <div class="flex justify-end pt-4 mt-4 border-t border-zinc-800">
+        <button type="button" @click="cerrarModalDocs()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-zinc-300 text-xs font-semibold">
           Cerrar
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Pie de página -->
-  <footer class="max-w-6xl w-full mx-auto text-center text-xs text-slate-500 pt-4 border-t border-slate-800/80">
-    <p>© 2026 PSI · Sistema de Gestión de Solicitudes y Acceso a Planta</p>
-  </footer>
+  {% endblock %}
 
-</body>
-</html>
+  <!-- Pie de página -->
+  {% block footer %}
+  <p>© 2026 PSI · Sistema de Gestión de Solicitudes y Acceso a Planta</p>
+  {% endblock %}

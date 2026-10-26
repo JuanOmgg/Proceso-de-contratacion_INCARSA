@@ -58,6 +58,18 @@
         Esta acción no se puede deshacer y podría afectar el histórico de solicitudes vinculadas.
       </p>
 
+    {% elif tipo == 'formulario' or tipo == 'Formulario' %}
+      <div class="modal-stamp warning">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-[var(--paper-warn)]"></i>
+      </div>
+      <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] mb-2">¿Eliminar formulario GESCO?</h3>
+      <p class="text-sm leading-relaxed text-[var(--paper-text)] mb-6">
+        ¿Seguro que deseas eliminar el formulario <br>
+        <span class="font-bold text-[var(--paper-ink)] text-base"
+          x-text="(typeof formularioAEliminar !== 'undefined' && formularioAEliminar) ? formularioAEliminar.nombre : ''"></span>?<br>
+        Si contiene registros históricos de inducción asociados, se desactivará de forma segura.
+      </p>
+
     {% else %}
       <div class="modal-stamp danger">
         <i class="fa-solid fa-xmark text-2xl text-[var(--paper-err)]"></i>
@@ -71,7 +83,7 @@
     <!-- Botones de Acción (Cancelar / Confirmar) -->
     <div class="flex items-center justify-center gap-3">
       <button type="button" 
-        @click="(typeof cancelDelete === 'function' ? cancelDelete() : (typeof cancelarEliminar === 'function' ? cancelarEliminar() : null))" 
+        @click="(typeof cerrarModalEliminar === 'function' ? cerrarModalEliminar() : (typeof cancelDelete === 'function' ? cancelDelete() : (typeof cancelarEliminar === 'function' ? cancelarEliminar() : null)))" 
         class="modal-btn-cancel flex-1 cursor-pointer"
         :disabled="typeof eliminando !== 'undefined' ? eliminando : false">
         Cancelar
@@ -84,6 +96,8 @@
         @click="typeof eliminarPersona === 'function' ? eliminarPersona() : (typeof executeDelete === 'function' ? executeDelete() : null)"
         {% elif tipo == 'correspondencia' %}
         @click="typeof eliminarCorrespondencia === 'function' ? eliminarCorrespondencia() : (typeof executeDelete === 'function' ? executeDelete() : null)"
+        {% elif tipo == 'formulario' or tipo == 'Formulario' %}
+        @click="typeof eliminarFormulario === 'function' ? eliminarFormulario() : (typeof executeDelete === 'function' ? executeDelete() : null)"
         {% else %}
         @click="typeof eliminarSolicitud === 'function' ? eliminarSolicitud() : (typeof executeDelete === 'function' ? executeDelete() : null)"
         {% endif %}

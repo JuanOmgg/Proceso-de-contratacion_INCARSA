@@ -259,12 +259,15 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
             }
 
         # 1. Ciframos contraseña si viene en el PATCH
+        cambio_clave = False
         if "contrasena" in new_updates and new_updates["contrasena"]:
             password_plana = str(new_updates["contrasena"])
             salt = bcrypt.gensalt()
             new_updates["contrasena"] = bcrypt.hashpw(
                 password_plana.encode("utf-8"), salt
             ).decode("utf-8")
+            new_updates["password_changed_at"] = datetime.utcnow()
+            cambio_clave = True
 
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
@@ -319,6 +322,13 @@ def UPDATE_user_db(id_user: int, new_updates: dict) -> dict:
                                     )
 
                 conexion.commit()
+
+                if cambio_clave:
+                    try:
+                        from src.utils.security import invalidate_user_sessions
+                        invalidate_user_sessions(id_user)
+                    except Exception as ex:
+                        print(f"⚠️ Error invalidando sesiones previas tras cambio de clave: {ex}")
 
                 # Resolver rol actual y plantas actualizadas para sincronización en tiempo real
                 cursor.execute("""

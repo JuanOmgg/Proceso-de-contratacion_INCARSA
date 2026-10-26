@@ -20,3 +20,10 @@ class PermisosRolInput(BaseModel):
 class DosPasosConfigInput(BaseModel):
     activo: bool
 
+
+class ConfiguracionCorreosInduccionInput(BaseModel):
+    correos_habilitados: bool = True
+    induccion_modo_entrega: str = "CORREO"  # "CORREO" | "DIRECTO"
+    induccion_tipo_enlace: str = "GESCO"    # "GESCO" | "WIX"
+
+

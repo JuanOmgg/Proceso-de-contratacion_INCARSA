@@ -103,23 +103,24 @@
     const fallbacks = {
       'dashboard': true,
       'solicitudes': true,
-      'nueva_solicitud': ['ADMINISTRADOR', 'GESTION DOCUMENTAL', 'SST', 'GESCO', 'SCR'].includes(miRol),
+      'nueva_solicitud': ['ADMINISTRADOR', 'SOLICITANTE', 'SST', 'GESCO', 'SCR'].includes(miRol),
       'usuarios': ['ADMINISTRADOR'].includes(miRol),
       'nuevo_usuario': ['ADMINISTRADOR', 'SCR'].includes(miRol),
       'plantas': ['ADMINISTRADOR', 'SCR'].includes(miRol),
-      'contratistas': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
-      'vehiculos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
-      'dispositivos': ['ADMINISTRADOR', 'SCR', 'GESTION DOCUMENTAL', 'SST', 'GESCO'].includes(miRol),
+      'contratistas': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE'].includes(miRol),
+      'vehiculos': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE'].includes(miRol),
+      'dispositivos': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE', 'SST', 'GESCO'].includes(miRol),
       'personas': true,
-      'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'GESTION DOCUMENTAL'].includes(miRol),
+      'procesamiento': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR', 'SOLICITANTE'].includes(miRol),
       'antecedentes': ['ADMINISTRADOR', 'SCR'].includes(miRol),
       'seguridad_social': ['ADMINISTRADOR', 'SST', 'GESCO', 'SCR'].includes(miRol),
       'inducciones': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SST'].includes(miRol),
       'estadisticas': ['ADMINISTRADOR', 'SCR', 'GESCO', 'SST'].includes(miRol),
-      'formulario_temporal': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE', 'GESTION DOCUMENTAL', 'GESTIÓN DOCUMENTAL'].includes(miRol),
+      'formulario_temporal': ['ADMINISTRADOR', 'SCR', 'SOLICITANTE', 'SOLICITANTE'].includes(miRol),
       'revision_solicitud': ['ADMINISTRADOR', 'SCR', 'GESCO', 'SST', 'VIGILANTE'].includes(miRol),
       'correspondencias': true,
       'nueva_correspondencia': true,
+      'formularios_gesco': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SUPERADMIN', 'SST'].includes(miRol),
       'superadmin': miRol === 'SUPERADMIN'
     };
 
@@ -199,8 +200,7 @@
     const rolNom = String(sesion.rol || sesion.nombre_rol || '').toUpperCase();
     return idRol === 5 || idRol === 1 || idRol === 2 ||
            rolNom.includes('SOLICITANTE') ||
-           rolNom.includes('GESTION DOCUMENTAL') ||
-           rolNom.includes('GESTIÓN DOCUMENTAL') ||
+           rolNom.includes('SOLICITANTE') ||
            rolNom.includes('ADMIN');
   }
   window.puedeGenerarFormularioTemporal = puedeGenerarFormularioTemporal;

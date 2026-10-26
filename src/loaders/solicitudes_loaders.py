@@ -2,14 +2,16 @@ import re
 import math
 import json
 import secrets
-import string
 import threading
 from datetime import datetime, timedelta
 from database import GET_conexion
 from typing import Dict, List, Any, Optional
 from src.utils.broadcaster import notification_broadcaster
 from src.transformers.vehiculo_transformer import FORMATEAR_PLACA
-from src.utils.email_service import enviar_correo_autorizacion_datos
+from src.utils.email_service import (
+    send_autorizacionDatos,
+    send_notificationRevision
+)
 
 
 def Generate_unique_code(cursor) -> str:
@@ -58,7 +60,7 @@ def obtener_usuarios_revisores_por_planta(cursor, id_solicitud: int, plantas_ids
 
     format_p = ",".join(["%s"] * len(p_ids))
     sql = f"""
-        SELECT DISTINCT u.id, u.id_rol, r.nombre_rol
+        SELECT DISTINCT u.id, u.id_rol, r.nombre_rol, u.nombres, u.apellidos, u.correo
         FROM usuarios u
         INNER JOIN roles r ON u.id_rol = r.id
         INNER JOIN usuario_plantas up ON u.id = up.id_usuario
@@ -68,6 +70,87 @@ def obtener_usuarios_revisores_por_planta(cursor, id_solicitud: int, plantas_ids
     """
     cursor.execute(sql, tuple(p_ids))
     return cursor.fetchall() or []
+
+
+def OBTENER_info_induccion_para_correo(
+    cursor,
+    id_persona: int,
+    id_empresa_origen: Any = None,
+    nombre_empresa_origen: Optional[str] = None,
+    tipo_personal: Optional[str] = "Contratista"
+) -> dict:
+    """
+    Determina si la persona tiene inducción vigente activa (válida para todas las 4 empresas).
+    Si no está vigente, retorna la URL oficial de inducción (formulario GESCO dinámico asignado
+    según el tipo de personal o portal externo Wix según la configuración de SuperAdmin).
+    """
+    from src.utils.email_service import get_url_induccion_empresa, get_baseURL
+    from src.loaders.superadmin_loader import GET_configuracion_correos_induccion_db, GET_formulario_asignado_por_tipo_db
+
+    nom_emp = nombre_empresa_origen
+    if not nom_emp and id_empresa_origen:
+        cursor.execute("SELECT nombre_empresa FROM empresa WHERE id = %s", (id_empresa_origen,))
+        r_e = cursor.fetchone()
+        if r_e:
+            nom_emp = r_e.get("nombre_empresa")
+    if not nom_emp:
+        nom_emp = "INCARSA S.A.S."
+
+    # Consultar directiva global de correos e inducciones
+    cfg = GET_configuracion_correos_induccion_db()
+    tipo_enlace = cfg.get("induccion_tipo_enlace", "GESCO")
+    form_asignado = None
+
+    if tipo_enlace == "GESCO":
+        res_f = GET_formulario_asignado_por_tipo_db(tipo_personal or "Contratista")
+        if res_f.get("exito") and res_f.get("formulario"):
+            form_asignado = res_f["formulario"]
+            base_url = get_baseURL()
+            url_ind = f"{base_url}{form_asignado['url_evaluacion']}"
+        else:
+            url_ind = get_url_induccion_empresa(nom_emp or id_empresa_origen)
+    else:
+        url_ind = get_url_induccion_empresa(nom_emp or id_empresa_origen)
+
+    cursor.execute("""
+        SELECT fecha_induccion, fecha_vigencia, DATEDIFF(fecha_vigencia, CURDATE()) AS dias_restantes
+        FROM inducciones
+        WHERE id_persona = %s
+        ORDER BY fecha_vigencia DESC, id DESC
+        LIMIT 1
+    """, (id_persona,))
+    row = cursor.fetchone()
+
+    if row and row.get("fecha_vigencia"):
+        dias = row.get("dias_restantes")
+        if dias is not None and dias >= 0:
+            f_vig = str(row["fecha_vigencia"]).split(" ")[0]
+            f_partes = f_vig.split("-")
+            meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+            if len(f_partes) == 3:
+                m_idx = int(f_partes[1]) - 1
+                f_vig_legible = f"{f_partes[2]} {meses[m_idx]} {f_partes[0]}"
+            else:
+                f_vig_legible = f_vig
+
+            return {
+                "induccion_vigente": True,
+                "fecha_vigencia": f_vig_legible,
+                "dias_restantes": dias,
+                "url_induccion": None,
+                "nombre_empresa_origen": nom_emp,
+                "formulario_asignado": form_asignado
+            }
+
+    return {
+        "induccion_vigente": False,
+        "fecha_vigencia": None,
+        "dias_restantes": None,
+        "url_induccion": url_ind,
+        "nombre_empresa_origen": nom_emp,
+        "formulario_asignado": form_asignado
+    }
+
 
 
 def CREATE_solicitud_bd(solicitud: dict) -> dict:
@@ -196,6 +279,14 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                         cursor.execute("SELECT id FROM emp_contratista LIMIT 1")
                         row_c_first = cursor.fetchone()
                         id_contratista = row_c_first["id"] if row_c_first else 1
+
+                    # Resolver nombre de empresa contratista para notificaciones y correos
+                    nom_contratista_txt = "Empresa Contratista"
+                    if id_contratista:
+                        cursor.execute("SELECT nombre FROM emp_contratista WHERE id = %s", (id_contratista,))
+                        r_c_nom = cursor.fetchone()
+                        if r_c_nom and r_c_nom.get("nombre"):
+                            nom_contratista_txt = r_c_nom["nombre"]
 
                     # 3. Resolver diligenciado_por válido
                     raw_diligenciado = solicitud.get("diligenciado_por", 1)
@@ -329,12 +420,15 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                     c_email = str(p_row.get("correo") or "").strip()
                                     if c_email and "@" in c_email:
                                         p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
+                                        tipo_pers_crea = solicitud.get("tipo_personal", "Contratista")
+                                        info_ind = OBTENER_info_induccion_para_correo(cursor, p_id, emp_origen, nom_empresa_email, tipo_personal=tipo_pers_crea)
                                         personas_para_notificar.append({
                                             "destinatario": c_email,
                                             "nombre": p_nom,
                                             "radicado": cod_val,
                                             "contratista": nom_contratista_email,
-                                            "token": tok
+                                            "token": tok,
+                                            **info_ind
                                         })
 
                                 # Sincronizar automáticamente antecedentes y antecedentes_historial_solicitudes
@@ -484,6 +578,20 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     else:
                         # Notificar a los usuarios revisores (SST y GESCO) cuyas plantas asignadas coincidan con la solicitud
                         try:
+                            # 1. Evaluar si GESCO se auto-aprueba porque todo el personal tiene inducciones vigentes
+                            gesco_autoaprobado = False
+                            try:
+                                from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
+                                res_auto_g = EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
+                                    cursor=cursor,
+                                    id_solicitud=solicitud_id,
+                                    tipo_personal=solicitud.get("tipo_personal", "Contratista"),
+                                    plantas_ids=sub_plantas
+                                )
+                                gesco_autoaprobado = bool(res_auto_g.get("auto_aprobado"))
+                            except Exception as e_ag:
+                                print(f"⚠️ Aviso al evaluar auto-aprobación GESCO: {e_ag}")
+
                             revisores_dest = obtener_usuarios_revisores_por_planta(
                                 cursor,
                                 id_solicitud=solicitud_id,
@@ -494,8 +602,12 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 if cod_val:
                                     rol_nom = u_rev.get("nombre_rol") or "SST"
                                     u_id = u_rev["id"]
-                                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
-                                    msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {rol_nom}."
+                                    if rol_nom == "GESCO" and gesco_autoaprobado:
+                                        tit_notif = "Visto bueno GESCO automático"
+                                        msg_notif = f"La solicitud {cod_val} cuenta con visto bueno automático de GESCO (todo el personal tiene inducciones vigentes)."
+                                    else:
+                                        tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                                        msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {rol_nom}."
                                     cursor.execute(
                                         """
                                         INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
@@ -524,6 +636,61 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                         target_user_id=u_id
                                     )
 
+                            # Despachar correos a revisores SST y GESCO en segundo plano
+                            if revisores_dest and cod_val:
+                                plantas_nombres_txt = "Planta asignada"
+                                if sub_plantas:
+                                    try:
+                                        f_p = ",".join(["%s"] * len(sub_plantas))
+                                        cursor.execute(f"SELECT nombre FROM planta WHERE id IN ({f_p})", tuple(sub_plantas))
+                                        p_rows = cursor.fetchall() or []
+                                        if p_rows:
+                                            plantas_nombres_txt = ", ".join([str(r["nombre"]) for r in p_rows if r.get("nombre")])
+                                    except Exception as e_p:
+                                        print(f"⚠️ [WARN] Error obteniendo nombres de plantas para correo: {e_p}")
+
+                                info_notif_revisores = {
+                                    "radicado": cod_val,
+                                    "contratista": nom_contratista_txt or "Empresa Contratista",
+                                    "plantas": plantas_nombres_txt,
+                                    "tipo_contratista": solicitud.get("tipo_contratista") or "Contratista",
+                                    "total_personas": len(personas_ids) if isinstance(personas_ids, list) else 0,
+                                    "total_vehiculos": len(resolved_vehiculos) if isinstance(resolved_vehiculos, list) else 0,
+                                    "fecha_inicio": str(solicitud.get("fecha_inicio") or "N/A"),
+                                    "fecha_fin": str(solicitud.get("fecha_fin") or "N/A"),
+                                }
+
+                                def _despachar_correos_revisores_creacion(rev_list, info_sol):
+                                    for r_u in rev_list:
+                                        dest_email = str(r_u.get("correo") or "").strip()
+                                        if dest_email and "@" in dest_email:
+                                            r_nom = f"{r_u.get('nombres') or ''} {r_u.get('apellidos') or ''}".strip() or "Revisor"
+                                            r_rol = r_u.get("nombre_rol") or "SST"
+                                            if r_rol == "GESCO" and gesco_autoaprobado:
+                                                continue
+                                            try:
+                                                send_notificationRevision(
+                                                    destinatario=dest_email,
+                                                    nombre_revisor=r_nom,
+                                                    rol_revisor=r_rol,
+                                                    radicado=info_sol["radicado"],
+                                                    empresa_contratista=info_sol["contratista"],
+                                                    plantas=info_sol["plantas"],
+                                                    tipo_contratista=info_sol["tipo_contratista"],
+                                                    total_personas=info_sol["total_personas"],
+                                                    total_vehiculos=info_sol["total_vehiculos"],
+                                                    fecha_inicio=info_sol["fecha_inicio"],
+                                                    fecha_fin=info_sol["fecha_fin"]
+                                                )
+                                            except Exception as ex_m:
+                                                print(f"[WARN] Error enviando correo de revisión a {dest_email}: {ex_m}")
+
+                                threading.Thread(
+                                    target=_despachar_correos_revisores_creacion,
+                                    args=(list(revisores_dest), info_notif_revisores),
+                                    daemon=True
+                                ).start()
+
                             # Notificar cambio general de solicitudes para refrescar tablas y tableros en caliente
                             if cod_val:
                                 notification_broadcaster.notificar_cambio_solicitud(
@@ -541,17 +708,28 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     def _despachar_correos_creacion(lista):
                         for item in lista:
                             try:
-                                enviar_correo_autorizacion_datos(
+                                send_autorizacionDatos(
                                     destinatario=item["destinatario"],
                                     nombre_persona=item["nombre"],
                                     radicado=item["radicado"],
                                     empresa_contratista=item["contratista"],
-                                    token_autorizacion=item["token"]
+                                    token_autorizacion=item["token"],
+                                    induccion_vigente=item.get("induccion_vigente", False),
+                                    fecha_vigencia_induccion=item.get("fecha_vigencia"),
+                                    dias_restantes_induccion=item.get("dias_restantes"),
+                                    url_induccion=item.get("url_induccion"),
+                                    empresa_origen_nombre=item.get("nombre_empresa_origen")
                                 )
                             except Exception as e_m:
                                 print(f"[WARN] Error despachando correo de autorización a {item.get('destinatario')}: {e_m}")
 
                     threading.Thread(target=_despachar_correos_creacion, args=(personas_para_notificar,), daemon=True).start()
+
+        from src.loaders.superadmin_loader import GET_configuracion_correos_induccion_db, GET_formulario_asignado_por_tipo_db
+        cfg_ind = GET_configuracion_correos_induccion_db()
+        modo_entrega_actual = cfg_ind.get("induccion_modo_entrega", "CORREO")
+        res_form_asig = GET_formulario_asignado_por_tipo_db(solicitud.get("tipo_personal", "Contratista"))
+        form_asig = res_form_asig.get("formulario") if res_form_asig.get("exito") else None
 
         print(f"[OK] Se registraron {len(ids_generados)} solicitud(es) con exito: IDs {ids_generados}")
         return {
@@ -561,6 +739,9 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
             "id_generado": ids_generados[0] if ids_generados else None,
             "codigos_generados": codigos_generados,
             "codigo": codigos_generados[0] if codigos_generados else None,
+            "tipo_personal": solicitud.get("tipo_personal", "Contratista"),
+            "modo_entrega": modo_entrega_actual,
+            "formulario_asignado": form_asig
         }
 
     except Exception as e:
@@ -698,7 +879,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                                CONCAT(u_den.nombres, ' ', u_den.apellidos) AS denegado_por_nombre,
                                a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
                                ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
-                               ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
+                               NULL AS responsable_induccion, NULL AS anotaciones_induccion
                         FROM ingresantes i
                         INNER JOIN personas p ON i.id_persona = p.id
                         LEFT JOIN usuarios u_den ON i.denegado_por = u_den.id
@@ -726,7 +907,7 @@ def GET_solicitud_bd(solicitud_id: int) -> dict:
                                        'PENDIENTE' AS estado_datos, NULL AS token_autorizacion, NULL AS fecha_respuesta_datos,
                                        a.fecha_consulta, a.ultima_revision, a.responsable, a.anotaciones,
                                        ind.fecha_induccion, ind.fecha_vigencia AS fecha_vigencia_induccion,
-                                       ind.responsable AS responsable_induccion, ind.anotaciones AS anotaciones_induccion
+                                       NULL AS responsable_induccion, NULL AS anotaciones_induccion
                                 FROM personas p
                                 LEFT JOIN antecedentes a ON a.id_persona = p.id
                                 LEFT JOIN inducciones ind ON ind.id_persona = p.id
@@ -1001,14 +1182,17 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                         fecha_revision = NOW()
                 """
 
+                habia_visto_bueno_previo = False
                 for pid in plantas_objetivo:
                     if pid is None:
                         cursor.execute(
-                            "SELECT id FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
+                            "SELECT id, decision FROM solicitud_revisiones WHERE id_solicitud = %s AND id_planta IS NULL AND UPPER(rol) = %s",
                             (real_id, rol)
                         )
                         rev_existente = cursor.fetchone()
                         if rev_existente:
+                            if rev_existente.get("decision") in ("APROBADO", "RECHAZADO"):
+                                habia_visto_bueno_previo = True
                             cursor.execute(
                                 """
                                 UPDATE solicitud_revisiones
@@ -1040,6 +1224,8 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                 id_rol_user = dictamen.get("id_rol")
                 es_admin_o_super = (id_rol_user in (1, 2)) or (rol in ("ADMIN", "ADMINISTRADOR", "SUPERADMIN"))
                 es_superadmin = (id_rol_user == 2) or (rol == "SUPERADMIN")
+                es_scr_o_superior = es_admin_o_super or (rol == "SCR")
+                cod_sol = sol.get("codigo") or cod_str
                 sol_estado_prev = str(sol.get("estado") or "").strip().upper()
                 es_finalizada = sol_estado_prev in ("APROBADO", "FINALIZADO", "RECHAZADO")
                 hubo_cambio_personas_aut = False
@@ -1382,6 +1568,7 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                     (rev_scr_exist["id"],)
                                 )
                             else:
+                                obs_auto = "Aprobación automática tras visto bueno de revisores técnicos (Pre-aprobación SCR activa)"
                                 cursor.execute(
                                     """
                                     INSERT INTO solicitud_revisiones (
@@ -1449,7 +1636,7 @@ def REGISTRAR_dictamen_db(solicitud_id: Any, dictamen: dict) -> dict:
                                 target_user_id=id_creador
                             )
                         
-                        # También alertar al rol GESTION DOCUMENTAL
+                        # También alertar al rol SOLICITANTE
                         cursor.execute("SELECT id FROM roles WHERE UPPER(nombre_rol) LIKE '%DOCUMENTAL%' LIMIT 1")
                         r_gd = cursor.fetchone()
                         if r_gd:
@@ -1959,9 +2146,9 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                     """,
                     (
                         real_id,
-                        "GESTION DOCUMENTAL",
+                        "SOLICITANTE",
                         id_usuario,
-                        nombre_usuario or "Gestión Documental",
+                        nombre_usuario or "Solicitante",
                         "CORREGIDO",
                         "Solicitud corregida mediante enlace de edición única y retornada directamente a SCR para aprobación final."
                     )
@@ -1999,7 +2186,7 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                             bloque_obs = ("\nObservaciones previas SST / GESCO:\n" + "\n".join(items_obs)) if items_obs else "\nSin observaciones adicionales de SST ni GESCO."
 
                             tit_corregida = f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR"
-                            msg_corregida = f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra en 'Por Aprobar' lista para tu dictamen final.\n{bloque_obs}"
+                            msg_corregida = f"El solicitante corrigió la solicitud {cod_sol}. Se encuentra en 'Por Aprobar' lista para tu dictamen final.\n{bloque_obs}"
                             cursor.execute(
                                 """
                                 INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -2027,7 +2214,7 @@ def CONSUMIR_token_edicion_db(solicitud_id: Any, token: str, id_usuario: Optiona
                             )
                         else:
                             tit_conv = f"Solicitud {cod_sol} corregida - Pendiente aprobación final SCR"
-                            msg_conv = f"Gestión Documental corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final."
+                            msg_conv = f"El solicitante corrigió la solicitud {cod_sol}. Se encuentra directamente en tu bandeja 'Por Aprobar' lista para tu dictamen final."
                             cursor.execute(
                                 """
                                 INSERT INTO notificaciones (rol_destino, titulo, mensaje, tipo, enlace)
@@ -2681,14 +2868,18 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
 
                         # Obtener datos de la solicitud y contratista por si hay personas nuevas a notificar
                         cursor.execute("""
-                            SELECT s.codigo, ec.nombre AS contratista_nom
+                            SELECT s.codigo, s.empresa_origen, s.tipo_personal, e.nombre_empresa AS nombre_empresa_origen, ec.nombre AS contratista_nom
                             FROM solicitudes s
+                            LEFT JOIN empresa e ON s.empresa_origen = e.id
                             LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
                             WHERE s.id = %s
                         """, (real_id,))
                         sol_info = cursor.fetchone() or {}
                         rad_update = sol_info.get("codigo") or f"RAD-{real_id}"
                         nom_cont_update = sol_info.get("contratista_nom") or "Empresa Contratista"
+                        emp_orig_update = sol_info.get("empresa_origen")
+                        tipo_pers_update = sol_info.get("tipo_personal") or "Contratista"
+                        nom_emp_orig_update = sol_info.get("nombre_empresa_origen") or "INCARSA"
 
                         cursor.execute("DELETE FROM ingresantes WHERE id_solicitud = %s", (real_id,))
                         valores_ing = []
@@ -2730,12 +2921,14 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                                     row_pn = cursor.fetchone()
                                     if row_pn and row_pn.get("correo") and "@" in str(row_pn.get("correo")):
                                         nom_pn = f"{row_pn.get('nombre') or ''} {row_pn.get('apellido') or ''}".strip()
+                                        info_ind = OBTENER_info_induccion_para_correo(cursor, p_id_int, emp_orig_update, nom_emp_orig_update, tipo_personal=tipo_pers_update)
                                         personas_nuevas_update.append({
                                             "destinatario": str(row_pn["correo"]).strip(),
                                             "nombre": nom_pn,
                                             "radicado": rad_update,
                                             "contratista": nom_cont_update,
-                                            "token": tok_p
+                                            "token": tok_p,
+                                            **info_ind
                                         })
 
                                 valores_ing.append((real_id, p_id_int, aut_val, mot, tok_p, est_d, f_resp, ip_d, disp_d, m_rec))
@@ -2755,12 +2948,17 @@ def UPDATE_solicitud_bd(solicitud_id: Any, campos: dict) -> dict:
                             def _notificar_nuevas_async(lista):
                                 for item in lista:
                                     try:
-                                        enviar_correo_autorizacion_datos(
+                                        send_autorizacionDatos(
                                             destinatario=item["destinatario"],
                                             nombre_persona=item["nombre"],
                                             radicado=item["radicado"],
                                             empresa_contratista=item["contratista"],
-                                            token_autorizacion=item["token"]
+                                            token_autorizacion=item["token"],
+                                            induccion_vigente=item.get("induccion_vigente", False),
+                                            fecha_vigencia_induccion=item.get("fecha_vigencia"),
+                                            dias_restantes_induccion=item.get("dias_restantes"),
+                                            url_induccion=item.get("url_induccion"),
+                                            empresa_origen_nombre=item.get("nombre_empresa_origen")
                                         )
                                     except Exception as e_nu:
                                         print(f"⚠️ Error enviando correo de autorización a {item.get('destinatario')}: {e_nu}")
@@ -3341,20 +3539,6 @@ def GET_resumen_verificacion_porteria_db(identificador: str) -> dict:
 # AUTORIZACIÓN DE TRATAMIENTO DE DATOS PERSONALES (LEY 1581 DE 2012)
 # ==============================================================================
 
-def OBTENER_correo_institucional_empresa(nombre_empresa: str) -> str:
-    """
-    Retorna el correo institucional oficial para trámites de Habeas Data
-    y atención al titular según la empresa mandante / origen.
-    """
-    nom = str(nombre_empresa or "").strip().upper()
-    if "MILPA" in nom:
-        return "cimilpa@milpa.com.co"
-    if "CARBOINSA" in nom:
-        return "carboinsasas@carboinsa.com.co"
-    if "UNIMINAS" in nom:
-        return "uniminas@uniminas.com.co"
-    return "incarsasas@incarsa.com.co"
-
 
 def GET_detalle_autorizacion_datos_db(token: str) -> dict:
     """
@@ -3385,13 +3569,16 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         p.correo,
                         s.id AS solicitud_id,
                         s.codigo AS codigo_radicado,
+                        COALESCE(s.tipo_personal, 'Contratista') AS tipo_personal,
                         s.fecha_inicio,
                         s.fecha_fin,
                         s.actividad,
                         s.plantas_ids,
                         ec.nombre AS empresa_contratista,
                         ec.nit AS empresa_contratista_nit,
-                        e.nombre_empresa AS empresa_origen
+                        e.nombre_empresa AS empresa_origen,
+                        e.nit AS empresa_origen_nit,
+                        e.correo AS empresa_origen_correo
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
                     INNER JOIN solicitudes s ON i.id_solicitud = s.id
@@ -3418,7 +3605,20 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         plantas_nombres = [pr["nombre"] for pr in cursor.fetchall() if pr.get("nombre")]
 
                 empresa_origen_nombre = row.get("empresa_origen") or "INCARSA S.A.S."
-                correo_institucional = OBTENER_correo_institucional_empresa(empresa_origen_nombre)
+                nit_empresa = row.get("empresa_origen_nit") or "830.078.829-5"
+                correo_institucional = row.get("empresa_origen_correo") or "incarsasas@incarsa.com.co"
+
+                tipo_personal_sol = row.get("tipo_personal") or "Contratista"
+                from src.loaders.superadmin_loader import (
+                    GET_configuracion_correos_induccion_db,
+                    GET_formulario_asignado_por_tipo_db
+                )
+                cfg_ind = GET_configuracion_correos_induccion_db()
+                modo_entrega = cfg_ind.get("induccion_modo_entrega", "CORREO")
+                tipo_enlace = cfg_ind.get("induccion_tipo_enlace", "GESCO")
+
+                res_form = GET_formulario_asignado_por_tipo_db(tipo_personal_sol)
+                form_asignado = res_form.get("formulario") if res_form.get("exito") else None
 
                 nombre_completo = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
                 return {
@@ -3438,9 +3638,14 @@ def GET_detalle_autorizacion_datos_db(token: str) -> dict:
                         "correo": row.get("correo") or "",
                         "solicitud_id": row["solicitud_id"],
                         "codigo_radicado": row.get("codigo_radicado") or "",
+                        "tipo_personal": tipo_personal_sol,
+                        "modo_entrega": modo_entrega,
+                        "tipo_enlace": tipo_enlace,
+                        "formulario_asignado": form_asignado,
                         "empresa_contratista": row.get("empresa_contratista") or "",
                         "empresa_contratista_nit": row.get("empresa_contratista_nit") or "",
                         "empresa_origen": empresa_origen_nombre,
+                        "nit_empresa": nit_empresa,
                         "correo_institucional": correo_institucional,
                         "plantas": plantas_nombres,
                         "plantas_texto": ", ".join(plantas_nombres) if plantas_nombres else "",
@@ -3476,9 +3681,11 @@ def REGISTRAR_respuesta_autorizacion_datos_db(
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
                 cursor.execute("""
-                    SELECT id_solicitud, id_persona, estado_datos
-                    FROM ingresantes
-                    WHERE token_autorizacion = %s
+                    SELECT i.id_solicitud, i.id_persona, i.estado_datos,
+                           COALESCE(s.tipo_personal, 'Contratista') AS tipo_personal
+                    FROM ingresantes i
+                    INNER JOIN solicitudes s ON i.id_solicitud = s.id
+                    WHERE i.token_autorizacion = %s
                     LIMIT 1
                 """, (tok_clean,))
                 row = cursor.fetchone()
@@ -3500,13 +3707,27 @@ def REGISTRAR_respuesta_autorizacion_datos_db(
                 """, (nuevo_estado, ip or "", dispositivo or "", motivo_rechazo or None, tok_clean))
                 conexion.commit()
 
+                tipo_personal_sol = row.get("tipo_personal") or "Contratista"
+                from src.loaders.superadmin_loader import (
+                    GET_configuracion_correos_induccion_db,
+                    GET_formulario_asignado_por_tipo_db
+                )
+                cfg_ind = GET_configuracion_correos_induccion_db()
+                modo_entrega = cfg_ind.get("induccion_modo_entrega", "CORREO")
+                res_form = GET_formulario_asignado_por_tipo_db(tipo_personal_sol)
+                form_asignado = res_form.get("formulario") if res_form.get("exito") else None
+
                 ahora_fmt = datetime.now().strftime("%d/%m/%Y %I:%M:%S %p")
                 return {
                     "exito": True,
                     "mensaje": "Respuesta de tratamiento de datos personales registrada con éxito.",
                     "nuevo_estado": nuevo_estado,
-                    "fecha": ahora_fmt
+                    "fecha": ahora_fmt,
+                    "tipo_personal": tipo_personal_sol,
+                    "modo_entrega": modo_entrega,
+                    "formulario_asignado": form_asignado
                 }
+
     except Exception as e:
         print(f"❌ Error en REGISTRAR_respuesta_autorizacion_datos_db: {e}")
         return {
@@ -3526,10 +3747,14 @@ def REENVIAR_correo_autorizacion_datos_db(solicitud_id: int, persona_id: int) ->
                     SELECT i.token_autorizacion, i.estado_datos,
                            p.nombre, p.apellido, p.correo,
                            s.codigo AS radicado,
+                           s.tipo_personal,
+                           s.empresa_origen,
+                           e.nombre_empresa AS nombre_empresa_origen,
                            ec.nombre AS empresa_contratista
                     FROM ingresantes i
                     INNER JOIN personas p ON i.id_persona = p.id
                     INNER JOIN solicitudes s ON i.id_solicitud = s.id
+                    LEFT JOIN empresa e ON s.empresa_origen = e.id
                     LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
                     WHERE i.id_solicitud = %s AND i.id_persona = %s
                     LIMIT 1
@@ -3561,13 +3786,25 @@ def REENVIAR_correo_autorizacion_datos_db(solicitud_id: int, persona_id: int) ->
                 nom = f"{row.get('nombre') or ''} {row.get('apellido') or ''}".strip()
                 rad = row.get("radicado") or f"RAD-{solicitud_id}"
                 emp_c = row.get("empresa_contratista") or "Empresa Contratista"
+                info_ind = OBTENER_info_induccion_para_correo(
+                    cursor,
+                    persona_id,
+                    row.get("empresa_origen"),
+                    row.get("nombre_empresa_origen") or "INCARSA",
+                    tipo_personal=row.get("tipo_personal") or "Contratista"
+                )
 
-                enviado = enviar_correo_autorizacion_datos(
+                enviado = send_autorizacionDatos(
                     destinatario=correo,
                     nombre_persona=nom,
                     radicado=rad,
                     empresa_contratista=emp_c,
-                    token_autorizacion=tok
+                    token_autorizacion=tok,
+                    induccion_vigente=info_ind.get("induccion_vigente", False),
+                    fecha_vigencia_induccion=info_ind.get("fecha_vigencia"),
+                    dias_restantes_induccion=info_ind.get("dias_restantes"),
+                    url_induccion=info_ind.get("url_induccion"),
+                    empresa_origen_nombre=info_ind.get("nombre_empresa_origen")
                 )
 
                 if enviado:
@@ -3578,7 +3815,7 @@ def REENVIAR_correo_autorizacion_datos_db(solicitud_id: int, persona_id: int) ->
                 else:
                     return {
                         "exito": False,
-                        "mensaje": f"No se pudo despachar el correo a {correo}. Verifique la configuración de correo SMTP/Resend."
+                        "mensaje": f"No se pudo despachar el correo a {correo}. Verifique la configuración de correo SMTP."
                     }
     except Exception as e:
         print(f"[ERROR] Error en REENVIAR_correo_autorizacion_datos_db: {e}")
@@ -3592,7 +3829,7 @@ def REENVIAR_correo_autorizacion_datos_db(solicitud_id: int, persona_id: int) ->
 # FUNCIONES PARA FORMULARIOS TEMPORALES CON TOKEN (SOLICITANTE Y PÚBLICO)
 # =========================================================================
 
-def CREAR_token_formulario_db(
+def CREATE_token_formulario_db(
     id_usuario: int,
     duracion_horas: float = 24.0,
     destinatario_nombre: Optional[str] = None,
@@ -3687,11 +3924,11 @@ def CREAR_token_formulario_db(
             }
         }
     except Exception as e:
-        print(f"[ERROR] Error en CREAR_token_formulario_db: {e}")
+        print(f"[ERROR] Error en CREATE_token_formulario_db: {e}")
         return {"exito": False, "mensaje": f"Error al generar token: {str(e)}"}
 
 
-def OBTENER_token_formulario_db(token: str) -> dict:
+def GET_token_formulario_db(token: str) -> dict:
     """
     Valida un token de formulario temporal y retorna su estado, creador, contratista asignado
     y los catálogos públicos de empresas y contratistas necesarios para el formulario.
@@ -3942,14 +4179,31 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                 # 3. Transicionar a ENVIADO
                 cursor.execute("UPDATE solicitudes SET estado = 'ENVIADO' WHERE id = %s", (real_id,))
 
-                # 4. Generar notificaciones oficiales para SST y GESCO solo si la solicitud tiene una de sus plantas asignadas
+                # 4. Evaluar si GESCO se auto-aprueba porque todo el personal tiene inducciones vigentes
+                gesco_autoaprobado = False
+                try:
+                    from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
+                    res_auto_g = EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
+                        cursor=cursor,
+                        id_solicitud=real_id,
+                        tipo_personal=sol.get("tipo_personal", "Contratista")
+                    )
+                    gesco_autoaprobado = bool(res_auto_g.get("auto_aprobado"))
+                except Exception as e_ag:
+                    print(f"⚠️ Aviso al evaluar auto-aprobación GESCO tras aprobación de pre-envío: {e_ag}")
+
+                # Generar notificaciones oficiales para SST y GESCO solo si la solicitud tiene una de sus plantas asignadas
                 revisores_dest = obtener_usuarios_revisores_por_planta(cursor, id_solicitud=real_id)
                 now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 for u_rev in revisores_dest:
                     rol_nom = u_rev.get("nombre_rol") or "SST"
                     u_id = u_rev["id"]
-                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
-                    msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {rol_nom}."
+                    if rol_nom == "GESCO" and gesco_autoaprobado:
+                        tit_notif = "Visto bueno GESCO automático"
+                        msg_notif = f"La solicitud {cod_val} cuenta con visto bueno automático de GESCO (todo el personal tiene inducciones vigentes)."
+                    else:
+                        tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                        msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {rol_nom}."
                     cursor.execute("""
                         INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
                         VALUES (%s, %s, %s, %s, %s, FALSE, %s)
@@ -3975,12 +4229,83 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                     detalle="Solicitud aprobada por el solicitante y enviada al proceso de revisión"
                 )
 
+                # Despachar correos a revisores SST y GESCO en segundo plano tras aprobación
+                if revisores_dest and cod_val:
+                    plantas_nombres_txt = "Planta asignada"
+                    try:
+                        cursor.execute("""
+                            SELECT DISTINCT p.nombre
+                            FROM visita v
+                            JOIN planta p ON v.id_planta = p.id
+                            WHERE v.id_solicitud = %s
+                        """, (real_id,))
+                        p_rows = cursor.fetchall() or []
+                        if p_rows:
+                            plantas_nombres_txt = ", ".join([str(r["nombre"]) for r in p_rows if r.get("nombre")])
+                    except Exception as e_p:
+                        print(f"⚠️ [WARN] Error obteniendo nombres de plantas tras aprobación: {e_p}")
+
+                    cursor.execute("""
+                        SELECT s.codigo, s.tipo_contratista, s.fecha_inicio, s.fecha_fin, ec.nombre AS contratista_nom,
+                               (SELECT COUNT(*) FROM ingresantes WHERE id_solicitud = s.id) AS total_personas,
+                               (SELECT COUNT(*) FROM vehiculos WHERE id_solicitud = s.id) AS total_vehiculos
+                        FROM solicitudes s
+                        LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
+                        WHERE s.id = %s
+                    """, (real_id,))
+                    sol_detalles = cursor.fetchone() or {}
+
+                    info_notif_revisores = {
+                        "radicado": cod_val,
+                        "contratista": sol_detalles.get("contratista_nom") or "Empresa Contratista",
+                        "plantas": plantas_nombres_txt,
+                        "tipo_contratista": sol_detalles.get("tipo_contratista") or "Contratista",
+                        "total_personas": sol_detalles.get("total_personas") or 0,
+                        "total_vehiculos": sol_detalles.get("total_vehiculos") or 0,
+                        "fecha_inicio": str(sol_detalles.get("fecha_inicio") or "N/A"),
+                        "fecha_fin": str(sol_detalles.get("fecha_fin") or "N/A"),
+                    }
+
+                    def _despachar_correos_revisores_aprobacion(rev_list, info_sol):
+                        for r_u in rev_list:
+                            dest_email = str(r_u.get("correo") or "").strip()
+                            if dest_email and "@" in dest_email:
+                                r_nom = f"{r_u.get('nombres') or ''} {r_u.get('apellidos') or ''}".strip() or "Revisor"
+                                r_rol = r_u.get("nombre_rol") or "SST"
+                                if r_rol == "GESCO" and gesco_autoaprobado:
+                                    continue
+                                try:
+                                    send_notificationRevision(
+                                        destinatario=dest_email,
+                                        nombre_revisor=r_nom,
+                                        rol_revisor=r_rol,
+                                        radicado=info_sol["radicado"],
+                                        empresa_contratista=info_sol["contratista"],
+                                        plantas=info_sol["plantas"],
+                                        tipo_contratista=info_sol["tipo_contratista"],
+                                        total_personas=info_sol["total_personas"],
+                                        total_vehiculos=info_sol["total_vehiculos"],
+                                        fecha_inicio=info_sol["fecha_inicio"],
+                                        fecha_fin=info_sol["fecha_fin"]
+                                    )
+                                except Exception as ex_m:
+                                    print(f"[WARN] Error enviando correo de revisión tras aprobación a {dest_email}: {ex_m}")
+
+                    threading.Thread(
+                        target=_despachar_correos_revisores_aprobacion,
+                        args=(list(revisores_dest), info_notif_revisores),
+                        daemon=True
+                    ).start()
+
                 # 5. Despachar correos de autorización de datos a las personas asociadas
                 cursor.execute("""
-                    SELECT p.id, p.nombre, p.apellido, p.correo, i.token_autorizacion, ec.nombre AS contratista_nom
+                    SELECT p.id, p.nombre, p.apellido, p.correo, i.token_autorizacion,
+                           s.tipo_personal, s.empresa_origen, e.nombre_empresa AS nombre_empresa_origen,
+                           ec.nombre AS contratista_nom
                     FROM ingresantes i
                     JOIN personas p ON i.id_persona = p.id
                     LEFT JOIN solicitudes s ON i.id_solicitud = s.id
+                    LEFT JOIN empresa e ON s.empresa_origen = e.id
                     LEFT JOIN emp_contratista ec ON s.empresa_contratista = ec.id
                     WHERE i.id_solicitud = %s
                 """, (real_id,))
@@ -3992,12 +4317,20 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                     if c_email and "@" in c_email:
                         p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
                         tok_aut = p_row.get("token_autorizacion")
+                        info_ind = OBTENER_info_induccion_para_correo(
+                            cursor,
+                            p_row["id"],
+                            p_row.get("empresa_origen"),
+                            p_row.get("nombre_empresa_origen") or "INCARSA",
+                            tipo_personal=p_row.get("tipo_personal") or "Contratista"
+                        )
                         personas_para_notificar.append({
                             "destinatario": c_email,
                             "nombre": p_nom,
                             "radicado": cod_val,
                             "contratista": p_row.get("contratista_nom") or "Empresa Contratista",
-                            "token": tok_aut
+                            "token": tok_aut,
+                            **info_ind
                         })
 
                 conexion.commit()
@@ -4006,12 +4339,17 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                     def _despachar_correos_aprobacion(lista):
                         for item in lista:
                             try:
-                                enviar_correo_autorizacion_datos(
+                                send_autorizacionDatos(
                                     destinatario=item["destinatario"],
                                     nombre_persona=item["nombre"],
                                     radicado=item["radicado"],
                                     empresa_contratista=item["contratista"],
-                                    token_autorizacion=item["token"]
+                                    token_autorizacion=item["token"],
+                                    induccion_vigente=item.get("induccion_vigente", False),
+                                    fecha_vigencia_induccion=item.get("fecha_vigencia"),
+                                    dias_restantes_induccion=item.get("dias_restantes"),
+                                    url_induccion=item.get("url_induccion"),
+                                    empresa_origen_nombre=item.get("nombre_empresa_origen")
                                 )
                             except Exception as e_m:
                                 print(f"[WARN] Error despachando correo de autorización tras aprobación: {e_m}")

@@ -12,9 +12,9 @@ function correspondenciaForm() {
       const r = String(ses?.rol || ses?.nombre_rol || ses?.rol_nombre || '').toUpperCase().trim();
       const u = String(ses?.tipo_usuario || ses?.usuario || '').toUpperCase().trim();
       return r === 'SUPERADMIN' 
+        || r === 'SUPER ADMIN'
         || u === 'SUPERADMIN' 
-        || ses?.id_rol === 1 
-        || ses?.id_rol === 6
+        || ses?.id_rol === 2
         || document.documentElement.getAttribute('data-role') === 'SUPERADMIN'
         || document.documentElement.classList.contains('role-superadmin');
     } catch (e) {

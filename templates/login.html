@@ -207,14 +207,6 @@
               </div>
             </div>
 
-            <!-- Hint de simulación para pruebas locales (solo si no se envió por email) -->
-            <div class="simulation-code-badge mb-4" x-show="dosPasos.codigoDemo">
-              <i class="fa-solid fa-flask text-base text-cyan-400 flex-shrink-0"></i>
-              <div class="text-left leading-tight">
-                <span class="block text-[11px] opacity-80">Código de prueba (Dev):</span>
-                <span class="font-mono font-bold tracking-widest text-sm text-white" x-text="dosPasos.codigoDemo"></span>
-              </div>
-            </div>
 
             <!-- Alerta de Error -->
             <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5 mb-4"
@@ -404,17 +396,8 @@
                   Hemos enviado un código de 6 dígitos a <strong class="text-white block truncate" x-text="olvide.correo"></strong>
                 </p>
 
-                <!-- Hint de simulación para pruebas (solo si no se envió por email) -->
-                <div class="simulation-code-badge mb-4" x-show="olvide.codigoGenerado">
-                  <i class="fa-solid fa-flask text-base text-cyan-400 flex-shrink-0"></i>
-                  <div class="text-left leading-tight">
-                    <span class="block text-[11px] opacity-80">Código de prueba:</span>
-                    <span class="font-mono font-bold tracking-widest text-sm text-white" x-text="olvide.codigoGenerado"></span>
-                  </div>
-                </div>
-
                 <!-- Aviso de correo enviado a bandeja -->
-                <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 mb-4 text-xs text-emerald-300 flex items-center gap-2.5" x-show="!olvide.codigoGenerado">
+                <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 mb-4 text-xs text-emerald-300 flex items-center gap-2.5">
                   <i class="fa-solid fa-envelope-circle-check text-sm text-emerald-400 flex-shrink-0"></i>
                   <span>Código enviado a tu correo. Revisa tu bandeja de entrada o spam.</span>
                 </div>

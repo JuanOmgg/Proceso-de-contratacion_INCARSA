@@ -88,9 +88,17 @@ def PATCH_password_db(id_usuario: int, newPass_hash: str, id_token: int):
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute("UPDATE usuarios SET contrasena = %s WHERE id = %s", (newPass_hash, id_usuario))
+                cursor.execute(
+                    "UPDATE usuarios SET contrasena = %s, password_changed_at = NOW() WHERE id = %s",
+                    (newPass_hash, id_usuario)
+                )
                 cursor.execute("UPDATE tokens_reset SET used = TRUE WHERE id = %s", (id_token,))
                 conexion.commit()
+                try:
+                    from src.utils.security import invalidate_user_sessions
+                    invalidate_user_sessions(id_usuario)
+                except Exception as ex:
+                    print(f"⚠️ Error invalidando sesiones previas: {ex}")
                 return True
     except Exception as e:
         print(f"❌ Error actualizando contraseña del usuario: {e}")
@@ -141,3 +149,71 @@ def MARK_2faToken_used_db(id_token: int):
     except Exception as e:
         print(f"❌ Error marcando token 2FA como usado: {e}")
         return False
+
+def GET_latest_active_2fa_db(id_usuario: int):
+    """Obtiene el último token 2FA generado para el usuario."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = """
+                SELECT id, code_hash, expiration_time, used, intentos
+                FROM tokens_2fa 
+                WHERE id_usuario = %s 
+                ORDER BY creado_en DESC LIMIT 1
+                """
+                cursor.execute(sql, (id_usuario,))
+                return cursor.fetchone()
+    except Exception as e:
+        print(f"❌ Error buscando último token 2FA: {e}")
+        return None
+
+def INCREMENT_intentos_2fa_db(id_token: int) -> int:
+    """Incrementa los intentos fallidos de un token 2FA. Si llega a 5, lo invalida (used=TRUE). Retorna los nuevos intentos."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("UPDATE tokens_2fa SET intentos = intentos + 1 WHERE id = %s", (id_token,))
+                cursor.execute("SELECT intentos FROM tokens_2fa WHERE id = %s", (id_token,))
+                row = cursor.fetchone()
+                intentos = row["intentos"] if row else 5
+                if intentos >= 5:
+                    cursor.execute("UPDATE tokens_2fa SET used = TRUE WHERE id = %s", (id_token,))
+                conexion.commit()
+                return intentos
+    except Exception as e:
+        print(f"❌ Error incrementando intentos 2FA: {e}")
+        return 5
+
+def GET_latest_active_reset_db(id_usuario: int):
+    """Obtiene el último token de restablecimiento generado para el usuario."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                sql = """
+                SELECT id, code_hash, expiration_time, used, intentos
+                FROM tokens_reset 
+                WHERE id_usuario = %s 
+                ORDER BY creado_en DESC LIMIT 1
+                """
+                cursor.execute(sql, (id_usuario,))
+                return cursor.fetchone()
+    except Exception as e:
+        print(f"❌ Error buscando último token reset: {e}")
+        return None
+
+def INCREMENT_intentos_reset_db(id_token: int) -> int:
+    """Incrementa los intentos fallidos de un token reset. Si llega a 5, lo invalida (used=TRUE). Retorna los nuevos intentos."""
+    try:
+        with GET_conexion() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("UPDATE tokens_reset SET intentos = intentos + 1 WHERE id = %s", (id_token,))
+                cursor.execute("SELECT intentos FROM tokens_reset WHERE id = %s", (id_token,))
+                row = cursor.fetchone()
+                intentos = row["intentos"] if row else 5
+                if intentos >= 5:
+                    cursor.execute("UPDATE tokens_reset SET used = TRUE WHERE id = %s", (id_token,))
+                conexion.commit()
+                return intentos
+    except Exception as e:
+        print(f"❌ Error incrementando intentos reset: {e}")
+        return 5

@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'fba5d41ec52e'
-down_revision: Union[str, Sequence[str], None] = 'ef1ebd80d448'
+down_revision: Union[str, Sequence[str], None] = '69dabb8fd0ef'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,10 +24,7 @@ def upgrade() -> None:
         'inducciones',
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True, nullable=False),
         sa.Column('id_persona', sa.Integer(), sa.ForeignKey('personas.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
-        sa.Column('responsable', sa.String(length=100), nullable=True),
-        sa.Column('anotaciones', sa.Text(), nullable=True),
         sa.Column('id_empresa', sa.Integer(), sa.ForeignKey('empresa.id', ondelete='SET NULL', onupdate='CASCADE'), nullable=True),
-        sa.Column('ultima_revision', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), nullable=True),
         sa.Column('fecha_induccion', sa.Date(), nullable=True),
         sa.Column('fecha_vigencia', sa.Date(), nullable=True),
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.func.now(), nullable=True),

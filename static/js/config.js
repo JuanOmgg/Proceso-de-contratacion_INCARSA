@@ -17,8 +17,11 @@ const API = {
     contratistas: `${API_BASE_URL}/emp_contratista`,
     auth: `${API_BASE_URL}/api/v1/auth`,
     notificaciones: `${API_BASE_URL}/api/v1/notificaciones`,
-    correspondencia: `${API_BASE_URL}/api/v1/correspondencia`
+    correspondencia: `${API_BASE_URL}/api/v1/correspondencia`,
+    formularios_gesco: `${API_BASE_URL}/api/v1/formularios-gesco`,
+    preguntas: `${API_BASE_URL}/api/v1/preguntas`
 };
+window.API = API;
 
 // ============================================================================
 // GESTIÓN CENTRALIZADA DE AUTENTICACIÓN Y TOKEN JWT (OPTIMIZADO CON CACHÉ EN MEMORIA)
@@ -28,12 +31,8 @@ let _cachedAuthToken = null;
 let _lastSyncedToken = null;
 
 function syncAuthCookie(token) {
-    if (!token || _lastSyncedToken === token) return;
-    try {
-        _lastSyncedToken = token;
-        document.cookie = "token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
-        document.cookie = "incarsa_token=" + encodeURIComponent(token) + "; path=/; max-age=604800; SameSite=Lax";
-    } catch (e) {}
+    // Las cookies de autenticación HttpOnly son gestionadas exclusivamente por el backend para prevenir XSS
+    return;
 }
 
 function getAuthToken() {
@@ -93,7 +92,10 @@ function clearAuthSession() {
     } catch (e) {}
 }
 
-function cerrarSesionUsuario() {
+async function cerrarSesionUsuario() {
+    try {
+        await window.fetch("/api/v1/auth/logout", { method: "POST" });
+    } catch (e) {}
     clearAuthSession();
     window.location.replace("/login?logout=1");
 }

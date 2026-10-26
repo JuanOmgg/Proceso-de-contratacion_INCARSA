@@ -221,7 +221,7 @@ function usuariosTable() {
       const idRol = Number(usuario.id_rol);
       const esAdminTarget = rolTarget === "ADMINISTRADOR" || idRol === 1 || rolTarget === "SUPERADMIN" || idRol === 2;
       
-      // Los roles regulares (GESCO, SST, VIGILANTE, GESTIÓN DOCUMENTAL, SCR, etc.)
+      // Los roles regulares (GESCO, SST, VIGILANTE, SOLICITANTE, SCR, etc.)
       // pueden ser editados y activados/desactivados por el Administrador
       if (!esAdminTarget) return true;
 

@@ -77,7 +77,7 @@ function procesamientoBoard() {
       "SST",
       "GESCO",
       "SCR",
-      "GESTION DOCUMENTAL"
+      "SOLICITANTE"
     ],
 
     get puedeVerInactivos() {
@@ -294,10 +294,10 @@ function procesamientoBoard() {
         return true;
       });
 
-      // 1. Filtro para Gestión Documental: solo consultar solicitudes que haya diligenciado él mismo
+      // 1. Filtro para SOLICITANTE: solo consultar solicitudes que haya diligenciado él mismo
       const rolTextoProc = String((this.usuarioSesion && (this.usuarioSesion.rol || this.usuarioSesion.nombre_rol)) || "").toUpperCase();
       const rolIdProc = Number(this.usuarioSesion ? this.usuarioSesion.id_rol : 0);
-      const esGestionDoc = rolTextoProc.includes("GESTION DOCUMENTAL") || rolTextoProc.includes("GESTIÓN DOCUMENTAL") || rolIdProc === 5;
+      const esGestionDoc = rolTextoProc.includes("SOLICITANTE") || rolIdProc === 5;
       if (esGestionDoc) {
         const myId = Number(this.userId || (this.usuarioSesion && this.usuarioSesion.id) || 0);
         rows = rows.filter(s => Number(s.diligenciado_por) === myId);
@@ -500,7 +500,7 @@ function procesamientoBoard() {
         const rolTextoProc = String((sesion && (sesion.rol || sesion.nombre_rol)) || "").toUpperCase();
         const rolIdProc = Number(sesion ? sesion.id_rol : 0);
         const esSstGescoProc = rolTextoProc.includes("SST") || rolTextoProc.includes("GESCO") || rolIdProc === 6 || rolIdProc === 7;
-        const esGestionDoc = rolTextoProc.includes("GESTION DOCUMENTAL") || rolTextoProc.includes("GESTIÓN DOCUMENTAL") || rolIdProc === 5;
+        const esGestionDoc = rolTextoProc.includes("SOLICITANTE") || rolIdProc === 5;
 
         if (sesion && sesion.id) {
           if (esSstGescoProc) {

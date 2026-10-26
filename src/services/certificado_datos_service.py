@@ -184,6 +184,7 @@ def GENERAR_pdf_certificado_datos(datos: dict, base_url: str = "", es_interno: b
 
     # Extraer variables
     empresa_origen = datos.get("empresa_origen") or "INCARSA S.A.S."
+    nit_empresa = datos.get("nit_empresa") or "830.078.829-5"
     correo_institucional = datos.get("correo_institucional") or "incarsasas@incarsa.com.co"
     radicado = datos.get("codigo_radicado") or "S/R"
     nombre_completo = datos.get("nombre_completo") or "TITULAR NO ESPECIFICADO"
@@ -224,7 +225,7 @@ def GENERAR_pdf_certificado_datos(datos: dict, base_url: str = "", es_interno: b
 
     # 2. BANNER EMPRESA RESPONSABLE
     banner_data = [[
-        Paragraph(f"ORGANIZACIÓN RESPONSABLE: <b>{empresa_origen.upper()}</b> &nbsp;·&nbsp; "
+        Paragraph(f"ORGANIZACIÓN RESPONSABLE: <b>{empresa_origen.upper()}</b> &nbsp;·&nbsp; NIT: <b>{nit_empresa}</b> &nbsp;·&nbsp; "
                   f"LEY ESTATUTARIA 1581 DE 2012 & DECRETO 1377 DE 2013", style_banner_resp)
     ]]
     t_banner = Table(banner_data, colWidths=[548])
@@ -282,7 +283,7 @@ def GENERAR_pdf_certificado_datos(datos: dict, base_url: str = "", es_interno: b
     # 4. CUERPO LEGAL SINTÉTICO (ALCANCE FORMAL FR_SLV_016)
     p_intro = Paragraph(
         f"En mi calidad de Titular de los datos personales, manifiesto de manera libre, previa, expresa, informada "
-        f"e inequívoca que autorizo a la sociedad <b>{empresa_origen}</b> (la “Organización”), para que en calidad "
+        f"e inequívoca que autorizo a la sociedad <b>{empresa_origen}</b>, identificada con el NIT No. <b>{nit_empresa}</b> (la “Organización”), para que en calidad "
         f"de Responsable recolecte, almacene, circule, use, transmita y dé tratamiento a mi información personal y documentación aportada, "
         f"de conformidad con su <i>Manual de Políticas de Tratamiento de Datos Personales</i> y las siguientes condiciones:",
         style_legal_p

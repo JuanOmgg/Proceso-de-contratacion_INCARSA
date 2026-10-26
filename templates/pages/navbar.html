@@ -6,7 +6,8 @@
           </button>
           <h1 class="font-display font-semibold text-base sm:text-lg text-white truncate max-w-[160px] sm:max-w-none">{{ page_title | default("Dashboard") }}</h1>
           <span
-            class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--signal-500)] flex-shrink-0">
+            class="role-chip hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--signal-500)] flex-shrink-0"
+            :class="activeRole === 'SUPERADMIN' ? 'is-superadmin-chip' : ''">
             <span x-text="activeRole"></span>
           </span>
         </div>

@@ -20,7 +20,7 @@
   <!-- Configuración de APIs -->
   <script src="{{ url_for('static', path='js/config.js') }}"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', path='css/splash-loading.css') }}?v=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/splash-loading.css') }}?v=2.0">
 </head>
 
 <body class="antialiased">
@@ -38,7 +38,7 @@
     <p class="text-[#9FADC9] text-xs font-medium mt-1 tracking-wide">Sistema de Gestión de Solicitudes de Acceso</p>
 
     <!-- Badge de Usuario Activo -->
-    <div id="splashUserBadge" class="hidden items-center gap-2 mt-4 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-xs text-orange-400 font-semibold shadow-[0_0_12px_rgba(249,115,22,0.2)]">
+    <div id="splashUserBadge" class="hidden items-center gap-2 mt-4 px-3.5 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-xs text-red-400 font-semibold shadow-[0_0_12px_rgba(240,50,62,0.25)]">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       <span id="splashUserName">Iniciando sesión</span>
     </div>

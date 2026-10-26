@@ -1,0 +1,1562 @@
+/**
+ * ============================================================================
+ * formulario-gesco.css — Estilos Dedicados para Crear / Editar Formularios GESCO
+ * ============================================================================
+ * Diseñado con alta estética corporativa, modo oscuro nativo, micro-interacciones
+ * y sin depender de clases dinámicas/arbitrarias de Tailwind.
+ */
+
+/* --------------------------------------------------------------------------
+ * 1. Tarjetas de Sección (Wizard Card Extensions)
+ * -------------------------------------------------------------------------- */
+.gesco-section-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:root.dark .gesco-section-card,
+html.dark .gesco-section-card {
+  background: rgba(24, 24, 27, 0.7);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
+}
+
+.gesco-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  background: rgba(240, 50, 62, 0.12);
+  color: var(--signal-500, #F0323E);
+  border: 1px solid rgba(240, 50, 62, 0.25);
+}
+
+:root.dark .gesco-header-icon,
+html.dark .gesco-header-icon {
+  background: rgba(240, 50, 62, 0.15);
+  color: #fb7185;
+  border-color: rgba(240, 50, 62, 0.35);
+}
+
+.gesco-header-icon.emerald {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+:root.dark .gesco-header-icon.emerald,
+html.dark .gesco-header-icon.emerald {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 2. Inputs y Controles de Formulario
+ * -------------------------------------------------------------------------- */
+.gesco-input {
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border-subtle, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+  transition: all 0.15s ease-in-out;
+  outline: none;
+}
+
+:root.dark .gesco-input,
+html.dark .gesco-input {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.gesco-input:hover {
+  border-color: var(--steel-400, #94a3b8);
+}
+
+:root.dark .gesco-input:hover,
+html.dark .gesco-input:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.gesco-input:focus {
+  border-color: var(--signal-500, #F0323E);
+  box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.18);
+}
+
+.gesco-input.has-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 3. Banner Informativo de Vigencia
+ * -------------------------------------------------------------------------- */
+.gesco-calc-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(240, 50, 62, 0.05);
+  border: 1px solid rgba(240, 50, 62, 0.22);
+  color: var(--text-primary, #0f172a);
+}
+
+:root.dark .gesco-calc-banner,
+html.dark .gesco-calc-banner {
+  background: rgba(240, 50, 62, 0.1);
+  border-color: rgba(240, 50, 62, 0.3);
+  color: #f1f5f9;
+}
+
+.gesco-calc-banner i {
+  color: var(--signal-500, #F0323E);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+:root.dark .gesco-calc-banner i,
+html.dark .gesco-calc-banner i {
+  color: #fb7185;
+}
+
+/* Botones Presets de Vigencia */
+.gesco-preset-btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: var(--surface, #ffffff);
+  color: var(--text-primary, #1e293b);
+}
+
+:root.dark .gesco-preset-btn,
+html.dark .gesco-preset-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.gesco-preset-btn:hover {
+  background: rgba(240, 50, 62, 0.08);
+  border-color: rgba(240, 50, 62, 0.3);
+  color: var(--signal-500, #F0323E);
+  transform: translateY(-1px);
+}
+
+:root.dark .gesco-preset-btn:hover,
+html.dark .gesco-preset-btn:hover {
+  color: #fb7185;
+}
+
+.gesco-preset-btn.is-active {
+  background: var(--signal-500, #F0323E) !important;
+  border-color: var(--signal-600, #dc0517) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(240, 50, 62, 0.35);
+  transform: scale(1.02);
+}
+
+:root.dark .gesco-preset-btn.is-active,
+html.dark .gesco-preset-btn.is-active {
+  background: var(--signal-500, #F0323E) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 4. Tarjetas Seleccionables de Personal Aplicable (REDISEÑADAS)
+ * -------------------------------------------------------------------------- */
+.gesco-persona-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .gesco-persona-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gesco-persona-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border-subtle, #e2e8f0);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+:root.dark .gesco-persona-card,
+html.dark .gesco-persona-card {
+  background: rgba(24, 24, 27, 0.65);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.gesco-persona-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+:root.dark .gesco-persona-card:hover,
+html.dark .gesco-persona-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Ícono temático de la tarjeta */
+.gesco-persona-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+:root.dark .gesco-persona-icon,
+html.dark .gesco-persona-icon {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Indicador Checkbox en la esquina superior derecha */
+.gesco-persona-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: transparent;
+}
+
+:root.dark .gesco-persona-checkbox,
+html.dark .gesco-persona-checkbox {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.gesco-persona-card:hover .gesco-persona-checkbox {
+  border-color: #94a3b8;
+  transform: scale(1.08);
+}
+
+/* Badge / Etiqueta temática */
+.gesco-persona-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+}
+
+:root.dark .gesco-persona-badge,
+html.dark .gesco-persona-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+ * ESTADO SELECCIONADO CORPORATIVO (Signal / Administradores e inferiores)
+ * ========================================================================== */
+.gesco-persona-card.is-selected {
+  border-color: var(--signal-500, #F0323E) !important;
+  background: rgba(240, 50, 62, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(240, 50, 62, 0.4), 0 8px 24px -4px rgba(240, 50, 62, 0.25) !important;
+}
+
+:root.dark .gesco-persona-card.is-selected,
+html.dark .gesco-persona-card.is-selected {
+  background: rgba(240, 50, 62, 0.12) !important;
+  border-color: var(--signal-500, #F0323E) !important;
+  box-shadow: 0 0 0 1px rgba(240, 50, 62, 0.5), 0 8px 28px -4px rgba(240, 50, 62, 0.35) !important;
+}
+
+.gesco-persona-card.is-selected .gesco-persona-icon {
+  background: rgba(240, 50, 62, 0.16) !important;
+  color: var(--signal-500, #F0323E) !important;
+  border-color: rgba(240, 50, 62, 0.35) !important;
+  transform: scale(1.05);
+}
+
+:root.dark .gesco-persona-card.is-selected .gesco-persona-icon,
+html.dark .gesco-persona-card.is-selected .gesco-persona-icon {
+  color: #fb7185 !important;
+}
+
+.gesco-persona-card.is-selected .gesco-persona-checkbox {
+  background: var(--signal-500, #F0323E) !important;
+  border-color: var(--signal-500, #F0323E) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(240, 50, 62, 0.5);
+}
+
+.gesco-persona-card.is-selected .gesco-persona-badge {
+  background: rgba(240, 50, 62, 0.15) !important;
+  color: var(--signal-500, #F0323E) !important;
+  border: 1px solid rgba(240, 50, 62, 0.3);
+}
+
+:root.dark .gesco-persona-card.is-selected .gesco-persona-badge,
+html.dark .gesco-persona-card.is-selected .gesco-persona-badge {
+  color: #fda4af !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 5. Voucher / Ficha Técnica en Vivo
+ * -------------------------------------------------------------------------- */
+.gesco-ticket-card {
+  border: 1.5px dashed var(--border-subtle, #cbd5e1);
+  border-radius: 16px;
+  background: #faf8f5;
+  padding: 20px;
+  position: relative;
+}
+
+:root.dark .gesco-ticket-card,
+html.dark .gesco-ticket-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.gesco-ticket-inner {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+:root.dark .gesco-ticket-inner,
+html.dark .gesco-ticket-inner {
+  background: rgba(24, 24, 27, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+ * 6. Stepper de 2 Pasos (Navegación del Wizard)
+ * -------------------------------------------------------------------------- */
+.gesco-stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+:root.dark .gesco-stepper-container,
+html.dark .gesco-stepper-container {
+  background: rgba(25, 25, 30, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+.gesco-stepper-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.gesco-stepper-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+:root.dark .gesco-stepper-item:hover,
+html.dark .gesco-stepper-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gesco-stepper-item.is-active {
+  background: rgba(240, 50, 62, 0.04);
+  border-color: var(--signal-500, #F0323E);
+  box-shadow: 0 4px 14px -2px rgba(240, 50, 62, 0.2);
+}
+
+:root.dark .gesco-stepper-item.is-active,
+html.dark .gesco-stepper-item.is-active {
+  background: linear-gradient(135deg, rgba(240, 50, 62, 0.14) 0%, rgba(45, 45, 52, 0.7) 100%) !important;
+  border-color: var(--signal-500, #F0323E) !important;
+  box-shadow: 0 4px 20px -2px rgba(240, 50, 62, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.gesco-stepper-badge {
+  margin-left: auto;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .gesco-stepper-badge {
+    display: inline-flex;
+  }
+}
+
+.gesco-stepper-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted, #64748b);
+  transition: all 0.2s ease;
+}
+
+:root.dark .gesco-stepper-circle,
+html.dark .gesco-stepper-circle {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.gesco-stepper-item.is-active .gesco-stepper-circle {
+  background: var(--signal-500, #F0323E);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(240, 50, 62, 0.4);
+}
+
+.gesco-stepper-item.is-completed .gesco-stepper-circle {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.gesco-stepper-line {
+  width: 24px;
+  height: 2px;
+  background: var(--border-subtle, #e2e8f0);
+  flex-shrink: 0;
+}
+
+:root.dark .gesco-stepper-line,
+html.dark .gesco-stepper-line {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.gesco-stepper-line.is-active {
+  background: var(--signal-500, #F0323E);
+}
+
+/* --------------------------------------------------------------------------
+ * 7. Constructor de Preguntas (Paso 2)
+ * -------------------------------------------------------------------------- */
+.gesco-pregunta-card {
+  position: relative;
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border-subtle, #e2e8f0);
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:root.dark .gesco-pregunta-card,
+html.dark .gesco-pregunta-card {
+  background: rgba(24, 24, 27, 0.7);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 22px -2px rgba(0, 0, 0, 0.35);
+}
+
+.gesco-pregunta-card:hover {
+  border-color: rgba(240, 50, 62, 0.3);
+}
+
+.gesco-pregunta-num-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: rgba(240, 50, 62, 0.12);
+  color: var(--signal-500, #F0323E);
+  border: 1px solid rgba(240, 50, 62, 0.25);
+}
+
+:root.dark .gesco-pregunta-num-badge,
+html.dark .gesco-pregunta-num-badge {
+  color: #fb7185;
+  border-color: rgba(240, 50, 62, 0.35);
+}
+
+.gesco-tipo-select {
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+:root.dark .gesco-tipo-select,
+html.dark .gesco-tipo-select {
+  background: rgba(20, 20, 24, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+}
+
+.gesco-tipo-select:focus {
+  border-color: var(--signal-500, #F0323E);
+}
+
+/* --------------------------------------------------------------------------
+ * Fila de Opción de Respuesta (Constructor interactivo y pulido)
+ * -------------------------------------------------------------------------- */
+.gesco-opcion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  min-height: 50px;
+  border-radius: 14px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border-subtle, #e2e8f0);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  cursor: text;
+}
+
+:root.dark .gesco-opcion-item,
+html.dark .gesco-opcion-item {
+  background: rgba(24, 24, 27, 0.65);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.gesco-opcion-item:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+:root.dark .gesco-opcion-item:hover,
+html.dark .gesco-opcion-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Foco en la tarjeta al escribir */
+.gesco-opcion-item:focus-within {
+  border-color: var(--signal-500, #F0323E) !important;
+  box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.16) !important;
+  background: var(--surface, #ffffff) !important;
+}
+
+:root.dark .gesco-opcion-item:focus-within {
+  background: rgba(28, 28, 33, 0.95) !important;
+}
+
+/* Estado de Opción Correcta */
+.gesco-opcion-item.is-correct {
+  background: rgba(16, 185, 129, 0.07) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+:root.dark .gesco-opcion-item.is-correct,
+html.dark .gesco-opcion-item.is-correct {
+  background: rgba(16, 185, 129, 0.13) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+.gesco-opcion-item.is-correct:focus-within {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
+}
+
+/* Botón Circular Correcta / Incorrecta */
+.gesco-correct-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: 1.5px solid #cbd5e1;
+  background: transparent;
+  color: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  outline: none;
+}
+
+:root.dark .gesco-correct-btn,
+html.dark .gesco-correct-btn {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.gesco-correct-btn:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  transform: scale(1.08);
+}
+
+.gesco-correct-btn.is-correct {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.45);
+  transform: scale(1.04);
+}
+
+/* Badge de Letra Indicadora (A, B, C...) */
+.gesco-opcion-letra {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-muted, #64748b);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  flex-shrink: 0;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+:root.dark .gesco-opcion-letra,
+html.dark .gesco-opcion-letra {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.gesco-opcion-item.is-correct .gesco-opcion-letra {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #059669 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+:root.dark .gesco-opcion-item.is-correct .gesco-opcion-letra {
+  background: rgba(16, 185, 129, 0.22) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+/* Input de Texto de la Opción (Completamente integrado y sin caja negra) */
+input.gesco-opcion-input,
+.gesco-opcion-input {
+  flex: 1;
+  width: 100%;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  padding: 6px 4px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--text-primary, #0f172a) !important;
+  border-radius: 0 !important;
+}
+
+:root.dark input.gesco-opcion-input,
+html.dark input.gesco-opcion-input,
+:root.dark .gesco-opcion-input,
+html.dark .gesco-opcion-input {
+  color: #f8fafc !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.gesco-opcion-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.75;
+  font-weight: 400;
+  font-size: 0.875rem;
+}
+
+:root.dark .gesco-opcion-input::placeholder,
+html.dark .gesco-opcion-input::placeholder {
+  color: #71717a !important;
+  opacity: 0.85;
+}
+
+/* Badge 'Correcta' */
+.gesco-badge-correcta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+:root.dark .gesco-badge-correcta,
+html.dark .gesco-badge-correcta {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.gesco-badge-correcta:hover {
+  background: rgba(16, 185, 129, 0.25);
+  transform: scale(1.02);
+}
+
+/* Botón Eliminar Opción */
+.gesco-btn-delete-opcion {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.gesco-btn-delete-opcion:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  transform: scale(1.05);
+}
+
+/* Botón Añadir Opción */
+.gesco-btn-add-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--signal-500, #F0323E);
+  border: 1px dashed rgba(240, 50, 62, 0.4);
+  background: rgba(240, 50, 62, 0.05);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gesco-btn-add-opcion:hover {
+  background: rgba(240, 50, 62, 0.12);
+  border-color: var(--signal-500, #F0323E);
+}
+
+/* --------------------------------------------------------------------------
+ * Elementos Dependientes del Rol (Semántica)
+ * -------------------------------------------------------------------------- */
+.gesco-role-icon {
+  color: var(--signal-500, #F0323E);
+  transition: color 0.2s ease;
+}
+
+.gesco-role-pill {
+  background: rgba(240, 50, 62, 0.1);
+  color: var(--signal-500, #F0323E);
+  border: 1px solid rgba(240, 50, 62, 0.25);
+  transition: all 0.2s ease;
+}
+
+:root.dark .gesco-role-pill {
+  background: rgba(240, 50, 62, 0.15);
+  color: #fb7185;
+  border-color: rgba(240, 50, 62, 0.35);
+}
+
+.gesco-preset-badge-standard {
+  background: rgba(240, 50, 62, 0.15);
+  color: #dc2626;
+  border: 1px solid rgba(240, 50, 62, 0.25);
+}
+
+:root.dark .gesco-preset-badge-standard {
+  background: rgba(240, 50, 62, 0.2);
+  color: #f87171;
+  border-color: rgba(240, 50, 62, 0.4);
+}
+
+.gesco-role-empty-icon {
+  background: rgba(240, 50, 62, 0.1);
+  color: var(--signal-500, #F0323E);
+}
+
+:root.dark .gesco-role-empty-icon {
+  background: rgba(240, 50, 62, 0.15);
+  color: #fb7185;
+}
+
+/* ==========================================================================
+ * 8. TEMA EXCLUSIVO SUPERADMIN (Gradiente Neón Violeta / Cian)
+ * ==========================================================================
+ * Aplica exclusivamente cuando :root[data-role="SUPERADMIN"] o .role-superadmin.
+ * Los administradores e inferiores preservan la estética Rojo Señal corporativo.
+ * ========================================================================== */
+
+@keyframes superadminFlowLeft {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* 8.1. Stepper de 2 Pasos */
+:root[data-role="SUPERADMIN"] .gesco-stepper-item.is-active,
+:root.role-superadmin .gesco-stepper-item.is-active {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.16) 0%, rgba(6, 182, 212, 0.08) 100%) !important;
+  border-color: rgba(217, 70, 239, 0.65) !important;
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.25), 0 0 14px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-stepper-item.is-active .gesco-stepper-circle,
+:root.role-superadmin .gesco-stepper-item.is-active .gesco-stepper-circle {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.55), 0 0 16px rgba(6, 182, 212, 0.35) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-stepper-line.is-active,
+:root.role-superadmin .gesco-stepper-line.is-active {
+  background-image: linear-gradient(90deg, #d946ef, #06b6d4) !important;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+/* 8.2. Íconos de Cabecera de Sección */
+:root[data-role="SUPERADMIN"] .gesco-header-icon,
+:root.role-superadmin .gesco-header-icon {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.18), rgba(6, 182, 212, 0.12)) !important;
+  color: #e879f9 !important;
+  border-color: rgba(217, 70, 239, 0.5) !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.3) !important;
+}
+
+:root.dark[data-role="SUPERADMIN"] .gesco-header-icon,
+:root.dark.role-superadmin .gesco-header-icon {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.25), rgba(6, 182, 212, 0.15)) !important;
+  color: #f0abfc !important;
+  border-color: rgba(217, 70, 239, 0.6) !important;
+  box-shadow: 0 0 18px rgba(217, 70, 239, 0.4) !important;
+}
+
+/* 8.3. Inputs con foco */
+:root[data-role="SUPERADMIN"] .gesco-input:focus,
+:root.role-superadmin .gesco-input:focus {
+  border-color: #d946ef !important;
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.22), 0 0 14px rgba(6, 182, 212, 0.2) !important;
+}
+
+/* 8.4. Banner de Vigencia */
+:root[data-role="SUPERADMIN"] .gesco-calc-banner,
+:root.role-superadmin .gesco-calc-banner {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%) !important;
+  border-color: rgba(217, 70, 239, 0.35) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.15) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-calc-banner i,
+:root.role-superadmin .gesco-calc-banner i {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+/* 8.5. Presets de Vigencia */
+:root[data-role="SUPERADMIN"] .gesco-preset-btn:hover:not(.is-active),
+:root.role-superadmin .gesco-preset-btn:hover:not(.is-active) {
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  color: #e879f9 !important;
+  background: rgba(217, 70, 239, 0.08) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-preset-btn.is-active,
+:root.role-superadmin .gesco-preset-btn.is-active {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.5) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-preset-badge-standard,
+:root.role-superadmin .gesco-preset-badge-standard {
+  background: rgba(217, 70, 239, 0.18) !important;
+  color: #e879f9 !important;
+  border-color: rgba(217, 70, 239, 0.35) !important;
+}
+
+/* 8.6. Tarjetas de Selección de Personal */
+:root[data-role="SUPERADMIN"] .gesco-persona-card.is-selected,
+:root.role-superadmin .gesco-persona-card.is-selected {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%) !important;
+  border: 1.5px solid rgba(217, 70, 239, 0.65) !important;
+  box-shadow: 0 0 22px rgba(217, 70, 239, 0.3), inset 0 0 14px rgba(6, 182, 212, 0.15) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-persona-card.is-selected .gesco-persona-icon,
+:root.role-superadmin .gesco-persona-card.is-selected .gesco-persona-icon {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.5) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-persona-card.is-selected .gesco-persona-checkbox,
+:root.role-superadmin .gesco-persona-card.is-selected .gesco-persona-checkbox {
+  background-image: linear-gradient(135deg, #d946ef, #06b6d4) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(217, 70, 239, 0.55) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-persona-card.is-selected .gesco-persona-badge,
+:root.role-superadmin .gesco-persona-card.is-selected .gesco-persona-badge {
+  background: rgba(217, 70, 239, 0.18) !important;
+  color: #f0abfc !important;
+  border: 1px solid rgba(217, 70, 239, 0.4) !important;
+}
+
+/* 8.7. Íconos y Píldoras de Rol */
+:root[data-role="SUPERADMIN"] .gesco-role-icon,
+:root.role-superadmin .gesco-role-icon {
+  color: #c084fc !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-role-pill,
+:root.role-superadmin .gesco-role-pill {
+  background: rgba(217, 70, 239, 0.15) !important;
+  color: #e879f9 !important;
+  border-color: rgba(217, 70, 239, 0.4) !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.25) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-role-empty-icon,
+:root.role-superadmin .gesco-role-empty-icon {
+  background: rgba(217, 70, 239, 0.15) !important;
+  color: #e879f9 !important;
+}
+
+/* 8.8. Constructor de Preguntas (Paso 2) */
+:root[data-role="SUPERADMIN"] .gesco-pregunta-card:hover,
+:root.role-superadmin .gesco-pregunta-card:hover {
+  border-color: rgba(217, 70, 239, 0.4) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-pregunta-num-badge,
+:root.role-superadmin .gesco-pregunta-num-badge {
+  background: rgba(217, 70, 239, 0.16) !important;
+  color: #f0abfc !important;
+  border-color: rgba(217, 70, 239, 0.4) !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.25) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-opcion-item:focus-within,
+:root.role-superadmin .gesco-opcion-item:focus-within {
+  border-color: #d946ef !important;
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.18), 0 0 14px rgba(6, 182, 212, 0.15) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-btn-add-opcion,
+:root.role-superadmin .gesco-btn-add-opcion {
+  color: #c084fc !important;
+  border-color: rgba(217, 70, 239, 0.4) !important;
+  background: rgba(217, 70, 239, 0.08) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-btn-add-opcion:hover,
+:root.role-superadmin .gesco-btn-add-opcion:hover {
+  background: rgba(217, 70, 239, 0.16) !important;
+  border-color: #d946ef !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.3) !important;
+}
+
+/* 8.9. Muestreo Aleatorio y Cuotas de Categoría */
+:root[data-role="SUPERADMIN"] .gesco-cuota-card:hover,
+:root.role-superadmin .gesco-cuota-card:hover {
+  border-color: rgba(217, 70, 239, 0.45) !important;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.15) !important;
+}
+
+:root[data-role="SUPERADMIN"] .gesco-cuota-input:focus,
+:root.role-superadmin .gesco-cuota-input:focus {
+  border-color: #d946ef !important;
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.22), 0 0 14px rgba(6, 182, 212, 0.2) !important;
+}
+
+/* ==========================================================================
+ * 9. Categorías Temáticas (SST, Ambiental, Seguridad Vial, Calidad, Biomecánica, General)
+ * ========================================================================== */
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.cat-badge-sst {
+  background: rgba(249, 115, 22, 0.12);
+  color: #ea580c;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+:root.dark .cat-badge-sst, html.dark .cat-badge-sst {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
+.cat-badge-ambiental {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+:root.dark .cat-badge-ambiental, html.dark .cat-badge-ambiental {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.cat-badge-seguridad_vial {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+  border-color: rgba(14, 165, 233, 0.3);
+}
+:root.dark .cat-badge-seguridad_vial, html.dark .cat-badge-seguridad_vial {
+  background: rgba(14, 165, 233, 0.18);
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.4);
+}
+
+.cat-badge-calidad {
+  background: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+:root.dark .cat-badge-calidad, html.dark .cat-badge-calidad {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.cat-badge-biomecanica {
+  background: rgba(6, 182, 212, 0.12);
+  color: #0891b2;
+  border-color: rgba(6, 182, 212, 0.3);
+}
+:root.dark .cat-badge-biomecanica, html.dark .cat-badge-biomecanica {
+  background: rgba(6, 182, 212, 0.18);
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.cat-badge-general {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+:root.dark .cat-badge-general, html.dark .cat-badge-general {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Grid de Cuotas de Aleatoriedad Independiente */
+.gesco-cuotas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.gesco-cuota-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:root.dark .gesco-cuota-card, html.dark .gesco-cuota-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.gesco-cuota-card:hover {
+  border-color: var(--steel-400, #94a3b8);
+  transform: translateY(-1px);
+}
+
+:root.dark .gesco-cuota-card:hover, html.dark .gesco-cuota-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.gesco-cuota-input {
+  width: 100%;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: monospace;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border-subtle, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+:root.dark .gesco-cuota-input, html.dark .gesco-cuota-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+
+.gesco-cuota-input:focus {
+  border-color: var(--signal-500, #F0323E);
+  box-shadow: 0 0 0 2px rgba(240, 50, 62, 0.2);
+}
+
+/* Selector pill de categoría dentro de cada pregunta */
+.gesco-cat-selector {
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+:root.dark .gesco-cat-selector, html.dark .gesco-cat-selector {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.gesco-cat-selector:focus {
+  border-color: var(--signal-500, #F0323E);
+}
+
+/* --------------------------------------------------------------------------
+ * 8. Switch Toggle Dedicado para Modo Interno (Alta Visibilidad en Dark & Light)
+ * -------------------------------------------------------------------------- */
+.gesco-toggle-switch {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: 52px !important;
+  min-width: 52px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  flex-shrink: 0 !important;
+  border-radius: 9999px !important;
+  background-color: #cbd5e1 !important;
+  border: 2px solid #94a3b8 !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+:root.dark .gesco-toggle-switch,
+html.dark .gesco-toggle-switch {
+  background-color: #27272a !important;
+  border: 2px solid #52525b !important;
+}
+
+.gesco-toggle-switch:hover {
+  transform: scale(1.05);
+  border-color: var(--signal-500, #F0323E) !important;
+}
+
+.gesco-toggle-switch.is-active {
+  background-color: var(--signal-500, #F0323E) !important;
+  background: var(--signal-500, #F0323E) !important;
+  border-color: var(--signal-600, #dc0517) !important;
+  box-shadow: 0 0 14px rgba(240, 50, 62, 0.45) !important;
+}
+
+/* Knob / Thumb del switch: Máxima visibilidad y contraste en ambos modos */
+.gesco-toggle-thumb,
+:root.dark .gesco-toggle-thumb,
+html.dark .gesco-toggle-thumb,
+:root.dark span.gesco-toggle-thumb {
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 9999px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  pointer-events: none !important;
+  transform: translateX(0) !important;
+}
+
+.gesco-toggle-switch.is-active .gesco-toggle-thumb,
+:root.dark .gesco-toggle-switch.is-active .gesco-toggle-thumb,
+html.dark .gesco-toggle-switch.is-active .gesco-toggle-thumb,
+:root.dark .gesco-toggle-switch.is-active span.gesco-toggle-thumb {
+  transform: translateX(24px) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 9. Card y Badges de Modo Interno
+ * -------------------------------------------------------------------------- */
+.gesco-interno-card {
+  transition: all 0.25s ease-in-out;
+}
+
+.gesco-interno-card.is-interno {
+  border-color: rgba(240, 50, 62, 0.45) !important;
+  background: linear-gradient(135deg, rgba(240, 50, 62, 0.06) 0%, rgba(240, 50, 62, 0.02) 100%) !important;
+  box-shadow: 0 4px 20px -2px rgba(240, 50, 62, 0.12) !important;
+}
+
+:root.dark .gesco-interno-card.is-interno,
+html.dark .gesco-interno-card.is-interno {
+  background: linear-gradient(135deg, rgba(240, 50, 62, 0.12) 0%, rgba(24, 24, 27, 0.8) 100%) !important;
+  border-color: rgba(240, 50, 62, 0.45) !important;
+  box-shadow: 0 4px 24px -2px rgba(240, 50, 62, 0.2) !important;
+}
+
+.gesco-modo-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: #f1f5f9;
+  color: var(--text-muted, #64748b);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+:root.dark .gesco-modo-badge,
+html.dark .gesco-modo-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.gesco-modo-badge.is-interno {
+  background: rgba(240, 50, 62, 0.12) !important;
+  border-color: rgba(240, 50, 62, 0.35) !important;
+  color: var(--signal-500, #F0323E) !important;
+}
+
+:root.dark .gesco-modo-badge.is-interno,
+html.dark .gesco-modo-badge.is-interno {
+  color: #fb7185 !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 10. Botones Presets de Fecha Límite con Estilo Signal (Sin bordes blancos)
+ * -------------------------------------------------------------------------- */
+.gesco-preset-signal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(240, 50, 62, 0.06);
+  border: 1px solid rgba(240, 50, 62, 0.22);
+  color: var(--signal-500, #F0323E);
+}
+
+:root.dark .gesco-preset-signal-btn,
+html.dark .gesco-preset-signal-btn {
+  background: rgba(240, 50, 62, 0.1);
+  border-color: rgba(240, 50, 62, 0.32);
+  color: #fb7185;
+}
+
+.gesco-preset-signal-btn:hover {
+  background: rgba(240, 50, 62, 0.16);
+  border-color: rgba(240, 50, 62, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(240, 50, 62, 0.25);
+  color: var(--signal-600, #dc0517);
+}
+
+:root.dark .gesco-preset-signal-btn:hover,
+html.dark .gesco-preset-signal-btn:hover {
+  background: rgba(240, 50, 62, 0.22);
+  border-color: rgba(240, 50, 62, 0.6);
+  color: #ffffff;
+}
+
+.gesco-preset-signal-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.gesco-preset-signal-btn.is-active {
+  background: var(--signal-500, #F0323E) !important;
+  border-color: var(--signal-600, #dc0517) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(240, 50, 62, 0.45) !important;
+}
+
+:root.dark .gesco-preset-signal-btn.is-active,
+html.dark .gesco-preset-signal-btn.is-active {
+  background: var(--signal-500, #F0323E) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 11. Wrapper y Campo de Fecha Límite Estilizado (Flatpickr)
+ * -------------------------------------------------------------------------- */
+.gesco-date-picker-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: 240px !important;
+  height: 38px !important;
+  flex-shrink: 0 !important;
+}
+
+.gesco-date-picker-wrap input.flatpickr-input,
+.gesco-date-picker-wrap input.gesco-date-input,
+:root.dark .gesco-date-picker-wrap input.flatpickr-input,
+html.dark .gesco-date-picker-wrap input.flatpickr-input {
+  width: 100% !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+  padding-left: 38px !important;
+  padding-right: 36px !important;
+  font-size: 0.8125rem !important; /* 13px */
+  font-weight: 600 !important;
+  background-color: var(--surface, #ffffff) !important;
+  border: 1.5px solid var(--border-subtle, #cbd5e1) !important;
+  color: var(--text-primary, #0f172a) !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+  line-height: normal !important;
+}
+
+:root.dark .gesco-date-picker-wrap input.flatpickr-input,
+html.dark .gesco-date-picker-wrap input.flatpickr-input {
+  background-color: rgba(24, 24, 27, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #f1f5f9 !important;
+}
+
+.gesco-date-picker-wrap:hover input.flatpickr-input {
+  border-color: rgba(240, 50, 62, 0.45) !important;
+}
+
+:root.dark .gesco-date-picker-wrap:hover input.flatpickr-input {
+  border-color: rgba(240, 50, 62, 0.5) !important;
+  box-shadow: 0 0 10px rgba(240, 50, 62, 0.2) !important;
+}
+
+.gesco-date-picker-wrap input.flatpickr-input:focus {
+  border-color: var(--signal-500, #F0323E) !important;
+  box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.2) !important;
+}
+
+/* Ícono frontal del calendario (forzado a Signal, evita el cyan global) */
+.gesco-date-icon-left,
+:root.dark .gesco-date-icon-left,
+html.dark .gesco-date-icon-left {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  font-size: 0.875rem !important;
+  color: var(--signal-500, #F0323E) !important;
+  filter: none !important;
+  line-height: 1 !important;
+}
+
+:root.dark .gesco-date-icon-left,
+html.dark .gesco-date-icon-left {
+  color: #fb7185 !important;
+  filter: drop-shadow(0 0 4px rgba(240, 50, 62, 0.4)) !important;
+}
+
+/* Flechita / Trigger derecho */
+.gesco-date-icon-right,
+:root.dark .gesco-date-icon-right,
+html.dark .gesco-date-icon-right {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  font-size: 0.6875rem !important;
+  color: var(--text-muted, #94a3b8) !important;
+  line-height: 1 !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Botón limpiar fecha (X) */
+.gesco-date-clear-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: #ef4444 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+.gesco-date-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #f87171 !important;
+  transform: scale(1.05) !important;
+}
+
+

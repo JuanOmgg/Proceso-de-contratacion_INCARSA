@@ -262,7 +262,7 @@ function solicitudesTable() {
                 if (sesion && sesion.id && esSstGesco) {
                     url += `&id_usuario=${sesion.id}`;
                 }
-                const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolTexto.includes("SOLICITANTE") || rolId === 5;
+                const esGestionDoc = rolTexto.includes("SOLICITANTE") || rolId === 5;
                 if (sesion && sesion.id && esGestionDoc) {
                     url += `&diligenciado_por=${sesion.id}`;
                 }
@@ -344,8 +344,7 @@ function solicitudesTable() {
             const rolNom = String(u.rol || u.nombre_rol || "").toUpperCase();
             return idRol === 5 || idRol === 1 || idRol === 2 ||
                    rolNom.includes("SOLICITANTE") ||
-                   rolNom.includes("GESTION DOCUMENTAL") ||
-                   rolNom.includes("GESTIÓN DOCUMENTAL") ||
+                   rolNom.includes("SOLICITANTE") ||
                    rolNom.includes("ADMIN");
         },
 
@@ -356,7 +355,7 @@ function solicitudesTable() {
             const idRol = parseInt(u.id_rol || u.rol_id, 10);
             const rolNom = String(u.rol || u.nombre_rol || "").toUpperCase();
             if (idRol === 1 || idRol === 2 || rolNom.includes("ADMIN")) return true;
-            return (idRol === 5 || rolNom.includes("SOLICITANTE") || rolNom.includes("GESTION DOCUMENTAL") || rolNom.includes("GESTIÓN DOCUMENTAL"));
+            return (idRol === 5 || rolNom.includes("SOLICITANTE"));
         },
 
         get sesionUsuario() {

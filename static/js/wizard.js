@@ -68,6 +68,7 @@ function solicitudWizard() {
     ],
 
     // Opciones para selectores y chips
+    tiposContratista: ["Contratista", "Proveedor", "Visita"],
     nivelesRiesgo: ["Bajo", "Medio", "Alto"],
     tiposDocPersona: ["CC", "CE", "PAS", "PPT"],
     tiposDocAdjuntoPersona: [
@@ -78,7 +79,7 @@ function solicitudWizard() {
       "Certificado de Espacios Confinados",
       "EPS / Seguridad Social",
       "Hoja de Vida / Certificación",
-      "Soporte de GESCO",
+      "Inducción corporativa",
       "Planilla seguridad social",
       "Otro documento"
     ],
@@ -184,6 +185,7 @@ function solicitudWizard() {
     // ========================================================================
     form: {
       contratista: "", // Nombre de la empresa contratista seleccionada
+      tipo_personal: "Contratista", // "Contratista" | "Proveedor" | "Visita"
       empresas: [], // IDs de empresas destino seleccionadas (ej: ["emp-incarsa"])
       plantasPorEmpresa: {}, // Mapeo de plantas por empresa { "emp-incarsa": ["Planta Norte"] }
       fechaIngreso: "", // Fecha de inicio en formato YYYY-MM-DD
@@ -575,6 +577,7 @@ function solicitudWizard() {
       this.form.fechaIngreso = found.fecha_ingreso || found.fecha_inicio || found.fechaIngreso || "";
       this.form.fechaSalida = found.fecha_salida || found.fecha_fin || found.fechaSalida || "";
       this.form.nivelRiesgo = found.nivel_de_riesgo || found.nivelRiesgo || found.riesgo || "Bajo";
+      this.form.tipo_personal = found.tipo_personal || found.tipoPersonal || "Contratista";
       this.form.actividad = found.actividad || "";
       this.form.diligenciadoPor = found.diligenciador || (found.diligenciado_por ? `Usuario #${found.diligenciado_por}` : "") || found.diligenciadoPor || "—";
       this.form.estado = (found.estado || "ENVIADO").toUpperCase();
@@ -2605,7 +2608,7 @@ function solicitudWizard() {
         empresa_origen: empresaOrigenId,
         diligenciado_por: this.isEdit ? undefined : diligenciadorId,
         nivel_de_riesgo: this.form.nivelRiesgo || "Bajo",
-        tipo_personal: "Contratista",
+        tipo_personal: this.form.tipo_personal || "Contratista",
         empresa_contratista: contratistaId,
         plantas_ids: plantasIds.length ? plantasIds : [1],
         personas_ids: personasIds,
@@ -2794,6 +2797,53 @@ function solicitudWizard() {
           localStorage.setItem("incarsa_solicitudes_creadas", JSON.stringify(guardadas));
         } catch (e) {
           console.warn("No se pudo guardar en localStorage:", e);
+        }
+
+        // Si el SuperAdmin configuró entrega directa de inducciones (modo pruebas)
+        if (data.modo_entrega === "DIRECTO" && data.formulario_asignado && typeof Swal !== "undefined") {
+          this.submitted = true;
+          const formAsig = data.formulario_asignado;
+          const urlEval = formAsig.url_evaluacion || (formAsig.slug ? `/evaluacion-induccion/${formAsig.slug}` : `/evaluacion-induccion/${formAsig.id}`);
+          const tipoPers = data.tipo_personal || this.form.tipo_personal || "Contratista";
+          
+          await Swal.fire({
+            icon: 'info',
+            title: '🎯 Modo Pruebas: Formulario Asignado',
+            html: `
+              <div style="text-align: left; font-size: 13px; line-height: 1.5; color: #334155;">
+                <p style="margin-bottom: 10px;">
+                  La solicitud <strong style="color: #4f46e5; font-family: monospace;">${nuevaSolicitud.id}</strong> fue creada exitosamente.
+                </p>
+                <div style="background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                  <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4338ca; letter-spacing: 0.5px;">
+                    Tipo de Personal: <strong>${tipoPers}</strong>
+                  </div>
+                  <div style="font-size: 14px; font-weight: 700; color: #1e1b4b; margin-top: 4px;">
+                    ${formAsig.nombre || formAsig.titulo || 'Formulario de Inducción GESCO'}
+                  </div>
+                  <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                    Versión v${formAsig.version || '1.0'} &bull; Responsable: ${formAsig.creador_nombre || 'Auditor GESCO'}
+                  </div>
+                </div>
+                <p style="font-size: 11.5px; color: #64748b; margin: 0;">
+                  Como el sistema está en <strong>Modo Directo</strong> para pruebas, puedes abrir directamente el formulario asignado.
+                </p>
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-play mr-1"></i> Abrir Inducción Asignada',
+            cancelButtonText: '<i class="fa-solid fa-list-check mr-1"></i> Ir a Solicitudes',
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#64748b'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.open(urlEval, '_blank');
+              window.location.href = "/solicitudes";
+            } else {
+              window.location.href = "/solicitudes";
+            }
+          });
+          return;
         }
 
         this.submitted = true;

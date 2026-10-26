@@ -1,0 +1,2825 @@
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #0c0c0e;
+  color: #9ca3af;
+  min-height: 100vh;
+}
+.font-brand {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.bg-pattern {
+  background-color: #0c0c0e;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.glass-card {
+  background: rgba(18, 18, 20, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #26262b;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
+
+/* ==========================================================================
+   UTILIDADES ZINC DE SOPORTE PARA FORMULARIOS (GARANTIZA FONDOS Y BORDES NATIVOS)
+   ========================================================================== */
+.border-zinc-800 { border-color: #27272a !important; }
+.border-zinc-800\/80 { border-color: rgba(39, 39, 42, 0.8) !important; }
+.border-zinc-700 { border-color: #3f3f46 !important; }
+.border-zinc-700\/60 { border-color: rgba(63, 63, 70, 0.6) !important; }
+.border-zinc-700\/80 { border-color: rgba(63, 63, 70, 0.8) !important; }
+
+.bg-zinc-700 { background-color: #3f3f46 !important; }
+.bg-zinc-800 { background-color: #27272a !important; }
+.bg-zinc-800\/80 { background-color: rgba(39, 39, 42, 0.8) !important; }
+.bg-zinc-900 { background-color: #18181b !important; }
+.bg-zinc-900\/60 { background-color: rgba(24, 24, 27, 0.6) !important; }
+.bg-zinc-900\/70 { background-color: rgba(24, 24, 27, 0.7) !important; }
+.bg-zinc-900\/80 { background-color: rgba(24, 24, 27, 0.8) !important; }
+.bg-zinc-900\/90 { background-color: rgba(24, 24, 27, 0.9) !important; }
+.bg-zinc-950 { background-color: #09090b !important; }
+.bg-zinc-950\/60 { background-color: rgba(9, 9, 11, 0.6) !important; }
+.bg-zinc-950\/70 { background-color: rgba(9, 9, 11, 0.7) !important; }
+.bg-zinc-950\/80 { background-color: rgba(9, 9, 11, 0.8) !important; }
+
+.text-zinc-200 { color: #e4e4e7 !important; }
+.text-zinc-200\/90 { color: rgba(228, 228, 231, 0.9) !important; }
+.text-zinc-300 { color: #d4d4d8 !important; }
+.text-zinc-400 { color: #a1a1aa !important; }
+.text-zinc-500 { color: #71717a !important; }
+.text-zinc-600 { color: #52525b !important; }
+
+.placeholder-zinc-500::placeholder { color: #71717a !important; }
+
+.hover\:border-zinc-700:hover { border-color: #3f3f46 !important; }
+.hover\:bg-zinc-700\/80:hover { background-color: rgba(63, 63, 70, 0.8) !important; }
+.hover\:bg-zinc-800:hover { background-color: #27272a !important; }
+.hover\:text-zinc-200:hover { color: #e4e4e7 !important; }
+.hover\:text-zinc-300:hover { color: #d4d4d8 !important; }
+
+/* ==========================================================================
+   TARJETAS DE SELECCIÓN Y BOTONES INTERACTIVOS (NIVEL DE RIESGO, TIPO INGRESO)
+   ========================================================================== */
+.selection-card {
+  background: rgba(24, 24, 28, 0.85);
+  border: 1px solid #2e2e38;
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+.selection-card:hover {
+  background: rgba(32, 32, 38, 0.95);
+  border-color: #444452;
+  transform: translateY(-1px);
+}
+.selection-card.is-selected-bajo {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 1px #10b981, 0 4px 18px rgba(16, 185, 129, 0.25) !important;
+}
+.selection-card.is-selected-medio {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 1px #f59e0b, 0 4px 18px rgba(245, 158, 11, 0.25) !important;
+}
+.selection-card.is-selected-alto {
+  background: rgba(244, 63, 94, 0.14) !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 0 1px #f43f5e, 0 4px 18px rgba(244, 63, 94, 0.25) !important;
+}
+.selection-card.is-selected-brand {
+  background: var(--role-tint-bg) !important;
+  border-color: var(--role-primary) !important;
+  box-shadow: 0 0 0 1px var(--role-primary), 0 4px 18px var(--role-glow) !important;
+}
+
+/* Caja de Empresa y Plantas */
+.company-card-box {
+  background: rgba(22, 22, 26, 0.92);
+  border: 1px solid #2d2d36;
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  transition: border-color 0.2s ease;
+}
+.company-card-box:hover {
+  border-color: #3e3e4a;
+}
+
+/* Chips de Plantas */
+.plant-chip {
+  background: rgba(16, 16, 20, 0.95);
+  border: 1px solid #30303a;
+  color: #cbd5e1;
+  border-radius: 0.625rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.plant-chip:hover {
+  background: rgba(28, 28, 36, 0.95);
+  border-color: #4b4b58;
+  color: #ffffff;
+}
+.plant-chip.is-selected {
+  background: var(--role-tint-bg) !important;
+  border-color: var(--role-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 12px var(--role-glow) !important;
+}
+    /* ==========================================================================
+       ANIMACIÓN SUPERADMIN FLOW
+       ========================================================================== */
+    @keyframes superadminFlowLeft {
+      0% {
+        background-position: 0% 50%;
+      }
+      100% {
+        background-position: 200% 50%;
+      }
+    }
+
+    /* ==========================================================================
+       VARIABLES DE COLOR BASADAS EN EL ROL
+       Por defecto: Rojo Señal (#F0323E / #fb7185) para Administrador / GESCO
+       Superadmin: Neón Violeta / Cian (#d946ef -> #06b6d4)
+       ========================================================================== */
+    :root {
+      --role-primary: #F0323E;
+      --role-primary-hover: #d62833;
+      --role-accent: #fb7185;
+      --role-tint-bg: rgba(240, 50, 62, 0.12);
+      --role-tint-hover: rgba(240, 50, 62, 0.08);
+      --role-border: rgba(240, 50, 62, 0.35);
+      --role-border-hover: rgba(240, 50, 62, 0.65);
+      --role-glow: rgba(240, 50, 62, 0.35);
+      --role-shadow: 0 8px 20px -4px rgba(240, 50, 62, 0.45);
+      --role-gradient: linear-gradient(135deg, #F0323E 0%, #d62833 100%);
+      --role-gradient-hover: linear-gradient(135deg, #e02834 0%, #b91c1c 100%);
+      --role-gradient-progress: linear-gradient(90deg, #F0323E 0%, #fb7185 100%);
+    }
+
+    :root[data-role="SUPERADMIN"],
+    :root.role-superadmin {
+      --role-primary: #d946ef;
+      --role-primary-hover: #c026d3;
+      --role-accent: #f0abfc;
+      --role-tint-bg: rgba(217, 70, 239, 0.15);
+      --role-tint-hover: rgba(217, 70, 239, 0.09);
+      --role-border: rgba(217, 70, 239, 0.45);
+      --role-border-hover: rgba(217, 70, 239, 0.75);
+      --role-glow: rgba(217, 70, 239, 0.45);
+      --role-shadow: 0 8px 22px -4px rgba(217, 70, 239, 0.55), 0 0 16px rgba(6, 182, 212, 0.35);
+      --role-gradient: linear-gradient(90deg, #d946ef 0%, #a855f7 25%, #06b6d4 50%, #38bdf8 75%, #d946ef 100%);
+      --role-gradient-hover: linear-gradient(90deg, #e879f9 0%, #c084fc 25%, #22d3ee 50%, #38bdf8 75%, #e879f9 100%);
+      --role-gradient-progress: linear-gradient(90deg, #d946ef 0%, #a855f7 40%, #06b6d4 100%);
+    }
+
+    /* Botón Principal (Brand) con el Color del Rol */
+    .btn-brand {
+      background: var(--role-gradient);
+      color: #ffffff;
+      transition: all 0.2s ease;
+      box-shadow: var(--role-shadow);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-brand:hover:not(:disabled) {
+      background: var(--role-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--role-shadow), 0 0 16px var(--role-glow);
+    }
+    :root[data-role="SUPERADMIN"] .btn-brand,
+    :root.role-superadmin .btn-brand {
+      background-size: 200% 100% !important;
+      animation: superadminFlowLeft 3s linear infinite !important;
+    }
+    .btn-brand:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Tarjetas de Opciones del Examen */
+    .option-card {
+      background: rgba(28, 28, 33, 0.8);
+      border: 1px solid #2c2c34;
+      transition: all 0.15s ease-in-out;
+      cursor: pointer;
+    }
+    .option-card:hover {
+      border-color: var(--role-primary);
+      background: var(--role-tint-hover);
+    }
+    .option-card.is-selected {
+      border-color: var(--role-primary) !important;
+      background: var(--role-tint-bg) !important;
+      box-shadow: 0 0 0 1px var(--role-primary), 0 4px 16px var(--role-glow) !important;
+    }
+    .option-card.is-correct-selected {
+      background: rgba(16, 185, 129, 0.12) !important;
+      border-color: rgba(16, 185, 129, 0.45) !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.15) !important;
+    }
+    .option-card.is-correct-expected {
+      background: rgba(16, 185, 129, 0.06) !important;
+      border-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    .option-card.is-wrong-selected {
+      background: rgba(239, 68, 68, 0.12) !important;
+      border-color: rgba(239, 68, 68, 0.45) !important;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.15) !important;
+    }
+    .option-card.is-neutral {
+      background: rgba(24, 24, 28, 0.6) !important;
+      border-color: #26262b !important;
+      opacity: 0.8;
+    }
+    .option-card.is-readonly {
+      cursor: default !important;
+    }
+    .option-card.is-readonly:hover {
+      border-color: inherit;
+      background: inherit;
+      box-shadow: inherit;
+    }
+
+    /* ==========================================================================
+       TARJETAS Y PASTILLAS DE RESULTADOS (SIN BORDES BLANCOS)
+       ========================================================================== */
+    .card-metric-green {
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 78, 59, 0.25) 50%, rgba(24, 24, 27, 0.9) 100%) !important;
+      border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    }
+    .card-metric-red {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, rgba(127, 29, 29, 0.25) 50%, rgba(24, 24, 27, 0.9) 100%) !important;
+      border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    }
+    .card-metric-target {
+      background: linear-gradient(180deg, rgba(39, 39, 42, 0.6) 0%, rgba(24, 24, 27, 0.8) 50%, rgba(18, 18, 20, 0.95) 100%) !important;
+      border: 1px solid #3f3f46 !important;
+    }
+
+    /* Pastillas de estado sin bordes blancos */
+    .pill-status-correct {
+      background: rgba(16, 185, 129, 0.2) !important;
+      color: #6ee7b7 !important;
+      border: none !important;
+      outline: none !important;
+    }
+    .pill-status-wrong {
+      background: rgba(239, 68, 68, 0.2) !important;
+      color: #fca5a5 !important;
+      border: none !important;
+      outline: none !important;
+    }
+    .pill-metric-green {
+      background: rgba(16, 185, 129, 0.18) !important;
+      color: #6ee7b7 !important;
+      border: none !important;
+    }
+    .pill-metric-red {
+      background: rgba(239, 68, 68, 0.18) !important;
+      color: #fca5a5 !important;
+      border: none !important;
+    }
+    .pill-metric-neutral {
+      background: rgba(63, 63, 70, 0.5) !important;
+      color: #d4d4d8 !important;
+      border: none !important;
+    }
+
+    /* Círculo Radio / Checkbox de la Opción */
+    .option-circle {
+      transition: all 0.15s ease;
+    }
+    .option-circle.is-selected {
+      border-color: var(--role-primary) !important;
+      background: var(--role-gradient) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 10px var(--role-glow) !important;
+    }
+    :root[data-role="SUPERADMIN"] .option-circle.is-selected,
+    :root.role-superadmin .option-circle.is-selected {
+      background-size: 200% 100% !important;
+      animation: superadminFlowLeft 3s linear infinite !important;
+    }
+
+    /* Píldora del Número de Pregunta */
+    .q-index-badge {
+      background: var(--role-tint-bg);
+      border: 1px solid var(--role-border);
+      color: var(--role-accent);
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    :root[data-role="SUPERADMIN"] .q-index-badge,
+    :root.role-superadmin .q-index-badge {
+      box-shadow: 0 0 12px rgba(217, 70, 239, 0.35);
+    }
+
+    /* Contenedor de Íconos del Rol */
+    .role-icon-box {
+      background: var(--role-tint-bg);
+      border: 1px solid var(--role-border);
+      color: var(--role-accent);
+      transition: all 0.2s ease;
+    }
+    :root[data-role="SUPERADMIN"] .role-icon-box,
+    :root.role-superadmin .role-icon-box {
+      box-shadow: 0 0 14px rgba(217, 70, 239, 0.35);
+    }
+
+    /* Píldoras / Badges del Rol */
+    .role-badge {
+      background: var(--role-tint-bg);
+      border: 1px solid var(--role-border);
+      color: var(--role-accent);
+    }
+    :root[data-role="SUPERADMIN"] .role-badge,
+    :root.role-superadmin .role-badge {
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.25);
+    }
+
+    /* Barra de Progreso */
+    .role-progress-bar {
+      background: var(--role-gradient-progress);
+      box-shadow: 0 0 12px var(--role-glow);
+    }
+    :root[data-role="SUPERADMIN"] .role-progress-bar,
+    :root.role-superadmin .role-progress-bar {
+      background-size: 200% 100%;
+      animation: superadminFlowLeft 3s linear infinite;
+    }
+
+    /* Banner Informativo de Reglas */
+    .role-rule-banner {
+      background: var(--role-tint-bg);
+      border: 1px solid var(--role-border);
+      color: var(--role-accent);
+    }
+
+    /* Spinner con Color del Rol */
+    .role-spinner {
+      color: var(--role-primary);
+    }
+
+    /* Texto de Acento del Rol */
+    .role-text-accent {
+      color: var(--role-accent);
+    }
+
+    /* Inputs y Textareas con Foco del Rol */
+    .eval-input,
+    .eval-textarea,
+    .form-control-dark,
+    input[type="text"],
+    textarea {
+      background-color: #18181c !important;
+      color: #ffffff !important;
+      border: 1.5px solid #3f3f46 !important;
+      font-size: 0.875rem;
+    }
+    .eval-textarea:focus,
+    .eval-input:focus,
+    .form-control-dark:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      background-color: #1f1f25 !important;
+      color: #ffffff !important;
+      border-color: var(--role-primary) !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px var(--role-border), 0 0 12px var(--role-glow) !important;
+    }
+    textarea::placeholder,
+    input::placeholder {
+      color: #71717a !important;
+    }
+    ::selection {
+      background-color: var(--role-primary);
+      color: #ffffff;
+    }
+
+    /* Inputs con ícono a la izquierda (evita colisión de texto e ícono) */
+    .input-with-icon-left,
+    .flatpickr-input-with-icon,
+    input.input-with-icon-left {
+      padding-left: 2.75rem !important;
+    }
+
+    /* Banner y Controles del Simulador */
+    .sim-banner {
+      background: var(--role-tint-bg);
+      border: 1px solid var(--role-border);
+      color: #fecdd3;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+    }
+    :root[data-role="SUPERADMIN"] .sim-banner,
+    :root.role-superadmin .sim-banner {
+      color: #f5d0fe;
+      box-shadow: 0 10px 25px -5px rgba(217, 70, 239, 0.20), 0 0 15px rgba(6, 182, 212, 0.15);
+    }
+
+    .sim-icon-box {
+      background: var(--role-tint-bg);
+      color: var(--role-accent);
+      border: 1px solid var(--role-border);
+    }
+    :root[data-role="SUPERADMIN"] .sim-icon-box,
+    :root.role-superadmin .sim-icon-box {
+      box-shadow: 0 0 14px rgba(217, 70, 239, 0.35);
+    }
+
+    .sim-role-pill {
+      background: var(--role-tint-bg);
+      color: var(--role-accent);
+      border: 1px solid var(--role-border);
+    }
+    :root[data-role="SUPERADMIN"] .sim-role-pill,
+    :root.role-superadmin .sim-role-pill {
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.25);
+    }
+
+    .sim-role-text {
+      color: var(--role-accent);
+    }
+
+    .sim-btn-primary {
+      background: var(--role-gradient);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: var(--role-shadow);
+      transition: all 0.2s ease;
+    }
+    .sim-btn-primary:hover {
+      background: var(--role-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--role-shadow), 0 0 16px var(--role-glow);
+    }
+    :root[data-role="SUPERADMIN"] .sim-btn-primary,
+    :root.role-superadmin .sim-btn-primary {
+      background-size: 200% 100% !important;
+      animation: superadminFlowLeft 3s linear infinite !important;
+    }
+
+    .sim-btn-secondary {
+      background: var(--role-tint-bg);
+      color: var(--role-accent);
+      border: 1px solid var(--role-border);
+      transition: all 0.15s ease;
+    }
+    .sim-btn-secondary:hover {
+      background: var(--role-tint-hover);
+      color: #ffffff;
+      border-color: var(--role-border-hover);
+      box-shadow: 0 0 12px var(--role-glow);
+    }
+
+    /* ==========================================================================
+       BADGES POR CATEGORÍA DE PREGUNTA
+       ========================================================================== */
+    .cat-badge-sst {
+      background: rgba(249, 115, 22, 0.14);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.35);
+    }
+    .cat-badge-ambiental {
+      background: rgba(16, 185, 129, 0.14);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .cat-badge-seguridad_vial {
+      background: rgba(59, 130, 246, 0.14);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .cat-badge-calidad {
+      background: rgba(168, 85, 247, 0.14);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+    .cat-badge-biomecanica {
+      background: rgba(6, 182, 212, 0.14);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+    .cat-badge-general {
+      background: rgba(113, 113, 122, 0.20);
+      color: #d4d4d8;
+      border: 1px solid rgba(113, 113, 122, 0.40);
+    }
+
+    /* ==========================================================================
+       TEMA PERSONALIZADO SWEETALERT2 DARK LUXURY & GLASSMORPHISM
+       ========================================================================== */
+    
+    /* 1. Backdrop general: ÚNICAMENTE para modales regulares, NUNCA para toasts */
+    body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
+    body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-noanimation,
+    .swal2-container.swal2-backdrop-show:not(:has(.swal2-toast)) {
+      background: rgba(0, 0, 0, 0.75) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    /* 2. Contenedor de Toasts: Previene cualquier estiramiento de pantalla */
+    .swal2-container:has(.swal2-toast),
+    .swal2-container.swal2-top-end,
+    .swal2-container.swal2-top-right,
+    body.swal2-toast-shown .swal2-container {
+      position: fixed !important;
+      top: 16px !important;
+      right: 16px !important;
+      bottom: auto !important;
+      left: auto !important;
+      inset: 16px 16px auto auto !important;
+      width: auto !important;
+      max-width: calc(100vw - 32px) !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      pointer-events: none !important;
+      padding: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      justify-content: flex-start !important;
+      z-index: 100000 !important;
+    }
+
+    /* 3. Popup del Toast: Tarjeta compacta, altura estrictamente automática */
+    .swal2-popup.swal2-toast,
+    body.swal2-toast-shown .swal2-popup.swal2-toast {
+      grid-column: auto !important;
+      grid-row: auto !important;
+      box-sizing: border-box !important;
+      display: grid !important;
+      grid-template-columns: auto 1fr !important;
+      grid-template-rows: auto auto !important;
+      align-items: flex-start !important;
+      width: auto !important;
+      min-width: 290px !important;
+      max-width: 380px !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      align-self: flex-end !important;
+      justify-self: flex-end !important;
+      padding: 14px 18px 16px 16px !important;
+      margin: 0 !important;
+      background: rgba(22, 22, 26, 0.96) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+      color: #f4f4f5 !important;
+      pointer-events: auto !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    /* Ícono del Toast */
+    .swal2-popup.swal2-toast .swal2-icon {
+      grid-column: 1 !important;
+      grid-row: 1 / 3 !important;
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
+      margin: 2px 12px 0 0 !important;
+      border-width: 2px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      align-self: flex-start !important;
+      flex-shrink: 0 !important;
+      font-size: 14px !important;
+    }
+
+    /* Botón de cierre en toast (si aplica) */
+    .swal2-popup.swal2-toast .swal2-close {
+      position: absolute !important;
+      top: 10px !important;
+      right: 10px !important;
+      grid-column: auto !important;
+      grid-row: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      font-size: 16px !important;
+      color: #a1a1aa !important;
+    }
+
+    .swal2-popup.swal2-toast .swal2-icon.swal2-info {
+      border-color: rgba(56, 189, 248, 0.6) !important;
+      color: #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.14) !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon.swal2-info .swal2-icon-content {
+      color: #38bdf8 !important;
+      font-family: 'Space Grotesk', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      line-height: 1 !important;
+    }
+
+    .swal2-popup.swal2-toast .swal2-icon.swal2-success {
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      color: #34d399 !important;
+      background: rgba(16, 185, 129, 0.14) !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
+      background-color: #34d399 !important;
+    }
+
+    .swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+      border-color: rgba(245, 158, 11, 0.6) !important;
+      color: #fbbf24 !important;
+      background: rgba(245, 158, 11, 0.14) !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon.swal2-warning .swal2-icon-content {
+      color: #fbbf24 !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+    }
+
+    .swal2-popup.swal2-toast .swal2-icon.swal2-error {
+      border-color: rgba(239, 68, 68, 0.6) !important;
+      color: #f87171 !important;
+      background: rgba(239, 68, 68, 0.14) !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+      background-color: #f87171 !important;
+    }
+
+    /* Título del Toast */
+    .swal2-popup.swal2-toast .swal2-title {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      color: #ffffff !important;
+      font-size: 0.85rem !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.01em !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+      line-height: 1.3 !important;
+    }
+
+    /* Texto descriptivo del Toast */
+    .swal2-popup.swal2-toast .swal2-html-container {
+      grid-column: 2 !important;
+      grid-row: 2 !important;
+      font-family: 'Inter', sans-serif !important;
+      color: #a1a1aa !important;
+      font-size: 0.775rem !important;
+      line-height: 1.4 !important;
+      margin: 3px 0 0 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+    }
+
+    /* Barra de progreso de Toast */
+    .swal2-popup.swal2-toast .swal2-timer-progress-bar-container {
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: 3px !important;
+      border-radius: 0 0 16px 16px !important;
+      overflow: hidden !important;
+    }
+    .swal2-popup.swal2-toast .swal2-timer-progress-bar {
+      background: var(--role-gradient, linear-gradient(90deg, #F0323E, #fb7185)) !important;
+      height: 100% !important;
+    }
+    :root[data-role="SUPERADMIN"] .swal2-popup.swal2-toast .swal2-timer-progress-bar,
+    :root.role-superadmin .swal2-popup.swal2-toast .swal2-timer-progress-bar {
+      background: linear-gradient(90deg, #d946ef 0%, #06b6d4 100%) !important;
+    }
+
+    /* 4. MODALES / DIÁLOGOS ESTÁNDAR (Swal.fire modal) */
+    .swal2-popup:not(.swal2-toast) {
+      background: rgba(18, 18, 22, 0.98) !important;
+      backdrop-filter: blur(25px) !important;
+      -webkit-backdrop-filter: blur(25px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 24px !important;
+      box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+      padding: 32px 26px 26px 26px !important;
+      max-width: 440px !important;
+      color: #f4f4f5 !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-title {
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      color: #ffffff !important;
+      font-size: 1.25rem !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.01em !important;
+      margin: 12px 0 8px 0 !important;
+      padding: 0 !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-html-container {
+      font-family: 'Inter', sans-serif !important;
+      color: #a1a1aa !important;
+      font-size: 0.875rem !important;
+      line-height: 1.6 !important;
+      margin: 0 0 20px 0 !important;
+      padding: 0 10px !important;
+    }
+
+    /* Íconos de Modales Estándar */
+    .swal2-popup:not(.swal2-toast) .swal2-icon {
+      transform: scale(0.75) !important;
+      margin: 4px auto 0 auto !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+      border-color: rgba(16, 185, 129, 0.45) !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring {
+      border: 4px solid rgba(16, 185, 129, 0.25) !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'] {
+      background-color: #34d399 !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-left,
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-right,
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-fix {
+      background: transparent !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+      border-color: rgba(245, 158, 11, 0.45) !important;
+      color: #fbbf24 !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+      border-color: rgba(239, 68, 68, 0.45) !important;
+      color: #f87171 !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+      background-color: #f87171 !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
+      border-color: rgba(56, 189, 248, 0.45) !important;
+      color: #38bdf8 !important;
+    }
+
+    /* Botones de Acción en Modales */
+    .swal2-popup:not(.swal2-toast) .swal2-actions {
+      margin-top: 14px !important;
+      gap: 12px !important;
+      width: 100% !important;
+      justify-content: center !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-confirm {
+      background: var(--role-gradient) !important;
+      color: #ffffff !important;
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 0.85rem !important;
+      padding: 11px 26px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      box-shadow: var(--role-shadow) !important;
+      transition: all 0.2s ease !important;
+      cursor: pointer !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+      background: var(--role-gradient-hover) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: var(--role-shadow), 0 0 16px var(--role-glow) !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-confirm:focus {
+      outline: none !important;
+      box-shadow: 0 0 0 3px var(--role-border) !important;
+    }
+
+    .swal2-popup:not(.swal2-toast) .swal2-cancel {
+      background: rgba(39, 39, 42, 0.7) !important;
+      color: #d4d4d8 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      padding: 11px 22px !important;
+      border-radius: 12px !important;
+      transition: all 0.15s ease !important;
+      cursor: pointer !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+      background: rgba(63, 63, 70, 0.8) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .swal2-close {
+      color: #71717a !important;
+      transition: color 0.15s ease !important;
+    }
+    .swal2-close:hover {
+      color: #ffffff !important;
+    }
+
+    /* ==========================================================================
+       CUSTOM SCROLLBARS (GESCO DARK LUXURY)
+       ========================================================================== */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(24, 24, 27, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(113, 113, 122, 0.3);
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(161, 161, 170, 0.5);
+    }
+
+    /* ==========================================================================
+       FLATPICKR - ESTILOS GENERALES DEL SISTEMA (TEMA DARK LUXURY GESCO)
+       ========================================================================== */
+    .flatpickr-calendar {
+      --fp-accent: var(--role-accent, #fb3b4c);
+      --fp-accent-hover: #fa2336;
+      --fp-accent-soft: rgba(251, 59, 76, 0.16);
+      --fp-accent-border: rgba(251, 59, 76, 0.55);
+      --fp-accent-glow: rgba(251, 59, 76, 0.65);
+      --fp-arrow: var(--role-accent, #fb3b4c);
+      --fp-arrow-hover: var(--role-accent, #fb3b4c);
+      --fp-weekday: #94a3b8;
+      --fp-today-bg: rgba(251, 59, 76, 0.12);
+      --fp-today-border: var(--role-accent, #fb3b4c);
+      --fp-today-color: var(--role-accent, #fb3b4c);
+      --fp-selected-bg: linear-gradient(135deg, #fb3b4c 0%, #dc2626 100%);
+      --fp-card-border: rgba(251, 59, 76, 0.35);
+      --fp-card-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(251, 59, 76, 0.22);
+
+      background: rgba(20, 20, 24, 0.96) !important;
+      backdrop-filter: blur(16px) saturate(180%) !important;
+      border: 1px solid var(--fp-card-border) !important;
+      border-radius: 18px !important;
+      box-shadow: var(--fp-card-shadow) !important;
+      padding: 12px !important;
+      width: 320px !important;
+      min-width: 320px !important;
+      max-width: 320px !important;
+      box-sizing: border-box !important;
+      color: #f1f5f9 !important;
+      font-family: 'Inter', sans-serif !important;
+      z-index: 99999 !important;
+      color-scheme: dark !important;
+    }
+
+    :root[data-role="SUPERADMIN"] .flatpickr-calendar,
+    :root.role-superadmin .flatpickr-calendar {
+      --fp-accent: #38bdf8;
+      --fp-accent-hover: #06b6d4;
+      --fp-accent-soft: rgba(217, 70, 239, 0.22);
+      --fp-accent-border: rgba(217, 70, 239, 0.45);
+      --fp-accent-glow: rgba(217, 70, 239, 0.7);
+      --fp-arrow: #d946ef;
+      --fp-arrow-hover: #38bdf8;
+      --fp-weekday: #c084fc;
+      --fp-today-bg: rgba(6, 182, 212, 0.12);
+      --fp-today-border: #38bdf8;
+      --fp-today-color: #38bdf8;
+      --fp-selected-bg: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%);
+      --fp-card-border: rgba(217, 70, 239, 0.4);
+      --fp-card-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(217, 70, 239, 0.25), 0 0 15px rgba(6, 182, 212, 0.15);
+    }
+
+    .flatpickr-calendar.arrowTop:before,
+    .flatpickr-calendar.arrowTop:after {
+      border-bottom-color: rgba(20, 20, 24, 0.96) !important;
+    }
+
+    .flatpickr-calendar.arrowBottom:before,
+    .flatpickr-calendar.arrowBottom:after {
+      border-top-color: rgba(20, 20, 24, 0.96) !important;
+    }
+
+    .flatpickr-months {
+      background: transparent !important;
+      align-items: center !important;
+      padding: 4px 2px 10px 2px !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      margin-bottom: 8px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .flatpickr-months .flatpickr-month {
+      height: 34px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: #ffffff !important;
+      flex: 1 !important;
+    }
+
+    .flatpickr-current-month {
+      color: #ffffff !important;
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      padding: 0 !important;
+      width: 100% !important;
+    }
+
+    .flatpickr-current-month .cur-month {
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      font-size: 15px !important;
+      letter-spacing: 0.02em !important;
+    }
+
+    .flatpickr-current-month input.cur-year {
+      color: var(--fp-accent) !important;
+      font-weight: 700 !important;
+      font-size: 15px !important;
+      text-shadow: 0 0 8px var(--fp-accent-glow) !important;
+      background: transparent !important;
+      border: 0 !important;
+    }
+
+    /* Selector desplegable de meses (Fluent Dark nativo sin cajas ni bordes para preservar el flyout moderno con checkmark) */
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+      color-scheme: dark !important;
+      background: transparent !important;
+      border: none !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      font-size: 15px !important;
+      font-family: inherit !important;
+      outline: none !important;
+      cursor: pointer !important;
+    }
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months option,
+    .flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+      background-color: #18181c !important;
+      color: #ffffff !important;
+    }
+
+    .flatpickr-current-month .numInputWrapper {
+      width: 6ch !important;
+      display: inline-flex !important;
+      align-items: center !important;
+    }
+
+    /* Flechas de navegación (Mes anterior / siguiente) */
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: transform 0.2s ease !important;
+      cursor: pointer !important;
+      border-radius: 8px !important;
+      height: 30px !important;
+      width: 30px !important;
+      padding: 7px !important;
+    }
+
+    .flatpickr-months .flatpickr-prev-month:hover,
+    .flatpickr-months .flatpickr-next-month:hover {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      transform: scale(1.25) !important;
+    }
+
+    .flatpickr-months .flatpickr-prev-month svg,
+    .flatpickr-months .flatpickr-next-month svg {
+      fill: var(--fp-arrow) !important;
+      color: var(--fp-arrow) !important;
+      filter: drop-shadow(0 0 6px var(--fp-accent-glow)) !important;
+      transition: filter 0.2s ease, transform 0.2s ease, fill 0.2s ease !important;
+      width: 13px !important;
+      height: 13px !important;
+    }
+
+    .flatpickr-months .flatpickr-prev-month:hover svg,
+    .flatpickr-months .flatpickr-next-month:hover svg {
+      fill: var(--fp-arrow-hover) !important;
+      color: var(--fp-arrow-hover) !important;
+      filter: drop-shadow(0 0 10px var(--fp-accent-glow)) drop-shadow(0 0 16px var(--fp-accent-glow)) !important;
+    }
+
+    /* Contenedores de días y semanas */
+    .flatpickr-innerContainer,
+    .flatpickr-rContainer,
+    .flatpickr-weekdays,
+    .flatpickr-days {
+      width: 100% !important;
+      display: block !important;
+      box-sizing: border-box !important;
+    }
+
+    .dayContainer {
+      width: 100% !important;
+      min-width: 100% !important;
+      max-width: 100% !important;
+      display: grid !important;
+      grid-template-columns: repeat(7, 1fr) !important;
+      gap: 2px !important;
+      box-sizing: border-box !important;
+      justify-items: center !important;
+    }
+
+    /* Nombres de los días de la semana */
+    span.flatpickr-weekday {
+      color: var(--fp-weekday) !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+      text-align: center !important;
+      display: block !important;
+    }
+
+    /* Días */
+    .flatpickr-day {
+      color: #e2e8f0 !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      border-radius: 8px !important;
+      border: 1px solid transparent !important;
+      transition: all 0.18s ease !important;
+      width: 36px !important;
+      height: 36px !important;
+      line-height: 36px !important;
+      max-width: 36px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 1px auto !important;
+      box-sizing: border-box !important;
+    }
+
+    .flatpickr-day:hover {
+      background: var(--fp-accent-soft) !important;
+      border-color: var(--fp-accent-border) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 10px var(--fp-accent-glow) !important;
+      transform: scale(1.08) !important;
+    }
+
+    /* Día de hoy */
+    .flatpickr-day.today {
+      border-color: var(--fp-today-border) !important;
+      color: var(--fp-today-color) !important;
+      font-weight: 700 !important;
+      background: var(--fp-today-bg) !important;
+      box-shadow: 0 0 8px var(--fp-accent-glow) !important;
+    }
+
+    .flatpickr-day.today:hover {
+      background: var(--fp-accent-border) !important;
+      color: #ffffff !important;
+    }
+
+    /* Día seleccionado */
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.selected:focus,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+      background: var(--fp-selected-bg) !important;
+      border-color: var(--fp-today-border) !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      box-shadow: 0 0 18px var(--fp-accent-glow), inset 0 0 6px rgba(255, 255, 255, 0.35) !important;
+      transform: scale(1.05) !important;
+    }
+
+    /* Rango seleccionado */
+    .flatpickr-day.inRange,
+    .flatpickr-day.prevMonthDay.inRange,
+    .flatpickr-day.nextMonthDay.inRange {
+      background: var(--fp-accent-soft) !important;
+      border-color: transparent !important;
+      color: #ffffff !important;
+      box-shadow: -5px 0 0 var(--fp-accent-soft), 5px 0 0 var(--fp-accent-soft) !important;
+    }
+
+    /* Días de mes anterior / siguiente */
+    .flatpickr-day.prevMonthDay,
+    .flatpickr-day.nextMonthDay {
+      color: #475569 !important;
+    }
+
+    /* Días deshabilitados */
+    .flatpickr-day.disabled,
+    .flatpickr-day.disabled:hover {
+      color: #334155 !important;
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ==========================================================================
+       AVISO OBLIGATORIO LEY 1581 (TRATAMIENTO DE DATOS PERSONALES) - MODO OSCURO
+       ========================================================================== */
+    html.dark .aviso-ingreso-planta,
+    .dark .aviso-ingreso-planta {
+      background-color: rgba(245, 158, 11, 0.12) !important;
+      border: 1px solid rgba(245, 158, 11, 0.35) !important;
+      border-left: 4px solid #f59e0b !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-icono-escudo,
+    .dark .aviso-ingreso-planta .aviso-icono-escudo {
+      color: #fbbf24 !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-titulo,
+    .dark .aviso-ingreso-planta .aviso-titulo {
+      color: #fcd34d !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-cuerpo,
+    .dark .aviso-ingreso-planta .aviso-cuerpo {
+      color: #e2e8f0 !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-cuerpo strong,
+    .dark .aviso-ingreso-planta .aviso-cuerpo strong {
+      color: #ffffff !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-spam,
+    .dark .aviso-ingreso-planta .aviso-spam {
+      color: #fda4af !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-porteria,
+    .dark .aviso-ingreso-planta .aviso-porteria {
+      color: #fda4af !important;
+    }
+    html.dark .aviso-ingreso-planta .aviso-porteria i,
+    .dark .aviso-ingreso-planta .aviso-porteria i {
+      color: #f87171 !important;
+    }
+
+/* ==========================================================================
+   BOTÓN SELECTOR DE MODO CLARO Y OSCURO (THEME-TOGGLE-BTN)
+   ========================================================================== */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+
+/* Visibilidad de los íconos de sol / luna según el modo activo */
+html.dark .theme-icon-moon {
+  display: none !important;
+}
+html.dark .theme-icon-sun {
+  display: inline-block !important;
+}
+html:not(.dark) .theme-icon-sun {
+  display: none !important;
+}
+html:not(.dark) .theme-icon-moon {
+  display: inline-block !important;
+}
+
+/* ==========================================================================
+   SISTEMA DE MODO CLARO PARA FORMULARIOS (html:not(.dark))
+   ========================================================================== */
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #334155;
+}
+html:not(.dark) .bg-pattern {
+  background-color: #f8fafc;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+html:not(.dark) .glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+/* Botón de tema en modo claro */
+html:not(.dark) .theme-toggle-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+html:not(.dark) .theme-toggle-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Títulos, encabezados y textos principales en modo claro */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) .font-brand.text-white,
+html:not(.dark) .glass-card .text-white,
+html:not(.dark) .modal-panel .text-white,
+html:not(.dark) tr .text-white {
+  color: #0f172a !important;
+}
+
+/* Labels y textos guía de formularios en modo claro */
+html:not(.dark) label {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) label .text-red-400 {
+  color: #dc2626 !important;
+}
+
+/* Acentos y badges del rol en modo claro (Rojo Corporativo de alto contraste) */
+html:not(.dark) .role-text-accent {
+  color: #b91c1c !important;
+  font-weight: 600;
+}
+html:not(.dark) .role-badge {
+  background: rgba(240, 50, 62, 0.10) !important;
+  border-color: rgba(240, 50, 62, 0.28) !important;
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .role-icon-box {
+  background: rgba(240, 50, 62, 0.10) !important;
+  border-color: rgba(240, 50, 62, 0.28) !important;
+  color: #b91c1c !important;
+}
+
+/* Preservar texto blanco en botones con acento sólido o de marca */
+html:not(.dark) .btn-brand,
+html:not(.dark) .btn-brand *,
+html:not(.dark) .sim-btn-primary,
+html:not(.dark) .sim-btn-primary *,
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) .bg-emerald-600 *,
+html:not(.dark) .bg-rose-600,
+html:not(.dark) .bg-rose-600 *,
+html:not(.dark) .bg-red-600,
+html:not(.dark) .bg-red-600 *,
+html:not(.dark) .bg-amber-600,
+html:not(.dark) .bg-amber-600 *,
+html:not(.dark) .swal2-confirm {
+  color: #ffffff !important;
+}
+
+/* Botones secundarios en Modo Claro (Cancelar, Cerrar, Acciones de tabla) */
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-zinc-800,
+html:not(.dark) button.bg-slate-800,
+html:not(.dark) button.bg-zinc-800 {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .bg-slate-800:hover,
+html:not(.dark) .bg-zinc-800:hover,
+html:not(.dark) button.bg-slate-800:hover,
+html:not(.dark) button.bg-zinc-800:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .bg-slate-800 .text-zinc-300,
+html:not(.dark) .bg-slate-800 .text-zinc-400,
+html:not(.dark) .bg-zinc-800 .text-zinc-300,
+html:not(.dark) .bg-zinc-800 .text-zinc-400,
+html:not(.dark) button.bg-slate-800 span,
+html:not(.dark) button.bg-zinc-800 span {
+  color: #334155 !important;
+}
+
+/* Utilidades Zinc en modo claro */
+html:not(.dark) .border-zinc-800,
+html:not(.dark) .border-zinc-800\/80,
+html:not(.dark) .border-zinc-700,
+html:not(.dark) .border-zinc-700\/60,
+html:not(.dark) .border-zinc-700\/80 {
+  border-color: #e2e8f0 !important;
+}
+html:not(.dark) .bg-zinc-700 {
+  background-color: #cbd5e1 !important;
+}
+html:not(.dark) .bg-zinc-800,
+html:not(.dark) .bg-zinc-800\/80 {
+  background-color: #f1f5f9 !important;
+}
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-900\/60,
+html:not(.dark) .bg-zinc-900\/70,
+html:not(.dark) .bg-zinc-900\/80,
+html:not(.dark) .bg-zinc-900\/90 {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .bg-zinc-950,
+html:not(.dark) .bg-zinc-950\/60,
+html:not(.dark) .bg-zinc-950\/70,
+html:not(.dark) .bg-zinc-950\/80 {
+  background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-zinc-300 {
+  color: #334155 !important;
+}
+html:not(.dark) .text-zinc-400 {
+  color: #64748b !important;
+}
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-zinc-600 {
+  color: #94a3b8 !important;
+}
+html:not(.dark) .placeholder-zinc-500::placeholder {
+  color: #94a3b8 !important;
+}
+
+html:not(.dark) .hover\:border-zinc-700:hover {
+  border-color: #cbd5e1 !important;
+}
+html:not(.dark) .hover\:bg-zinc-700\/80:hover,
+html:not(.dark) .hover\:bg-zinc-800:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   TARJETAS INTERACTIVAS DE SELECCIÓN EN MODO CLARO (ALTO CONTRASTE)
+   ========================================================================== */
+html:not(.dark) .selection-card {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .selection-card:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+html:not(.dark) .selection-card:not([class*="is-selected"]) span.font-bold,
+html:not(.dark) .selection-card:not([class*="is-selected"]) .text-zinc-300 {
+  color: #1e293b !important;
+}
+html:not(.dark) .selection-card:not([class*="is-selected"]) p,
+html:not(.dark) .selection-card:not([class*="is-selected"]) .text-zinc-500 {
+  color: #64748b !important;
+}
+
+/* 1. RIESGO BAJO SELECCIONADO */
+html:not(.dark) .selection-card.is-selected-bajo {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 1.5px #10b981, 0 4px 14px rgba(16, 185, 129, 0.18) !important;
+}
+html:not(.dark) .selection-card.is-selected-bajo span.font-bold,
+html:not(.dark) .selection-card.is-selected-bajo .text-emerald-300 {
+  color: #047857 !important;
+}
+html:not(.dark) .selection-card.is-selected-bajo p,
+html:not(.dark) .selection-card.is-selected-bajo .text-emerald-200\/90 {
+  color: #065f46 !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .selection-card.is-selected-bajo i.text-emerald-400 {
+  color: #059669 !important;
+}
+
+/* 2. RIESGO MEDIO SELECCIONADO */
+html:not(.dark) .selection-card.is-selected-medio {
+  background-color: #fffbeb !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 1.5px #f59e0b, 0 4px 14px rgba(245, 158, 11, 0.20) !important;
+}
+html:not(.dark) .selection-card.is-selected-medio span.font-bold,
+html:not(.dark) .selection-card.is-selected-medio .text-amber-300 {
+  color: #b45309 !important;
+}
+html:not(.dark) .selection-card.is-selected-medio p,
+html:not(.dark) .selection-card.is-selected-medio .text-amber-200\/90 {
+  color: #78350f !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .selection-card.is-selected-medio i.text-amber-400 {
+  color: #d97706 !important;
+}
+
+/* 3. RIESGO ALTO SELECCIONADO */
+html:not(.dark) .selection-card.is-selected-alto {
+  background-color: #fff1f2 !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 0 1.5px #f43f5e, 0 4px 14px rgba(244, 63, 94, 0.18) !important;
+}
+html:not(.dark) .selection-card.is-selected-alto span.font-bold,
+html:not(.dark) .selection-card.is-selected-alto .text-rose-300 {
+  color: #be123c !important;
+}
+html:not(.dark) .selection-card.is-selected-alto p,
+html:not(.dark) .selection-card.is-selected-alto .text-rose-200\/90 {
+  color: #881337 !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .selection-card.is-selected-alto i.text-rose-400 {
+  color: #e11d48 !important;
+}
+
+/* 4. TIPO DE PERSONAL / CONTRATISTA (BRAND) SELECCIONADO */
+html:not(.dark) .selection-card.is-selected-brand {
+  background-color: #fef2f2 !important;
+  border-color: var(--role-primary) !important;
+  box-shadow: 0 0 0 1.5px var(--role-primary), 0 4px 14px rgba(240, 50, 62, 0.18) !important;
+}
+html:not(.dark) .selection-card.is-selected-brand span.font-bold,
+html:not(.dark) .selection-card.is-selected-brand .role-text-accent {
+  color: #b91c1c !important;
+}
+html:not(.dark) .selection-card.is-selected-brand p,
+html:not(.dark) .selection-card.is-selected-brand .text-zinc-200\/90 {
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .selection-card.is-selected-brand i.role-text-accent {
+  color: var(--role-primary) !important;
+}
+
+/* ==========================================================================
+   CHIPS DE PLANTAS Y CAJAS DE EMPRESA EN MODO CLARO
+   ========================================================================== */
+html:not(.dark) .company-card-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) .company-card-box:hover {
+  border-color: #cbd5e1 !important;
+}
+
+/* Chip de planta normal */
+html:not(.dark) .plant-chip {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 500;
+}
+html:not(.dark) .plant-chip:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* Chip de planta SELECCIONADO: Fondo sólido rojo con texto blanco de alto contraste */
+html:not(.dark) .plant-chip.is-selected {
+  background: var(--role-primary) !important;
+  border-color: var(--role-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px var(--role-glow) !important;
+}
+html:not(.dark) .plant-chip.is-selected i,
+html:not(.dark) .plant-chip.is-selected * {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   INPUTS, SELECTS Y CONTROLES DE FORMULARIO EN MODO CLARO
+   ========================================================================== */
+html:not(.dark) input[type="text"],
+html:not(.dark) input[type="search"],
+html:not(.dark) input[type="email"],
+html:not(.dark) input[type="number"],
+html:not(.dark) input[type="tel"],
+html:not(.dark) input[type="date"],
+html:not(.dark) select,
+html:not(.dark) textarea,
+html:not(.dark) .eval-input,
+html:not(.dark) .eval-textarea,
+html:not(.dark) .form-control-dark,
+html:not(.dark) .input-with-icon-left,
+html:not(.dark) .bg-\[\#18181c\] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #cbd5e1 !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) input:hover,
+html:not(.dark) select:hover,
+html:not(.dark) textarea:hover {
+  border-color: #94a3b8 !important;
+}
+html:not(.dark) input[type="text"]:focus,
+html:not(.dark) input[type="search"]:focus,
+html:not(.dark) input[type="email"]:focus,
+html:not(.dark) input[type="number"]:focus,
+html:not(.dark) input[type="tel"]:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus,
+html:not(.dark) .eval-input:focus,
+html:not(.dark) .eval-textarea:focus,
+html:not(.dark) .form-control-dark:focus,
+html:not(.dark) .input-with-icon-left:focus {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: var(--role-primary) !important;
+  box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.15) !important;
+  outline: none !important;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Opciones dentro de los selects nativos */
+html:not(.dark) select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 6px 10px;
+}
+html:not(.dark) select option:checked {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   BANNERS INFORMATIVOS Y ALERTAS EN MODO CLARO
+   ========================================================================== */
+html:not(.dark) .bg-amber-950\/40,
+html:not(.dark) .bg-amber-950\/70 {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+}
+html:not(.dark) .bg-amber-950\/40 *,
+html:not(.dark) .bg-amber-950\/70 * {
+  color: #92400e !important;
+}
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-amber-400 {
+  color: #b45309 !important;
+}
+
+html:not(.dark) .bg-emerald-950\/30,
+html:not(.dark) .bg-emerald-950\/40 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+html:not(.dark) .bg-emerald-950\/30 h4,
+html:not(.dark) .bg-emerald-950\/40 h4 {
+  color: #065f46 !important;
+}
+html:not(.dark) .bg-emerald-950\/30 p,
+html:not(.dark) .bg-emerald-950\/40 p {
+  color: #047857 !important;
+}
+html:not(.dark) .bg-emerald-500\/20 {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+
+/* Aviso obligatorio Ley 1581 en Modo Claro (Alto Contraste) */
+html:not(.dark) .aviso-ingreso-planta {
+  background-color: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+  border-left: 4px solid #f59e0b !important;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.08) !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-icono-escudo {
+  color: #d97706 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-titulo {
+  color: #92400e !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-cuerpo {
+  color: #78350f !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-cuerpo span {
+  color: #451a03 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-cuerpo strong {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-spam {
+  color: #b91c1c !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-porteria {
+  color: #b91c1c !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .aviso-ingreso-planta .aviso-porteria i {
+  color: #dc2626 !important;
+}
+
+/* Opciones de evaluación en modo claro */
+html:not(.dark) .option-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+html:not(.dark) .option-card:hover {
+  background: #f8fafc;
+  border-color: var(--role-primary);
+}
+html:not(.dark) .option-card.is-neutral {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Tablas en modo claro */
+html:not(.dark) thead {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+html:not(.dark) tbody tr {
+  border-color: #f1f5f9 !important;
+}
+html:not(.dark) tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Calendario Flatpickr en modo claro */
+html:not(.dark) .flatpickr-calendar {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.1) !important;
+}
+html:not(.dark) .flatpickr-calendar::before,
+html:not(.dark) .flatpickr-calendar::after {
+  border-bottom-color: #ffffff !important;
+}
+html:not(.dark) .flatpickr-current-month,
+html:not(.dark) .flatpickr-current-month span.cur-month,
+html:not(.dark) .flatpickr-current-month input.cur-year {
+  color: #0f172a !important;
+}
+html:not(.dark) .flatpickr-monthDropdown-months {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+html:not(.dark) .flatpickr-monthDropdown-months option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html:not(.dark) span.flatpickr-weekday {
+  color: #64748b !important;
+}
+html:not(.dark) .flatpickr-day {
+  color: #334155 !important;
+}
+html:not(.dark) .flatpickr-day:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .flatpickr-day.prevMonthDay,
+html:not(.dark) .flatpickr-day.nextMonthDay {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   PORTAL DE TRATAMIENTO DE DATOS PERSONALES (LEY 1581 / FR_SLV_016)
+   ESTILOS DUALES: MODO OSCURO (GLASS/EMERALD/ROSE) Y MODO CLARO (HIGH CONTRAST)
+   ========================================================================== */
+
+/* --- 1. Estado AUTORIZADO (Consentimiento Vigente) --- */
+.card-estado-autorizado {
+  background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.18) 0%, rgba(6, 78, 59, 0.25) 45%, rgba(10, 26, 20, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px -5px rgba(16, 185, 129, 0.25);
+}
+.status-halo-emerald {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+}
+.credencial-box {
+  background: rgba(6, 44, 34, 0.45);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: inset 0 1px 0 rgba(52, 211, 153, 0.15), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+.credencial-tile {
+  background: rgba(6, 78, 59, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  backdrop-filter: blur(8px);
+}
+.credencial-tile:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+}
+.credencial-label {
+  color: #6ee7b7;
+}
+.credencial-label i {
+  color: #34d399;
+}
+.credencial-value {
+  color: #ffffff;
+}
+.credencial-sub {
+  color: rgba(167, 243, 208, 0.9);
+}
+.credencial-pill {
+  background: rgba(6, 95, 70, 0.5);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #d1fae5;
+}
+.credencial-pill-tag {
+  color: #6ee7b7;
+}
+.credencial-pill-num {
+  color: #ffffff;
+}
+.credencial-rad-badge {
+  background: rgba(6, 95, 70, 0.6);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.credencial-footer {
+  border-top: 1px solid rgba(16, 185, 129, 0.25);
+}
+.credencial-footer-icon {
+  color: #34d399;
+}
+.credencial-footer-label {
+  color: rgba(110, 231, 183, 0.8);
+}
+.credencial-footer-val {
+  color: #a7f3d0;
+}
+.credencial-footer-habeas {
+  color: rgba(110, 231, 183, 0.9);
+}
+.credencial-footer-habeas i {
+  color: #34d399;
+}
+.porteria-info-box {
+  background: rgba(6, 78, 59, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  backdrop-filter: blur(8px);
+}
+.porteria-icon-box {
+  background: rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #6ee7b7;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
+}
+.porteria-title {
+  color: #a7f3d0;
+}
+.porteria-desc {
+  color: rgba(209, 250, 229, 0.9);
+}
+.porteria-empresa {
+  color: #ffffff;
+}
+
+/* Botón Descarga Certificado Oficial PDF */
+.btn-descargar-pdf {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #047857 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #10b981 !important;
+  box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.45) !important;
+}
+.btn-descargar-pdf * {
+  color: #ffffff !important;
+}
+.btn-descargar-pdf:hover {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 50%, #059669 100%) !important;
+  box-shadow: 0 14px 28px -5px rgba(5, 150, 105, 0.6) !important;
+}
+.link-simular {
+  color: #a1a1aa;
+}
+.link-simular:hover {
+  color: #ffffff;
+}
+
+/* --- 2. Estado RECHAZADO (Tratamiento No Autorizado) --- */
+.card-estado-rechazado {
+  background: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.16) 0%, rgba(127, 29, 29, 0.22) 45%, rgba(20, 12, 16, 0.95) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px -5px rgba(244, 63, 94, 0.25);
+}
+.status-halo-rose {
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(251, 113, 133, 0.4);
+  color: #fb7185;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.25);
+}
+.title-rechazado {
+  color: #fecdd3;
+}
+.desc-rechazado {
+  color: #d4d4d8;
+}
+.radicado-rechazado {
+  color: #ffffff;
+}
+.aviso-bloqueo-porteria {
+  background: rgba(45, 26, 12, 0.45);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left: 4px solid #f59e0b;
+  box-shadow: inset 0 1px 0 rgba(245, 158, 11, 0.15), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+.aviso-bloqueo-icon {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fcd34d;
+}
+.aviso-bloqueo-title {
+  color: #fcd34d;
+}
+.aviso-bloqueo-texto {
+  color: rgba(254, 243, 199, 0.9);
+}
+.btn-cambiar-opinion {
+  background: rgba(39, 39, 42, 0.9);
+  border: 1px solid rgba(63, 63, 70, 0.8);
+  color: #e4e4e7;
+}
+.btn-cambiar-opinion i {
+  color: #fb7185;
+}
+.btn-cambiar-opinion:hover {
+  background: #3f3f46;
+  color: #ffffff;
+}
+
+/* --- 3. Estado ERROR / EXPIRADO --- */
+.card-estado-error {
+  background: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.16) 0%, rgba(127, 29, 29, 0.22) 45%, rgba(20, 12, 16, 0.95) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px -5px rgba(244, 63, 94, 0.25);
+}
+.aviso-orientacion-error {
+  background: rgba(36, 14, 20, 0.5);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  box-shadow: inset 0 1px 0 rgba(244, 63, 94, 0.15), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+.aviso-orientacion-icon {
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  color: #fda4af;
+}
+.btn-action-simular {
+  background: rgba(39, 39, 42, 0.9);
+  border: 1px solid rgba(63, 63, 70, 0.8);
+  color: #e4e4e7;
+}
+.btn-action-simular:hover {
+  background: #3f3f46;
+  color: #ffffff;
+}
+.btn-action-superadmin {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+}
+.btn-action-superadmin:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* --- 4. Estado PENDIENTE & Formulario Legal --- */
+.card-doc-pill {
+  background: rgba(9, 9, 11, 0.8);
+  border: 1px solid #27272a;
+  color: #e4e4e7;
+}
+.card-doc-num {
+  color: #ffffff;
+}
+.badge-cargo-titular {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #6ee7b7;
+}
+.empresa-contratista-label {
+  color: rgba(252, 211, 77, 0.95);
+}
+.empresa-contratista-label i {
+  color: #fbbf24;
+}
+.legal-scroll-container {
+  background: rgba(9, 9, 11, 0.8);
+  border: 1px solid rgba(39, 39, 42, 0.9);
+  color: #d4d4d8;
+}
+.legal-header-box {
+  background: rgba(24, 24, 27, 0.8);
+  border: 1px solid rgba(63, 63, 70, 0.8);
+}
+.legal-badge-code {
+  background: #09090b;
+  color: #ffffff;
+  border-color: #3f3f46;
+  font-weight: 700;
+}
+.legal-badge-ver {
+  background: #09090b;
+  color: #a1a1aa;
+  border-color: #27272a;
+}
+.legal-titular-grid {
+  background: rgba(24, 24, 27, 0.6);
+  border: 1px solid #27272a;
+}
+.legal-titular-grid-header {
+  background: rgba(39, 39, 42, 0.8);
+  border-bottom: 1px solid rgba(63, 63, 70, 0.8);
+  color: #e4e4e7;
+}
+.btn-rechazar-action {
+  background: rgba(244, 63, 94, 0.10);
+  border: 1px solid rgba(244, 63, 94, 0.30);
+  color: #fda4af;
+}
+.btn-rechazar-action:hover {
+  background: rgba(244, 63, 94, 0.20);
+  border-color: rgba(244, 63, 94, 0.50);
+  color: #fecdd3;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.15);
+}
+
+/* ==========================================================================
+   OVERRIDE MODO CLARO DE ALTA DEFINICIÓN (html:not(.dark))
+   ========================================================================== */
+
+/* Píldoras métricas en modo claro */
+html:not(.dark) .pill-metric-green {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+html:not(.dark) .pill-metric-red {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+/* --- 1. MODO CLARO: Estado AUTORIZADO --- */
+html:not(.dark) .card-estado-autorizado {
+  background: radial-gradient(circle at 50% -5%, rgba(16, 185, 129, 0.08) 0%, rgba(236, 253, 245, 0.55) 30%, #ffffff 75%) !important;
+  border: 1.5px solid #a7f3d0 !important;
+  box-shadow: 0 20px 45px -15px rgba(5, 150, 105, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .status-halo-emerald {
+  background: #dcfce7 !important;
+  border: 1.5px solid #86efac !important;
+  color: #059669 !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.18) !important;
+}
+html:not(.dark) .card-estado-autorizado h2 {
+  color: #0f172a !important;
+}
+html:not(.dark) .card-estado-autorizado p {
+  color: #334155 !important;
+}
+html:not(.dark) .estado-ley-highlight {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+/* Ficha Credencial en Modo Claro */
+html:not(.dark) .credencial-box {
+  background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%) !important;
+  border: 1.5px solid #bbf7d0 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03), inset 0 1px 0 #ffffff !important;
+}
+html:not(.dark) .credencial-tile {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) .credencial-tile:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12) !important;
+}
+html:not(.dark) .credencial-label {
+  color: #047857 !important;
+}
+html:not(.dark) .credencial-label i {
+  color: #059669 !important;
+}
+html:not(.dark) .credencial-value {
+  color: #0f172a !important;
+}
+html:not(.dark) .credencial-sub {
+  color: #047857 !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .credencial-pill {
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  color: #065f46 !important;
+}
+html:not(.dark) .credencial-pill-tag {
+  color: #047857 !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .credencial-pill-num {
+  color: #0f172a !important;
+}
+html:not(.dark) .credencial-rad-badge {
+  background: #ecfdf5 !important;
+  border: 1.5px solid #10b981 !important;
+  color: #047857 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15) !important;
+}
+html:not(.dark) .credencial-footer {
+  border-top: 1px solid #bbf7d0 !important;
+}
+html:not(.dark) .credencial-footer-icon {
+  color: #059669 !important;
+}
+html:not(.dark) .credencial-footer-label {
+  color: #64748b !important;
+}
+html:not(.dark) .credencial-footer-val {
+  color: #0f172a !important;
+}
+html:not(.dark) .credencial-footer-habeas {
+  color: #047857 !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .credencial-footer-habeas i {
+  color: #059669 !important;
+}
+
+/* Tarjeta Portería en Modo Claro */
+html:not(.dark) .porteria-info-box {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%) !important;
+  border: 1.5px solid #a7f3d0 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08) !important;
+}
+html:not(.dark) .porteria-icon-box {
+  background: #dcfce7 !important;
+  border: 1.5px solid #86efac !important;
+  color: #059669 !important;
+}
+html:not(.dark) .porteria-title {
+  color: #065f46 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .porteria-desc {
+  color: #1e293b !important;
+}
+html:not(.dark) .porteria-empresa {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* Botón Descarga PDF en Modo Claro: Mantener Gradiente Esmeralda Vívido con Texto Blanco */
+html:not(.dark) .btn-descargar-pdf {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #047857 100%) !important;
+  border: 1px solid #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -3px rgba(5, 150, 105, 0.35) !important;
+}
+html:not(.dark) .btn-descargar-pdf * {
+  color: #ffffff !important;
+}
+html:not(.dark) .btn-descargar-pdf:hover {
+  background: linear-gradient(135deg, #047857 0%, #0f766e 50%, #065f46 100%) !important;
+  box-shadow: 0 12px 24px -3px rgba(5, 150, 105, 0.45) !important;
+}
+html:not(.dark) .link-simular {
+  color: #475569 !important;
+}
+html:not(.dark) .link-simular:hover {
+  color: #0f172a !important;
+}
+
+/* --- 2. MODO CLARO: Estado RECHAZADO --- */
+html:not(.dark) .card-estado-rechazado {
+  background: radial-gradient(circle at 50% -5%, rgba(244, 63, 94, 0.08) 0%, rgba(255, 241, 242, 0.55) 30%, #ffffff 75%) !important;
+  border: 1.5px solid #fecdd3 !important;
+  box-shadow: 0 20px 45px -15px rgba(225, 29, 72, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .status-halo-rose {
+  background: #ffe4e6 !important;
+  border: 1.5px solid #fda4af !important;
+  color: #e11d48 !important;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.15) !important;
+}
+html:not(.dark) .title-rechazado {
+  color: #9f1239 !important;
+}
+html:not(.dark) .desc-rechazado {
+  color: #334155 !important;
+}
+html:not(.dark) .radicado-rechazado {
+  color: #0f172a !important;
+}
+html:not(.dark) .aviso-bloqueo-porteria {
+  background: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+  border-left: 4px solid #f59e0b !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.08) !important;
+}
+html:not(.dark) .aviso-bloqueo-icon {
+  background: #fef3c7 !important;
+  border: 1px solid #fde68a !important;
+  color: #d97706 !important;
+}
+html:not(.dark) .aviso-bloqueo-title {
+  color: #92400e !important;
+}
+html:not(.dark) .aviso-bloqueo-texto {
+  color: #78350f !important;
+}
+html:not(.dark) .btn-cambiar-opinion {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+html:not(.dark) .btn-cambiar-opinion i {
+  color: #e11d48 !important;
+}
+html:not(.dark) .btn-cambiar-opinion:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* --- 3. MODO CLARO: Estado ERROR / EXPIRADO --- */
+html:not(.dark) .card-estado-error {
+  background: radial-gradient(circle at 50% -5%, rgba(244, 63, 94, 0.08) 0%, rgba(255, 241, 242, 0.55) 30%, #ffffff 75%) !important;
+  border: 1.5px solid #fecdd3 !important;
+  box-shadow: 0 20px 45px -15px rgba(225, 29, 72, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .card-estado-error h2 {
+  color: #0f172a !important;
+}
+html:not(.dark) .card-estado-error p {
+  color: #334155 !important;
+}
+html:not(.dark) .aviso-orientacion-error {
+  background: #fef2f2 !important;
+  border: 1px solid #fecdd3 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) .aviso-orientacion-icon {
+  background: #fee2e2 !important;
+  border: 1px solid #fca5a5 !important;
+  color: #e11d48 !important;
+}
+html:not(.dark) .aviso-orientacion-error strong {
+  color: #9f1239 !important;
+}
+html:not(.dark) .aviso-orientacion-error p {
+  color: #334155 !important;
+}
+html:not(.dark) .aviso-orientacion-error .aviso-target {
+  color: #9f1239 !important;
+}
+html:not(.dark) .btn-action-simular {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .btn-action-simular:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+html:not(.dark) .btn-action-superadmin {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+html:not(.dark) .btn-action-superadmin:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* --- 4. MODO CLARO: Barra de Previsualización y Dropdown --- */
+html:not(.dark) .preview-emp-dropdown {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15) !important;
+}
+html:not(.dark) .preview-emp-dropdown button {
+  color: #334155 !important;
+}
+html:not(.dark) .preview-emp-dropdown button:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .preview-emp-dropdown button.bg-zinc-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .preview-emp-dropdown .text-zinc-400 {
+  color: #64748b !important;
+}
+
+/* --- 5. MODO CLARO: Formulario PENDIENTE (Titular y Términos Legales) --- */
+html:not(.dark) .card-titular-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+html:not(.dark) .titular-nombre {
+  color: #0f172a !important;
+}
+html:not(.dark) .card-doc-pill {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+html:not(.dark) .card-doc-icon {
+  color: #64748b !important;
+}
+html:not(.dark) .card-doc-type {
+  color: #64748b !important;
+}
+html:not(.dark) .card-doc-num {
+  color: #0f172a !important;
+}
+html:not(.dark) .badge-cargo-titular {
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  color: #047857 !important;
+}
+html:not(.dark) .badge-cargo-titular i {
+  color: #059669 !important;
+}
+html:not(.dark) .radicado-code {
+  color: #0f172a !important;
+}
+html:not(.dark) .empresa-contratista-label {
+  color: #b45309 !important;
+}
+html:not(.dark) .empresa-contratista-label i {
+  color: #d97706 !important;
+}
+
+/* Caja de Texto Legal FR_SLV_016 en Modo Claro */
+html:not(.dark) .legal-scroll-container {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+html:not(.dark) .legal-header-box {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+html:not(.dark) .legal-header-divider {
+  border-bottom-color: #e2e8f0 !important;
+}
+html:not(.dark) .legal-form-title {
+  color: #0f172a !important;
+}
+html:not(.dark) .legal-form-sub {
+  color: #64748b !important;
+}
+html:not(.dark) .legal-badge-code {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .legal-badge-ver {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+html:not(.dark) .legal-header-meta {
+  color: #64748b !important;
+}
+html:not(.dark) .legal-header-meta strong {
+  color: #0f172a !important;
+}
+
+/* Tabla de Datos Titular dentro de Términos */
+html:not(.dark) .legal-titular-grid {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+html:not(.dark) .legal-titular-grid-header {
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .legal-titular-grid .text-zinc-400 {
+  color: #64748b !important;
+}
+html:not(.dark) .legal-titular-grid .text-white {
+  color: #0f172a !important;
+}
+html:not(.dark) .legal-titular-grid .text-emerald-300 {
+  color: #047857 !important;
+}
+html:not(.dark) .legal-titular-grid .text-amber-300 {
+  color: #b45309 !important;
+}
+html:not(.dark) .legal-titular-grid .text-zinc-300 {
+  color: #334155 !important;
+}
+
+/* Títulos de Secciones Legales (1, 2, 3, 4, 5) */
+html:not(.dark) .legal-scroll-container .text-emerald-400 {
+  color: #047857 !important;
+}
+html:not(.dark) .legal-scroll-container .text-amber-400 {
+  color: #b45309 !important;
+}
+html:not(.dark) .legal-scroll-container .text-rose-400 {
+  color: #be123c !important;
+}
+html:not(.dark) .legal-scroll-container a[href^="mailto:"] {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .legal-scroll-container a[href^="mailto:"]:hover {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Círculo Checkbox Unchecked en Modo Claro */
+html:not(.dark) .option-circle:not(.is-selected) {
+  border-color: #94a3b8 !important;
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .check-autorizo-label {
+  color: #047857 !important;
+}
+
+/* Botón Rechazar en Modo Claro */
+html:not(.dark) .btn-rechazar-action {
+  background: #fff1f2 !important;
+  border: 1.5px solid #fecdd3 !important;
+  color: #be123c !important;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.06) !important;
+}
+html:not(.dark) .btn-rechazar-action i {
+  color: #e11d48 !important;
+}
+html:not(.dark) .btn-rechazar-action:hover {
+  background: #ffe4e6 !important;
+  border-color: #fda4af !important;
+  color: #9f1239 !important;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.12) !important;
+}
+
+/* --- 6. SweetAlert2 en Modos Claro y Oscuro --- */
+html.dark .swal2-popup {
+  background: #141418 !important;
+  border: 1px solid #27272a !important;
+  color: #e4e4e7 !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85) !important;
+}
+html.dark .swal2-title {
+  color: #ffffff !important;
+}
+html.dark .swal2-html-container {
+  color: #a1a1aa !important;
+}
+html:not(.dark) .swal2-popup {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+html:not(.dark) .swal2-title {
+  color: #0f172a !important;
+}
+html:not(.dark) .swal2-html-container {
+  color: #334155 !important;
+}
+html:not(.dark) .swal-rechazo-body {
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #334155;
+}
+html:not(.dark) .swal-rechazo-aviso strong {
+  color: #0f172a;
+}
+html:not(.dark) .swal-rechazo-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+html.dark .swal-rechazo-body {
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #a1a1aa;
+}
+html.dark .swal-rechazo-aviso strong {
+  color: #ffffff;
+}
+html.dark .swal-rechazo-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #d4d4d8;
+}
+
+/* ==========================================================================
+   PORTAL DE EVALUACIÓN DE INDUCCIÓN (EVALUACION-INDUCCION.HTML)
+   SOPORTE DUAL Y REFINAMIENTO DE MODO CLARO (ALTO CONTRASTE Y LEGIBILIDAD)
+   ========================================================================== */
+
+/* 1. Switcher de Perspectiva (Modo Oscuro base) */
+.sim-tab-active-persona {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+  color: #34d399 !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+.sim-tab-active-auditor {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+  color: #d8b4fe !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+}
+.sim-tab-inactive {
+  color: #94a3b8 !important;
+}
+.sim-tab-inactive:hover {
+  color: #ffffff !important;
+}
+.sim-btn-volver {
+  background-color: rgba(39, 39, 42, 0.8) !important;
+  border-color: rgba(63, 63, 70, 0.6) !important;
+  color: #d4d4d8 !important;
+}
+.sim-btn-volver:hover {
+  background-color: rgba(63, 63, 70, 0.8) !important;
+  color: #ffffff !important;
+}
+
+/* 2. Banner de Simulación en Modo Claro */
+html:not(.dark) .sim-banner {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%) !important;
+  border: 1.5px solid #fecdd3 !important;
+  box-shadow: 0 4px 20px -2px rgba(225, 29, 72, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .sim-banner .sim-title,
+html:not(.dark) .sim-banner p.text-white {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+html:not(.dark) .sim-banner .sim-desc,
+html:not(.dark) .sim-banner p.text-zinc-300\/90 {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .sim-icon-box {
+  background: #ffe4e6 !important;
+  border: 1.5px solid #fda4af !important;
+  color: #e11d48 !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.12) !important;
+}
+html:not(.dark) .sim-role-pill {
+  background: #ffe4e6 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #be123c !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+}
+html:not(.dark) .sim-pill-auditor {
+  background: #f3e8ff !important;
+  border: 1px solid #d8b4fe !important;
+  color: #7e22ce !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .sim-switcher-box {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .sim-tab-active-persona {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid #059669 !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3) !important;
+}
+html:not(.dark) .sim-tab-active-persona * {
+  color: #ffffff !important;
+}
+html:not(.dark) .sim-tab-active-auditor {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid #7e22ce !important;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3) !important;
+}
+html:not(.dark) .sim-tab-active-auditor * {
+  color: #ffffff !important;
+}
+html:not(.dark) .sim-tab-inactive {
+  color: #64748b !important;
+  border: 1px solid transparent !important;
+}
+html:not(.dark) .sim-tab-inactive:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .sim-btn-secondary {
+  background: #ffffff !important;
+  border: 1.5px solid #fecdd3 !important;
+  color: #be123c !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(225, 29, 72, 0.08) !important;
+}
+html:not(.dark) .sim-btn-secondary:hover {
+  background: #ffe4e6 !important;
+  border-color: #fda4af !important;
+  color: #9f1239 !important;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15) !important;
+}
+html:not(.dark) .sim-btn-secondary .sim-role-text,
+html:not(.dark) .sim-btn-secondary i {
+  color: #e11d48 !important;
+}
+html:not(.dark) .sim-btn-volver {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+html:not(.dark) .sim-btn-volver:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+html:not(.dark) .sim-btn-volver i {
+  color: #64748b !important;
+}
+
+/* 3. Número de Pregunta y Badges de Categoría en Modo Claro */
+html:not(.dark) .q-index-badge {
+  background: #fef2f2 !important;
+  border: 1.5px solid #fecdd3 !important;
+  color: #e11d48 !important;
+  font-weight: 800 !important;
+}
+html:not(.dark) .cat-badge-sst {
+  background: #fff7ed !important;
+  border: 1px solid #fdba74 !important;
+  color: #c2410c !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .cat-badge-ambiental {
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .cat-badge-seguridad_vial {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .cat-badge-calidad {
+  background: #faf5ff !important;
+  border: 1px solid #e9d5ff !important;
+  color: #7e22ce !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .cat-badge-biomecanica {
+  background: #ecfeff !important;
+  border: 1px solid #a5f3fc !important;
+  color: #0e7490 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .cat-badge-general {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+/* 4. Pastillas de Métrica y Estado en Modo Claro */
+html:not(.dark) .pill-metric-green {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .pill-metric-green i {
+  color: #059669 !important;
+}
+html:not(.dark) .pill-metric-red {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1px solid #fecdd3 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .pill-metric-red i {
+  color: #e11d48 !important;
+}
+html:not(.dark) .pill-metric-neutral {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .pill-status-correct {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .pill-status-correct i {
+  color: #059669 !important;
+}
+html:not(.dark) .pill-status-wrong {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1px solid #fecdd3 !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .pill-status-wrong i {
+  color: #e11d48 !important;
+}
+
+/* 5. Tarjetas de Métricas de Resultados en Modo Claro */
+html:not(.dark) .card-metric-green {
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%) !important;
+  border: 1.5px solid #a7f3d0 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08) !important;
+}
+html:not(.dark) .card-metric-red {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%) !important;
+  border: 1.5px solid #fecdd3 !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.08) !important;
+}
+html:not(.dark) .card-metric-target {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .card-metric-target .text-white {
+  color: #0f172a !important;
+}
+
+/* 6. Banner de Reglas y Bloques de Alerta en Examen */
+html:not(.dark) .role-rule-banner {
+  background: #fff1f2 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #9f1239 !important;
+}
+html:not(.dark) .role-rule-banner strong {
+  color: #881337 !important;
+}
+html:not(.dark) .bg-purple-500\/10 {
+  background-color: #faf5ff !important;
+  border: 1px solid #e9d5ff !important;
+}
+html:not(.dark) .text-purple-300 {
+  color: #7e22ce !important;
+}
+html:not(.dark) .text-purple-400 {
+  color: #9333ea !important;
+}
+
+/* 7. Tarjetas de Certificados por Empresa en Modo Claro */
+html:not(.dark) .bg-orange-950\/20 {
+  background-color: #fff7ed !important;
+  border: 1px solid #fed7aa !important;
+}
+html:not(.dark) .bg-orange-950\/20:hover {
+  background-color: #ffedd5 !important;
+  border-color: #fdba74 !important;
+}
+html:not(.dark) .bg-blue-950\/20 {
+  background-color: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+}
+html:not(.dark) .bg-blue-950\/20:hover {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+}
+html:not(.dark) .bg-emerald-950\/20 {
+  background-color: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+html:not(.dark) .bg-emerald-950\/20:hover {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+}
+html:not(.dark) .bg-red-950\/20 {
+  background-color: #fef2f2 !important;
+  border: 1px solid #fecdd3 !important;
+}
+html:not(.dark) .bg-red-950\/20:hover {
+  background-color: #fee2e2 !important;
+  border-color: #fda4af !important;
+}
+
+/* 8. Tarjeta de Respuesta Abierta en Revisión de Examen (Modo Oscuro & Modo Claro) */
+.open-resp-card {
+  background: rgba(24, 24, 28, 0.7);
+  border: 1px solid #2e2e38;
+}
+.open-resp-label {
+  color: #e4e4e7;
+}
+.open-resp-textbox {
+  background: rgba(14, 14, 16, 0.85);
+  border: 1px solid #3f3f46;
+}
+.open-resp-content {
+  color: #f1f5f9;
+}
+.open-resp-empty {
+  color: #a1a1aa;
+}
+.open-resp-footer {
+  color: #71717a;
+}
+
+html:not(.dark) .open-resp-card {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) .open-resp-label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+html:not(.dark) .open-resp-textbox {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) .open-resp-content {
+  color: #0f172a !important;
+  font-weight: 500 !important;
+}
+html:not(.dark) .open-resp-empty {
+  color: #e11d48 !important;
+  font-weight: 600 !important;
+}
+html:not(.dark) .open-resp-footer {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+

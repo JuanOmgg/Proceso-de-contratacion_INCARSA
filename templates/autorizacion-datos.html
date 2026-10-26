@@ -1,23 +1,79 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Autorización de Tratamiento de Datos Personales · Ley 1581 de 2012 · INCARSA</title>
 
+  <!-- Detección Temprana de Modo Oscuro y Rol RBAC (Sincronización con sesión) -->
+  <script>
+    (function () {
+      try {
+        var isDarkStored = localStorage.getItem('darkMode');
+        if (isDarkStored === 'false') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var urlRol = (params.get('rol') || '').trim().toUpperCase();
+        var isSim = params.get('simulacion') === '1' || params.get('simulacion') === 'true' || params.get('preview') === '1' || window.__ES_PREVIEW__;
+        var raw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+        var rol = '';
+        if (raw) {
+          var ses = JSON.parse(raw);
+          rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
+        }
+        if (!rol && urlRol) { rol = urlRol; }
+        if (!rol && isSim) { rol = 'SUPERADMIN'; }
+        if (rol === 'SUPERADMIN' || rol === 'SUPER ADMIN') {
+          document.documentElement.setAttribute('data-role', 'SUPERADMIN');
+          document.documentElement.classList.add('role-superadmin');
+        } else {
+          document.documentElement.removeAttribute('data-role');
+          document.documentElement.classList.remove('role-superadmin');
+        }
+      } catch (e) {}
+    })();
+
+    function toggleThemeGlobal() {
+      try {
+        var isDark = document.documentElement.classList.contains('dark');
+        if (isDark) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('darkMode', 'false');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('darkMode', 'true');
+        }
+        window.dispatchEvent(new CustomEvent('theme-changed', { detail: { darkMode: !isDark } }));
+      } catch (e) {}
+    }
+  </script>
+
+  <style>
+    [x-cloak], [x-cloak] * {
+      display: none !important;
+    }
+  </style>
+
   <!-- Favicon / Ícono -->
   <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
   <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+
+  <!-- Google Fonts: Inter, Space Grotesk, JetBrains Mono, Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS Compilado Local -->
   <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
 
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-  <!-- Google Fonts: Space Grotesk + Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -26,334 +82,45 @@
   <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
 
-  <style>
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0c0c0e;
-      color: #9ca3af;
-      min-height: 100vh;
-    }
-    .font-brand {
-      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .bg-pattern {
-      background-color: #0c0c0e;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-      background-size: 20px 20px;
-    }
-    .glass-card {
-      background: rgba(18, 18, 20, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid #26262b;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
-    }
-    .legal-scroll {
-      scrollbar-width: thin;
-      scrollbar-color: #38383e #0d0d0f;
-    }
-    .legal-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .legal-scroll::-webkit-scrollbar-track {
-      background: #0d0d0f;
-    }
-    .legal-scroll::-webkit-scrollbar-thumb {
-      background-color: #38383e;
-      border-radius: 9999px;
-    }
-    .legal-scroll::-webkit-scrollbar-thumb:hover {
-      background-color: #4a4a52;
-    }
+  <!-- Controlador JS de Tratamiento de Datos (Ley 1581) -->
+  <script src="{{ url_for('static', path='js/dataProcessing.js') }}?v=1.0"></script>
 
-    /* Modal SweetAlert2: Minimalista, Estético y Sobrio */
-    .swal2-popup.swal-dark-mono {
-      background: #141417 !important;
-      border: 1px solid #28282d !important;
-      border-radius: 18px !important;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-      padding: 26px 22px 22px 22px !important;
-      max-width: 390px !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon {
-      transform: scale(0.58) !important;
-      margin: 0 auto 2px auto !important;
-      opacity: 0.95 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success {
-      border-color: rgba(34, 197, 94, 0.35) !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-ring {
-      border: 4px solid rgba(34, 197, 94, 0.2) !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success [class^='swal2-success-line'] {
-      background-color: #4ade80 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-circular-line-left,
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-circular-line-right,
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-success .swal2-success-fix {
-      background: transparent !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-warning {
-      border-color: rgba(245, 158, 11, 0.35) !important;
-      color: #fbbf24 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-error {
-      border-color: rgba(239, 68, 68, 0.35) !important;
-      color: #f87171 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
-      background-color: #f87171 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-icon.swal2-info {
-      border-color: rgba(148, 163, 184, 0.35) !important;
-      color: #94a3b8 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-title {
-      color: #f3f4f6 !important;
-      font-size: 17px !important;
-      font-weight: 700 !important;
-      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
-      letter-spacing: -0.01em !important;
-      padding: 0 !important;
-      margin: 0 0 8px 0 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-html-container {
-      color: #9ca3af !important;
-      font-size: 13px !important;
-      line-height: 1.55 !important;
-      padding: 0 8px !important;
-      margin: 0 0 16px 0 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-actions {
-      margin-top: 14px !important;
-      gap: 10px !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-confirm {
-      background: #f4f4f5 !important;
-      color: #18181b !important;
-      border: 1px solid #ffffff !important;
-      font-size: 13px !important;
-      font-weight: 700 !important;
-      padding: 8px 24px !important;
-      border-radius: 10px !important;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
-      transition: all 0.15s ease !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-confirm:hover {
-      background: #ffffff !important;
-      color: #09090b !important;
-      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12) !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-confirm:focus {
-      box-shadow: 0 0 0 2px #52525b !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-cancel {
-      background: transparent !important;
-      color: #9ca3af !important;
-      border: 1px solid #28282d !important;
-      font-size: 13px !important;
-      font-weight: 600 !important;
-      padding: 8px 20px !important;
-      border-radius: 10px !important;
-      transition: all 0.15s ease !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-cancel:hover {
-      background: #18181b !important;
-      color: #d1d5db !important;
-      border-color: #3f3f46 !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-textarea {
-      background: #0a0a0c !important;
-      border: 1px solid #28282d !important;
-      color: #d1d5db !important;
-      border-radius: 10px !important;
-      font-size: 12px !important;
-      padding: 10px !important;
-      transition: border-color 0.15s ease !important;
-    }
-    .swal2-popup.swal-dark-mono .swal2-textarea:focus {
-      border-color: #52525b !important;
-      box-shadow: 0 0 0 1px #52525b !important;
-      outline: none !important;
-    }
-
-    /* ========================================================
-       COMPONENTES REFINADOS: SUPERADMIN BAR, BADGES & ALERT
-       ======================================================== */
-    .sa-preview-bar {
-      background: rgba(16, 18, 24, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
-      border-radius: 16px;
-    }
-    .sa-segmented-group {
-      background: rgba(8, 9, 13, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 10px;
-      padding: 3px;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .sa-tab-btn {
-      padding: 5px 11px;
-      font-size: 11.5px;
-      font-weight: 500;
-      border-radius: 7px;
-      color: #94a3b8;
-      background: transparent;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      line-height: 1;
-      white-space: nowrap;
-    }
-    .sa-tab-btn:hover {
-      color: #f1f5f9;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .sa-tab-btn.active-tab {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-    }
-    .sa-tab-btn.active-tab-autorizado {
-      background: rgba(16, 185, 129, 0.18);
-      color: #34d399;
-      font-weight: 700;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
-    }
-    .sa-tab-btn.active-tab-rechazado {
-      background: rgba(244, 63, 94, 0.18);
-      color: #fb7185;
-      font-weight: 700;
-      border: 1px solid rgba(244, 63, 94, 0.3);
-      box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
-    }
-    .sa-tab-btn.active-tab-expirado {
-      background: rgba(245, 158, 11, 0.18);
-      color: #fbbf24;
-      font-weight: 700;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
-    }
-
-    /* Badges de Identificación */
-    .badge-cc {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: rgba(59, 130, 246, 0.08);
-      border: 1px solid rgba(59, 130, 246, 0.25);
-      color: #93c5fd;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-    .badge-cargo {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: #6ee7b7;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    /* Caja de Radicado */
-    .box-radicado {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(12, 14, 20, 0.95) 100%);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 12px;
-      padding: 10px 14px;
-      box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Alerta Informativa Obligatoria */
-    .alerta-requisito {
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.09) 0%, rgba(20, 16, 10, 0.8) 100%);
-      border-bottom: 1px solid rgba(245, 158, 11, 0.22);
-      border-left: 3px solid #f59e0b;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    /* Botón Aceptar y Autorizar (Estilo Verde Esmeralda Premium) */
-    .btn-autorizar-verde {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-      color: #ffffff !important;
-      border: 1px solid rgba(52, 211, 153, 0.45) !important;
-      box-shadow: 0 4px 18px -2px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
-      font-weight: 800 !important;
-      border-radius: 12px !important;
-      padding: 12px 24px !important;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      cursor: pointer !important;
-    }
-    .btn-autorizar-verde:hover:not(:disabled) {
-      background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-      box-shadow: 0 6px 24px -2px rgba(16, 185, 129, 0.65), 0 0 0 1px rgba(52, 211, 153, 0.4) !important;
-      transform: translateY(-1px) !important;
-      color: #ffffff !important;
-    }
-    .btn-autorizar-verde:active:not(:disabled) {
-      transform: translateY(0) !important;
-      box-shadow: 0 2px 10px -2px rgba(16, 185, 129, 0.4) !important;
-    }
-    .btn-autorizar-verde:disabled {
-      background: rgba(16, 185, 129, 0.12) !important;
-      border: 1px solid rgba(16, 185, 129, 0.18) !important;
-      color: rgba(167, 243, 208, 0.35) !important;
-      box-shadow: none !important;
-      cursor: not-allowed !important;
-      transform: none !important;
-    }
-  </style>
+  <!-- Estilos Centralizados del Ecosistema de Formularios GESCO / INCARSA -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/formularios.css') }}?v=3.0">
 </head>
-<body class="bg-pattern flex flex-col justify-between py-6 px-3 sm:px-6 min-h-screen" x-data="autorizacionDatosApp()" x-init="iniciar()">
+<body class="bg-pattern flex flex-col justify-between py-6 px-3 sm:px-6 min-h-screen text-slate-200" x-data="autorizacionDatosApp()" x-init="iniciar()">
 
-  <!-- Token y Modo Previsualización inyectados por FastAPI -->
+  <!-- Token y Datos inyectados por FastAPI / Jinja2 -->
+  <script id="empresas-data" type="application/json">{{ empresas_db | default([]) | tojson | safe }}</script>
   <script>
     window.__TOKEN_AUTORIZACION__ = "{{ token if token is defined else '' }}";
     window.__ES_PREVIEW__ = "{{ 'true' if es_preview is defined and es_preview else 'false' }}" === "true";
   </script>
 
-  <!-- Barra Flotante de Previsualización SuperAdmin -->
+  <!-- Barra Flotante de Previsualización SuperAdmin (Alineada con formularios.css) -->
   <div 
     x-cloak 
     x-show="esPreview" 
-    class="sa-preview-bar sticky top-2 z-50 max-w-3xl mx-auto w-full mb-5 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+    class="sticky top-2 z-50 max-w-3xl mx-auto w-full mb-5 px-4 py-2.5 rounded-2xl glass-card flex flex-wrap items-center justify-between gap-3 text-xs border border-zinc-800 shadow-2xl">
     
     <div class="flex items-center gap-2.5">
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold text-[11px]">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full sim-role-pill font-bold text-[11px]">
+        <span class="w-1.5 h-1.5 rounded-full bg-[var(--role-accent)] animate-pulse"></span>
         <span>Previsualización SuperAdmin</span>
       </span>
-      <span class="text-slate-400 text-xs hidden sm:inline">Portal Ley 1581</span>
+      <span class="text-zinc-400 text-xs hidden sm:inline font-medium">Portal Ley 1581</span>
     </div>
 
     <div class="flex items-center gap-2 flex-wrap">
-      <!-- Selector de Empresa Origen (Solo en Previsualización) con Dropdown Personalizado (Siempre Visible) -->
+      <!-- Selector de Empresa Origen (Solo en Previsualización) con Dropdown Personalizado -->
       <div class="relative inline-block text-xs" x-data="{ openEmpresas: false }">
         <button 
           type="button" 
           @click="openEmpresas = !openEmpresas" 
-          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-sky-300 hover:text-sky-200 hover:border-sky-500/50 transition-all font-medium cursor-pointer shadow-xs select-none">
-          <i class="fa-solid fa-building text-sky-400 text-[10px]"></i>
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-700/80 text-zinc-200 hover:text-white hover:border-zinc-500 transition-all font-medium cursor-pointer shadow-xs select-none">
+          <i class="fa-solid fa-building role-text-accent text-[11px]"></i>
           <span x-text="datos.empresa_origen || 'Seleccionar Empresa'"></span>
-          <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 transition-transform duration-200" :class="openEmpresas ? 'rotate-180 text-sky-400' : ''"></i>
+          <i class="fa-solid fa-chevron-down text-[9px] text-zinc-400 transition-transform duration-200" :class="openEmpresas ? 'rotate-180 role-text-accent' : ''"></i>
         </button>
 
         <!-- Menú Desplegable con fondo oscuro y opciones nítidas -->
@@ -367,65 +134,79 @@
           x-transition:leave="transition ease-in duration-100"
           x-transition:leave-start="opacity-100 translate-y-0 scale-100"
           x-transition:leave-end="opacity-0 translate-y-1 scale-95"
-          class="absolute left-0 mt-1.5 w-48 rounded-xl bg-[#0f1422] border border-slate-700/90 shadow-2xl p-1.5 z-[100] backdrop-blur-md">
-          <div class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800/80 mb-1">
-            Empresa Origen
+          class="preview-emp-dropdown absolute left-0 mt-1.5 w-64 rounded-xl bg-[#141418] border border-zinc-700/90 shadow-2xl p-1.5 z-[100] backdrop-blur-md">
+          <div class="dropdown-header px-2 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-800/80 mb-1 flex items-center justify-between">
+            <span>Empresa Origen</span>
+            <span>NIT</span>
           </div>
-          <template x-for="emp in ['INCARSA S.A.S.', 'MILPA S.A.', 'CARBOINSA S.A.S.', 'UNIMINAS S.A.S']" :key="emp">
+          <template x-for="emp in empresasCatalogo" :key="emp.nombre">
             <button 
               type="button" 
-              @click="datos.empresa_origen = emp; datos.correo_institucional = obtenerCorreoEmpresa(emp); openEmpresas = false" 
-              :class="datos.empresa_origen === emp ? 'bg-sky-500/20 text-sky-300 font-semibold' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'"
-              class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer">
-              <span x-text="emp"></span>
-              <i class="fa-solid fa-check text-sky-400 text-xs" x-show="datos.empresa_origen === emp"></i>
+              @click="seleccionarEmpresaPreview(emp); openEmpresas = false" 
+              :class="datos.empresa_origen === emp.nombre ? 'bg-zinc-800 text-white font-semibold border border-zinc-700' : 'text-zinc-300 hover:bg-zinc-800/70 hover:text-white'"
+              class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer gap-2">
+              <div class="flex flex-col">
+                <span x-text="emp.nombre" class="font-medium"></span>
+                <span class="text-[9.5px] font-mono text-zinc-400" x-text="'NIT: ' + emp.nit"></span>
+              </div>
+              <i class="fa-solid fa-check role-text-accent text-xs shrink-0" x-show="datos.empresa_origen === emp.nombre"></i>
             </button>
           </template>
         </div>
       </div>
 
       <!-- Segmented Tab Switcher sin bordes toscos -->
-      <div class="sa-segmented-group">
+      <div class="inline-flex p-1 rounded-xl bg-zinc-950/90 border border-zinc-800 text-xs">
         <button 
           type="button" 
           @click="setEstadoPreview('PENDIENTE')" 
-          :class="datos.estado_datos === 'PENDIENTE' && !error ? 'active-tab' : ''" 
-          class="sa-tab-btn">
+          :class="datos.estado_datos === 'PENDIENTE' && !error ? 'btn-brand text-white font-bold shadow-xs' : 'text-zinc-400 hover:text-white'" 
+          class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium">
           Pendiente
         </button>
 
         <button 
           type="button" 
           @click="setEstadoPreview('AUTORIZADO')" 
-          :class="datos.estado_datos === 'AUTORIZADO' && !error ? 'active-tab-autorizado' : ''" 
-          class="sa-tab-btn">
+          :class="datos.estado_datos === 'AUTORIZADO' && !error ? 'pill-metric-green font-bold shadow-xs' : 'text-zinc-400 hover:text-white'" 
+          class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium">
           Autorizado
         </button>
 
         <button 
           type="button" 
           @click="setEstadoPreview('RECHAZADO')" 
-          :class="datos.estado_datos === 'RECHAZADO' && !error ? 'active-tab-rechazado' : ''" 
-          class="sa-tab-btn">
+          :class="datos.estado_datos === 'RECHAZADO' && !error ? 'pill-metric-red font-bold shadow-xs' : 'text-zinc-400 hover:text-white'" 
+          class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium">
           Rechazado
         </button>
 
         <button 
           type="button" 
           @click="simularErrorToken()" 
-          :class="error ? 'active-tab-expirado' : ''" 
-          class="sa-tab-btn"
+          :class="error ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shadow-xs' : 'text-zinc-400 hover:text-white'" 
+          class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer font-medium"
           title="Simular enlace no válido o expirado">
           Expirado
         </button>
       </div>
 
-      <div class="h-4 w-px bg-white/10 mx-0.5"></div>
+      <div class="h-4 w-px bg-zinc-800 mx-0.5"></div>
+
+      <!-- Botón Selector Modo Claro / Oscuro -->
+      <button type="button"
+        onclick="toggleThemeGlobal()"
+        class="theme-toggle-btn w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
+        title="Alternar entre modo claro y modo oscuro"
+        aria-label="Alternar entre modo claro y modo oscuro">
+        <i class="fa-solid fa-sun text-xs text-amber-400 theme-icon-sun"></i>
+        <i class="fa-solid fa-moon text-xs text-slate-400 theme-icon-moon"></i>
+      </button>
 
       <!-- Botón Volver a SuperAdmin -->
       <a 
         href="/superadmin" 
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all font-medium text-xs">
+        class="sim-btn-secondary px-3 py-1.5 rounded-lg transition-all font-medium text-xs inline-flex items-center gap-1.5">
         <i class="fa-solid fa-arrow-left text-[10px]"></i>
         <span>SuperAdmin</span>
       </a>
@@ -434,64 +215,106 @@
 
   <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center">
     
-    <!-- Header Institucional: Jerarquía Clara y Colores Vivos -->
+    <!-- Header Institucional: Armonizado con el diseño de formularios.css -->
     <header class="text-center mb-6">
-      <div class="inline-flex items-center justify-center p-3 rounded-2xl mb-3 shadow-xl" style="background: #14161f; border: 1px solid rgba(56, 189, 248, 0.25); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);">
+      <div class="inline-flex items-center justify-center p-3 rounded-2xl mb-3 glass-card border border-zinc-700/60 shadow-xl">
         <img src="{{ url_for('static', path='img/icono.png') }}" alt="Logo INCARSA" class="h-10 w-auto rounded-lg object-contain">
       </div>
       <!-- Título Principal -->
       <h1 class="text-xl sm:text-2xl font-bold font-brand tracking-tight text-white flex items-center justify-center gap-2">
-        <span class="text-sky-400 font-extrabold tracking-wide" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></span>
-        <span class="text-sky-500/60 font-light">·</span>
-        <!-- Subtítulo del Header -->
-        <span class="text-slate-200 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
+        <span class="font-extrabold tracking-wide role-text-accent" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></span>
+        <span class="text-zinc-600 font-light">·</span>
+        <span class="text-zinc-200 font-medium text-base sm:text-lg">Gestión de Acceso a Planta</span>
       </h1>
       <!-- Metadata / Formato Oficial FR_SLV_016 -->
-      <div class="flex items-center justify-center gap-2 mt-2 flex-wrap text-xs text-slate-400">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold text-sky-300" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.3);">
-          <i class="fa-solid fa-file-shield text-[10px]"></i> Código: FR_SLV_016
+      <div class="flex items-center justify-center gap-2 mt-2 flex-wrap text-xs text-zinc-400">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg font-mono font-semibold bg-zinc-900/90 border border-zinc-800 text-zinc-300 shadow-xs">
+          <i class="fa-solid fa-file-shield text-[10px] role-text-accent"></i> Código: FR_SLV_016
         </span>
-        <span class="text-slate-600">•</span>
-        <span class="text-slate-300 font-medium">Versión: 00</span>
-        <span class="text-slate-600">•</span>
-        <span class="text-slate-300 font-medium">Vigencia: 16/01/2025</span>
-        <span class="text-slate-600">•</span>
-        <span class="text-sky-300 font-semibold px-2 py-0.5 rounded text-[11px]" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);">Ley 1581 de 2012</span>
+        <span class="text-zinc-600">•</span>
+        <span class="text-zinc-400 font-medium">Versión: 00</span>
+        <span class="text-zinc-600">•</span>
+        <span class="text-zinc-400 font-medium">Vigencia: 16/01/2025</span>
+        <span class="text-zinc-600">•</span>
+        <span class="role-badge font-semibold px-2.5 py-0.5 rounded-lg text-[11px] shadow-xs">Ley 1581 de 2012</span>
       </div>
     </header>
 
     <!-- Estado: Cargando -->
     <div x-show="cargando" class="glass-card rounded-2xl p-10 text-center flex flex-col items-center justify-center my-8">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-700 border-t-sky-400 mb-4"></div>
-      <p class="text-white font-semibold">Validando enlace de consentimiento...</p>
-      <span class="text-xs text-slate-400 mt-1">Por favor espere un momento</span>
+      <i class="fa-solid fa-spinner fa-spin text-3xl role-spinner mb-4"></i>
+      <p class="text-white font-semibold font-brand text-base">Validando enlace de consentimiento...</p>
+      <span class="text-xs text-zinc-400 mt-1">Por favor espere un momento</span>
     </div>
 
-    <!-- Estado: Error de Enlace o no encontrado -->
-    <div x-show="!cargando && error" x-cloak class="glass-card rounded-2xl p-8 sm:p-10 text-center" style="border: 1px solid rgba(244, 63, 94, 0.35);">
-      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">
+    <!-- Estado: Error de Enlace o no encontrado (Expirado / Inválido) -->
+    <div x-show="!cargando && error" x-cloak 
+      class="glass-card card-estado-error rounded-3xl p-6 sm:p-10 text-center shadow-2xl relative overflow-hidden max-w-xl mx-auto my-6">
+      
+      <!-- Halo e Ícono de Advertencia / Expirado -->
+      <div class="status-halo-rose w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-lg mb-3">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <h2 class="text-lg sm:text-xl font-bold text-rose-300 mb-2 font-brand" x-text="errorTitulo">Enlace no disponible</h2>
-      <p class="text-sm text-slate-300 max-w-md mx-auto mb-6 leading-relaxed" x-text="errorMensaje">
-        El enlace de autorización proporcionado ha expirado o no corresponde a un registro válido.
+
+      <!-- Badge de Estado -->
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold pill-metric-red mb-2">
+        <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+        ENLACE NO DISPONIBLE O EXPIRADO
+      </span>
+
+      <!-- Título Principal -->
+      <h2 class="text-2xl sm:text-3xl font-black font-brand text-white tracking-tight mt-1" x-text="errorTitulo || 'Enlace no disponible'"></h2>
+      
+      <!-- Mensaje Descriptivo -->
+      <p class="text-sm text-zinc-300 max-w-md mx-auto mt-2 leading-relaxed" x-text="errorMensaje || 'El enlace de autorización proporcionado ha expirado o no corresponde a un registro válido.'">
       </p>
-      <div class="inline-flex items-center gap-2 text-xs text-slate-300 py-2 px-4 rounded-xl" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08);">
-        <i class="fa-solid fa-circle-info text-sky-400"></i>
-        <span>Si considera que se trata de un error, comuníquese con el responsable de su solicitud o contratista.</span>
+
+      <!-- Ficha de Orientación al Usuario (Sin cajas negras, estilo Glassmorphism translúcido) -->
+      <div class="aviso-orientacion-error mt-6 rounded-2xl p-4 sm:p-5 text-left backdrop-blur-md">
+        <div class="flex items-start gap-3.5">
+          <div class="aviso-orientacion-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm">
+            <i class="fa-solid fa-circle-question"></i>
+          </div>
+          <div class="text-xs sm:text-sm leading-relaxed">
+            <strong class="font-bold text-white block mb-1">¿Qué puedo hacer?</strong>
+            <p class="text-zinc-300">
+              Si considera que se trata de un error o requiere gestionar su acceso, comuníquese con el <strong class="text-rose-400 font-semibold aviso-target">responsable de su solicitud</strong> o la empresa contratista para que generen un nuevo enlace activo.
+            </p>
+          </div>
+        </div>
       </div>
+
+      <!-- Botones de Acción (Simular o Volver en modo Previsualización) -->
+      <div x-show="esPreview" class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <button 
+          type="button"
+          @click="cambiarADecision()" 
+          class="btn-action-simular px-5 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+          <i class="fa-solid fa-arrow-rotate-left text-rose-400"></i>
+          <span>Simular nuevamente desde Pendiente</span>
+        </button>
+
+        <a 
+          href="/superadmin" 
+          class="btn-action-superadmin px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all inline-flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-left text-[11px]"></i>
+          <span>SuperAdmin</span>
+        </a>
+      </div>
+
     </div>
 
     <!-- Estado: YA AUTORIZADO PREVIAMENTE (Credencial Digital de Consentimiento) -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'AUTORIZADO'" x-cloak class="glass-card rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden" style="border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 35px -10px rgba(16, 185, 129, 0.15);">
+    <div x-show="!cargando && !error && datos.estado_datos === 'AUTORIZADO'" x-cloak 
+      class="glass-card card-estado-autorizado rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden">
       <div class="text-center">
         <!-- Ícono con Halo y Brillo Esmeralda -->
-        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-lg mb-3" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.3) 100%); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; box-shadow: 0 8px 25px -4px rgba(16, 185, 129, 0.4);">
+        <div class="status-halo-emerald w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-lg mb-3">
           <i class="fa-solid fa-circle-check"></i>
         </div>
 
         <!-- Badge de Estado -->
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-emerald-300 mb-2" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3);">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold pill-metric-green mb-2">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           AUTORIZACIÓN CONFIRMADA Y VIGENTE
         </span>
@@ -499,85 +322,122 @@
         <!-- Título Principal -->
         <h2 class="text-2xl sm:text-3xl font-black font-brand text-white tracking-tight mt-1">Consentimiento Vigente</h2>
         
-        <!-- Texto explicativo -->
-        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
-          Estimado(a) <strong class="text-white font-bold" x-text="datos.nombre_completo"></strong>, su autorización de tratamiento de datos personales bajo la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> se encuentra formalmente registrada y activa.
+        <!-- Texto explicativo con acento esmeralda armonioso -->
+        <p class="text-sm text-zinc-300 mt-2 max-w-lg mx-auto leading-relaxed">
+          Estimado(a) <strong class="text-white font-bold" x-text="datos.nombre_completo"></strong>, su autorización de tratamiento de datos personales bajo la <span class="text-emerald-400 font-semibold estado-ley-highlight">Ley 1581 de 2012</span> se encuentra formalmente registrada y activa.
         </p>
       </div>
 
-      <!-- Ficha / Credencial de Acceso en Cuadrícula Estructurada -->
-      <div class="mt-6 rounded-2xl p-4 sm:p-5" style="background: rgba(10, 13, 20, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);">
+      <!-- Ficha / Credencial de Acceso en Vidrio Esmeralda Pulido (Sin cajas negras) -->
+      <div class="credencial-box mt-6 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           
           <!-- Bloque: Titular -->
-          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
-            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-user-shield text-sky-400"></i>
+          <div class="credencial-tile p-3.5 rounded-xl text-left transition-all duration-200">
+            <span class="credencial-label text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-user-shield"></i>
               <span>Titular de los Datos</span>
             </span>
-            <p class="text-sm sm:text-base font-bold text-white mt-1 truncate" x-text="datos.nombre_completo"></p>
-            <span x-show="datos.cargo" class="text-xs text-slate-400 truncate block mt-0.5" x-text="datos.cargo"></span>
+            <p class="credencial-value text-sm sm:text-base font-bold text-white mt-1 truncate" x-text="datos.nombre_completo"></p>
+            <span x-show="datos.cargo" class="credencial-sub text-xs truncate block mt-0.5" x-text="datos.cargo"></span>
           </div>
 
           <!-- Bloque: Identificación -->
-          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
-            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-id-card text-blue-400"></i>
+          <div class="credencial-tile p-3.5 rounded-xl text-left transition-all duration-200">
+            <span class="credencial-label text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-id-card"></i>
               <span>Documento de Identidad</span>
             </span>
             <div class="mt-1">
-              <span class="badge-cc">
-                <i class="fa-solid fa-id-card text-blue-400"></i>
-                <span class="text-blue-300 font-medium" x-text="datos.tipo_doc || 'C.C.'"></span>
-                <strong class="text-white font-mono font-bold" x-text="datos.cedula || datos.identificacion || 'No especificado'"></strong>
+              <span class="credencial-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium">
+                <span class="credencial-pill-tag" x-text="datos.tipo_doc || 'C.C.'"></span>
+                <strong class="credencial-pill-num font-mono font-bold" x-text="datos.cedula || datos.identificacion || 'No especificado'"></strong>
               </span>
             </div>
           </div>
 
           <!-- Bloque: Radicado -->
-          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
-            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-hashtag text-sky-400"></i>
+          <div class="credencial-tile p-3.5 rounded-xl text-left transition-all duration-200">
+            <span class="credencial-label text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-hashtag"></i>
               <span>Solicitud / Radicado</span>
             </span>
             <div class="mt-1">
-              <span class="font-mono font-bold text-sky-300 text-sm px-2.5 py-1 rounded-lg inline-block" style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.25);" x-text="datos.codigo_radicado"></span>
+              <span class="credencial-rad-badge font-mono font-bold text-sm px-2.5 py-1 rounded-lg inline-block"
+                x-text="datos.codigo_radicado"></span>
             </div>
           </div>
 
           <!-- Bloque: Empresa Contratista -->
-          <div class="p-3.5 rounded-xl text-left" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
-            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-building text-amber-400"></i>
+          <div class="credencial-tile p-3.5 rounded-xl text-left transition-all duration-200">
+            <span class="credencial-label text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-building"></i>
               <span>Empresa Contratista</span>
             </span>
-            <p class="text-xs sm:text-sm font-semibold text-amber-300 mt-1 truncate" x-text="datos.empresa_contratista"></p>
+            <p class="credencial-value text-xs sm:text-sm font-semibold mt-1 truncate" x-text="datos.empresa_contratista"></p>
           </div>
 
         </div>
 
         <!-- Fila Inferior de Auditoría y Fecha -->
-        <div class="mt-4 pt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs" style="border-top: 1px solid rgba(255, 255, 255, 0.06);">
-          <div class="flex items-center gap-2 text-slate-300">
-            <i class="fa-regular fa-clock text-emerald-400"></i>
-            <span class="text-slate-400">Registro Legal:</span>
-            <strong class="text-emerald-300 font-mono font-semibold" x-text="datos.fecha_respuesta_datos || 'Registrado formalmente'"></strong>
+        <div class="credencial-footer mt-4 pt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <i class="fa-regular fa-clock credencial-footer-icon"></i>
+            <span class="credencial-footer-label">Registro Legal:</span>
+            <strong class="credencial-footer-val font-mono font-semibold" x-text="datos.fecha_respuesta_datos || 'Registrado formalmente'"></strong>
           </div>
-          <div class="flex items-center gap-1.5 text-slate-400 text-[11px]">
-            <i class="fa-solid fa-shield-halved text-sky-400"></i>
+          <div class="flex items-center gap-1.5 text-[11px] credencial-footer-habeas">
+            <i class="fa-solid fa-shield-halved"></i>
             <span>Habeas Data · Seguridad SG-SST</span>
           </div>
         </div>
       </div>
 
+      <!-- Tarjeta Destacada de Inducción Asignada (Modo Directo / Pruebas) -->
+      <template x-if="datos.formulario_asignado && datos.formulario_asignado.url_evaluacion">
+        <div class="mt-5 rounded-2xl p-4 sm:p-5 border border-indigo-500/40 bg-gradient-to-br from-indigo-950/70 via-purple-950/40 to-slate-900/90 shadow-2xl backdrop-blur-md text-left transition-all duration-200 hover:border-indigo-400">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1.5 min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/25 text-indigo-300 border border-indigo-500/40">
+                  <i class="fa-solid fa-graduation-cap"></i> Inducción Corporativa Asignada
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10.5px] font-mono font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700" x-text="'Tipo: ' + (datos.tipo_personal || 'Contratista')"></span>
+                <template x-if="datos.modo_entrega === 'DIRECTO' || esPreview">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <i class="fa-solid fa-bolt mr-1"></i> Modo Directo Activo
+                  </span>
+                </template>
+              </div>
+              <h3 class="text-sm sm:text-base font-bold text-white truncate" x-text="datos.formulario_asignado.nombre"></h3>
+              <p class="text-xs text-zinc-300 leading-relaxed flex items-center gap-3 flex-wrap">
+                <span><strong class="text-zinc-400 font-normal">Vigencia:</strong> <span class="text-white font-medium" x-text="datos.formulario_asignado.vigencia || '1 año'"></span></span>
+                <span>•</span>
+                <span><strong class="text-zinc-400 font-normal">Preguntas:</strong> <span class="text-white font-medium" x-text="datos.formulario_asignado.cantidad_preguntas || 10"></span></span>
+                <span>•</span>
+                <span><strong class="text-zinc-400 font-normal">Responsable:</strong> <span class="text-white font-medium" x-text="datos.formulario_asignado.creador_nombre || 'Auditor GESCO'"></span></span>
+              </p>
+            </div>
+
+            <a :href="datos.formulario_asignado.url_evaluacion"
+              class="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-xl shadow-indigo-600/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer">
+              <i class="fa-solid fa-play text-xs"></i>
+              <span>Iniciar Inducción Asignada</span>
+              <i class="fa-solid fa-arrow-right text-[11px] opacity-80"></i>
+            </a>
+          </div>
+        </div>
+      </template>
+
       <!-- Tarjeta Informativa de Acceso a Portería -->
-      <div class="mt-5 rounded-2xl p-4 flex items-center gap-3.5 text-left" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 18px; border: 1px solid rgba(16, 185, 129, 0.3);">
+      <div class="porteria-info-box mt-5 rounded-2xl p-4 flex items-center gap-3.5 text-left">
+
+        <div class="porteria-icon-box w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg">
           <i class="fa-solid fa-id-badge"></i>
         </div>
         <div class="text-xs leading-relaxed">
-          <span class="font-bold text-emerald-300 block text-xs sm:text-sm">Ingreso Habilitado en Portería</span>
-          <span class="text-slate-300">Presente su documento de identidad original en la portería física de <strong class="text-white font-semibold" x-text="datos.empresa_origen || 'INCARSA'"></strong>. Su autorización ha sido sincronizada con el control de acceso SG-SST.</span>
+          <span class="porteria-title font-bold block text-xs sm:text-sm">Ingreso Habilitado en Portería</span>
+          <span class="porteria-desc">Presente su documento de identidad original en la portería física de <strong class="porteria-empresa font-semibold" x-text="datos.empresa_origen || 'INCARSA'"></strong>. Su autorización ha sido sincronizada con el control de acceso SG-SST.</span>
         </div>
       </div>
 
@@ -585,202 +445,211 @@
       <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
         <a :href="'/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(token || 'preview') + '/certificado-pdf'"
           target="_blank"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-emerald-950/50 hover:shadow-emerald-900/70 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer border border-emerald-400/40"
+          class="btn-descargar-pdf w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
           title="Descargar Certificado Oficial en PDF (Formato FR_SLV_016 / SG-SST / SIC)">
-          <i class="fa-solid fa-file-pdf text-base text-emerald-200"></i>
+          <i class="fa-solid fa-file-pdf text-base"></i>
           <span>Descargar Certificado Oficial en PDF (SST / SIC)</span>
-          <i class="fa-solid fa-arrow-up-right-from-square text-[11px] opacity-75 ml-1"></i>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[11px] opacity-80 ml-1"></i>
         </a>
       </div>
 
       <!-- Enlace para volver a probar en modo SuperAdmin -->
       <div x-show="esPreview" class="mt-4 text-center">
-        <button @click="cambiarADecision()" class="text-xs text-slate-400 hover:text-white underline transition-colors cursor-pointer">
+        <button @click="cambiarADecision()" class="link-simular text-xs underline transition-colors cursor-pointer">
           <i class="fa-solid fa-arrow-rotate-left mr-1"></i> Simular nuevamente desde estado Pendiente
         </button>
       </div>
     </div>
 
     <!-- Estado: RECHAZADO PREVIAMENTE -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'RECHAZADO'" x-cloak class="glass-card rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden" style="border: 1px solid rgba(244, 63, 94, 0.35); box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 35px -10px rgba(244, 63, 94, 0.15);">
+    <div x-show="!cargando && !error && datos.estado_datos === 'RECHAZADO'" x-cloak 
+      class="glass-card card-estado-rechazado rounded-3xl p-6 sm:p-9 shadow-2xl relative overflow-hidden">
       <div class="text-center">
-        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-lg" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">
+        <div class="status-halo-rose w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-lg">
           <i class="fa-solid fa-ban"></i>
         </div>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-2" style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #fda4af;">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold pill-metric-red mb-2">
+          <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
           AUTORIZACIÓN RECHAZADA
         </span>
-        <h2 class="text-xl sm:text-2xl font-bold text-rose-300 font-brand mt-1">Tratamiento No Autorizado</h2>
-        <p class="text-sm text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
-          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="text-sky-300 font-mono font-bold" x-text="datos.codigo_radicado"></strong>.
+        <h2 class="text-2xl sm:text-3xl font-black font-brand tracking-tight mt-1 title-rechazado">Tratamiento No Autorizado</h2>
+        <p class="text-sm text-zinc-300 mt-2 max-w-lg mx-auto leading-relaxed desc-rechazado">
+          Has manifestado el rechazo al tratamiento de datos personales para la solicitud <strong class="font-mono font-bold radicado-rechazado" x-text="datos.codigo_radicado"></strong>.
         </p>
       </div>
 
-      <div class="mt-6 rounded-xl p-4 sm:p-5 text-xs sm:text-sm" style="background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(20, 16, 10, 0.7) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 3px solid #f59e0b;">
-        <div class="flex items-start gap-3 text-amber-200/90 text-left">
-          <i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg mt-0.5 shrink-0"></i>
-          <div>
-            <strong class="font-bold block mb-1 text-amber-300">Bloqueo de Ingreso en Portería:</strong>
+      <!-- Ficha de Advertencia Translúcida (Sin cajas negras) -->
+      <div class="aviso-bloqueo-porteria mt-6 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm backdrop-blur-md">
+        <div class="flex items-start gap-3.5 text-left">
+          <div class="aviso-bloqueo-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div class="text-xs sm:text-sm leading-relaxed aviso-bloqueo-texto">
+            <strong class="font-bold block mb-1 aviso-bloqueo-title">Bloqueo de Ingreso en Portería:</strong>
             De conformidad con los protocolos de seguridad industrial y la Ley 1581 de 2012, sin esta autorización no es posible validar su identidad ni permitir el ingreso a las instalaciones de la planta.
           </div>
         </div>
       </div>
 
       <div class="mt-6 text-center">
-        <button @click="cambiarADecision()" class="text-xs sm:text-sm text-sky-400 hover:text-sky-300 underline font-semibold cursor-pointer transition-colors">
-          ¿Deseas cambiar tu respuesta y autorizar el tratamiento para permitir tu ingreso?
+        <button 
+          type="button"
+          @click="cambiarADecision()" 
+          class="btn-cambiar-opinion px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+          <i class="fa-solid fa-arrow-rotate-left"></i>
+          <span>Cambiar de opinión y autorizar</span>
         </button>
       </div>
     </div>
 
     <!-- Estado: PENDIENTE (Formulario Principal de Autorización) -->
-    <div x-show="!cargando && !error && datos.estado_datos === 'PENDIENTE'" x-cloak class="glass-card rounded-2xl overflow-hidden border-slate-700/60 shadow-2xl">
+    <div x-show="!cargando && !error && datos.estado_datos === 'PENDIENTE'" x-cloak class="glass-card rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
       
-      <!-- Ficha de Datos del Titular: Colores Vivos y Jerarquía Clara -->
-      <div class="bg-gradient-to-r from-[#111422] via-[#0e1017] to-[#121624] p-5 sm:p-6 border-b border-slate-700/50">
+      <!-- Ficha de Datos del Titular: Colores y Estilos alineados a formularios.css -->
+      <div class="card-titular-header bg-zinc-900/80 p-5 sm:p-6 border-b border-zinc-800">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <!-- Etiqueta de Sección (Overline) con Color Sky -->
-            <div class="flex items-center gap-1.5 text-sky-400 text-xs font-bold tracking-wider uppercase mb-1">
-              <i class="fa-solid fa-user-shield text-sky-400 text-xs"></i>
+            <!-- Etiqueta de Sección (Overline) -->
+            <div class="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase mb-1 role-text-accent">
+              <i class="fa-solid fa-user-shield text-xs"></i>
               <span>Titular de los Datos</span>
             </div>
             <!-- Título Principal (Nombre en Blanco Puro) -->
-            <h2 class="text-xl sm:text-2xl font-black text-white font-brand tracking-tight" x-text="datos.nombre_completo"></h2>
+            <h2 class="titular-nombre text-xl sm:text-2xl font-black text-white font-brand tracking-tight" x-text="datos.nombre_completo"></h2>
             <!-- Metadatos de Persona con Pills de Colores Diferenciados -->
             <div class="flex flex-wrap items-center gap-2 mt-2.5">
-              <span class="badge-cc">
-                <i class="fa-solid fa-id-card text-blue-400"></i>
-                <span class="text-blue-300 font-medium">C.C.</span>
-                <strong class="text-white font-mono font-bold" x-text="datos.cedula || '—'"></strong>
+              <span class="card-doc-pill inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-950/80 border border-zinc-800 text-zinc-200 text-xs">
+                <i class="card-doc-icon fa-solid fa-id-card text-zinc-400 text-xs"></i>
+                <span class="card-doc-type text-zinc-400 font-medium">C.C.</span>
+                <strong class="card-doc-num text-white font-mono font-bold" x-text="datos.cedula || '—'"></strong>
               </span>
-              <span x-show="datos.cargo" class="badge-cargo">
-                <i class="fa-solid fa-briefcase text-emerald-400"></i>
-                <span class="text-emerald-200 font-medium" x-text="datos.cargo"></span>
+              <span x-show="datos.cargo" class="badge-cargo-titular inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium">
+                <i class="fa-solid fa-briefcase text-xs"></i>
+                <span x-text="datos.cargo"></span>
               </span>
             </div>
           </div>
 
-          <!-- Caja de Radicado con Acento Sky y Ámbar -->
-          <div class="box-radicado sm:text-right">
-            <span class="text-[10.5px] text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1 sm:justify-end">
-              <i class="fa-solid fa-hashtag text-[9px] text-sky-400"></i>
+          <!-- Caja de Radicado (company-card-box de formularios.css) -->
+          <div class="company-card-box sm:text-right bg-zinc-950/80 border border-zinc-800">
+            <span class="text-[10.5px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1 sm:justify-end">
+              <i class="fa-solid fa-hashtag text-[9px] role-text-accent"></i>
               <span>Solicitud / Radicado</span>
             </span>
-            <!-- Código Radicado (Cyan / Sky Luminoso) -->
-            <span class="text-base sm:text-lg font-mono font-black text-sky-300 tracking-wide block mt-0.5" x-text="datos.codigo_radicado"></span>
-            <!-- Empresa Contratista (Ámbar Cálido) -->
-            <span class="text-xs text-amber-300/95 font-medium flex items-center gap-1.5 sm:justify-end mt-1 truncate max-w-[240px]">
-              <i class="fa-solid fa-building text-amber-400 text-[11px]"></i>
+            <!-- Código Radicado -->
+            <span class="radicado-code text-base sm:text-lg font-mono font-black text-white tracking-wide block mt-0.5" x-text="datos.codigo_radicado"></span>
+            <!-- Empresa Contratista -->
+            <span class="empresa-contratista-label text-xs font-medium flex items-center gap-1.5 sm:justify-end mt-1 truncate max-w-[240px]">
+              <i class="fa-solid fa-building text-[11px]"></i>
               <span x-text="datos.empresa_contratista"></span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- Alerta Informativa Obligatoria: Estilo Limpio y Alta Legibilidad -->
-      <div class="alerta-requisito">
-        <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg shrink-0"></i>
-        <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">
-          <strong class="text-amber-300 font-bold">Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
+      <!-- Alerta Informativa Obligatoria: Usa aviso-ingreso-planta nativo de formularios.css -->
+      <div class="aviso-ingreso-planta px-5 py-3.5 flex items-center gap-3.5 border-b border-zinc-800">
+        <i class="fa-solid fa-circle-exclamation aviso-icono-escudo text-lg shrink-0"></i>
+        <p class="text-xs sm:text-sm aviso-cuerpo leading-relaxed">
+          <strong class="aviso-titulo font-bold">Requisito Indispensable:</strong> La autorización de tratamiento de datos es obligatoria para validar su acceso en la portería y registrar su permanencia en planta bajo normativas SG-SST.
         </p>
       </div>
 
-      <!-- Contenido Legal con Scroll -->
-      <div class="p-5 sm:p-6">
+      <!-- Contenido Legal con Scroll y custom-scroll de formularios.css -->
+      <div class="p-5 sm:p-6 space-y-5">
         <!-- Encabezado de la Sección con Icono y Contraste -->
-        <h3 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-3 flex items-center justify-between flex-wrap gap-2">
-          <span class="flex items-center gap-2">
-            <i class="fa-solid fa-file-contract text-sky-400"></i>
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2 font-brand">
+            <i class="fa-solid fa-file-contract role-text-accent"></i>
             <span>Términos y Condiciones de la Autorización</span>
-          </span>
-          <span class="text-[11px] font-medium text-slate-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-            <i class="fa-solid fa-arrows-up-down text-[10px] text-sky-400"></i>
+          </h3>
+          <span class="text-[11px] font-medium text-zinc-400 bg-zinc-900 border border-zinc-800 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-xs">
+            <i class="fa-solid fa-arrows-up-down text-[10px] text-zinc-400"></i>
             <span>Deslice para leer el texto completo</span>
           </span>
-        </h3>
+        </div>
 
-        <!-- Caja de Texto Legal con Variedad de Colores y Secciones alineada al Formato FR_SLV_016 -->
-        <div class="legal-scroll h-80 overflow-y-auto bg-[#08090f] rounded-xl p-5 border border-slate-800 text-xs space-y-4 leading-relaxed">
+        <!-- Caja de Texto Legal alineada al Formato FR_SLV_016 con custom-scroll -->
+        <div class="custom-scroll legal-scroll-container h-80 overflow-y-auto bg-zinc-950/80 rounded-xl p-5 border border-zinc-800/90 text-xs space-y-4 leading-relaxed text-zinc-300">
           
           <!-- Encabezado Oficial del Formato FR_SLV_016 -->
-          <div class="rounded-xl p-3.5 border border-sky-500/30" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%);">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-sky-500/20 pb-2.5 mb-2.5">
+          <div class="legal-header-box rounded-xl p-3.5 border border-zinc-700/80 bg-zinc-900/80">
+            <div class="legal-header-divider flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-zinc-800 pb-2.5 mb-2.5">
               <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-file-shield text-sky-400 text-base"></i>
+                <i class="fa-solid fa-file-shield role-text-accent text-base"></i>
                 <div>
-                  <h4 class="text-xs sm:text-sm font-bold text-sky-200 tracking-wide">
+                  <h4 class="legal-form-title text-xs sm:text-sm font-bold text-white tracking-wide">
                     AUTORIZACIÓN TRATAMIENTO DE DATOS PERSONALES
                   </h4>
-                  <p class="text-[10.5px] text-slate-400">
+                  <p class="legal-form-sub text-[10.5px] text-zinc-400">
                     Procesos de Selección, Vinculación, Contratación y Acceso a Instalaciones
                   </p>
                 </div>
               </div>
               <div class="flex items-center gap-1.5 font-mono text-[11px]">
-                <span class="bg-sky-950/90 text-sky-300 font-bold px-2 py-0.5 rounded border border-sky-400/40">Código: FR_SLV_016</span>
-                <span class="bg-slate-900/90 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">Versión: 00</span>
+                <span class="legal-badge-code bg-zinc-950 text-white font-bold px-2 py-0.5 rounded border border-zinc-700">Código: FR_SLV_016</span>
+                <span class="legal-badge-ver bg-zinc-950 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-800">Versión: 00</span>
               </div>
             </div>
-            <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
-              <span>Responsable: <strong class="text-white" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> · NIT: <strong class="text-sky-300 font-mono">830.078.829-5</strong></span>
-              <span class="text-slate-400">Fecha de entrada en vigencia: <strong class="text-slate-200 font-medium">16 de enero de 2025</strong></span>
+            <div class="legal-header-meta flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
+              <span>Responsable: <strong class="text-white" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> · NIT: <strong class="text-zinc-200 font-mono" x-text="nitEmpresa">830.078.829-5</strong></span>
+              <span>Fecha de entrada en vigencia: <strong class="text-zinc-200 font-medium">16 de enero de 2025</strong></span>
             </div>
           </div>
 
           <!-- Párrafo 1: Autorización Base e Identificación de la Organización -->
-          <p class="text-slate-300">
-            Autorizo a la sociedad <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong>, identificada con el <strong class="text-sky-300 font-mono font-bold">NIT No. 830.078.829-5</strong> en adelante la <strong class="text-white font-bold">“Organización”</strong>
+          <p class="text-zinc-300">
+            Autorizo a la sociedad <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong>, identificada con el <strong class="text-white font-mono font-bold" x-text="'NIT No. ' + nitEmpresa">NIT No. 830.078.829-5</strong> en adelante la <strong class="text-white font-bold">“Organización”</strong>
             <template x-if="datos.empresa_contratista && datos.empresa_origen !== datos.empresa_contratista">
               <span> (y de manera concurrente a la empresa contratista <strong class="text-amber-300 font-bold" x-text="datos.empresa_contratista"></strong>)</span>
             </template>,
-            para que trate mi información personal de acuerdo con el <strong class="text-sky-300 font-medium">“Manual de Políticas de Tratamiento de la Información de Datos Personales”</strong>, y que me dio a conocer antes de recolectar mis datos personales en el presente proceso.
+            para que trate mi información personal de acuerdo con el <strong class="text-zinc-100 font-medium">“Manual de Políticas de Tratamiento de la Información de Datos Personales”</strong>, y que me dio a conocer antes de recolectar mis datos personales en el presente proceso.
           </p>
 
           <!-- Párrafo 2: Puesta de Presente y Manifestación Voluntaria -->
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             Manifiesto que la presente autorización me fue solicitada y puesta de presente antes de entregar mis datos en la solicitud y, la cual se suscribe de forma libre, informada y voluntaria una vez leída en su totalidad.
           </p>
 
           <!-- Tabla de Datos del Titular según formato FR_SLV_016 -->
-          <div class="rounded-xl overflow-hidden border border-slate-700/80 bg-slate-900/70 my-2">
-            <div class="bg-slate-800/80 px-3 py-1.5 text-[11px] font-bold text-sky-300 uppercase tracking-wider flex items-center justify-between border-b border-slate-700/80">
+          <div class="legal-titular-grid rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/60 my-2">
+            <div class="legal-titular-grid-header bg-zinc-800/80 px-3 py-1.5 text-[11px] font-bold text-zinc-200 uppercase tracking-wider flex items-center justify-between border-b border-zinc-700/80">
               <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-id-card text-sky-400 text-xs"></i>
+                <i class="fa-solid fa-id-card role-text-accent text-xs"></i>
                 <span>Información del Titular (Formato FR_SLV_016)</span>
               </span>
-              <span class="font-mono text-[10px] text-slate-400" x-text="'Radicado: ' + datos.codigo_radicado"></span>
+              <span class="font-mono text-[10px] text-zinc-400" x-text="'Radicado: ' + datos.codigo_radicado"></span>
             </div>
             <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px]">
               <div>
-                <span class="text-slate-400 text-[10.5px] block font-medium">NOMBRES Y APELLIDOS:</span>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">NOMBRES Y APELLIDOS:</span>
                 <strong class="text-white font-semibold" x-text="datos.nombre_completo"></strong>
               </div>
               <div>
-                <span class="text-slate-400 text-[10.5px] block font-medium">DOCUMENTO DE IDENTIFICACIÓN:</span>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">DOCUMENTO DE IDENTIFICACIÓN:</span>
                 <strong class="text-white font-mono font-semibold" x-text="(datos.tipo_doc || 'C.C.') + ' ' + (datos.cedula || datos.identificacion || 'No registrado')"></strong>
               </div>
               <div x-show="datos.cargo">
-                <span class="text-slate-400 text-[10.5px] block font-medium">CARGO / ESPECIALIDAD:</span>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">CARGO / ESPECIALIDAD:</span>
                 <strong class="text-emerald-300 font-medium" x-text="datos.cargo"></strong>
               </div>
               <div>
-                <span class="text-slate-400 text-[10.5px] block font-medium">EMPRESA CONTRATISTA:</span>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">EMPRESA CONTRATISTA:</span>
                 <strong class="text-amber-300 font-medium" x-text="datos.empresa_contratista || 'Personal Directo / No aplica'"></strong>
               </div>
               <div x-show="datos.plantas_texto">
-                <span class="text-slate-400 text-[10.5px] block font-medium">PLANTA(S) DESTINO / SEDES:</span>
-                <strong class="text-sky-300 font-medium" x-text="datos.plantas_texto"></strong>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">PLANTA(S) DESTINO / SEDES:</span>
+                <strong class="text-zinc-200 font-medium" x-text="datos.plantas_texto"></strong>
               </div>
               <div>
-                <span class="text-slate-400 text-[10.5px] block font-medium">CORREO / NOTIFICACIÓN:</span>
-                <span class="text-slate-300 font-mono text-[11px]" x-text="datos.correo || 'Registrado en sistema'"></span>
+                <span class="text-zinc-400 text-[10.5px] block font-medium">CORREO / NOTIFICACIÓN:</span>
+                <span class="text-zinc-300 font-mono text-[11px]" x-text="datos.correo || 'Registrado en sistema'"></span>
               </div>
             </div>
           </div>
 
           <!-- Declaración del Proceso -->
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             Mediante el presente documento manifiesto, comprendo y acepto que el proceso al interior de la <strong class="text-white">Organización</strong> contiene una serie de etapas técnicas, administrativas y de seguridad que son indispensables para validar la idoneidad, requisitos de la función, protocolos de prevención y estándares operacionales en instalaciones industriales.
           </p>
 
@@ -789,10 +658,10 @@
             <i class="fa-solid fa-circle-check text-emerald-400 text-[11px]"></i>
             <span>1. Finalidades del Tratamiento (Ley Estatutaria 1581 de 2012):</span>
           </p>
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             Adicionalmente, y de acuerdo con la <strong class="text-white">Ley Estatutaria 1581 de 2012</strong> y el <strong class="text-white">Decreto Reglamentario 1377 de 2013</strong> autorizo, como titular de los datos personales, que éstos sean incorporados en una base de datos responsabilidad de la <strong class="text-white">Organización</strong> siendo tratados con la finalidad de:
           </p>
-          <ul class="space-y-1.5 pl-1 text-slate-300">
+          <ul class="space-y-1.5 pl-1 text-zinc-300">
             <li class="flex items-start gap-2">
               <i class="fa-solid fa-angle-right text-emerald-400 text-[11px] mt-0.5 shrink-0"></i>
               <span><strong>Procedimientos administrativos y operativos:</strong> Tramitar solicitudes, emitir radicados, gestionar credenciales de acceso y archivar soportes requeridos.</span>
@@ -828,39 +697,39 @@
             <i class="fa-solid fa-fingerprint text-amber-400 text-[11px]"></i>
             <span>2. Tratamiento de Datos Sensibles y Biometría:</span>
           </p>
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             De conformidad con el Artículo 6 de la Ley 1581 de 2012, se me ha informado expresamente que el suministro de datos sensibles (tales como imágenes de videovigilancia, datos biométricos de registro dactilar o facial, o certificados de aptitud médica laboral) tiene carácter facultativo; sin embargo, reconozco que son indispensables para los protocolos de seguridad industrial y control de acceso estricto a las plantas de producción.
           </p>
 
           <!-- Sección 3: Declaración de Veracidad y Comprobación Sin Restricción (Texto FR_SLV_016) -->
-          <p class="font-bold text-indigo-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved text-indigo-400 text-[11px]"></i>
+          <p class="font-bold text-zinc-200 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved role-text-accent text-[11px]"></i>
             <span>3. Declaración de Exactitud, Veracidad y Facultad de Comprobación:</span>
           </p>
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             Manifiesto que toda la información suministrada en esta solicitud y en toda la documentación aportada para efectos del proceso del cual estoy participando es <strong>exacta, veraz y completa</strong>, la cual puede ser comprobada de cualquier forma y en cualquier momento por parte de la Organización para lo cual desde ya lo autorizo <strong>sin ningún tipo de restricción</strong>.
           </p>
 
           <!-- Sección 4: Ausencia de Relación Laboral Directa (Texto FR_SLV_016 Pág. 1-2) -->
-          <p class="font-bold text-rose-300 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+          <p class="font-bold text-rose-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
             <i class="fa-solid fa-briefcase text-rose-400 text-[11px]"></i>
             <span>4. Delimitación de Relación y Ausencia de Vínculo Laboral:</span>
           </p>
-          <p class="text-slate-300">
+          <p class="text-zinc-300">
             Por último, manifiesto de manera expresa, que el hecho de registrarme o participar en el proceso de solicitud, autorización o ingreso ante la Organización, <strong class="text-white">en modo alguno implica el que se haya configurado una relación laboral entre las partes</strong>, ni tampoco implica obligatoriedad alguna en cabeza de la Organización, de tener efectivamente que suscribir un contrato de trabajo con el firmante ni autorizar el acceso si no se cumplen integralmente los requerimientos técnicos y de seguridad.
           </p>
 
           <!-- Sección 5: Canales de Atención Institucional -->
-          <p class="font-bold text-sky-400 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
-            <i class="fa-solid fa-headset text-sky-400 text-[11px]"></i>
+          <p class="font-bold text-zinc-200 text-xs uppercase tracking-wide pt-2 flex items-center gap-2">
+            <i class="fa-solid fa-headset role-text-accent text-[11px]"></i>
             <span>5. Canales de Atención Institucional:</span>
           </p>
-          <p class="text-slate-300 leading-relaxed">
+          <p class="text-zinc-300 leading-relaxed">
             Para el ejercicio de los derechos de Habeas Data, <strong class="text-white font-medium" x-text="datos.empresa_origen || 'LA COMPAÑÍA'"></strong> dispone del correo electrónico institucional de atención 
             <a :href="'mailto:' + correoInstitucional" 
-              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-400/35 hover:border-sky-400/60 font-mono text-[11.5px] font-bold no-underline transition-all duration-150 shadow-xs align-middle select-all"
+              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700 hover:border-zinc-500 font-mono text-[11.5px] font-semibold no-underline transition-all duration-150 shadow-xs align-middle select-all"
               title="Clic para enviar correo institucional">
-              <i class="fa-regular fa-envelope text-[11px] text-sky-400"></i>
+              <i class="fa-regular fa-envelope text-[11px] role-text-accent"></i>
               <span x-text="correoInstitucional"></span>
             </a> 
             y sus oficinas principales, donde se atenderán consultas y reclamos en los términos fijados por la legislación vigente.
@@ -868,79 +737,84 @@
 
         </div>
 
-        <!-- 3 Casillas de Verificación: Leído, Valido y Autorizo -->
-        <div class="mt-5 space-y-2.5">
-          <p class="text-[11px] font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5 px-1">
-            <i class="fa-solid fa-list-check text-sky-400"></i>
+        <!-- 3 Casillas de Verificación: Leído, Valido y Autorizo usando selection-card y option-circle de formularios.css -->
+        <div class="space-y-2.5">
+          <p class="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5 px-1 font-brand">
+            <i class="fa-solid fa-list-check role-text-accent"></i>
             <span>Confirmación de Conformidad y Consentimiento:</span>
           </p>
 
           <!-- 1. LEÍDO -->
-          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
-            :class="checkLeido ? 'border-sky-500/60 bg-sky-950/25' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+          <div 
+            class="selection-card flex items-start gap-3 select-none"
+            :class="checkLeido ? 'is-selected-brand' : ''"
             @click="checkLeido = !checkLeido">
-            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
-              <input type="checkbox" x-model="checkLeido" 
-                class="mt-0.5 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
-              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
-                <strong class="text-sky-300 font-bold">1. Leído:</strong> He leído integramente la informacion proporcionada en los terminos y condiciones de la autorizacion de manejo de datos reflejados previamente.
-              </span>
-            </label>
+            <div 
+              class="option-circle w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5"
+              :class="checkLeido ? 'is-selected' : ''">
+              <i class="fa-solid fa-check text-[10px]" :class="checkLeido ? 'text-white' : 'opacity-0'"></i>
+            </div>
+            <span class="text-xs sm:text-sm text-zinc-200 leading-snug">
+              <strong class="font-bold text-white">1. Leído:</strong> He leído íntegramente la información proporcionada en los términos y condiciones de la autorización de manejo de datos reflejados previamente.
+            </span>
           </div>
 
           <!-- 2. VALIDO -->
-          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
-            :class="checkValido ? 'border-sky-500/60 bg-sky-950/25' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+          <div 
+            class="selection-card flex items-start gap-3 select-none"
+            :class="checkValido ? 'is-selected-brand' : ''"
             @click="checkValido = !checkValido">
-            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
-              <input type="checkbox" x-model="checkValido" 
-                class="mt-0.5 w-4 h-4 rounded border-sky-500/50 bg-[#0d1117] text-sky-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
-              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
-                <strong class="text-sky-300 font-bold">2. Valido:</strong> Valido y comprendo los alcances legales de la <span class="text-sky-300 font-semibold">Ley 1581 de 2012</span> y el <span class="text-sky-300 font-semibold">Decreto 1377 de 2013</span>, así como mis derechos como titular de la información.
-              </span>
-            </label>
+            <div 
+              class="option-circle w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5"
+              :class="checkValido ? 'is-selected' : ''">
+              <i class="fa-solid fa-check text-[10px]" :class="checkValido ? 'text-white' : 'opacity-0'"></i>
+            </div>
+            <span class="text-xs sm:text-sm text-zinc-200 leading-snug">
+              <strong class="font-bold text-white">2. Valido:</strong> Valido y comprendo los alcances legales de la <span class="role-text-accent font-semibold">Ley 1581 de 2012</span> y el <span class="role-text-accent font-semibold">Decreto 1377 de 2013</span>, así como mis derechos como titular de la información.
+            </span>
           </div>
 
           <!-- 3. AUTORIZO -->
-          <div class="rounded-xl transition-all p-3 sm:p-3.5 border cursor-pointer select-none"
-            :class="checkAutorizo ? 'border-emerald-500/60 bg-emerald-950/20' : 'border-slate-800 bg-[#0c1017]/80 hover:border-slate-700'"
+          <div 
+            class="selection-card flex items-start gap-3 select-none"
+            :class="checkAutorizo ? 'is-selected-bajo' : ''"
             @click="checkAutorizo = !checkAutorizo">
-            <label class="flex items-start gap-3 cursor-pointer" @click.stop>
-              <input type="checkbox" x-model="checkAutorizo" 
-                class="mt-0.5 w-4 h-4 rounded border-emerald-500/50 bg-[#0d1117] text-emerald-500 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0">
-              <span class="text-xs sm:text-sm text-slate-200 leading-snug">
-                <strong class="text-emerald-400 font-bold">3. Autorizo:</strong> Autorizo de manera libre, previa, expresa e informada el tratamiento de mis datos personales a favor de <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> para fines de ingreso, permanencia y trámites operacionales.
-              </span>
-            </label>
+            <div 
+              class="option-circle w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5"
+              :class="checkAutorizo ? 'is-selected' : ''">
+              <i class="fa-solid fa-check text-[10px]" :class="checkAutorizo ? 'text-white' : 'opacity-0'"></i>
+            </div>
+            <span class="text-xs sm:text-sm text-zinc-200 leading-snug">
+              <strong class="text-emerald-400 font-bold check-autorizo-label">3. Autorizo:</strong> Autorizo de manera libre, previa, expresa e informada el tratamiento de mis datos personales a favor de <strong class="text-white font-bold" x-text="datos.empresa_origen || 'INCARSA S.A.S.'"></strong> para fines de ingreso, permanencia y trámites operacionales.
+            </span>
           </div>
         </div>
 
         <!-- Botones de Acción con Jerarquía y Colores Diferenciados -->
-        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-700/50">
-          <!-- Botón Rechazar (Rojo Rosa Acentuado) -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-zinc-800">
+          <!-- Botón Rechazar (Rojo Rosa Acentuado de Formularios) -->
           <button 
             type="button" 
             @click="abrirModalRechazo()"
             :disabled="enviando"
-            class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            style="border: 1px solid rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.1); color: #fda4af;">
-            <i class="fa-solid fa-xmark text-rose-400"></i>
-            <span>No Acepto / Rechazar</span>
+            class="btn-rechazar-action w-full sm:w-auto px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.98]">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Rechazar</span>
           </button>
 
-          <!-- Botón Aceptar (Estilo Verde Esmeralda) -->
+          <!-- Botón Aceptar (btn-brand con gradiente y elevación) -->
           <button 
             type="button" 
             @click="enviarRespuesta(true)"
             :disabled="!aceptaTerminos || enviando"
-            class="btn-autorizar-verde w-full sm:w-auto text-sm flex items-center justify-center gap-2.5">
+            class="btn-brand w-full sm:w-auto text-sm font-bold flex items-center justify-center gap-2.5 py-3 px-6 rounded-xl cursor-pointer">
             <template x-if="enviando">
               <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
             </template>
             <template x-if="!enviando">
               <i class="fa-solid fa-check text-white text-sm"></i>
             </template>
-            <span>Aceptar y Autorizar Ingreso</span>
+            <span>Aceptar</span>
           </button>
         </div>
 
@@ -950,328 +824,10 @@
 
   </main>
 
-  <!-- Footer Legal: Gris Neutro -->
-  <footer class="w-full max-w-3xl mx-auto text-center mt-6 text-[11px] text-[#52525b] space-y-1">
+  <!-- Footer Legal: Gris Neutro de Formularios -->
+  <footer class="w-full max-w-3xl mx-auto text-center mt-6 text-xs text-zinc-500 space-y-1">
     <p>© 2026 PSI · Sistema de Gestión de Solicitudes y Acceso a Planta</p>
     <p>Este sistema opera bajo los principios de legalidad, finalidad y seguridad de la información (Ley 1581 de 2012).</p>
   </footer>
-
-  <!-- Lógica Alpine.js -->
-  <script>
-    function autorizacionDatosApp() {
-      return {
-        token: window.__TOKEN_AUTORIZACION__ || "",
-        esPreview: false,
-        cargando: true,
-        enviando: false,
-        error: false,
-        errorTitulo: "",
-        errorMensaje: "",
-        checkLeido: false,
-        checkValido: false,
-        checkAutorizo: false,
-        get aceptaTerminos() {
-          return Boolean(this.checkLeido && this.checkValido && this.checkAutorizo);
-        },
-        get correoInstitucional() {
-          if (this.datos.correo_institucional && !this.esPreview) {
-            return this.datos.correo_institucional;
-          }
-          return this.obtenerCorreoEmpresa(this.datos.empresa_origen);
-        },
-        obtenerCorreoEmpresa(nombreEmpresa) {
-          const emp = String(nombreEmpresa || '').toUpperCase();
-          if (emp.includes('MILPA')) return 'cimilpa@milpa.com.co';
-          if (emp.includes('CARBOINSA')) return 'carboinsasas@carboinsa.com.co';
-          if (emp.includes('UNIMINAS')) return 'uniminas@uniminas.com.co';
-          return 'incarsasas@incarsa.com.co';
-        },
-        datos: {
-          nombre_completo: "",
-          tipo_doc: "C.C.",
-          identificacion: "",
-          cedula: "",
-          cargo: "",
-          correo: "",
-          codigo_radicado: "",
-          empresa_origen: "INCARSA S.A.S.",
-          correo_institucional: "incarsasas@incarsa.com.co",
-          empresa_contratista: "",
-          plantas_texto: "",
-          estado_datos: "PENDIENTE",
-          fecha_respuesta_datos: ""
-        },
-
-        async iniciar() {
-          const urlParams = new URLSearchParams(window.location.search);
-          const queryPreview = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
-
-          // Detectar modo previsualización SuperAdmin
-          if (window.__ES_PREVIEW__ || this.token.includes('demo') || this.token.includes('preview') || queryPreview) {
-            this.esPreview = true;
-            this.datos = {
-              nombre_completo: "Diego Alejandro Cardozo",
-              tipo_doc: "C.C.",
-              identificacion: "1.098.765.432",
-              cedula: "1.098.765.432",
-              cargo: "Supervisor de Operaciones y Mantenimiento",
-              correo: "diego.cardozo@ejemplo.com",
-              codigo_radicado: "RAD-LGKS84",
-              empresa_origen: "INCARSA S.A.S.",
-              correo_institucional: "incarsasas@incarsa.com.co",
-              empresa_contratista: "AGRÍCOLA & SERVICIOS INDUSTRIALES S.A.S.",
-              plantas_texto: "PLANTA 1 INCARSA",
-              estado_datos: "PENDIENTE",
-              fecha_respuesta_datos: ""
-            };
-            this.cargando = false;
-            return;
-          }
-
-          if (!this.token) {
-            this.mostrarError("Token no proporcionado", "El enlace no contiene el token de verificación requerido.");
-            this.cargando = false;
-            return;
-          }
-
-          try {
-            const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}`);
-            const data = await resp.json();
-
-            if (!resp.ok || !data.exito) {
-              this.mostrarError("Enlace no válido o expirado", data.detail || data.mensaje || "No se encontró el registro asociado.");
-              this.cargando = false;
-              return;
-            }
-
-            this.datos = data.datos;
-            this.cargando = false;
-          } catch (e) {
-            console.error("Error al consultar token:", e);
-            this.mostrarError("Error de Conexión", "No se pudo establecer comunicación con el servidor. Por favor intente más tarde.");
-            this.cargando = false;
-          }
-        },
-
-        setEstadoPreview(nuevoEstado) {
-          this.error = false;
-          this.cargando = false;
-          this.datos.estado_datos = nuevoEstado;
-          if (nuevoEstado === 'AUTORIZADO' && !this.datos.fecha_respuesta_datos) {
-            this.datos.fecha_respuesta_datos = new Date().toLocaleString('es-CO');
-          }
-        },
-
-        simularErrorToken() {
-          this.cargando = false;
-          this.mostrarError(
-            "Enlace no válido o expirado (Simulación)",
-            "Este es un ejemplo de cómo ve el usuario la pantalla si el token ya venció o no existe en la base de datos."
-          );
-        },
-
-        mostrarError(titulo, mensaje) {
-          this.error = true;
-          this.errorTitulo = titulo;
-          this.errorMensaje = mensaje;
-        },
-
-        cambiarADecision() {
-          this.datos.estado_datos = "PENDIENTE";
-          this.checkLeido = false;
-          this.checkValido = false;
-          this.checkAutorizo = false;
-        },
-
-        async abrirModalRechazo() {
-          const nombreEmpresaOrigen = this.datos.empresa_origen || 'la empresa';
-          const { value: confirmacion } = await Swal.fire({
-            title: '¿Rechazar Autorización?',
-            customClass: {
-              popup: 'swal-dark-mono'
-            },
-            html: `
-              <div style="text-align: left; font-size: 13px; color: #9ca3af; line-height: 1.5;">
-                <p style="margin-bottom: 12px;">
-                  ⚠️ <strong style="color: #c4c4c8;">Atención:</strong> Si rechaza el tratamiento de datos personales, el sistema de portería de <strong style="color: #d1d5db;">${nombreEmpresaOrigen}</strong> bloqueará automáticamente su ingreso a las instalaciones físicas.
-                </p>
-                <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #8e8e93;">
-                  Motivo del rechazo (opcional):
-                </label>
-                <textarea id="swal-motivo-rechazo" class="swal2-textarea" style="width: 100%; height: 70px; margin: 0; background: #0a0a0c; color: #d1d5db; border: 1px solid #28282d; border-radius: 8px; font-size: 12px; padding: 8px;" placeholder="Indique si tiene alguna observación..."></textarea>
-              </div>
-            `,
-            icon: 'warning',
-            background: '#141416',
-            color: '#9ca3af',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, Rechazar y No Ingresar',
-            confirmButtonColor: '#b91c1c',
-            cancelButtonText: 'Volver a Leer',
-            cancelButtonColor: '#28282d',
-            reverseButtons: true,
-            preConfirm: () => {
-              const motivo = document.getElementById('swal-motivo-rechazo')?.value || '';
-              return { rechazar: true, motivo: motivo };
-            }
-          });
-
-          if (confirmacion && confirmacion.rechazar) {
-            await this.enviarRespuesta(false, confirmacion.motivo);
-          }
-        },
-
-        async enviarRespuesta(acepto, motivo = null) {
-          if (this.enviando) return;
-          this.enviando = true;
-
-          // Modo Previsualización SuperAdmin: Simulación interactiva sin alterar base de datos
-          if (this.esPreview) {
-            await new Promise(r => setTimeout(r, 300));
-            this.datos.estado_datos = acepto ? "AUTORIZADO" : "RECHAZADO";
-            this.datos.fecha_respuesta_datos = new Date().toLocaleString('es-CO');
-
-            if (acepto) {
-              await Swal.fire({
-                title: '¡Autorización Exitosa!',
-                text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'Descargar Certificado PDF',
-                cancelButtonText: 'Continuar',
-                customClass: { popup: 'swal-dark-mono' },
-                background: '#141416',
-                color: '#9ca3af',
-                confirmButtonColor: '#059669',
-                cancelButtonColor: '#28282d'
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  window.open('/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(this.token || 'preview') + '/certificado-pdf', '_blank');
-                }
-              });
-            } else {
-              await Swal.fire({
-                title: 'Respuesta Registrada',
-                text: 'Se ha registrado su rechazo al tratamiento de datos. El ingreso a la planta queda restringido.',
-                icon: 'info',
-                customClass: { popup: 'swal-dark-mono' },
-                background: '#141416',
-                color: '#9ca3af',
-                confirmButtonColor: '#2e2e33'
-              });
-            }
-            this.enviando = false;
-            return;
-          }
-
-          // Captura forense de alta entropía del dispositivo (Client Hints + GPU WebGL Fallback)
-          let modeloCliente = '';
-          try {
-            if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
-              const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
-              if (hints && hints.model) {
-                modeloCliente = String(hints.model).trim();
-              }
-            }
-          } catch (eHint) {}
-
-          // Si por estar en contexto HTTP (o navegador sin Client Hints) no se obtuvo el modelo exacto,
-          // extraer la huella de hardware de la GPU (WebGL) y resolución física del dispositivo
-          if (!modeloCliente) {
-            try {
-              const canvas = document.createElement('canvas');
-              const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-              if (gl) {
-                const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-                if (dbg) {
-                  const gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '';
-                  if (gpu && !gpu.includes('SwiftShader') && !gpu.includes('llvmpipe')) {
-                    modeloCliente = 'GPU: ' + gpu.trim();
-                  }
-                }
-              }
-            } catch (eGpu) {}
-          }
-
-          try {
-            const resp = await fetch(`/api/v1/solicitudes/publico/autorizacion-datos/${encodeURIComponent(this.token)}/responder`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                acepto: acepto,
-                motivo_rechazo: motivo,
-                dispositivo_cliente: modeloCliente || null
-              })
-            });
-
-            const resData = await resp.json();
-
-            if (!resp.ok || !resData.exito) {
-              Swal.fire({
-                title: 'Error',
-                text: resData.detail || resData.mensaje || 'No se pudo registrar su respuesta.',
-                icon: 'error',
-                customClass: { popup: 'swal-dark-mono' },
-                background: '#141416',
-                color: '#9ca3af',
-                confirmButtonColor: '#2e2e33'
-              });
-              this.enviando = false;
-              return;
-            }
-
-            // Actualizar estado local
-            this.datos.estado_datos = resData.nuevo_estado;
-            this.datos.fecha_respuesta_datos = resData.fecha;
-
-            if (acepto) {
-              Swal.fire({
-                title: '¡Autorización Exitosa!',
-                text: 'Su consentimiento ha sido registrado formalmente bajo la Ley 1581 de 2012. Puede presentarse en portería en las fechas programadas.',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'Descargar Certificado PDF',
-                cancelButtonText: 'Continuar',
-                customClass: { popup: 'swal-dark-mono' },
-                background: '#141416',
-                color: '#9ca3af',
-                confirmButtonColor: '#059669',
-                cancelButtonColor: '#2e2e33'
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  window.open('/api/v1/solicitudes/publico/autorizacion-datos/' + encodeURIComponent(this.token) + '/certificado-pdf', '_blank');
-                }
-              });
-            } else {
-              Swal.fire({
-                title: 'Respuesta Registrada',
-                text: 'Se ha registrado su rechazo al tratamiento de datos. El ingreso a la planta queda restringido.',
-                icon: 'info',
-                customClass: { popup: 'swal-dark-mono' },
-                background: '#141416',
-                color: '#9ca3af',
-                confirmButtonColor: '#2e2e33'
-              });
-            }
-          } catch (e) {
-            console.error("Error al registrar respuesta:", e);
-            Swal.fire({
-              title: 'Error de Red',
-              text: 'Ocurrió un fallo al comunicar la respuesta al servidor.',
-              icon: 'error',
-              customClass: { popup: 'swal-dark-mono' },
-              background: '#141416',
-              color: '#9ca3af',
-              confirmButtonColor: '#2e2e33'
-            });
-          } finally {
-            this.enviando = false;
-          }
-        }
-      };
-    }
-  </script>
 </body>
 </html>

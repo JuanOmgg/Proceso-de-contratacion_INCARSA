@@ -60,7 +60,7 @@ function formularioTemporal(tokenInicial) {
     cargando: true,
     tokenValido: false,
     mensajeError: '',
-    metadata: null,
+    metadata: {},
     formatearFechaHora(f) { return formatearFechaHora(f); },
     formatearFechaLarga(f) { return formatearFechaLarga(f); },
     catalogos: { empresas: [], contratistas: [], personas: [], vehiculos: [] },
@@ -89,6 +89,7 @@ function formularioTemporal(tokenInicial) {
     equipos: [],
 
     // Tipos y opciones
+    tiposContratista: ['Contratista', 'Proveedor', 'Visita'],
     tiposDocPersona: ['CC', 'CE', 'PAS', 'PPT'],
     tiposDocAdjuntoPersona: [
       'ARL',
@@ -98,7 +99,7 @@ function formularioTemporal(tokenInicial) {
       'Certificado de Espacios Confinados',
       'EPS / Seguridad Social',
       'Hoja de Vida / Certificación',
-      'Soporte de GESCO',
+      'Inducción corporativa',
       'Planilla seguridad social',
       'Autorización tratamiento de datos',
       'Otro documento'
@@ -162,11 +163,18 @@ function formularioTemporal(tokenInicial) {
     modalDocsList: [],
 
     async init() {
-      if (!this.token) {
-        const parts = window.location.pathname.split('/');
-        this.token = parts[parts.length - 1] || '';
+      if (!this.token || this.token === 'formulario-temporal') {
+        const parts = window.location.pathname.split('/').filter(Boolean);
+        const lastPart = parts[parts.length - 1] || '';
+        this.token = (lastPart !== 'formulario-temporal') ? lastPart : '';
       }
-      await this.validarToken();
+      if (this.token) {
+        await this.validarToken();
+      } else {
+        this.cargando = false;
+        this.tokenValido = false;
+        this.mensajeError = 'No se proporcionó un token de acceso válido para el formulario.';
+      }
       if (this.tokenValido) {
         this.initFlatpickrs();
       }
@@ -181,7 +189,8 @@ function formularioTemporal(tokenInicial) {
             dateFormat: 'Y-m-d',
             altInput: true,
             altFormat: 'j \\de F, Y',
-            altInputClass: 'w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-sm',
+            altInputClass: 'w-full bg-[#18181c] border border-zinc-700 rounded-xl input-with-icon-left pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] cursor-pointer shadow-sm',
+            disableMobile: "true",
             minDate: 'today',
             defaultDate: this.form.fecha_ingreso || null,
             onChange: (selectedDates, dateStr) => {
@@ -204,7 +213,8 @@ function formularioTemporal(tokenInicial) {
             dateFormat: 'Y-m-d',
             altInput: true,
             altFormat: 'j \\de F, Y',
-            altInputClass: 'w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-sm',
+            altInputClass: 'w-full bg-[#18181c] border border-zinc-700 rounded-xl input-with-icon-left pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-[var(--role-primary)] focus:ring-1 focus:ring-[var(--role-primary)] cursor-pointer shadow-sm',
+            disableMobile: "true",
             minDate: this.form.fecha_ingreso || 'today',
             defaultDate: this.form.fecha_salida || null,
             onChange: (selectedDates, dateStr) => {

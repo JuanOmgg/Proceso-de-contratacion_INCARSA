@@ -27,7 +27,7 @@ function esSolicitudParaGestionDoc(s, sesion) {
 
   const rolTexto = String(sesion.rol || sesion.nombre_rol || "").toUpperCase();
   const rolId = Number(sesion.id_rol || 0);
-  const esGestionDoc = rolTexto.includes("GESTION DOCUMENTAL") || rolTexto.includes("GESTIÓN DOCUMENTAL") || rolId === 5;
+  const esGestionDoc = rolTexto.includes("SOLICITANTE") || rolId === 5;
 
   if (!esGestionDoc) return true;
 
@@ -415,7 +415,7 @@ function solicitudesTable() {
 // ---------------------------------------------------------
 function usersSection() {
   return {
-    roles: ["SST", "GESCO", "SCR", "GESTIÓN DOCUMENTAL"],
+    roles: ["SST", "GESCO", "SCR", "SOLICITANTE"],
     usuarios: [],
     solicitudes: [],
     activeTab: "SST",

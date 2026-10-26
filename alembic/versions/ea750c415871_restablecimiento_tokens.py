@@ -25,6 +25,21 @@ def upgrade() -> None:
         sa.Column('code_hash', sa.String(length=255), nullable=False),
         sa.Column('expiration_time', sa.DateTime(), nullable=False),
         sa.Column('used', sa.Boolean(), server_default=sa.text('0'), nullable=False),
+        sa.Column('intentos', sa.Integer(), server_default=sa.text('0'), nullable=False),
+        sa.Column('creado_en', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8mb4',
+        mysql_collate='utf8mb4_unicode_ci'
+    )
+
+    op.create_table(
+        'tokens_2fa',
+        sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True),
+        sa.Column('id_usuario', sa.Integer(), sa.ForeignKey('usuarios.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('code_hash', sa.String(length=255), nullable=False),
+        sa.Column('expiration_time', sa.DateTime(), nullable=False),
+        sa.Column('used', sa.Boolean(), server_default=sa.text('0'), nullable=False),
+        sa.Column('intentos', sa.Integer(), server_default=sa.text('0'), nullable=False),
         sa.Column('creado_en', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         mysql_engine='InnoDB',
         mysql_charset='utf8mb4',
@@ -33,4 +48,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_table('tokens_2fa')
     op.drop_table('tokens_reset')

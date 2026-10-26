@@ -93,6 +93,19 @@ function superAdminPanel() {
     cargandoCorrespondencias: false,
     filtroBusquedaCorrSuperadmin: '',
 
+    // 5. Control de Correos y Flujo de Inducciones (Modo Pruebas)
+    correosInduccion: {
+      correos_habilitados: true,
+      induccion_modo_entrega: 'CORREO', // 'CORREO' o 'DIRECTO'
+      induccion_tipo_enlace: 'GESCO',   // 'GESCO' o 'WIX'
+      guardando: false,
+      // Probador / Simulador interactivo en vivo
+      probadorTipoPersonal: 'Contratista',
+      probadorCargando: false,
+      probadorFormulario: null,
+      probadorError: ''
+    },
+
     get rolActual() {
       return this.roles.find(r => r.id === this.rolSeleccionadoId) || null;
     },
@@ -263,7 +276,8 @@ function superAdminPanel() {
         this.cargarMatrizPermisos(),
         this.cargarUsuariosSistema(),
         this.cargarHistorialDifusion(),
-        this.cargarUltimasCorrespondencias()
+        this.cargarUltimasCorrespondencias(),
+        this.cargarConfiguracionCorreosInduccion()
       ]);
 
       this.cargando = false;
@@ -1401,7 +1415,148 @@ function superAdminPanel() {
       } finally {
         this.guardandoCorrespondencia = false;
       }
+    },
+
+    // =============================================================
+    // 5. CONTROL DE CORREOS Y FLUJO DE INDUCCIONES (MODO PRUEBAS)
+    // =============================================================
+    async cargarConfiguracionCorreosInduccion() {
+      try {
+        const res = await fetch('/api/v1/superadmin/configuracion-correos-induccion');
+        if (res.ok) {
+          const data = await res.json();
+          this.correosInduccion.correos_habilitados = data.correos_habilitados !== false;
+          this.correosInduccion.induccion_modo_entrega = data.induccion_modo_entrega || 'CORREO';
+          this.correosInduccion.induccion_tipo_enlace = data.induccion_tipo_enlace || 'GESCO';
+        }
+      } catch (err) {
+        console.error('Error al cargar configuración de correos e inducción:', err);
+      } finally {
+        // Cargar el probador interactivo para el tipo actual
+        await this.probarFormularioAsignado(this.correosInduccion.probadorTipoPersonal);
+      }
+    },
+
+    async guardarConfiguracionCorreosInduccion() {
+      if (this.correosInduccion.guardando) return;
+      this.correosInduccion.guardando = true;
+
+      try {
+        const payload = {
+          correos_habilitados: !!this.correosInduccion.correos_habilitados,
+          induccion_modo_entrega: this.correosInduccion.induccion_modo_entrega,
+          induccion_tipo_enlace: this.correosInduccion.induccion_tipo_enlace
+        };
+
+        const res = await fetch('/api/v1/superadmin/configuracion-correos-induccion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.exito) {
+          throw new Error(data.detail || data.mensaje || 'Error al guardar configuración.');
+        }
+
+        this.correosInduccion.correos_habilitados = data.correos_habilitados;
+        this.correosInduccion.induccion_modo_entrega = data.induccion_modo_entrega;
+        this.correosInduccion.induccion_tipo_enlace = data.induccion_tipo_enlace;
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Configuración Guardada',
+            text: 'Las directivas de correo y entrega de inducciones han sido actualizadas con éxito.',
+            confirmButtonColor: '#fb3b4c',
+            timer: 2200
+          });
+        }
+      } catch (err) {
+        console.error('Error al guardar configuración de correos:', err);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al Guardar',
+            text: err.message || 'No fue posible guardar la configuración.',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      } finally {
+        this.correosInduccion.guardando = false;
+      }
+    },
+
+    async setModoEntregaInduccion(modo) {
+      this.correosInduccion.induccion_modo_entrega = modo;
+      await this.guardarConfiguracionCorreosInduccion();
+    },
+
+    async toggleCorreosHabilitados(activo) {
+      this.correosInduccion.correos_habilitados = activo !== undefined ? activo : !this.correosInduccion.correos_habilitados;
+      await this.guardarConfiguracionCorreosInduccion();
+    },
+
+    async setTipoEnlaceInduccion(tipo) {
+      this.correosInduccion.induccion_tipo_enlace = tipo;
+      await this.guardarConfiguracionCorreosInduccion();
+    },
+
+    async probarFormularioAsignado(tipo = null) {
+      if (tipo) {
+        this.correosInduccion.probadorTipoPersonal = tipo;
+      }
+      this.correosInduccion.probadorCargando = true;
+      this.correosInduccion.probadorError = '';
+      this.correosInduccion.probadorFormulario = null;
+
+      try {
+        const tp = encodeURIComponent(this.correosInduccion.probadorTipoPersonal);
+        const res = await fetch(`/api/v1/superadmin/formulario-asignado-preview?tipo_personal=${tp}`);
+        const data = await res.json();
+
+        if (res.ok && data.exito && data.formulario) {
+          this.correosInduccion.probadorFormulario = data.formulario;
+        } else {
+          this.correosInduccion.probadorError = data.mensaje || `No hay un formulario activo asignado para '${this.correosInduccion.probadorTipoPersonal}'.`;
+        }
+      } catch (err) {
+        console.error('Error al consultar probador de formulario:', err);
+        this.correosInduccion.probadorError = 'Error de conexión al consultar el formulario asignado.';
+      } finally {
+        this.correosInduccion.probadorCargando = false;
+      }
+    },
+
+    async copiarEnlaceInduccion(urlRelativa) {
+      try {
+        const fullUrl = window.location.origin + urlRelativa;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(fullUrl);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = fullUrl;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: '¡Enlace de Inducción Copiado!',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        }
+      } catch (err) {
+        console.error('Error al copiar enlace:', err);
+      }
     }
   };
 }
+
 

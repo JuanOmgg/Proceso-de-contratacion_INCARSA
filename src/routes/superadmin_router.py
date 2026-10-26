@@ -2,7 +2,12 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from typing import Dict, List, Optional, Any
-from src.schemas.superadmin_schema import MantenimientoInput, PermisosRolInput, DosPasosConfigInput
+from src.schemas.superadmin_schema import (
+    MantenimientoInput,
+    PermisosRolInput,
+    DosPasosConfigInput,
+    ConfiguracionCorreosInduccionInput
+)
 
 from src.utils.security import get_current_user, require_role
 from src.loaders.superadmin_loader import (
@@ -13,7 +18,11 @@ from src.loaders.superadmin_loader import (
     GET_permisos_rol_db,
     GET_dos_pasos_status,
     SET_dos_pasos_status,
+    GET_configuracion_correos_induccion_db,
+    SET_configuracion_correos_induccion_db,
+    GET_formulario_asignado_por_tipo_db,
 )
+
 
 
 router = APIRouter(tags=["SuperAdmin"])
@@ -85,13 +94,17 @@ def previsualizar_500(request: Request):
 @router.get("/superadmin/previsualizar-autorizacion-datos", response_class=HTMLResponse, summary="Previsualización de Autorización de Tratamiento de Datos (Ley 1581)")
 def previsualizar_autorizacion_datos(request: Request):
     """Previsualiza la pantalla pública de Autorización de Tratamiento de Datos Personales con datos mock para SuperAdmin."""
+    from src.loaders.empresa_loader import GET_empresas_con_plantas_bd
+    res_emp = GET_empresas_con_plantas_bd()
+    empresas = res_emp.get("datos", []) if res_emp.get("exito") else []
     return templates.TemplateResponse(
         name="autorizacion-datos.html",
         request=request,
         status_code=200,
         context={
             "token": "demo-preview-superadmin",
-            "es_preview": True
+            "es_preview": True,
+            "empresas_db": empresas
         }
     )
 
@@ -185,3 +198,48 @@ def get_mis_permisos(current_user: dict = Depends(get_current_user)):
     if not id_rol:
         return {"superadmin": False, "modulos": {}, "acciones": {}}
     return GET_permisos_rol_db(int(id_rol))
+
+
+# -----------------------------------------------------------------------------
+# API: Control de Correos y Flujo de Inducciones (Modo Pruebas / SuperAdmin)
+# -----------------------------------------------------------------------------
+
+@router.get("/api/v1/superadmin/configuracion-correos-induccion", status_code=status.HTTP_200_OK)
+def get_configuracion_correos_induccion(current_user: dict = Depends(require_role(["SUPERADMIN"]))):
+    """Consulta la configuración global de correos y modo de entrega de inducciones."""
+    cfg = GET_configuracion_correos_induccion_db()
+    return {
+        "exito": True,
+        **cfg
+    }
+
+
+@router.post("/api/v1/superadmin/configuracion-correos-induccion", status_code=status.HTTP_200_OK)
+def set_configuracion_correos_induccion(
+    payload: ConfiguracionCorreosInduccionInput,
+    current_user: dict = Depends(require_role(["SUPERADMIN"]))
+):
+    """Actualiza la directiva de despacho de correos y el modo de entrega de inducción (Exclusivo SuperAdmin)."""
+    nueva_cfg = SET_configuracion_correos_induccion_db(
+        correos_habilitados=payload.correos_habilitados,
+        induccion_modo_entrega=payload.induccion_modo_entrega,
+        induccion_tipo_enlace=payload.induccion_tipo_enlace
+    )
+    return {
+        "exito": True,
+        "mensaje": "Configuración de correos e inducciones guardada exitosamente.",
+        **nueva_cfg
+    }
+
+
+@router.get("/api/v1/superadmin/formulario-asignado-preview", status_code=status.HTTP_200_OK)
+def get_formulario_asignado_preview(
+    tipo_personal: str = "Contratista",
+    current_user: dict = Depends(require_role(["SUPERADMIN"]))
+):
+    """
+    Determina y previsualiza el formulario de inducción GESCO asignado
+    según el tipo de personal especificado (Exclusivo SuperAdmin).
+    """
+    return GET_formulario_asignado_por_tipo_db(tipo_personal=tipo_personal)
+

@@ -14,6 +14,8 @@ def GET_empresas_con_plantas_bd() -> Dict[str, Any]:
                     SELECT 
                         e.id AS empresa_id,
                         e.nombre_empresa,
+                        e.nit,
+                        e.correo,
                         p.id AS planta_id,
                         p.nombre AS planta_nombre
                     FROM empresa e
@@ -34,6 +36,8 @@ def GET_empresas_con_plantas_bd() -> Dict[str, Any]:
                         empresas_dict[emp_id] = {
                             'id': emp_id,
                             'nombre': row['nombre_empresa'],
+                            'nit': row.get('nit') or '',
+                            'correo': row.get('correo') or '',
                             'plantas': []
                         }
                     

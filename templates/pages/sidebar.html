@@ -3,7 +3,7 @@
     openModules: (function() {
       const p = window.location.pathname;
       let defaults = {
-        formularios: p.includes('formulario') || p.includes('nueva') || p.includes('editar') || p.includes('correspondencia-form'),
+        formularios: p.includes('formulario') || p.includes('nueva') || p.includes('editar'),
         tablas: p.includes('solicitudes') || p.includes('usuarios') || p.includes('personas') || p === '/dashboard' || p === '/'
       };
       try {
@@ -25,7 +25,6 @@
       const current = window.location.pathname;
       if (path === '/dashboard') return current === '/dashboard' || current === '/';
       if (path === '/solicitudes') return current === '/solicitudes' || current === '/solicitudes/';
-      if (path === '/correspondencias') return current === '/correspondencias' || current === '/correspondencias/';
       if (path === '/superadmin') return current === '/superadmin' || current.startsWith('/superadmin');
       return current.startsWith(path);
     },
@@ -56,7 +55,6 @@
         <a href="/dashboard" class="flex items-center justify-center w-full py-2 transition-transform hover:opacity-90">
           <img src="/static/img/logo-sidebar.png" alt="PSI"
             class="sidebar-logo w-auto object-contain select-none transition-all duration-200 mx-auto"
-            style="mix-blend-mode: screen;"
             :class="(isHovered || isFocused) ? 'max-w-[145px] h-10' : 'max-w-[44px] h-8'">
         </a>
         <button type="button" @click="sidebarOpenMobile = false" class="mobile-sidebar-close absolute right-4 top-1/2 -translate-y-1/2" aria-label="Cerrar menú">
@@ -75,10 +73,10 @@
         </a>
 
         <!-- Módulo desplegable: Formularios -->
-        <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario') || puedeModulo('nueva_correspondencia')">
+        <div x-show="puedeModulo('nueva_solicitud') || puedeModulo('nuevo_usuario') || puedeModulo('formularios_gesco') || puedeModulo('nueva_correspondencia')">
           <button type="button" @click="toggleModule('formularios'); $el.blur()"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
-            :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') || isActive('/correspondencia/nueva') || isActive('/formulario-correspondencia') || isActive('/correspondencia-form') }">
+            :class="{ 'is-module-active': isActive('/solicitudes/nueva') || isActive('/formulario-solicitudes') || isActive('/usuarios/nuevo') || isActive('/formulario-usuarios') || isActive('/formularios-gesco/nuevo') || isActive('/correspondencia/nueva') || isActive('/formulario-correspondencia') || isActive('/correspondencia-form') }">
             <span class="flex items-center gap-3">
               <i class="fa-solid fa-file-circle-plus w-4 text-center"></i>
               <span class="sidebar-label">Formularios</span>
@@ -104,8 +102,13 @@
               <span>Nuevo usuario</span>
               <span x-show="isModuloMantenimiento('nuevo_usuario')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
             </a>
+            <a href="/formularios-gesco/nuevo" x-show="puedeModulo('formularios_gesco')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/formularios-gesco/nuevo') ? 'is-active' : ''">
+              <span>Nuevo formulario GESCO</span>
+              <span x-show="isModuloMantenimiento('formularios_gesco')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
             <a href="/formulario-correspondencia" x-show="puedeModulo('nueva_correspondencia')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
-              :class="isActive('/formulario-correspondencia') || isActive('/formulario-correspondencia') ? 'is-active' : ''">
+              :class="isActive('/formulario-correspondencia') ? 'is-active' : ''">
               <span>Nueva correspondencia</span>
               <span x-show="isModuloMantenimiento('nueva_correspondencia')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
             </a>
@@ -116,7 +119,7 @@
         <div>
           <button type="button" @click="toggleModule('tablas'); $el.blur()"
             class="sidebar-link w-full flex items-center justify-between px-3 py-2.5 cursor-pointer"
-            :class="{ 'is-module-active': (isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar')) || isActive('/usuarios') || isActive('/personas') }">
+            :class="{ 'is-module-active': (isActive('/solicitudes') && !isActive('/solicitudes/nueva') && !isActive('/solicitudes/editar')) || isActive('/usuarios') || isActive('/personas') || (isActive('/formularios-gesco') && !isActive('/formularios-gesco/nuevo')) }">
             <span class="flex items-center gap-3">
               <i class="fa-solid fa-table-list w-4 text-center"></i>
               <span class="sidebar-label">Consultas</span>
@@ -165,6 +168,11 @@
               <span>Personas</span>
               <span x-show="isModuloMantenimiento('personas')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
             </a>
+            <a href="/formularios-gesco" x-show="puedeModulo('formularios_gesco')" class="sidebar-sublink flex items-center justify-between py-2 px-3 rounded-lg text-[13px]"
+              :class="isActive('/formularios-gesco') && !isActive('/formularios-gesco/nuevo') ? 'is-active' : ''">
+              <span>Formularios GESCO</span>
+              <span x-show="isModuloMantenimiento('formularios_gesco')" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">Mantenimiento</span>
+            </a>
           </div>
         </div>
 
@@ -177,6 +185,8 @@
           </span>
           <span x-show="isModuloMantenimiento('correspondencias')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
+
+
 
         <a href="/procesamiento" x-show="puedeModulo('procesamiento')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
           :class="isActive('/procesamiento') ? 'is-active' : ''">
@@ -226,12 +236,20 @@
             <i class="fa-solid fa-crown text-[9px] text-amber-400"></i>
             <span>Control Maestro</span>
           </div>
+          
 
           <!-- 1. Panel SuperAdmin (Principal) -->
           <a href="/superadmin" class="sidebar-superadmin-item flex items-center gap-2.5 px-3 py-1.5"
             :class="isActive('/superadmin') && !window.location.hash ? 'is-active' : ''">
             <i class="fa-solid fa-shield-halved w-4 text-center"></i>
             <span class="sidebar-label font-semibold">Panel SuperAdmin</span>
+          </a>
+
+          <!-- 6. Control de Correos e Inducción (Modo Pruebas) -->
+          <a href="/superadmin#seccion-correos-inducciones" class="sidebar-superadmin-subitem flex items-center gap-2.5 px-3 py-1 ml-3"
+            @click="if (window.location.pathname === '/superadmin') { $event.preventDefault(); document.getElementById('seccion-correos-inducciones')?.scrollIntoView({ behavior: 'smooth' }); history.pushState(null, '', '#seccion-correos-inducciones'); }">
+            <i class="fa-solid fa-envelope-circle-check w-4 text-center"></i>
+            <span class="sidebar-label">Control correos e inducción</span>
           </a>
 
           <!-- 2. Modo Mantenimiento -->
@@ -261,6 +279,10 @@
             <i class="fa-solid fa-envelope-open-text w-4 text-center"></i>
             <span class="sidebar-label">Radicar correspondencia</span>
           </a>
+
+
+
+          
         </div>
       </nav>
     </aside>

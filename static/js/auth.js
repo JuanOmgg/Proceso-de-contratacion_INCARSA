@@ -46,7 +46,6 @@ function loginForm() {
       tempToken: "",
       correoOfuscado: "",
       codigo: "",
-      codigoDemo: "",
       verificando: false,
       error: "",
       reenviando: false,
@@ -76,7 +75,6 @@ function loginForm() {
       this.dosPasos.tempToken = "";
       this.dosPasos.codigo = "";
       this.dosPasos.error = "";
-      this.dosPasos.codigoDemo = "";
       this.dosPasos.verificando = false;
       this.vista = "login";
     },
@@ -164,10 +162,6 @@ function loginForm() {
           throw new Error(data.detail || data.mensaje || "No se pudo reenviar el código de verificación.");
         }
 
-        if (data.codigo_demo) {
-          this.dosPasos.codigoDemo = String(data.codigo_demo);
-        }
-
         this.dosPasos.reenviando = false;
         this.dosPasos.codigo = "";
         this.iniciarTemporizador2FA();
@@ -228,7 +222,6 @@ function loginForm() {
       paso: 1,
       correo: "",
       codigo: "",
-      codigoGenerado: "",
       nuevaContrasena: "",
       confirmarContrasena: "",
       showPass1: false,
@@ -287,13 +280,6 @@ function loginForm() {
           throw new Error(data.detail || data.mensaje || "No se pudo procesar la solicitud de recuperación.");
         }
 
-        // Si el backend entrega código demo (modo prueba / dev), lo mostramos en el badge
-        if (data.codigo_demo) {
-          this.olvide.codigoGenerado = String(data.codigo_demo);
-        } else {
-          this.olvide.codigoGenerado = "";
-        }
-
         this.olvide.enviando = false;
         this.olvide.paso = 2;
         this.olvide.codigo = "";
@@ -339,11 +325,6 @@ function loginForm() {
         if (!response.ok) {
           this.olvide.error = data.detail || data.mensaje || "Error al reenviar el código.";
           return;
-        }
-        if (data.codigo_demo) {
-          this.olvide.codigoGenerado = String(data.codigo_demo);
-        } else {
-          this.olvide.codigoGenerado = "";
         }
         this.iniciarTemporizadorCodigo();
       } catch (e) {
@@ -503,8 +484,7 @@ function loginForm() {
       sessionStorage.setItem("incarsa_session", JSON.stringify(datos));
       if (token) {
         sessionStorage.setItem("incarsa_token", token);
-        document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-        document.cookie = `incarsa_token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        // Las cookies token e incarsa_token son configuradas de forma segura y con HttpOnly desde el servidor
       }
       if (permisos) {
         sessionStorage.setItem("incarsa_permisos", JSON.stringify(permisos));
@@ -564,7 +544,6 @@ function loginForm() {
             this.submitting = false;
             this.dosPasos.tempToken = resData.temp_token;
             this.dosPasos.correoOfuscado = resData.correo_ofuscado || this.correo;
-            this.dosPasos.codigoDemo = resData.codigo_demo || "";
             this.dosPasos.codigo = "";
             this.dosPasos.error = "";
             this.dosPasos.verificando = false;
