@@ -24,7 +24,7 @@ def upgrade() -> None:
         (1, 'dispositivos', 'ver', 1),  -- ADMINISTRADOR
         (2, 'dispositivos', 'ver', 1),  -- SUPERADMIN
         (4, 'dispositivos', 'ver', 1),  -- EQUIPO SCR - RADICADOS
-        (5, 'dispositivos', 'ver', 1),  -- GESTION DOCUMENTAL
+        (5, 'dispositivos', 'ver', 1),  -- SOLICITANTE
         (6, 'dispositivos', 'ver', 1),  -- SST
         (7, 'dispositivos', 'ver', 1),  -- GESCO
         (8, 'dispositivos', 'ver', 1)   -- SCR

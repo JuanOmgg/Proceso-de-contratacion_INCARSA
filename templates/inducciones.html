@@ -3,7 +3,7 @@
 {% block title %}Inducciones · PSI{% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/inducciones.js') }}?v=1.1"></script>
+  <script src="{{ url_for('static', path='js/inducciones.js') }}?v=1.3"></script>
 {% endblock %}
 
 {% block content %}
@@ -141,9 +141,8 @@
                     <th class="px-4 py-3.5 text-center w-12">#</th>
                     <th class="px-4 py-3.5">Persona / Documento</th>
                     <th class="px-4 py-3.5">Empresa / Contratista</th>
-                    <th class="px-4 py-3.5">Fecha Inducción</th>
-                    <th class="px-4 py-3.5">Fecha Vigencia (+1 Año)</th>
-                    <th class="px-4 py-3.5 text-center">Estado / Vigencia</th>
+                    <th class="px-4 py-3.5 min-w-[280px]">Inducciones / Formularios Realizados</th>
+                    <th class="px-4 py-3.5 text-center">Estado / Vigencia General</th>
                     <th class="px-4 py-3.5">Auditor Responsable</th>
                     <th class="px-4 py-3.5 text-center w-36">Acciones</th>
                   </tr>
@@ -153,14 +152,14 @@
                   <!-- Skeleton / Loading -->
                   <template x-if="cargando">
                     <tr>
-                      <td colspan="8" class="px-4 py-12 text-center text-slate-400">
+                      <td colspan="7" class="px-4 py-12 text-center text-slate-400">
                         <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)] mb-2"></i>
-                        <p class="text-sm font-medium">Cargando registros de inducciones...</p>
+                        <p class="text-sm font-medium">Cargando registros de personas e inducciones...</p>
                       </td>
                     </tr>
                   </template>
 
-                  <!-- Filas de la tabla -->
+                  <!-- Filas de la tabla por Persona -->
                   <template x-for="(item, index) in induccionesPagina" :key="item.id_persona || index">
                     <tr class="hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors">
                       
@@ -168,10 +167,9 @@
                       <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-400"
                         x-text="(currentPage - 1) * pageSize + index + 1"></td>
 
-                      <!-- Persona -->
+                      <!-- Persona / Documento -->
                       <td class="px-4 py-3.5">
                         <div class="flex items-center gap-3">
-                          
                           <div class="min-w-0">
                             <p class="font-semibold text-[var(--text-primary)] text-sm truncate max-w-[220px]"
                               x-text="item.nombre_completo || (item.persona_nombre + ' ' + (item.persona_apellido || ''))"></p>
@@ -191,29 +189,57 @@
                         </div>
                       </td>
 
-                      <!-- Fecha Inducción -->
+                      <!-- Inducciones / Formularios Realizados y Vigencias individuales (Abre Modal Detallado) -->
                       <td class="px-4 py-3.5">
-                        <div class="text-xs text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5">
-                          <i class="fa-regular fa-calendar text-purple-400 text-xs"></i>
-                          <span :class="!item.fecha_induccion ? 'text-slate-400 dark:text-zinc-500 font-normal italic' : 'font-medium'"
-                            x-text="formatearFecha(item.fecha_induccion, 'Sin inducción')"></span>
+                        
+                        <!-- Caso: Sin inducciones -->
+                        <div x-show="!item.formularios_realizados || item.formularios_realizados.length === 0" class="inline-flex items-center gap-1.5 text-xs text-slate-400 italic">
+                          <i class="fa-solid fa-clock-rotate-left text-slate-300"></i>
+                          <span>Sin inducciones</span>
                         </div>
+
+                        <!-- Caso: 1 Inducción (Pill elegante e interactivo) -->
+                        <div x-show="item.formularios_realizados && item.formularios_realizados.length === 1">
+                          <button type="button" @click="abrirFichaInduccion(item)"
+                            class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 dark:bg-purple-950/30 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/50 transition-all text-xs font-semibold cursor-pointer max-w-[280px]"
+                            title="Clic para ver detalle de formulario y vigencia">
+                            <i class="fa-solid fa-file-signature text-purple-500 text-xs flex-shrink-0"></i>
+                            <span class="truncate max-w-[140px]" x-text="item.formularios_realizados[0].nombre_formulario"></span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0"
+                                  :class="getFormVigenciaInfo(item.formularios_realizados[0]).badgeClass"
+                                  x-text="item.formularios_realizados[0].dias_restantes !== null ? item.formularios_realizados[0].dias_restantes + 'd' : 'Al día'"></span>
+                            <i class="fa-solid fa-chevron-right text-[9px] opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0"></i>
+                          </button>
+                        </div>
+
+                        <!-- Caso: 2 o más Inducciones (Badge agrupado interactivo) -->
+                        <div x-show="item.formularios_realizados && item.formularios_realizados.length > 1">
+                          <button type="button" @click="abrirFichaInduccion(item)"
+                            class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 dark:bg-purple-950/30 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/50 transition-all text-xs font-semibold cursor-pointer"
+                            title="Clic para ver todas las inducciones y sus vigencias">
+                            <i class="fa-solid fa-layer-group text-purple-500 text-xs"></i>
+                            <span x-text="item.total_formularios + ' inducciones realizadas'"></span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-200/70 dark:bg-purple-900/70 text-purple-800 dark:text-purple-200 flex items-center gap-1">
+                              Ver vigencias <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                            </span>
+                          </button>
+                        </div>
+
                       </td>
 
-                      <!-- Fecha Vigencia (+1 Año) -->
-                      <td class="px-4 py-3.5">
-                        <div class="text-xs text-slate-700 dark:text-zinc-300 font-medium flex items-center gap-1.5">
-                          <i class="fa-regular fa-calendar-check text-emerald-400 text-xs"></i>
-                          <span class="font-semibold" x-text="formatearFecha(item.fecha_vigencia)"></span>
-                        </div>
-                      </td>
-
-                      <!-- Estado / Días Restantes -->
+                      <!-- Estado / Vigencia General -->
                       <td class="px-4 py-3.5 text-center">
-                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                          :class="getEstadoVigenciaInfo(item).badgeClass">
-                          <i :class="getEstadoVigenciaInfo(item).icono" class="text-[11px]"></i>
-                          <span x-text="getEstadoVigenciaInfo(item).textoDias"></span>
+                        <div class="inline-flex flex-col items-center gap-1">
+                          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                            :class="getEstadoVigenciaInfo(item).badgeClass">
+                            <i :class="getEstadoVigenciaInfo(item).icono" class="text-[11px]"></i>
+                            <span x-text="getEstadoVigenciaInfo(item).etiqueta"></span>
+                          </div>
+                          <span class="text-[11px] text-slate-500 font-medium"
+                            x-show="item.fecha_vigencia && item.fecha_vigencia !== 'Sin vigencia'"
+                            x-text="'Vence: ' + formatearFecha(item.fecha_vigencia)"></span>
+                          <span class="text-[10px] text-slate-400"
+                            x-text="item.total_formularios > 0 ? (item.total_formularios + (item.total_formularios === 1 ? ' inducción' : ' inducciones')) : ''"></span>
                         </div>
                       </td>
 
@@ -229,25 +255,32 @@
                       <td class="px-4 py-3.5 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                           
-                          <!-- Botón 1: Ver Ficha Ticket -->
+                          <!-- Botón 1: Ver Ficha Ticket con historial de formularios -->
                           <button type="button" @click="abrirFichaInduccion(item)"
                             class="action-icon-btn action-btn-ficha text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors p-2 rounded-lg cursor-pointer"
-                            title="Ver ficha de inducción">
+                            title="Ver ficha completa y vigencias">
                             <i class="fa-solid fa-id-card-clip text-xs"></i>
                           </button>
 
                           <!-- Botón 2: Editar Renovar con Formulario -->
                           <button type="button" @click="abrirFormularioInduccion(item)"
                             class="action-icon-btn action-btn-nota text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors p-2 rounded-lg cursor-pointer"
-                            title="Agregar nota">
+                            title="Registrar / Renovar inducción">
                             <i class="fa-solid fa-calendar-check text-xs"></i>
                           </button>
 
                           <!-- Botón 3: Renovación Rápida (+1 Año con 1 clic) -->
                           <button type="button" @click="renovarRapido(item)"
                             class="action-icon-btn action-btn-renovar text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors p-2 rounded-lg cursor-pointer"
-                            title="Renovar">
+                            title="Renovación rápida (+1 año)">
                             <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                          </button>
+
+                          <!-- Botón 4: Descargar Certificado Oficial (Por Empresa o ZIP con las 4) -->
+                          <button type="button" @click="abrirModalCertificado(item)"
+                            class="action-icon-btn text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors p-2 rounded-lg cursor-pointer"
+                            title="Descargar Certificado Oficial (Por Empresa o ZIP con las 4)">
+                            <i class="fa-solid fa-file-pdf text-xs"></i>
                           </button>
 
                         </div>
@@ -258,7 +291,7 @@
 
                   <!-- Estado vacío -->
                   <tr x-show="!cargando && induccionesFiltradas.length === 0">
-                    <td colspan="8" class="px-4 py-12 text-center text-slate-400">
+                    <td colspan="7" class="px-4 py-12 text-center text-slate-400">
                       <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
                       <p class="text-sm font-medium">No se encontraron registros de inducciones con los filtros aplicados.</p>
                     </td>
@@ -293,7 +326,7 @@
         <!-- Panel del Modal Ticket -->
         <div x-show="showFichaModal"
           @click.outside="cerrarFichaModal()"
-          class="modal-panel w-full max-w-lg pt-6 px-6 pb-6 relative text-center"
+          class="modal-panel w-full max-w-xl pt-6 px-6 pb-6 relative text-center"
           x-transition:enter="transition ease-out duration-300"
           x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
           x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -320,7 +353,7 @@
             </p>
           </div>
 
-          <!-- Estado de Vigencia Badge -->
+          <!-- Estado de Vigencia Badge General -->
           <div class="my-3">
             <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-2xs"
               :class="getEstadoVigenciaInfo(detalleInduccion).badgeClass">
@@ -332,30 +365,22 @@
           </div>
 
           <!-- Grid de Detalles Estructurados -->
-          <div class="space-y-2.5 text-left text-xs bg-slate-50/80 dark:bg-white/5 p-4 rounded-xl border border-[var(--paper-shadow)] mt-4">
+          <div class="space-y-2.5 text-left text-xs bg-slate-50/80 dark:bg-white/5 p-4 rounded-xl border border-[var(--paper-shadow)] mt-3">
             
             <div class="flex items-center justify-between gap-3">
               <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
                 <i class="fa-solid fa-building text-sky-400"></i> Contratista:
               </span>
-              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-200 truncate max-w-[220px]"
+              <span class="font-semibold text-[var(--paper-ink)] dark:text-zinc-200 truncate max-w-[240px]"
                 x-text="detalleInduccion.nombre_empresa || 'Sin empresa asignada'"></span>
             </div>
 
             <div class="flex items-center justify-between gap-3">
               <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
-                <i class="fa-regular fa-calendar text-purple-400"></i> Fecha Inducción:
+                <i class="fa-solid fa-clipboard-check text-indigo-400"></i> Solicitudes asociadas:
               </span>
               <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-zinc-200"
-                x-text="formatearFecha(detalleInduccion.fecha_induccion)"></span>
-            </div>
-
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
-                <i class="fa-regular fa-calendar-check text-emerald-400"></i> Fecha Vigencia (+1 Año):
-              </span>
-              <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400"
-                x-text="formatearFecha(detalleInduccion.fecha_vigencia)"></span>
+                x-text="(detalleInduccion.total_solicitudes || 0) + ' solicitudes'"></span>
             </div>
 
             <div class="flex items-center justify-between gap-3">
@@ -366,30 +391,103 @@
                 x-text="detalleInduccion.responsable || 'Auditor GESCO'"></span>
             </div>
 
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
-                <i class="fa-solid fa-clipboard-check text-indigo-400"></i> Total Solicitudes:
-              </span>
-              <span class="font-mono font-bold text-[var(--paper-ink)] dark:text-zinc-200"
-                x-text="detalleInduccion.total_solicitudes + ' solicitudes'"></span>
-            </div>
-
             <!-- Anotaciones -->
-            <div class="pt-2.5 border-t border-dashed border-[var(--paper-shadow)] mt-2">
+            <div class="pt-2 border-t border-dashed border-[var(--paper-shadow)] mt-1">
               <span class="text-[var(--paper-muted)] font-medium block mb-1">Observaciones / Notas:</span>
               <p class="text-[11px] text-[var(--paper-ink)] dark:text-zinc-300 italic bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-[var(--paper-shadow)]"
-                x-text="detalleInduccion.anotaciones || 'Sin observaciones registradas para esta inducción.'"></p>
+                x-text="detalleInduccion.anotaciones || 'Sin observaciones registradas para esta persona.'"></p>
             </div>
 
           </div>
 
+          <!-- SECCIÓN: INDUCCIONES Y FORMULARIOS REALIZADOS -->
+          <div class="mt-4 text-left">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--paper-ink)] dark:text-zinc-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-purple-500"></i>
+                Inducciones / Formularios Realizados
+                <span class="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  x-text="(detalleInduccion.formularios_realizados ? detalleInduccion.formularios_realizados.length : 0)"></span>
+              </h4>
+            </div>
+
+            <!-- Lista de formularios realizados -->
+            <div class="space-y-2.5 max-h-64 overflow-y-auto custom-scroll pr-1">
+              <template x-for="f in (detalleInduccion.formularios_realizados || [])" :key="f.id_induccion || f.id_formulario">
+                <div class="p-3 rounded-xl bg-slate-50/90 dark:bg-white/[0.04] border border-[var(--paper-shadow)] hover:border-purple-300 dark:hover:border-purple-500/40 transition-all text-xs">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-signature text-purple-500 text-xs flex-shrink-0"></i>
+                        <span class="font-bold text-[var(--paper-ink)] dark:text-white truncate" x-text="f.nombre_formulario" :title="f.nombre_formulario"></span>
+                      </div>
+                      
+                      <!-- Puntuación / Resultado si existe -->
+                      <div x-show="f.resultado" class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                          <i class="fa-solid fa-square-poll-vertical text-[9px]"></i>
+                          Resultado: <span class="font-bold" x-text="f.resultado"></span>
+                        </span>
+                        <span x-show="f.aprobado === 1 || f.aprobado === true" class="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold flex items-center gap-0.5">
+                          <i class="fa-solid fa-circle-check"></i> Aprobado
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Botón de Certificado específico de este formulario -->
+                    <button type="button" @click="abrirModalCertificado(detalleInduccion, f)"
+                       class="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-100 transition-colors flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+                       title="Descargar Certificado para este formulario">
+                      <i class="fa-solid fa-file-pdf"></i>
+                      <span>Certificado</span>
+                    </button>
+                  </div>
+
+                  <!-- Detalle de fechas y vigencia de este formulario -->
+                  <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-dashed border-[var(--paper-shadow)] text-[11px]">
+                    <div>
+                      <span class="text-slate-400 block text-[10px]">Realizado el:</span>
+                      <span class="font-medium text-slate-700 dark:text-zinc-300" x-text="formatearFecha(f.fecha_induccion)"></span>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-slate-400 block text-[10px]">Vence (+1 Año):</span>
+                      <span class="font-semibold text-slate-800 dark:text-zinc-200" x-text="formatearFecha(f.fecha_vigencia)"></span>
+                    </div>
+                  </div>
+
+                  <!-- Badge de tiempo restante del formulario -->
+                  <div class="mt-2 flex items-center justify-between text-[11px]">
+                    <span class="text-slate-400 text-[10px]">Tiempo restante de vigencia:</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1"
+                          :class="getFormVigenciaInfo(f).badgeClass">
+                      <i :class="getFormVigenciaInfo(f).icono" class="text-[9px]"></i>
+                      <span x-text="getFormVigenciaInfo(f).texto"></span>
+                    </span>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Mensaje si no tiene formularios -->
+              <div x-show="!detalleInduccion.formularios_realizados || detalleInduccion.formularios_realizados.length === 0"
+                   class="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 text-center text-slate-400">
+                <i class="fa-solid fa-clipboard-question text-xl mb-1 text-slate-300"></i>
+                <p class="text-xs">No tiene inducciones ni formularios completados aún.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Botones de Acción -->
-          <div class="flex items-center justify-center gap-3 pt-4 mt-2 border-t border-dashed border-[var(--paper-shadow)]">
+          <div class="flex items-center justify-center gap-3 pt-4 mt-3 border-t border-dashed border-[var(--paper-shadow)] flex-wrap">
             <button type="button" @click="cerrarFichaModal()" class="modal-btn-cancel px-6 py-2 cursor-pointer">
               Cerrar
             </button>
+            <button type="button" @click="abrirModalCertificado(detalleInduccion)"
+              class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Descargar Certificados (Empresa / ZIP)</span>
+            </button>
             <button type="button" @click="cerrarFichaModal(); abrirFormularioInduccion(detalleInduccion)"
-              class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
               <i class="fa-solid fa-pen-to-square"></i>
               <span>Renovar / Editar</span>
             </button>
@@ -415,7 +513,7 @@
 
         <!-- Panel del Formulario Ticket -->
         <div x-show="showFormModal"
-          @click.outside="cerrarFormModal()"
+          @click.outside="if (!$event.target.closest('.flatpickr-calendar')) cerrarFormModal()"
           class="modal-panel w-full max-w-xl pt-6 px-6 pb-6 relative text-left"
           x-transition:enter="transition ease-out duration-300"
           x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
@@ -455,7 +553,7 @@
           <!-- Campos del Formulario -->
           <form @submit.prevent="guardarInduccion()" class="space-y-4 text-xs">
             
-            <!-- TARJETAS INFORMATIVAS: EMPRESA, FECHA RENOVACIÓN (HOY) Y VIGENCIA (+1 AÑO) -->
+            <!-- TARJETAS INFORMATIVAS: EMPRESA, FECHA RENOVACIÓN (SELECCIONABLE) Y VIGENCIA (+1 AÑO) -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               
               <!-- Empresa Contratista -->
@@ -470,27 +568,50 @@
                 </div>
               </div>
 
-              <!-- Fecha de Renovación (Hoy) -->
-              <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-purple-500/30">
+              <!-- Fecha de Inducción (Rige desde - Interactivo con Flatpickr) -->
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] hover:border-purple-500/50 dark:hover:border-purple-500/40 transition-all flex items-center gap-3 cursor-pointer group"
+                   @click="$refs.fechaInduccionInput && $refs.fechaInduccionInput._flatpickr && $refs.fechaInduccionInput._flatpickr.open()"
+                   title="Clic para seleccionar desde qué fecha rige el año de validación">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-500 dark:text-purple-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-purple-500/30 group-hover:scale-105 transition-transform">
                   <i class="fa-solid fa-clock-rotate-left"></i>
                 </div>
-                <div class="min-w-0">
-                  <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Fecha Inducción</span>
-                  <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formInduccion.fecha_induccion_texto"></p>
-                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Auto hoy</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Fecha Inducción</span>
+                    <i class="fa-solid fa-pen-to-square text-[10px] text-purple-500 opacity-60 group-hover:opacity-100 transition-opacity" title="Modificar fecha"></i>
+                  </div>
+                  <div class="relative mt-0.5">
+                    <input type="text"
+                      x-ref="fechaInduccionInput"
+                      x-init="$nextTick(() => initFlatpickrFechaInduccion($el))"
+                      class="text-xs font-bold text-[var(--paper-ink)] dark:text-white bg-transparent border-0 p-0 focus:ring-0 cursor-pointer w-full truncate"
+                      readonly>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[10px] font-semibold"
+                      :class="esFechaHoy ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'"
+                      x-text="esFechaHoy ? 'Auto hoy' : 'Personalizada'"></span>
+                    <button type="button" x-show="!esFechaHoy" @click.stop="fijarFechaHoy()"
+                      class="text-[9px] text-[var(--paper-muted)] hover:text-purple-600 dark:hover:text-purple-400 underline cursor-pointer"
+                      title="Volver a la fecha actual">
+                      (Hoy)
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <!-- Nueva Vigencia (+1 Año) -->
+              <!-- Nueva Vigencia (+1 Año Dinámico) -->
               <div class="p-3.5 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-base font-bold border border-emerald-500/30">
                   <i class="fa-solid fa-calendar-plus"></i>
                 </div>
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1">
                   <span class="subtitles-modal text-[10px] font-bold uppercase tracking-wider block">Nueva Vigencia</span>
                   <p class="text-xs font-bold text-[var(--paper-ink)] dark:text-white truncate mt-0.5" x-text="formInduccion.fecha_vigencia_texto"></p>
-                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">+1 Año</span>
+                  <span class="text-[10px] font-semibold"
+                    :class="formInduccion.dias_restantes > 30 ? 'text-emerald-600 dark:text-emerald-400' : (formInduccion.dias_restantes > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')"
+                    x-text="formInduccion.dias_restantes > 0 ? `+1 Año (${formInduccion.dias_restantes}d rest.)` : `+1 Año (Vence hoy/anterior)`">
+                  </span>
                 </div>
               </div>
 
@@ -694,6 +815,161 @@
               class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer">
               <span>Aceptar y Continuar</span>
               <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Borde dentado decorativo ticket -->
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL 5: DESCARGA DE CERTIFICADO DE INDUCCIÓN (Empresas / ZIP)
+      ============================================================= -->
+      <div x-show="showCertificadoModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarModalCertificado()">
+
+        <!-- Panel del Modal Ticket -->
+        <div x-show="showCertificadoModal"
+          @click.outside="cerrarModalCertificado()"
+          class="modal-panel w-full max-w-lg p-6 sm:p-7 relative text-center"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-4">
+
+          <!-- Botón cerrar superior derecho -->
+          <button type="button" @click="cerrarModalCertificado()"
+            class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all z-20 cursor-pointer">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Ícono de Encabezado -->
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 text-xl shadow-lg shadow-rose-500/10 mb-2">
+            <i class="fa-solid fa-award"></i>
+          </div>
+
+          <!-- Título y Datos de la Persona -->
+          <h3 class="font-display font-bold text-xl text-[var(--paper-ink)] dark:text-white tracking-tight">
+            Descargar Certificado Oficial
+          </h3>
+          <p class="text-xs text-[var(--paper-muted)] mt-0.5">
+            <strong class="text-[var(--paper-ink)] dark:text-zinc-200" x-text="personaCertificado ? personaCertificado.nombre_completo : ''"></strong>
+            <span class="font-mono text-[11px]" x-text="personaCertificado ? ' · ' + (personaCertificado.tipo_doc || 'CC') + ' ' + personaCertificado.identificacion : ''"></span>
+          </p>
+
+          <!-- Selector de Formulario (si tiene múltiples formularios realizados) -->
+          <div x-show="personaCertificado && personaCertificado.formularios_realizados && personaCertificado.formularios_realizados.length > 1" class="text-left mt-3.5 mb-2">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-[var(--paper-muted)] mb-1">
+              <i class="fa-solid fa-file-signature text-purple-500"></i> Formulario de Inducción:
+            </label>
+            <select x-model="formularioSeleccionadoCertificado"
+              class="w-full text-xs font-semibold p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-[var(--paper-shadow)] focus:ring-2 focus:ring-purple-500/30 text-[var(--paper-ink)] dark:text-zinc-200 cursor-pointer">
+              <template x-for="f in (personaCertificado ? personaCertificado.formularios_realizados : [])" :key="f.id_formulario">
+                <option :value="f.id_formulario" x-text="f.nombre_formulario + ' (' + (f.dias_restantes !== null ? f.dias_restantes + 'd rest.' : 'Al día') + ')'"></option>
+              </template>
+            </select>
+          </div>
+
+          <p class="text-xs text-[var(--paper-muted)] mt-2.5 mb-3 text-left">
+            Selecciona la empresa del grupo con la que deseas emitir el certificado oficial o descarga el paquete comprimido con las 4 constancias:
+          </p>
+
+          <!-- Grid de las 4 Empresas -->
+          <div class="grid grid-cols-2 gap-2.5 mb-3.5 text-left">
+            
+            <!-- 1. INCARSA -->
+            <button type="button" @click="descargarCertificadoEmpresa('INCARSA')"
+              class="group p-3 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 hover:border-orange-500/60 transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                    <i class="fa-solid fa-building"></i>
+                  </div>
+                  <span class="font-bold text-xs text-orange-950 dark:text-orange-200">INCARSA</span>
+                </div>
+                <span class="text-[10px] text-orange-700/80 dark:text-orange-300/80 block mt-1">Formato corporativo</span>
+              </div>
+              <i class="fa-solid fa-file-arrow-down text-orange-600 dark:text-orange-400 group-hover:translate-y-0.5 transition-transform text-sm"></i>
+            </button>
+
+            <!-- 2. CARBOINSA -->
+            <button type="button" @click="descargarCertificadoEmpresa('CARBOINSA')"
+              class="group p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500/60 transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                    <i class="fa-solid fa-mountain-sun"></i>
+                  </div>
+                  <span class="font-bold text-xs text-blue-950 dark:text-blue-200">CARBOINSA</span>
+                </div>
+                <span class="text-[10px] text-blue-700/80 dark:text-blue-300/80 block mt-1">Formato institucional</span>
+              </div>
+              <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400 group-hover:translate-y-0.5 transition-transform text-sm"></i>
+            </button>
+
+            <!-- 3. UNIMINAS -->
+            <button type="button" @click="descargarCertificadoEmpresa('UNIMINAS')"
+              class="group p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/60 transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                    <i class="fa-solid fa-gem"></i>
+                  </div>
+                  <span class="font-bold text-xs text-emerald-950 dark:text-emerald-200">UNIMINAS</span>
+                </div>
+                <span class="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 block mt-1">Formato operativo</span>
+              </div>
+              <i class="fa-solid fa-file-arrow-down text-emerald-600 dark:text-emerald-400 group-hover:translate-y-0.5 transition-transform text-sm"></i>
+            </button>
+
+            <!-- 4. MILPA -->
+            <button type="button" @click="descargarCertificadoEmpresa('MILPA')"
+              class="group p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/60 transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                    <i class="fa-solid fa-industry"></i>
+                  </div>
+                  <span class="font-bold text-xs text-rose-950 dark:text-rose-200">MILPA</span>
+                </div>
+                <span class="text-[10px] text-rose-700/80 dark:text-rose-300/80 block mt-1">Formato fundación</span>
+              </div>
+              <i class="fa-solid fa-file-arrow-down text-rose-600 dark:text-rose-400 group-hover:translate-y-0.5 transition-transform text-sm"></i>
+            </button>
+
+          </div>
+
+          <!-- Opción Destacada: Descargar ZIP con las 4 Empresas -->
+          <div class="pt-3 border-t border-dashed border-[var(--paper-shadow)]">
+            <button type="button" @click="descargarCertificadosZip()"
+              class="w-full p-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all flex items-center justify-between gap-3 cursor-pointer group">
+              <div class="flex items-center gap-3 min-w-0 text-left">
+                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <i class="fa-solid fa-file-zipper"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-xs font-bold leading-tight">Descargar las 4 empresas (Archivo ZIP)</span>
+                  <span class="text-[11px] text-purple-200 font-normal block mt-0.5">Incluye INCARSA, CARBOINSA, UNIMINAS y MILPA en 1 solo clic</span>
+                </div>
+              </div>
+              <i class="fa-solid fa-download text-sm flex-shrink-0"></i>
+            </button>
+          </div>
+
+          <!-- Botón Cerrar -->
+          <div class="mt-4 pt-2">
+            <button type="button" @click="cerrarModalCertificado()" class="modal-btn-cancel w-full cursor-pointer">
+              Cerrar
             </button>
           </div>
 

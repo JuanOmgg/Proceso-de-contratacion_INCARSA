@@ -21,8 +21,6 @@
         var rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
         var idRol = (ses && (ses.id_rol || (ses.usuario && ses.usuario.id_rol)));
         if ((rol === 'SUPERADMIN' || rol === 'SUPER ADMIN' || idRol === 1) && tok) {
-          document.cookie = "token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
-          document.cookie = "incarsa_token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
           // Redirigir de inmediato omitiendo la pantalla 503 si el Superadmin llegó por falta de cookie
           var attemptKey = 'incarsa_503_sa_retry';
           var attempts = parseInt(sessionStorage.getItem(attemptKey) || '0', 10);
@@ -37,15 +35,6 @@
 
   function reintentar503() {
     try {
-      var tok = sessionStorage.getItem('incarsa_token') || localStorage.getItem('incarsa_token');
-      if (!tok) {
-        var ses = JSON.parse(sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session') || 'null');
-        if (ses && ses.token) tok = ses.token;
-      }
-      if (tok) {
-        document.cookie = "token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
-        document.cookie = "incarsa_token=" + encodeURIComponent(tok) + "; path=/; max-age=604800; SameSite=Lax";
-      }
       sessionStorage.removeItem('incarsa_503_sa_retry');
     } catch (e) {}
     window.location.reload();

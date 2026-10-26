@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PSI{% endblock %}</title>
+
+  <!-- Detección Temprana de Modo Oscuro y Rol RBAC (Sincronización con sesión) -->
+  <script>
+    (function () {
+      try {
+        var isDarkStored = localStorage.getItem('darkMode');
+        if (isDarkStored === 'false') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var urlRol = (params.get('rol') || '').trim().toUpperCase();
+        var isSim = params.get('simulacion') === '1' || params.get('simulacion') === 'true';
+        var raw = sessionStorage.getItem('incarsa_session') || localStorage.getItem('incarsa_session');
+        var rol = '';
+        if (raw) {
+          var ses = JSON.parse(raw);
+          rol = String((ses && (ses.rol || (ses.usuario && ses.usuario.rol))) || '').trim().toUpperCase();
+        }
+        if (!rol && urlRol) {
+          rol = urlRol;
+        }
+        if (!rol && isSim) {
+          rol = 'SUPERADMIN';
+        }
+        if (rol === 'SUPERADMIN' || rol === 'SUPER ADMIN') {
+          document.documentElement.setAttribute('data-role', 'SUPERADMIN');
+          document.documentElement.classList.add('role-superadmin');
+        } else {
+          document.documentElement.removeAttribute('data-role');
+          document.documentElement.classList.remove('role-superadmin');
+        }
+      } catch (e) {}
+    })();
+
+    function toggleThemeGlobal() {
+      try {
+        var isDark = document.documentElement.classList.contains('dark');
+        if (isDark) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('darkMode', 'false');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('darkMode', 'true');
+        }
+        window.dispatchEvent(new CustomEvent('theme-changed', { detail: { darkMode: !isDark } }));
+      } catch (e) {}
+    }
+  </script>
+
+  <style>
+    [x-cloak], [x-cloak] * {
+      display: none !important;
+    }
+  </style>
+
+<!-- Favicon / Ícono -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}"> 
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+  
+
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Alpine.js Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', path='css/formularios.css') }}?v=2.6">
+
+
+  <script src="{{ url_for('static', path='js/fechas.js') }}"></script>
+  
+  
+
+  <!-- Bloque para estilos o librerías adicionales de cada plantilla -->
+  {% block extra_head %}{% endblock %}
+
+  <!-- Scripts que deben ejecutarse antes de inicializar Alpine -->
+  {% block extra_js %}{% endblock %}
+  
+
+  <script>
+    window.__FORMULARIO_ID__ = {{ formulario_id | default(None) | tojson }};
+    window.__FORMULARIO_NOMBRE__ = {{ formulario_nombre | default(None) | tojson }};
+    window.__FORMULARIO_SLUG__ = {{ formulario_slug | default(None) | tojson }};
+  </script>
+</head>
+<body class="bg-pattern antialiased text-slate-200 min-h-screen flex flex-col justify-between py-6 px-4 sm:px-6" {% block body_attrs %}{% endblock %}>
+
+<!-- Pantalla de carga y transición autónoma entre páginas -->
+  {% include 'pages/page-loader.html' %}
+
+  <header class="{% block header_width %}max-w-3xl{% endblock %} mx-auto w-full mb-6">
+    <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl role-icon-box flex items-center justify-center text-xl flex-shrink-0">
+            {% block icon_form %}{% endblock %}
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold font-brand text-white flex items-center gap-2">
+            {% block title_form %}{% endblock %}
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full role-badge">{% block badge_form %}{% endblock %}</span>
+          </h1>
+          <p class="text-xs text-zinc-400">{% block description %}{% endblock%}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+        {% block header_extra %}{% endblock %}
+
+        <!-- Botón Selector Modo Claro / Oscuro -->
+        <button type="button"
+          onclick="toggleThemeGlobal()"
+          class="theme-toggle-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
+          title="Alternar entre modo claro y modo oscuro"
+          aria-label="Alternar entre modo claro y modo oscuro">
+          <i class="fa-solid fa-sun text-sm sm:text-base text-amber-400 theme-icon-sun"></i>
+          <i class="fa-solid fa-moon text-sm sm:text-base text-slate-500 theme-icon-moon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal inyectado por cada plantilla -->
+  {% block content %}  {% endblock %}
+
+  <!-- Bloque opcional para scripts al final del body -->
+  {% block body_scripts %}{% endblock %}
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="{% block footer_width %}max-w-3xl{% endblock %} mx-auto w-full mt-6 text-center text-xs text-zinc-600">
+    {% block footer %}{% endblock %}
+  </footer>
+
+  <!-- Script Controlador Alpine.js -->
+  
+</body>
+</html>

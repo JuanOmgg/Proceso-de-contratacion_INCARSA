@@ -13,9 +13,9 @@ function tokenFormularioManager() {
             const r = String(ses?.rol || ses?.nombre_rol || ses?.rol_nombre || '').toUpperCase().trim();
             const u = String(ses?.tipo_usuario || ses?.usuario || '').toUpperCase().trim();
             return r === 'SUPERADMIN' 
+                || r === 'SUPER ADMIN'
                 || u === 'SUPERADMIN'
-                || ses?.id_rol === 1
-                || ses?.id_rol === 6
+                || ses?.id_rol === 2
                 || window.location.pathname.includes('/superadmin')
                 || document.documentElement.getAttribute('data-role') === 'SUPERADMIN'
                 || document.documentElement.classList.contains('role-superadmin');
@@ -291,9 +291,14 @@ function tokenFormularioManager() {
                         icon: 'success',
                         title: '¡Pase Emitido!',
                         text: 'El enlace del formulario ha sido generado correctamente.',
-                        confirmButtonColor: signalColor,
-                        timer: 1500,
-                        timerProgressBar: true
+                        showConfirmButton: false,
+                        timer: 1600,
+                        timerProgressBar: true,
+                        width: '320px',
+                        padding: '1.25rem',
+                        customClass: {
+                            popup: 'swal2-compact-modal'
+                        }
                     });
                 }
             } catch (err) {
@@ -369,9 +374,14 @@ function tokenFormularioManager() {
                             icon: 'success',
                             title: 'Pase Revocado',
                             text: 'El enlace ha quedado invalidado permanentemente.',
-                            confirmButtonColor: this.getSignalColor(),
-                            timer: 2000,
-                            showConfirmButton: false
+                            showConfirmButton: false,
+                            timer: 1600,
+                            timerProgressBar: true,
+                            width: '320px',
+                            padding: '1.25rem',
+                            customClass: {
+                                popup: 'swal2-compact-modal'
+                            }
                         });
                     }
                 } else {

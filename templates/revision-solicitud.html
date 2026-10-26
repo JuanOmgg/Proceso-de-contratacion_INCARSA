@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=5.8"></script>
+  <script src="{{ url_for('static', path='js/revision-solicitud.js') }}?v=6.0"></script>
 {% endblock %}
 
 {% block content %}
@@ -1174,11 +1174,11 @@
                           <span>Motivo de Devolución para Corrección (Obligatorio) *</span>
                         </label>
                         <textarea x-model="dictamenForm.motivoDevolucion" rows="3"
-                          placeholder="Describe el motivo de la devolución para que Gestión Documental pueda realizar las correcciones...."
+                          placeholder="Describe el motivo de la devolución para que el solicitante pueda realizar las correcciones...."
                           class="input-field w-full rounded-xl p-3 text-xs resize-none border-amber-300 focus:ring-amber-200 dark:border-amber-600/70 dark:bg-slate-900/80 dark:text-white dark:focus:ring-amber-500/20"></textarea>
                         <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 font-medium flex items-start gap-2">
                           <i class="fa-solid fa-circle-info text-amber-500 text-xs mt-0.5 flex-shrink-0"></i>
-                          <span class="text-[11px] leading-relaxed">Se notificará a Gestión Documental con este motivo y se le habilitará un enlace de <strong>edición única</strong>. Al corregirse, retornará directo a tu bandeja.</span>
+                          <span class="text-[11px] leading-relaxed">Se notificará al solicitante con este motivo y se le habilitará un enlace de <strong>edición única</strong>. Al corregirse, retornará directo a tu bandeja.</span>
                         </div>
                       </div>
 

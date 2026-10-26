@@ -29,6 +29,8 @@ from src.routes.vehiculo_router import router as vehiculo_router
 from src.routes.empresa_route import router as empresa_router
 from src.routes.antecedentes_route import router as antecedentes_router
 from src.routes.inducciones_route import router as inducciones_router
+from src.routes.formulario_gesco_route import router as formulario_gesco_router
+from src.routes.pregunta_route import router as pregunta_router
 from src.routes.seguridad_social_route import router as seguridad_social_router
 from src.routes.auth_router import router as auth_router
 from src.routes.notificacion_route import router as notificacion_router
@@ -37,7 +39,9 @@ from src.routes.correspondencia_route import router as correspondencia_router
 from src.routes.dispositivo_router import router as dispositivo_router
 from src.routes.estadisticas_route import router as estadisticas_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
+from src.loaders.formulario_gesco_loader import GET_formulario_gesco_por_id_db, GET_formularios_gesco_db
 from src.utils.security import decode_access_token
+from urllib.parse import unquote
 
 from contextlib import asynccontextmanager
 
@@ -77,6 +81,7 @@ DOCUMENTOS_DIR = os.path.join(UPLOAD_DIR, "documentos")
 subcategorias = ["cedulas", "arl", "examenes_medicos", "otros", "general", "vehiculos", "notificaciones"]
 for sub in subcategorias:
     os.makedirs(os.path.join(DOCUMENTOS_DIR, sub), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "gesco"), exist_ok=True)
 
 # Cabeceras estándar de caché y seguridad para archivos adjuntos
 CACHE_HEADERS_UPLOADS = {
@@ -96,7 +101,10 @@ SUBCARPETAS_UPLOADS_DIRECTAS = [
     os.path.join(DOCUMENTOS_DIR, "notificaciones"),
     os.path.join(DOCUMENTOS_DIR, "general"),
     os.path.join(DOCUMENTOS_DIR, "otros"),
+    os.path.join(UPLOAD_DIR, "gesco"),
     os.path.join(UPLOAD_DIR, "vehiculos"),
+    os.path.join(UPLOAD_DIR, "sistema"),
+    os.path.join(UPLOAD_DIR, "sistemas"),
     UPLOAD_DIR,
 ]
 
@@ -128,6 +136,29 @@ async def servir_archivo_upload(archivo_path: str):
             return FileResponse(ruta_encontrada, headers=CACHE_HEADERS_UPLOADS)
 
     raise HTTPException(status_code=404, detail="El documento solicitado no fue encontrado en el servidor.")
+
+
+@app.get("/api/sistema/formato-herramientas", tags=["Archivos"])
+async def descargar_formato_herramientas():
+    """Descarga el formato oficial de relación de herramientas, materiales y equipos (FR-SCR-042) para control en portería."""
+    carpetas = [
+        os.path.join(UPLOAD_DIR, "sistema"),
+        os.path.join(UPLOAD_DIR, "sistemas")
+    ]
+    for carpeta in carpetas:
+        if os.path.isdir(carpeta):
+            archivos = [f for f in os.listdir(carpeta) if not f.startswith(".")]
+            if archivos:
+                herramientas = [f for f in archivos if "HERRAMIENTA" in f.upper() or "FR_SCR" in f.upper()]
+                elegido = herramientas[0] if herramientas else archivos[0]
+                ruta = os.path.join(carpeta, elegido)
+                return FileResponse(
+                    path=ruta,
+                    filename=elegido,
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{elegido}"'}
+                )
+    raise HTTPException(status_code=404, detail="El formato de herramientas no fue encontrado en el servidor.")
 
 # ==============================================================================
 # CONFIGURACIÓN SEGURA DE CORS (Restricción de Orígenes y Credenciales)
@@ -184,8 +215,6 @@ MODULO_NOMBRES = {
     "nueva_solicitud": "Nueva Solicitud",
     "usuarios": "Listado de Usuarios",
     "nuevo_usuario": "Formulario de Usuarios",
-    "correspondencias": "Listado de Correspondencia",
-    "nueva_correspondencia": "Nueva Correspondencia",
     "plantas": "Gestión de Plantas y Zonas",
     "contratistas": "Empresas Contratistas",
     "vehiculos": "Vehículos y Maquinaria",
@@ -197,7 +226,8 @@ MODULO_NOMBRES = {
     "estadisticas": "Estadísticas y Reportes",
     "formulario_temporal": "Solicitudes para Terceros",
     "revision_solicitud": "Revisión y Aprobación de Solicitudes",
-    "dispositivos": "Consulta de Dispositivos"
+    "dispositivos": "Consulta de Dispositivos",
+    "formularios_gesco": "Formularios GESCO"
 }
 
 def obtener_modulo_de_ruta(path: str) -> Optional[str]:
@@ -217,10 +247,6 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "nuevo_usuario"
     if p == "/usuarios" or p.startswith("/api/v1/usuarios"):
         return "usuarios"
-    if p in ("/formulario-correspondencia", "/correspondencia/nueva", "/correspondencia-form"):
-        return "nueva_correspondencia"
-    if p == "/correspondencias" or p.startswith("/api/v1/correspondencias"):
-        return "correspondencias"
     if p.startswith("/planta") or p.startswith("/api/plantas") or p.startswith("/api/v1/plantas"):
         return "plantas"
     if p.startswith("/emp_contratista") or p.startswith("/api/contratistas") or p.startswith("/api/v1/contratistas"):
@@ -243,6 +269,8 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "estadisticas"
     if p.startswith("/formulario-temporal") or p.startswith("/api/v1/tokens-formulario") or p.startswith("/api/tokens"):
         return "formulario_temporal"
+    if p.startswith("/formularios-gesco") or p.startswith("/api/v1/formularios-gesco") or p.startswith("/api/v1/preguntas") or p.startswith("/preguntas"):
+        return "formularios_gesco"
     return None
 
 # Middleware de modo mantenimiento (Error 503)
@@ -441,6 +469,8 @@ app.include_router(vehiculo_router)
 app.include_router(empresa_router)
 app.include_router(antecedentes_router, prefix="/api/v1")
 app.include_router(inducciones_router, prefix="/api/v1")
+app.include_router(formulario_gesco_router, prefix="/api/v1")
+app.include_router(pregunta_router, prefix="/api/v1")
 app.include_router(seguridad_social_router, prefix="/api/v1")
 app.include_router(seguridad_social_router)
 app.include_router(auth_router)
@@ -490,7 +520,12 @@ async def get_dashboard(request: Request):
 
 @app.get("/login")
 async def get_login(request: Request):
-    return templates.TemplateResponse(name="login.html", request=request)
+    response = templates.TemplateResponse(name="login.html", request=request)
+    if request.query_params.get("logout") or request.query_params.get("expired"):
+        response.delete_cookie(key="token", path="/")
+        response.delete_cookie(key="incarsa_token", path="/")
+        response.delete_cookie(key="access_token", path="/")
+    return response
 
 @app.get("/splash-loading")
 @app.get("/cargando")
@@ -546,6 +581,97 @@ async def get_editar_usuario(request: Request, identificador: str):
         context={"usuario_identificador": identificador}
     )
 
+@app.get("/formularios-gesco")
+@app.get("/gesco/formularios")
+@app.get("/formulariosGESCO.html")
+async def get_formularios_gesco(request: Request):
+    return templates.TemplateResponse(name="formulariosGESCO.html", request=request)
+
+@app.get("/formularios-gesco/nuevo")
+@app.get("/formulario-gesco/nuevo")
+async def get_nuevo_formulario_gesco(request: Request):
+    return templates.TemplateResponse(name="formulario-gesco.html", request=request)
+
+@app.get("/formularios-gesco/editar/{id_form}")
+async def get_editar_formulario_gesco(request: Request, id_form: int):
+    return templates.TemplateResponse(
+        name="formulario-gesco.html",
+        request=request,
+        context={"formulario_id": id_form}
+    )
+
+@app.get("/evaluacion-induccion")
+@app.get("/evaluacion-induccion/")
+async def get_evaluacion_induccion_default(request: Request):
+    """
+    Ruta raíz de inducción: redirige al formulario activo por defecto utilizando su nombre/slug.
+    """
+    res = GET_formularios_gesco_db(solo_activos=True)
+    if res.get("exito") and res.get("datos"):
+        primer = res["datos"][0]
+        slug = primer.get("slug") or str(primer.get("id"))
+        query_str = f"?{request.url.query}" if request.url.query else ""
+        return RedirectResponse(
+            url=f"/evaluacion-induccion/{slug}{query_str}",
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT
+        )
+    return RedirectResponse(url="/formularios-gesco", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+@app.get("/induccion/evaluacion/{identificador:path}")
+@app.get("/evaluacion-induccion/{identificador:path}")
+@app.get("/evaluacion/{identificador:path}")
+async def get_evaluacion_induccion_page(request: Request, identificador: str):
+    """
+    Entrega la vista del cuestionario público de inducción GESCO.
+    Si se accede con ID numérico (ej: /evaluacion-induccion/3), redirige con 307
+    al slug amigable con el nombre del formulario (ej: /evaluacion-induccion/formulario-test-preguntas-back).
+    Permite acceso por ID, nombre exacto o slug.
+    """
+    ident_clean = unquote(str(identificador or "").strip())
+
+    res = GET_formulario_gesco_por_id_db(ident_clean)
+    if res.get("exito") and res.get("datos"):
+        form_data = res["datos"]
+        form_id = form_data.get("id")
+        form_nombre = form_data.get("nombre") or ""
+        form_slug = form_data.get("slug") or str(form_id)
+
+        # Si el usuario o enlace ingresó con ID numérico pero el formulario tiene slug/nombre,
+        # redirigir para que en la barra del navegador aparezca el nombre en vez del número
+        if ident_clean.isdigit() and form_slug and ident_clean != form_slug:
+            query_str = f"?{request.url.query}" if request.url.query else ""
+            return RedirectResponse(
+                url=f"/evaluacion-induccion/{form_slug}{query_str}",
+                status_code=status.HTTP_307_TEMPORARY_REDIRECT
+            )
+
+        return templates.TemplateResponse(
+            name="evaluacion-induccion.html",
+            request=request,
+            context={
+                "formulario_id": form_id,
+                "formulario_nombre": form_nombre,
+                "formulario_slug": form_slug
+            }
+        )
+
+    # Si es numérico pero no existe registro en BD, renderizar fallback
+    if ident_clean.isdigit():
+        return templates.TemplateResponse(
+            name="evaluacion-induccion.html",
+            request=request,
+            context={
+                "formulario_id": int(ident_clean),
+                "formulario_nombre": f"Formulario #{ident_clean}",
+                "formulario_slug": ident_clean
+            }
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Formulario de inducción '{ident_clean}' no encontrado."
+    )
+
 @app.get("/solicitudes/nueva")
 @app.get("/formulario-solicitudes")
 async def get_formulario_solicitudes(request: Request):
@@ -577,10 +703,16 @@ async def get_verificar_solicitud(request: Request, codigo: str = ""):
 @app.get("/autorizacion-datos/{token}")
 @app.get("/autorizacion-datos")
 async def get_autorizacion_datos_page(request: Request, token: str = ""):
+    from src.loaders.empresa_loader import GET_empresas_con_plantas_bd
+    res_emp = GET_empresas_con_plantas_bd()
+    empresas = res_emp.get("datos", []) if res_emp.get("exito") else []
     return templates.TemplateResponse(
         name="autorizacion-datos.html",
         request=request,
-        context={"token": token.strip()}
+        context={
+            "token": token.strip(),
+            "empresas_db": empresas
+        }
     )
 
 
@@ -596,13 +728,28 @@ async def get_autorizacion_datos_certificado_redirect(token: str):
 @app.get("/formulario-temporal/{token}")
 @app.get("/formulario-temporal")
 async def get_formulario_temporal_page(request: Request, token: str = ""):
+    tok = token.strip()
+    if not tok:
+        try:
+            from database import GET_conexion
+            with GET_conexion() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT token FROM tokens_formulario_temporal 
+                        WHERE usado = 0 AND revocado = 0 AND fecha_expiracion > NOW() 
+                        ORDER BY id DESC LIMIT 1
+                    """)
+                    row = cur.fetchone()
+                    if row and row.get("token"):
+                        tok = row["token"]
+        except Exception as e:
+            print(f"⚠️ [FORMULARIO TEMPORAL] Error buscando token activo por defecto: {e}")
+
     return templates.TemplateResponse(
         name="formulario-temporal.html",
         request=request,
-        context={"token": token.strip()}
+        context={"token": tok}
     )
-
-
 
 @app.get("/formulario-correspondencia")
 async def get_formulario_correspondencia_publico(request: Request):

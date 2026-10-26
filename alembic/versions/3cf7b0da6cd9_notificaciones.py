@@ -30,6 +30,8 @@ def upgrade() -> None:
         sa.Column('mensaje', sa.Text(), nullable=False),
         sa.Column('tipo', sa.String(length=30), server_default='info', nullable=False),
         sa.Column('enlace', sa.VARCHAR(250), nullable=True),
+        sa.Column('archivo_url', sa.String(length=500), nullable=True),
+        sa.Column('archivo_nombre', sa.String(length=255), nullable=True),
         sa.Column('leido', sa.Boolean(), server_default=sa.text('0'), nullable=False),
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         mysql_engine='InnoDB',

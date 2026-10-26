@@ -1,12 +1,15 @@
 import os
 import re
 import secrets
+import hmac
+import hashlib
 from datetime import datetime, timedelta, timezone
 import jwt
 from dotenv import load_dotenv
 import bcrypt
 
-from fastapi import Depends, HTTPException, status
+import time
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
@@ -28,6 +31,44 @@ ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "720"))
 
+def generar_codigo_otp() -> str:
+    """Genera un código OTP de 6 dígitos criptográficamente seguro usando secrets (CSPRNG)."""
+    return f"{secrets.randbelow(900000) + 100000}"
+
+def obtener_ip_cliente(request: Request) -> str:
+    """Extrae la IP del cliente considerando encabezados de proxy inverso."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "127.0.0.1"
+
+_ip_verificacion_intentos: dict[str, list[float]] = {}
+
+def verificar_rate_limit_ip(ip: str, max_intentos: int = 15, ventana_segundos: int = 60) -> None:
+    """Limita la tasa de intentos de verificación por dirección IP (previene ataques de fuerza bruta)."""
+    ahora = time.time()
+    historial = _ip_verificacion_intentos.get(ip, [])
+    historial = [t for t in historial if ahora - t < ventana_segundos]
+    
+    if len(historial) >= max_intentos:
+        _ip_verificacion_intentos[ip] = historial
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Demasiados intentos de verificación desde esta dirección IP. Por favor espera un momento antes de reintentar."
+        )
+    
+    historial.append(ahora)
+    _ip_verificacion_intentos[ip] = historial
+
+def hash_codigo_seguro(codigo: str) -> str:
+    """Calcula un hash HMAC-SHA256 con la clave secreta del servidor para códigos de 6 dígitos.
+    Evita ataques de reversión por diccionario/fuerza bruta sobre el millón de combinaciones
+    en caso de filtración de la base de datos.
+    """
+    key = SECRET_KEY.encode('utf-8')
+    data = str(codigo).strip().encode('utf-8')
+    return hmac.new(key, data, hashlib.sha256).hexdigest()
+
 def get_password_hash(password: str) -> str:
     password_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt()
@@ -43,16 +84,64 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         print(f"Error verificando contraseña: {e}")
         return False
 
+_user_sessions_revoked_at: dict[int, int] = {}
+
+def invalidate_user_sessions(user_id: int, timestamp: int | None = None) -> None:
+    """Invalida todas las sesiones JWT de un usuario emitidas antes del timestamp actual."""
+    ts = timestamp or int(datetime.now(timezone.utc).timestamp())
+    _user_sessions_revoked_at[int(user_id)] = ts
+    try:
+        from database import GET_conexion
+        with GET_conexion() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE usuarios SET password_changed_at = FROM_UNIXTIME(%s) WHERE id = %s",
+                    (ts, int(user_id))
+                )
+                conn.commit()
+    except Exception as e:
+        print(f"⚠️ [SEGURIDAD] Error actualizando password_changed_at en BD: {e}")
+
+def get_user_sessions_revoked_at(user_id: int) -> int:
+    """Obtiene el timestamp de última revocación en memoria o consulta la BD si no está en caché."""
+    uid = int(user_id)
+    if uid in _user_sessions_revoked_at:
+        return _user_sessions_revoked_at[uid]
+    
+    try:
+        from database import GET_conexion
+        with GET_conexion() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT UNIX_TIMESTAMP(password_changed_at) AS ts FROM usuarios WHERE id = %s",
+                    (uid,)
+                )
+                row = cur.fetchone()
+                if row and row.get("ts") is not None:
+                    ts = int(row["ts"])
+                    _user_sessions_revoked_at[uid] = ts
+                    return ts
+                else:
+                    _user_sessions_revoked_at[uid] = 0
+                    return 0
+    except Exception as e:
+        print(f"⚠️ [SEGURIDAD] Error consultando password_changed_at: {e}")
+        return 0
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """Genera un token JWT firmado con fecha de expiración."""
+    """Genera un token JWT firmado con fecha de emisión (iat) y expiración (exp)."""
     to_encode = data.copy()
+    now_utc = datetime.now(timezone.utc)
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = now_utc + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire})
+    to_encode.update({
+        "exp": expire,
+        "iat": int(now_utc.timestamp())
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str) -> dict | None:
@@ -70,7 +159,7 @@ def decode_access_token(token: str) -> dict | None:
         return None
     
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)) -> dict:
-    """Extrae el token del header Authorization, lo valida y devuelve los datos del usuario."""
+    """Extrae el token del header Authorization, lo valida y comprueba que la sesión no haya sido invalidada por cambio de clave."""
     token = credentials.credentials
     payload = decode_access_token(token)
     
@@ -94,6 +183,25 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             payload["id"] = int(payload["sub"])
         except ValueError:
             payload["id"] = payload["sub"]
+
+    # Validar si el token fue emitido antes de un cambio de contraseña
+    user_id_val = payload.get("id") or payload.get("sub")
+    if user_id_val is not None:
+        try:
+            uid = int(user_id_val)
+            token_iat = payload.get("iat")
+            revoked_at = get_user_sessions_revoked_at(uid)
+            if revoked_at and revoked_at > 0:
+                if token_iat is None or int(token_iat) < revoked_at:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="La sesión ha expirado porque la contraseña fue modificada. Por favor, inicia sesión nuevamente.",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            pass
 
     return payload
 

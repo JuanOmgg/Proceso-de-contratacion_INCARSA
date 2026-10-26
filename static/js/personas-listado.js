@@ -40,7 +40,7 @@ function personasTable() {
       "Certificado de Espacios Confinados",
       "EPS / Seguridad Social",
       "Hoja de Vida / Certificación",
-      "Soporte de GESCO",
+      "Inducción corporativa",
       "Otro documento"
     ],
 

@@ -210,7 +210,7 @@ function revisionSolicitudApp() {
 
     // Sesión y Rol actual
     usuarioSesion: null,
-    rolActual: "SST", // 'SST' | 'GESCO' | 'SCR' | 'Administrador' | 'Gestion documental'
+    rolActual: "SST", // 'SST' | 'GESCO' | 'SCR' | 'Administrador' | 'SOLICITANTE'
     rolNombre: "SST",
 
     get esSuperAdmin() {
@@ -238,7 +238,7 @@ function revisionSolicitudApp() {
       const idRol = Number(this.usuarioSesion?.id_rol || 0);
 
       // Si el rol activo (simulado o real) es un rol operativo sin atribución de antecedentes
-      const rolesExcluidos = ["SST", "GESCO", "GESTION DOCUMENTAL", "GESTIÓN DOCUMENTAL", "VIGILANTE", "COORDINADOR"];
+      const rolesExcluidos = ["SST", "GESCO", "SOLICITANTE", "VIGILANTE", "COORDINADOR"];
       if (rolesExcluidos.includes(rolActualNorm)) {
         return false;
       }
@@ -834,8 +834,8 @@ function revisionSolicitudApp() {
             );
         if (sesion) {
           this.usuarioSesion = sesion;
-          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
-          const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Gestion documental";
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Solicitante", 6: "SST", 7: "GESCO", 8: "SCR" };
+          const rol = sesion.rol || sesion.nombre_rol || mapaRoles[sesion.id_rol] || "Solicitante";
           this.rolActual = rol;
           this.rolNombre = rol;
         }
@@ -847,7 +847,7 @@ function revisionSolicitudApp() {
       window.addEventListener("sesion-actualizada-en-caliente", (e) => {
         if (e.detail) {
           this.usuarioSesion = e.detail;
-          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Gestion documental", 6: "SST", 7: "GESCO", 8: "SCR" };
+          const mapaRoles = { 1: "Administrador", 2: "Superadmin", 3: "Vigilante", 4: "Coordinador", 5: "Solicitante", 6: "SST", 7: "GESCO", 8: "SCR" };
           const rol = this.usuarioSesion.rol || this.usuarioSesion.nombre_rol || mapaRoles[this.usuarioSesion.id_rol] || this.rolActual;
           this.rolActual = rol;
           this.rolNombre = rol;
@@ -2096,7 +2096,7 @@ function revisionSolicitudApp() {
             const mensajeToast = decision === "preaprobar"
               ? `Solicitud PRE-APROBADA por SCR. Redirigiendo a Procesamiento...`
               : (decision === "devolver"
-                  ? `Solicitud devuelta a Gestión Documental. Redirigiendo a Procesamiento...`
+                  ? `Solicitud devuelta al solicitante. Redirigiendo a Procesamiento...`
                   : (decision === "rechazar"
                       ? `Solicitud rechazada${extraPlantaMsg}. Redirigiendo a Procesamiento...`
                       : `Dictamen registrado${extraPlantaMsg} exitosamente (${dataRes.nuevo_estado}). Redirigiendo a Procesamiento...`));
@@ -3230,7 +3230,18 @@ function revisionSolicitudApp() {
 
       const ahora = new Date();
       const hoyLocal = this.obtenerFechaHoraLocal(ahora).split(" ")[0];
-      const masUnAnio = this.obtenerFechaMasUnAnio(ahora);
+      
+      let fechaInd = hoyLocal;
+      if (item.fecha_induccion && item.fecha_induccion !== "None" && item.fecha_induccion !== "null" && item.fecha_induccion !== "—") {
+        const limpia = String(item.fecha_induccion).trim().split("T")[0].split(" ")[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(limpia)) {
+          fechaInd = limpia;
+        }
+      }
+      const fechaVig = item.fecha_vigencia && item.fecha_vigencia !== "None" && item.fecha_vigencia !== "null" && item.fecha_vigencia !== "—"
+        ? String(item.fecha_vigencia).trim().split("T")[0].split(" ")[0]
+        : this.obtenerFechaMasUnAnio(fechaInd);
+
       const sesionNombre = (this.userDisplayName && this.userDisplayName !== "Usuario Activo")
         ? this.userDisplayName
         : (this.usuarioSesion?.nombre || this.usuarioSesion?.nombres || "Auditor GESCO");
@@ -3244,12 +3255,42 @@ function revisionSolicitudApp() {
         persona_cargo: item.persona_cargo || "General",
         responsable: sesionNombre,
         anotaciones: item.anotaciones || "",
-        fecha_induccion: hoyLocal,
-        fecha_vigencia: masUnAnio,
+        fecha_induccion: fechaInd,
+        fecha_vigencia: fechaVig,
         ultima_empresa_contratista: item.ultima_empresa_contratista || "Sin contratista asignado"
       };
 
       this.showFormInduccionModal = true;
+
+      this.$nextTick(() => {
+        if (this.$refs.fechaInduccionRevisionInput) {
+          if (this.$refs.fechaInduccionRevisionInput._flatpickr) {
+            this.$refs.fechaInduccionRevisionInput._flatpickr.setDate(this.formInduccion.fecha_induccion, true);
+          } else {
+            this.initFlatpickrFechaInduccionRevision(this.$refs.fechaInduccionRevisionInput);
+          }
+        }
+      });
+    },
+
+    initFlatpickrFechaInduccionRevision(el) {
+      if (typeof flatpickr === "undefined" || !el) return;
+      if (el._flatpickr) el._flatpickr.destroy();
+      const self = this;
+      flatpickr(el, {
+        locale: (typeof flatpickr !== "undefined" && flatpickr.l10ns && flatpickr.l10ns.es) ? flatpickr.l10ns.es : "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d M Y",
+        altInputClass: "text-sm font-bold text-[var(--paper-ink)] dark:text-white bg-transparent border-0 p-0 focus:ring-0 cursor-pointer w-full truncate",
+        defaultDate: self.formInduccion.fecha_induccion || "today",
+        onChange(selectedDates, dateStr) {
+          if (dateStr) {
+            self.formInduccion.fecha_induccion = dateStr;
+            self.formInduccion.fecha_vigencia = self.obtenerFechaMasUnAnio(dateStr);
+          }
+        }
+      });
     },
 
     cerrarFormularioInduccion() {

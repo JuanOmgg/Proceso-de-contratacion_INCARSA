@@ -1,0 +1,852 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Formularios GESCO · PSI{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/usuarios-listado.css') }}?v=1.1">
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/gesco-listados.js') }}?v=1.2"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- SIDEBAR -->
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="formulariosGescoTable()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      {% set page_title = "Formularios GESCO" %}
+      {% include 'pages/navbar.html' %}
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-4 sm:p-6 space-y-6 min-w-0 w-full">
+
+        <!-- ===== 1. Contadores / Tarjetas de Métricas Neón ===== -->
+        <section x-data="formulariosGescoCards()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <!-- Total Formularios (Azul / Cian Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-incarsa rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-folder-tree text-xl"></i>
+            </div>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Total formularios</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalFormularios"></p>
+            </div>
+          </div>
+
+          <!-- Activos (Verde Esmeralda Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 neon-stat-card neon-card-uniminas rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-circle-check text-xl"></i>
+            </div>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Activos en operación</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalActivos"></p>
+            </div>
+          </div>
+
+          <!-- Inactivos (Rojo Carmesí Neón) -->
+          <div class="gauge-card p-4 flex items-center gap-4 col-span-1 sm:col-span-2 lg:col-span-1 neon-stat-card neon-card-total rounded-xl">
+            <div class="gauge-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </div>
+            <div>
+              <p class="text-xs text-[var(--text-muted)] neon-label font-medium">Inactivos / Pausados</p>
+              <p class="gauge-value text-2xl font-semibold neon-value" x-text="cargando ? '...' : totalInactivos"></p>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===== 2. Filtros / Buscador ===== -->
+        <div class="filter-bar p-4 flex flex-col lg:flex-row lg:items-center gap-3">
+          
+          <!-- Buscador de texto -->
+          <div class="search-input-wrapper flex-1">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" x-model.debounce.250ms="search" placeholder="Buscar formulario por nombre, alcance o personal..."
+              name="busqueda_formularios" id="busqueda_formularios" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+              class="input-field w-full rounded-lg py-2.5 text-sm">
+          </div>
+
+          <!-- Dropdown Personalizado para Tipo de Personal -->
+          <div class="relative w-full lg:w-56 text-left" x-data="{ open: false }" @click.outside="open = false">
+            <button type="button" @click="open = !open"
+              class="w-full flex items-center justify-between px-3.5 py-2.5 bg-white dark:bg-[#18181b] border border-[var(--border-subtle)] dark:border-white/10 rounded-lg text-sm font-medium hover:border-[var(--steel-300)] shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--signal-500)]/20">
+              <span class="truncate flex items-center gap-2 text-[var(--text-primary)] dark:text-zinc-200">
+                <i class="fa-solid fa-users text-xs text-[var(--text-muted)]"></i>
+                <span x-text="filtroTipo ? (filtroTipo === 'TODOS' ? 'Todos los tipos' : filtroTipo) : 'Filtrar por personal'"></span>
+              </span>
+              <i class="fa-solid fa-chevron-down text-xs text-[var(--text-muted)] transition-transform duration-200"
+                :class="open ? 'rotate-180 text-[var(--signal-500)]' : ''"></i>
+            </button>
+
+            <!-- Menú Flotante -->
+            <div x-show="open" x-cloak
+              x-transition:enter="transition ease-out duration-150"
+              x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-100"
+              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+              x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+              class="absolute z-40 mt-1.5 w-full bg-white dark:bg-[#18181b] rounded-xl shadow-xl border border-[var(--border-subtle)] dark:border-white/10 py-1.5 overflow-hidden max-h-60 overflow-y-auto">
+              
+              <!-- Opción: Todos los tipos -->
+              <div @click="filtroTipo = ''; open = false"
+                class="mx-1.5 px-3 py-2 text-xs rounded-lg font-medium cursor-pointer transition-all duration-150 flex items-center justify-between"
+                :class="!filtroTipo ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-orange-50 dark:hover:bg-white/5 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                <span>Cualquier personal</span>
+                <i x-show="!filtroTipo" class="fa-solid fa-check text-xs"></i>
+              </div>
+
+              <div class="h-px bg-[var(--border-subtle)] dark:bg-white/10 my-1 mx-2"></div>
+
+              <!-- Lista dinámica de tipos de personal -->
+              <template x-for="tipo in tiposPersonalDisponibles" :key="tipo.id">
+                <div @click="filtroTipo = tipo.id; open = false"
+                  class="mx-1.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 flex items-center justify-between gap-2 text-xs"
+                  :class="filtroTipo == tipo.id ? 'bg-[var(--signal-500)]/15 text-[var(--signal-500)] font-bold' : 'text-[var(--text-primary)] dark:text-zinc-200 hover:bg-orange-50 dark:hover:bg-white/5 hover:text-[var(--signal-500)] hover:pl-3.5'">
+                  <span x-text="tipo.label"></span>
+                  <i x-show="filtroTipo == tipo.id" class="fa-solid fa-check text-xs flex-shrink-0"></i>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Chips de Filtro Estado + Limpiar filtros -->
+          <div class="filter-chips-wrapper">
+            <div class="filter-chips-responsive overflow-visible py-1">
+              <button type="button" @click="filtroEstado = 'todos'" 
+                class="filter-status-chip chip-neon-todos relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroEstado === 'todos' ? 'is-active scale-105' : 'is-idle'">
+                Todos
+              </button>
+              <button type="button" @click="filtroEstado = 'activos'" 
+                class="filter-status-chip chip-neon-aprobado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroEstado === 'activos' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-circle-check text-xs mr-1"></i> Activos
+              </button>
+              <button type="button" @click="filtroEstado = 'inactivos'" 
+                class="filter-status-chip chip-neon-rechazado relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center"
+                :class="filtroEstado === 'inactivos' ? 'is-active scale-105' : 'is-idle'">
+                <i class="fa-solid fa-circle-xmark text-xs mr-1"></i> Inactivos
+              </button>
+              <button type="button" @click="limpiarFiltros()" 
+                class="filter-status-chip relative rounded-full text-xs px-3.5 py-1.5 whitespace-nowrap transition-all duration-200 font-bold select-none cursor-pointer flex items-center justify-center text-center text-slate-500 hover:text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700/60 hover:bg-black/5 dark:hover:bg-white/5"
+                title="Limpiar filtros">
+                <i class="fa-solid fa-filter-circle-xmark mr-1.5 text-xs"></i> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Botón Crear Nuevo Formulario -->
+          <a href="/formularios-gesco/nuevo"
+            class="btn-signal rounded-lg px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 w-full lg:w-auto flex-shrink-0 cursor-pointer shadow-md">
+            <i class="fa-solid fa-plus text-xs"></i> Nuevo formulario
+          </a>
+        </div>
+
+        <!-- ===== 3. Tabla de Formularios GESCO ===== -->
+        <div class="wizard-card overflow-hidden">
+          <div class="w-full overflow-x-auto custom-scroll">
+            <table class="w-full text-sm data-table usuarios-tabla align-middle min-w-[850px]">
+              <thead>
+                <tr class="border-b border-[var(--border-subtle)]">
+                  <th class="w-12 px-3 py-3.5 text-center whitespace-nowrap">#</th>
+                  <th class="px-4 py-3.5 text-left whitespace-nowrap">Formulario de Inducción</th>
+                  <th class="px-3 py-3.5 text-center whitespace-nowrap">Vigencia</th>
+                  <th class="px-4 py-3.5 text-center whitespace-nowrap">Personal Aplicable</th>
+                  <th class="px-3 py-3.5 text-center whitespace-nowrap">Preguntas</th>
+                  <th class="px-3 py-3.5 text-center whitespace-nowrap">Estado</th>
+                  <th class="px-3 py-3.5 text-center whitespace-nowrap">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <!-- Estado Cargando -->
+                <template x-if="cargando">
+                  <tr>
+                    <td colspan="8" class="text-center py-12 text-[var(--text-muted)]">
+                      <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)] mb-2"></i>
+                      <p class="text-sm font-medium">Cargando formularios GESCO...</p>
+                    </td>
+                  </tr>
+                </template>
+
+                <!-- Filas de Formularios -->
+                <template x-for="(formulario, index) in formulariosPagina" :key="formulario.id">
+                  <tr x-transition:enter="transition ease-out duration-[200ms]"
+                      x-transition:enter-start="opacity-0"
+                      x-transition:enter-end="opacity-100"
+                      class="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors">
+                    
+                    <!-- 1. Contador de Fila -->
+                    <td class="w-12 px-3 py-3.5 text-center font-medium text-xs text-[var(--text-muted)] whitespace-nowrap"
+                      x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                    <!-- 2. Formulario (Nombre) -->
+                    <td class="px-4 py-3.5 text-left whitespace-nowrap">
+                      <div class="flex items-center gap-2.5">
+                        <div class="min-w-0">
+                          <p class="font-bold text-[var(--text-primary)] text-sm truncate max-w-[240px]"
+                             x-text="formulario.nombre" :title="formulario.nombre"></p>
+                          <p class="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5 mt-0.5" x-show="formulario.creador_nombre">
+                            <i class="fa-solid fa-user-shield text-[10px] text-purple-500/80"></i>
+                            <span class="truncate max-w-[200px]" x-text="formulario.creador_nombre" :title="'Creado por
+                            
+                          }
+                          : ' + formulario.creador_nombre"></span>
+                          </p>
+                          <p class="text-[10px] text-indigo-400 font-bold flex items-center gap-1 mt-0.5" x-show="formulario.es_interno">
+                            <i class="fa-solid fa-building-user text-[9px]"></i>
+                            <span>Diálogo Interno</span>
+                            <template x-if="formulario.fecha_limite">
+                              <span class="text-[9px] text-amber-400 font-mono ml-1 font-semibold" :title="'Límite: ' + formatearFecha(formulario.fecha_limite)">
+                                · Límite: <span x-text="formatearFechaCorta(formulario.fecha_limite)"></span>
+                              </span>
+                            </template>
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- 4. Vigencia -->
+                    <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
+                        <i class="fa-regular fa-calendar-check text-[11px] text-[var(--signal-500)]"></i>
+                        <span x-text="vigenciaLegible(formulario.vigencia)"></span>
+                      </span>
+                    </td>
+
+                    <!-- 5. Personal Aplicable (Pills) -->
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                      <div class="flex items-center justify-center gap-1 flex-wrap max-w-[200px] mx-auto">
+                        <template x-for="p in tipoPersonalPills(formulario.tipo_personal)" :key="p">
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider"
+                                :class="p === 'TODOS'
+                                  ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
+                                  : (p === 'Contratista'
+                                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                                      : (p === 'Proveedor'
+                                          ? 'bg-slate-500/15 text-slate-700 dark:text-zinc-300 border border-slate-500/30'
+                                          : (p === 'Interno'
+                                              ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30'
+                                              : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30')))"
+                                x-text="p"></span>
+                        </template>
+                      </div>
+                    </td>
+
+                    <!-- 6. Total Preguntas y Muestreo Aleatorio -->
+                    <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                      <div class="inline-flex flex-col items-center">
+                        <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-zinc-300">
+                          <i class="fa-solid fa-circle-question text-[10px] text-slate-400"></i>
+                          <span x-text="formulario.cantidad_preguntas ? (formulario.cantidad_preguntas + ' de ' + (formulario.total_preguntas || 0) + ' preg.') : ((formulario.total_preguntas || 0) + ' preg.')"></span>
+                        </span>
+                        <template x-if="formulario.cantidad_preguntas">
+                          <span class="text-[9px] font-bold text-amber-500 uppercase tracking-wider mt-0.5 flex items-center gap-0.5">
+                            <i class="fa-solid fa-shuffle text-[8px]"></i> Aleatorias
+                          </span>
+                        </template>
+                      </div>
+                    </td>
+
+                    <!-- 7. Estado (Toggle interactivo) -->
+                    <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                      <button type="button" 
+                        @click="toggleActivo(formulario)"
+                        class="status-pill cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 shadow-xs whitespace-nowrap"
+                        :class="(formulario.is_active === 1 || formulario.is_active === true || formulario.is_active === '1')
+                          ? 'status-usuario-activo'
+                          : 'status-usuario-inactivo bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800/50'"
+                        :data-tooltip="(formulario.is_active === 1 || formulario.is_active === true || formulario.is_active === '1') ? 'Clic para desactivar' : 'Clic para activar'">
+                        <span x-text="(formulario.is_active === 1 || formulario.is_active === true || formulario.is_active === '1') ? 'Activo' : 'Inactivo'"></span>
+                      </button>
+                    </td>
+
+                    <!-- 8. Acciones -->
+                    <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                      <div class="flex items-center justify-center gap-1.5 text-center whitespace-nowrap">
+
+                        <!-- Botón Ver Detalle -->
+                        <button type="button" 
+                          @click="verDetalle(formulario)"
+                          class="action-icon-btn text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                          data-tooltip="Ver ficha técnica">
+                          <i class="fa-solid fa-eye"></i>
+                        </button>
+
+                        <!-- Botón Ver Estadísticas / Analíticas -->
+                        <button type="button" 
+                          @click="abrirEstadisticas(formulario)"
+                          class="action-icon-btn text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
+                          data-tooltip="Ver estadísticas y porcentaje de aciertos">
+                          <i class="fa-solid fa-chart-pie"></i>
+                        </button>
+
+                        <!-- Botón Simular Examen (Modo Prueba con Slug Amigable) -->
+                        <a :href="formulario.url_simulacion || ('/evaluacion-induccion/' + (formulario.slug || formulario.id) + '?simulacion=1')" target="_blank"
+                          class="action-icon-btn text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
+                          data-tooltip="Simular evaluación (Modo prueba)">
+                          <i class="fa-solid fa-flask-vial"></i>
+                        </a>
+
+                        <!-- Botón Editar -->
+                        <a :href="'/formularios-gesco/editar/' + formulario.id"
+                          class="action-icon-btn text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950/30 transition-colors"
+                          data-tooltip="Editar formulario">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        
+                        <!-- Botón Eliminar / Desactivar -->
+                        <button type="button" 
+                          @click="confirmarEliminar(formulario)" 
+                          class="action-icon-btn text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                          data-tooltip="Eliminar o desactivar">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+
+                      </div>
+                    </td>
+
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Estado Vacío -->
+          <div class="text-center py-12 text-[var(--text-muted)]" x-show="!cargando && formulariosFiltrados.length === 0">
+            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300 dark:text-zinc-600"></i>
+            <p class="text-sm font-medium">No se encontraron formularios GESCO con los filtros seleccionados.</p>
+            <a href="/formularios-gesco/nuevo" class="inline-flex items-center gap-2 text-xs font-bold text-[var(--signal-500)] hover:underline mt-2">
+              <i class="fa-solid fa-plus"></i> Crear el primer formulario ahora
+            </a>
+          </div>
+
+          <!-- ===== Paginación Compartida ===== -->
+          {% include 'components/pagination.html' %}
+        </div>
+
+      </main>
+
+      <!-- Footer Compartido -->
+      {% set footer_modulo = 'Módulo de Formularios GESCO' %}
+      {% include 'pages/footer.html' %}
+
+      <!-- Modal Confirmar Eliminación (Modular) -->
+      {% set modal_delete_tipo = 'Formulario' %}
+      {% include 'components/modals/modal-confirmar-eliminar.html' %}
+
+      <!-- ============================================================
+         MODAL: FICHA TÉCNICA DEL FORMULARIO (Estilo Ticket INCARSA)
+      ============================================================= -->
+      <div x-show="showDetailModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarDetalle()">
+
+        <div x-show="showDetailModal"
+          @click.outside="cerrarDetalle()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="modal-panel modal-ticket w-full max-w-md pt-7 px-6 sm:px-8 pb-8 relative text-center" x-cloak>
+
+          <!-- Botón cerrar superior derecho -->
+          <button type="button" @click="cerrarDetalle()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+          
+          <!-- Encabezado estilo Ticket -->
+          <div class="text-center mb-4">
+            <div class="modal-stamp amber mb-3">
+              <i class="fa-solid fa-clipboard-list text-2xl text-amber-500"></i>
+            </div>
+            <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
+                x-text="formularioDetalle?.nombre || 'Ficha Técnica de Formulario'"></h2>
+            
+          </div>
+
+          <!-- Cuerpo scrollable -->
+          <div class="border-y border-dashed border-[var(--paper-shadow)] py-3 my-4 space-y-3 text-left text-xs bg-slate-50/70 dark:bg-white/5 p-4 rounded-xl">
+            
+            <!-- Descripción -->
+            <div>
+              <span class="text-[var(--paper-muted)] font-medium block mb-1">Descripción / Alcance:</span>
+              <p class="text-xs text-[var(--paper-ink)] dark:text-zinc-200 font-medium"
+                 x-text="formularioDetalle?.descripcion || 'Sin descripción registrada'"></p>
+            </div>
+
+            <!-- Vigencia -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar-check text-amber-500"></i> Vigencia Oficial:
+              </span>
+              <span class="font-bold text-[var(--paper-ink)] dark:text-white"
+                    x-text="vigenciaLegible(formularioDetalle?.vigencia)"></span>
+            </div>
+
+            <!-- Tipo de Personal -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-users text-cyan-500"></i> Personal Aplicable:
+              </span>
+              <span class="font-bold text-[var(--paper-ink)] dark:text-white"
+                    x-text="formularioDetalle?.es_interno ? 'Personal Interno (Diálogos)' : (formularioDetalle?.tipo_personal || 'TODOS')"></span>
+            </div>
+
+            <!-- Modalidad Interna si aplica -->
+            <div x-show="formularioDetalle?.es_interno" class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-building-user text-indigo-500"></i> Modalidad:
+              </span>
+              <span class="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                Diálogo Interno / Planta
+              </span>
+            </div>
+
+            <!-- Fecha Límite si aplica -->
+            <div x-show="formularioDetalle?.fecha_limite" class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar-xmark text-amber-500"></i> Plazo Límite:
+              </span>
+              <span class="font-bold text-amber-600 dark:text-amber-400 font-mono text-[11px]"
+                    x-text="formatearFecha(formularioDetalle?.fecha_limite)"></span>
+            </div>
+
+            <!-- Preguntas / Muestreo -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-dice text-amber-500"></i> Preguntas Evaluadas:
+              </span>
+              <span class="font-bold text-[var(--paper-ink)] dark:text-white"
+                    x-text="formularioDetalle?.cantidad_preguntas ? (formularioDetalle.cantidad_preguntas + ' aleatorias (de ' + (formularioDetalle.total_preguntas || 0) + ' en banco)') : ((formularioDetalle?.total_preguntas || 0) + ' (banco completo)')"></span>
+            </div>
+
+            <!-- Estado -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-power-off text-emerald-500"></i> Estado Operativo:
+              </span>
+              <span class="font-bold px-2 py-0.5 rounded-full text-[11px]"
+                    :class="(formularioDetalle?.is_active === 1 || formularioDetalle?.is_active === true || formularioDetalle?.is_active === '1')
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-red-500/15 text-red-600 dark:text-red-400'"
+                    x-text="(formularioDetalle?.is_active === 1 || formularioDetalle?.is_active === true || formularioDetalle?.is_active === '1') ? 'Activo' : 'Inactivo'"></span>
+            </div>
+
+            <!-- Fecha de Creación -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
+              <span class="text-[var(--paper-muted)] font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-clock text-slate-400"></i> Fecha de Registro:
+              </span>
+              <span class="font-mono text-slate-600 dark:text-zinc-400"
+                    x-text="formatearFecha(formularioDetalle?.created_at)"></span>
+            </div>
+
+          </div>
+
+          <!-- Pie del modal con botones -->
+          <div class="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
+            <button type="button" @click="cerrarDetalle()"
+              class="modal-btn-cancel px-5 py-2.5 cursor-pointer text-xs">
+              Cerrar
+            </button>
+            <a :href="formularioDetalle?.url_simulacion || ('/evaluacion-induccion/' + (formularioDetalle?.slug || formularioDetalle?.id || '') + '?simulacion=1')" target="_blank"
+              class="px-5 py-2.5 rounded-xl font-bold text-xs bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 cursor-pointer shadow-md transition-all">
+              <i class="fa-solid fa-flask-vial"></i>
+              <span>Simular examen</span>
+            </a>
+            <a :href="'/formularios-gesco/editar/' + (formularioDetalle?.id || '')"
+              class="modal-btn-confirm px-5 py-2.5 flex items-center gap-2 cursor-pointer text-xs">
+              <i class="fa-solid fa-pen-to-square text-xs"></i>
+              <span>Editar</span>
+            </a>
+          </div>
+
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         MODAL: ESTADÍSTICAS Y ANALÍTICAS DEL FORMULARIO GESCO (Estilo Ticket)
+      ============================================================= -->
+      <div x-show="showStatsModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 modal-backdrop"
+        style="overflow: hidden;"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="cerrarEstadisticas()">
+
+        <div x-show="showStatsModal"
+          @click.outside="cerrarEstadisticas()"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="modal-panel modal-ticket w-full max-w-4xl pt-6 px-5 sm:px-8 pb-9 sm:pb-10 relative text-center flex flex-col shadow-2xl"
+          style="max-height: calc(100vh - 2.5rem); height: min(92vh, 880px); display: flex; flex-direction: column;" x-cloak>
+
+          <!-- Botón Cerrar Superior Derecho -->
+          <button type="button" @click="cerrarEstadisticas()"
+            class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-[var(--paper-muted)] hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Encabezado estilo Ticket INCARSA -->
+          <div class="text-center mb-3 flex-shrink-0">
+            <div class="modal-stamp success mb-2">
+              <i class="fa-solid fa-chart-pie text-2xl"></i>
+            </div>
+            <h2 class="font-display font-bold text-xl sm:text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
+                x-text="estadisticasData?.formulario?.nombre || formularioDetalle?.nombre || 'Estadísticas del Formulario'"></h2>
+            <div class="flex items-center justify-center gap-2 flex-wrap">
+              <span class="status-pill inline-flex select-none font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 text-xs">
+                <i class="fa-solid fa-chart-line mr-1.5 text-emerald-600 dark:text-emerald-400"></i> Analítica en tiempo real
+              </span>
+              <span class="text-xs text-[var(--paper-muted)] font-medium">
+                Rendimiento de los evaluados y frecuencia por opción
+              </span>
+            </div>
+          </div>
+
+          <!-- Estado Cargando -->
+          <div x-show="cargandoStats" class="py-20 text-center text-[var(--paper-muted)] flex-1 flex flex-col items-center justify-center"
+               style="min-height: 0; flex: 1 1 auto;">
+            <i class="fa-solid fa-spinner fa-spin text-3xl text-emerald-500 mb-3"></i>
+            <p class="text-sm font-semibold text-[var(--paper-ink)]">Calculando métricas y análisis de respuestas...</p>
+            <p class="text-xs text-[var(--paper-muted)] mt-1">Consultando historial en base de datos.</p>
+          </div>
+
+          <!-- Cuerpo scrollable estilo Ticket -->
+          <div x-show="!cargandoStats && estadisticasData"
+               class="flex-1 overflow-y-auto custom-scroll pr-1.5 text-left border-y border-dashed border-[var(--paper-shadow)] py-3.5 my-2 space-y-4"
+               style="min-height: 0; overflow-y: auto; flex: 1 1 0%;">
+
+            <!-- 1. Cuadrícula de Métricas Globales estilo Ticket -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <!-- Métrica: Total Evaluaciones -->
+              <div class="p-3.5 rounded-xl bg-[#efe9dc]/50 dark:bg-white/[0.04] border border-[var(--paper-shadow)] text-center">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-[var(--paper-muted)] block mb-1">
+                  Evaluaciones
+                </span>
+                <span class="text-2xl sm:text-3xl font-black text-[var(--paper-ink)] font-mono"
+                      x-text="estadisticasData?.resumen?.total_evaluaciones || 0"></span>
+                <span class="text-[11px] text-[var(--paper-muted)] block mt-0.5"
+                      x-text="(estadisticasData?.resumen?.total_personas || 0) + ' personas'"></span>
+              </div>
+
+              <!-- Métrica: Tasa de Aprobación Global -->
+              <div class="p-3.5 rounded-xl border text-center"
+                   :class="(estadisticasData?.resumen?.porcentaje_aprobacion >= 80)
+                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                     : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'">
+                <span class="text-[10px] uppercase font-bold tracking-wider opacity-80 block mb-1">
+                  % Aprobación Global
+                </span>
+                <span class="text-2xl sm:text-3xl font-black font-mono"
+                      x-text="(estadisticasData?.resumen?.porcentaje_aprobacion || 0) + '%'"></span>
+                <span class="text-[10px] font-semibold block mt-0.5 opacity-90">
+                  Meta mínima: 80%
+                </span>
+              </div>
+
+              <!-- Métrica: Aprobados -->
+              <div class="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-center">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400 block mb-1">
+                  Aprobados
+                </span>
+                <span class="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400 font-mono"
+                      x-text="estadisticasData?.resumen?.total_aprobados || 0"></span>
+                <span class="text-[11px] text-[var(--paper-muted)] block mt-0.5">Cumplieron estándar</span>
+              </div>
+
+              <!-- Métrica: Reprobados -->
+              <div class="p-3.5 rounded-xl bg-red-500/5 border border-red-500/20 text-center">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-red-600 dark:text-red-400 block mb-1">
+                  Reprobados
+                </span>
+                <span class="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-400 font-mono"
+                      x-text="estadisticasData?.resumen?.total_reprobados || 0"></span>
+                <span class="text-[11px] text-[var(--paper-muted)] block mt-0.5">Requieren refuerzo</span>
+              </div>
+            </div>
+
+            <!-- Aviso si aún no hay evaluaciones -->
+            <div x-show="estadisticasData?.resumen?.total_evaluaciones === 0"
+              class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs flex items-center gap-3">
+              <i class="fa-solid fa-circle-info text-base flex-shrink-0"></i>
+              <span>
+                Este formulario aún no cuenta con evaluaciones presentadas por ingresantes. Las métricas de acierto y porcentaje de elección de cada opción se calcularán y actualizarán en tiempo real a medida que respondan el cuestionario.
+              </span>
+            </div>
+
+            <!-- 2. Barra de Filtros y Búsqueda (Elegante, sin colisiones) -->
+            <div class="p-3 rounded-xl bg-[#efe9dc]/40 dark:bg-white/[0.03] border border-[var(--paper-shadow)] space-y-2.5">
+              <!-- Fila Superior: Buscador y Contador -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="relative flex-1">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] text-xs pointer-events-none"></i>
+                  <input type="text" x-model="statsSearchPregunta"
+                    placeholder="Buscar por enunciado o palabra clave..."
+                    class="w-full py-2 text-xs rounded-lg bg-white dark:bg-black/30 border border-[var(--paper-shadow)] text-[var(--paper-ink)] placeholder-[var(--paper-muted)] focus:outline-hidden focus:border-emerald-500 transition-colors"
+                    style="padding-left: 36px; padding-right: 32px;">
+                  <button type="button" x-show="statsSearchPregunta" @click="statsSearchPregunta = ''"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--paper-muted)] hover:text-[var(--paper-ink)] text-xs cursor-pointer"
+                    title="Limpiar búsqueda">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <div class="text-[11px] font-mono font-bold text-[var(--paper-muted)] whitespace-nowrap hidden sm:block">
+                  <span x-text="preguntasEstadisticasFiltradas.length"></span> de <span x-text="estadisticasData?.estadisticas_preguntas?.length || 0"></span> preguntas
+                </div>
+              </div>
+
+              <!-- Fila Inferior: Botones de Categorías con scroll horizontal suave -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll max-w-full">
+                <span class="text-[11px] font-bold text-[var(--paper-muted)] uppercase tracking-wider flex-shrink-0 mr-1 flex items-center gap-1">
+                  <i class="fa-solid fa-tags text-emerald-500 text-[10px]"></i> Categoría:
+                </span>
+                
+                <button type="button" @click="statsFiltroCategoria = 'TODAS'"
+                  class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0"
+                  :class="statsFiltroCategoria === 'TODAS'
+                    ? 'bg-emerald-600 text-white shadow-xs font-black'
+                    : 'bg-white dark:bg-white/10 text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/15 border border-[var(--paper-shadow)]'">
+                  Todas (<span x-text="estadisticasData?.estadisticas_preguntas?.length || 0"></span>)
+                </button>
+
+                <template x-for="cat in ['SST', 'AMBIENTAL', 'SEGURIDAD_VIAL', 'CALIDAD', 'BIOMECANICA', 'GENERAL']" :key="cat">
+                  <button type="button" @click="statsFiltroCategoria = cat"
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex-shrink-0"
+                    :class="statsFiltroCategoria === cat
+                      ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                      : 'bg-white dark:bg-white/10 text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/15 border border-[var(--paper-shadow)]'"
+                    x-text="cat.replace('_', ' ')"></button>
+                </template>
+              </div>
+            </div>
+
+            <!-- 3. Listado de Preguntas con Desglose de Aciertos y Opciones -->
+            <div class="space-y-4">
+              <template x-for="(preg, pIdx) in preguntasEstadisticasFiltradas" :key="preg.id_pregunta">
+                <div class="p-4 sm:p-5 rounded-xl bg-white dark:bg-white/[0.02] border border-[var(--paper-shadow)] space-y-3.5 shadow-2xs">
+                  
+                  <!-- Cabecera de la Pregunta -->
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1.5 flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-[#efe9dc] dark:bg-white/10 text-[var(--paper-ink)] border border-[var(--paper-shadow)]"
+                              x-text="'#' + (pIdx + 1)"></span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30"
+                              x-text="preg.tipo_pregunta || 'GENERAL'"></span>
+                        
+                        <!-- Badge Calificable vs Informativa -->
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border"
+                              :class="preg.es_calificable
+                                ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'"
+                              x-text="preg.es_calificable ? 'Calificable' : 'Informativa'"></span>
+
+                        <span class="text-[10px] text-[var(--paper-muted)] font-medium font-mono"
+                              x-text="preg.tipo_respuesta"></span>
+
+                        <!-- Badge si tiene multimedia -->
+                        <span x-show="preg.imagen_url || preg.video_url"
+                              class="text-[10px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                          <i class="fa-solid fa-photo-film text-[10px]"></i> Con multimedia
+                        </span>
+                      </div>
+
+                      <h4 class="font-bold text-sm text-[var(--paper-ink)] leading-snug"
+                          x-text="preg.enunciado"></h4>
+                    </div>
+
+                    <!-- Indicador Derecho: % de Acierto de esta pregunta -->
+                    <div class="text-right flex-shrink-0">
+                      <template x-if="preg.es_calificable">
+                        <div>
+                          <div class="flex items-center justify-end gap-1.5">
+                            <span class="text-xs font-bold text-[var(--paper-muted)] uppercase">Acierto:</span>
+                            <span class="text-lg font-black font-mono"
+                                  :class="(preg.porcentaje_acierto >= 70)
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : ((preg.porcentaje_acierto >= 40) ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')"
+                                  x-text="preg.porcentaje_acierto + '%'"></span>
+                          </div>
+                          <span class="text-[10px] text-[var(--paper-muted)] block"
+                                x-text="preg.aciertos + ' aciertos · ' + preg.fallos + ' fallos'"></span>
+                        </div>
+                      </template>
+                      <template x-if="!preg.es_calificable">
+                        <div class="text-right">
+                          <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 block">Informativa</span>
+                          <span class="text-[10px] text-[var(--paper-muted)]"
+                                x-text="preg.veces_respondida + ' respuestas'"></span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Barra de Acierto Visual -->
+                  <div x-show="preg.es_calificable && preg.veces_respondida > 0" class="space-y-1">
+                    <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden flex">
+                      <div class="h-full bg-emerald-500 transition-all duration-300"
+                           :style="'width: ' + preg.porcentaje_acierto + '%'"></div>
+                      <div class="h-full bg-red-500/80 transition-all duration-300"
+                           :style="'width: ' + preg.porcentaje_fallo + '%'"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-[var(--paper-muted)]">
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold"
+                            x-text="'Correctas: ' + preg.aciertos + ' (' + preg.porcentaje_acierto + '%)'"></span>
+                      <span class="text-red-500 font-semibold"
+                            x-text="'Fallos: ' + preg.fallos + ' (' + preg.porcentaje_fallo + '%)'"></span>
+                    </div>
+                  </div>
+
+                  <!-- Desglose de Opciones de Selección -->
+                  <div x-show="preg.opciones && preg.opciones.length" class="space-y-2 pt-2 border-t border-dashed border-[var(--paper-shadow)]">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--paper-muted)] flex items-center gap-1.5">
+                      <i class="fa-solid fa-list-check text-xs text-emerald-500"></i>
+                      <span>Distribución de Respuestas por Opción:</span>
+                    </span>
+
+                    <div class="space-y-2">
+                      <template x-for="(opc, oIdx) in preg.opciones" :key="opc.id">
+                        <div class="p-3 rounded-xl border relative overflow-hidden transition-all"
+                             :class="opc.is_correct
+                               ? 'bg-emerald-500/10 border-emerald-500/30'
+                               : 'bg-[#efe9dc]/20 dark:bg-white/[0.02] border-[var(--paper-shadow)]'">
+                          
+                          <!-- Barra de Fondo de Porcentaje de Selección -->
+                          <div class="absolute inset-y-0 left-0 transition-all duration-500 pointer-events-none"
+                               :class="opc.is_correct ? 'bg-emerald-500/15' : 'bg-slate-200/50 dark:bg-white/[0.04]'"
+                               :style="'width: ' + (opc.porcentaje || 0) + '%'"></div>
+
+                          <div class="relative flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                              <!-- Letra A, B, C... -->
+                              <span class="w-6 h-6 rounded-lg text-xs font-bold font-mono flex items-center justify-center flex-shrink-0 border"
+                                    :class="opc.is_correct
+                                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-xs'
+                                      : 'bg-[#efe9dc] dark:bg-zinc-800 text-[var(--paper-ink)] border-[var(--paper-shadow)] dark:border-zinc-700'"
+                                    x-text="String.fromCharCode(65 + oIdx)"></span>
+
+                              <span class="text-xs font-medium text-[var(--paper-ink)] leading-snug"
+                                    x-text="opc.opcion"></span>
+
+                              <!-- Badge Clave Correcta -->
+                              <template x-if="opc.is_correct">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
+                                  <i class="fa-solid fa-check text-[9px]"></i> Clave Correcta
+                                </span>
+                              </template>
+                            </div>
+
+                            <!-- Conteo y Porcentaje de Selección -->
+                            <div class="flex items-center gap-2 flex-shrink-0 text-right">
+                              <span class="font-mono font-bold text-xs"
+                                    :class="opc.is_correct ? 'text-emerald-700 dark:text-emerald-300 font-black' : 'text-[var(--paper-ink)]'"
+                                    x-text="(opc.votos || 0) + ' votos'"></span>
+                              <span class="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold border"
+                                    :class="opc.is_correct
+                                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                      : 'bg-[#efe9dc] dark:bg-zinc-800 text-[var(--paper-muted)] border-[var(--paper-shadow)] dark:border-zinc-700'"
+                                    x-text="(opc.porcentaje || 0) + '%'"></span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Respuestas Abiertas / Texto -->
+                  <div x-show="preg.tipo_respuesta === 'TEXTO' || preg.tipo_respuesta === 'ABIERTA'"
+                    class="space-y-2 pt-2 border-t border-dashed border-[var(--paper-shadow)]">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--paper-muted)] flex items-center gap-1.5">
+                      <i class="fa-solid fa-align-left text-xs text-blue-500"></i>
+                      <span>Muestra de Respuestas Abiertas Recientes:</span>
+                    </span>
+
+                    <template x-if="preg.respuestas_abiertas && preg.respuestas_abiertas.length > 0">
+                      <div class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-1">
+                        <template x-for="(ra, raIdx) in preg.respuestas_abiertas" :key="raIdx">
+                          <div class="p-3 rounded-xl bg-[#efe9dc]/30 dark:bg-white/[0.03] border border-[var(--paper-shadow)] space-y-1">
+                            <p class="text-xs text-[var(--paper-ink)] leading-relaxed whitespace-pre-wrap"
+                               x-text="ra.texto"></p>
+                            <span class="text-[10px] text-[var(--paper-muted)] font-mono block text-right"
+                                  x-text="ra.fecha || ''"></span>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="!preg.respuestas_abiertas || preg.respuestas_abiertas.length === 0">
+                      <p class="text-xs italic text-[var(--paper-muted)]">
+                        No se han registrado respuestas de texto para esta pregunta aún.
+                      </p>
+                    </template>
+                  </div>
+
+                </div>
+              </template>
+            </div>
+
+          </div>
+
+          <!-- Pie del modal estilo Ticket con resguardo sobre el troquelado -->
+          <div class="flex items-center justify-between gap-4 pt-3 pb-4 px-1 flex-shrink-0">
+            <div class="flex items-center gap-2 text-xs text-[var(--paper-muted)]">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#efe9dc] dark:bg-white/10 text-emerald-600 dark:text-emerald-400 font-bold border border-[var(--paper-shadow)] shadow-2xs">
+                <i class="fa-solid fa-list-check text-[11px]"></i>
+              </span>
+              <span>Total preguntas: <strong class="text-[var(--paper-ink)] font-mono text-xs sm:text-sm" x-text="estadisticasData?.estadisticas_preguntas?.length || 0"></strong></span>
+              <span class="mx-1 opacity-40">·</span>
+              <span>Mostrando: <strong class="text-[var(--paper-ink)] font-mono text-xs sm:text-sm" x-text="preguntasEstadisticasFiltradas.length"></strong></span>
+            </div>
+            <button type="button" @click="cerrarEstadisticas()"
+              class="modal-btn-cancel px-7 py-2 cursor-pointer text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-2xs">
+              Cerrar
+            </button>
+          </div>
+
+          <!-- Borde dentado característico de ticket INCARSA -->
+          <div class="modal-serrated"></div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}

@@ -2,9 +2,8 @@ import os
 import random
 import hashlib
 import bcrypt
-import resend 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, status, Depends, Response
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
 
 from dotenv import load_dotenv
 
@@ -28,22 +27,46 @@ from src.loaders.auth_loader import (
     PATCH_password_db,
     POST_2faToken_db,
     GET_validate2faToken_db,
-    MARK_2faToken_used_db
+    MARK_2faToken_used_db,
+    GET_latest_active_2fa_db,
+    INCREMENT_intentos_2fa_db,
+    GET_latest_active_reset_db,
+    INCREMENT_intentos_reset_db
 )
 
-from src.utils.security import verify_password, create_access_token, decode_access_token, get_current_user
+from src.utils.security import (
+    verify_password,
+    create_access_token,
+    decode_access_token,
+    get_current_user,
+    hash_codigo_seguro,
+    generar_codigo_otp,
+    obtener_ip_cliente,
+    verificar_rate_limit_ip
+)
 from src.loaders.superadmin_loader import GET_permisos_rol_db, GET_dos_pasos_status
 
 
-resend.api_key = os.getenv("RESEND_API_KEY", "")
-
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
+
+# Cooldown en memoria para prevenir spam de reenvío en el servidor (60 segundos)
+_cooldown_recuperacion: dict[str, datetime] = {}
+_cooldown_2fa: dict[int, datetime] = {}
 
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def enviar_correo_smtp(destinatario: str, asunto: str, cuerpo_html: str) -> bool:
+    try:
+        from src.loaders.superadmin_loader import GET_configuracion_correos_induccion_db
+        cfg_correos = GET_configuracion_correos_induccion_db()
+        if not cfg_correos.get("correos_habilitados", True):
+            print(f"[AUTH-EMAIL-TEST-MODE] Despacho SMTP pausado por SuperAdmin. Envio simulado con exito hacia '{destinatario}'.")
+            return True
+    except Exception:
+        pass
+
     load_dotenv(override=True)
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "465"))
@@ -92,36 +115,35 @@ def ofuscar_correo(email: str) -> str:
         return email
 
 def generar_html_correo_2fa(nombre_usuario: str, codigo_plano: str) -> str:
-    """Genera la plantilla HTML con estética Dark Premium para el correo de verificación en dos pasos."""
+    """Genera la plantilla HTML ejecutiva con fondo blanco y acento Signal Red para el código 2FA."""
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark">
   <title>Verificación en 2 Pasos — PSI INCARSA</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 36px 16px;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9; padding: 36px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 540px; background-color: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7); border: 1px solid #1e293b;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0;">
           
-          <!-- Franja superior en degradado Sky / Indigo Neón -->
+          <!-- Franja superior en color Signal Red -->
           <tr>
-            <td style="height: 5px; background: linear-gradient(90deg, #38bdf8 0%, #6366f1 50%, #2563eb 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
+            <td style="height: 5px; background: linear-gradient(90deg, #fb3b4c 0%, #dc2626 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
           </tr>
 
           <!-- Encabezado Institucional -->
           <tr>
-            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #1e293b;">
-              <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-                INCARSA <span style="color: #38bdf8; font-weight: 300;">·</span> <span style="color: #cbd5e1; font-size: 18px; font-weight: 500;">Gestión de Acceso a Planta</span>
+            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #f1f5f9; background-color: #ffffff;">
+              <h1 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.3px;">
+                INCARSA <span style="color: #fb3b4c; font-weight: 900;">·</span> <span style="color: #475569; font-size: 17px; font-weight: 500;">Control de Acceso</span>
               </h1>
-              <p style="color: #94a3b8; font-size: 12px; font-weight: 500; margin: 6px 0 0 0;">
+              <p style="color: #64748b; font-size: 12px; font-weight: 500; margin: 5px 0 0 0;">
                 Sistema de Control y Gestión de Seguridad · Plataforma PSI
               </p>
-              <div style="display: inline-block; background-color: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px;">
+              <div style="display: inline-block; background-color: #fef2f2; color: #dc2626; border: 1px solid #fecdd3; border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 12px;">
                 🔐 Verificación en 2 Pasos (2FA)
               </div>
             </td>
@@ -129,28 +151,28 @@ def generar_html_correo_2fa(nombre_usuario: str, codigo_plano: str) -> str:
 
           <!-- Contenido Principal -->
           <tr>
-            <td style="padding: 28px 32px 32px 32px;">
-              <h2 style="color: #ffffff; font-size: 19px; font-weight: 800; margin: 0 0 12px 0; text-align: center;">
+            <td style="padding: 28px 32px 32px 32px; background-color: #ffffff;">
+              <h2 style="color: #0f172a; font-size: 19px; font-weight: 800; margin: 0 0 10px 0; text-align: center;">
                 Tu código de acceso seguro
               </h2>
-              <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 24px 0; text-align: center;">
-                Hola <strong style="color: #ffffff;">{nombre_usuario}</strong>, se ha detectado un inicio de sesión en tu cuenta de la plataforma <strong style="color: #ffffff;">PSI</strong>. Ingresa el siguiente código temporal de 6 dígitos para verificar tu identidad:
+              <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 24px 0; text-align: center;">
+                Hola <strong style="color: #0f172a;">{nombre_usuario}</strong>, se ha detectado un inicio de sesión en tu cuenta de la plataforma <strong style="color: #0f172a;">PSI</strong>. Ingresa el siguiente código temporal de 6 dígitos para verificar tu identidad:
               </p>
 
-              <!-- Tarjeta OTP en Modo Oscuro -->
-              <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 22px 16px; text-align: center; margin-bottom: 22px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);">
-                <div style="font-family: 'Courier New', Courier, monospace; font-size: 40px; font-weight: 900; letter-spacing: 12px; color: #38bdf8; line-height: 1; padding-left: 12px;">
+              <!-- Tarjeta OTP en Blanco y Signal Red -->
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #fb3b4c; border-radius: 12px; padding: 22px 16px; text-align: center; margin-bottom: 22px;">
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 40px; font-weight: 900; letter-spacing: 12px; color: #fb3b4c; line-height: 1; padding-left: 12px;">
                   {codigo_plano}
                 </div>
-                <div style="margin-top: 12px; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;">
+                <div style="margin-top: 12px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px;">
                   ⏱️ Válido por 10 minutos
                 </div>
               </div>
 
               <!-- Aviso de seguridad -->
-              <div style="background-color: rgba(56, 189, 248, 0.05); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;">
-                <p style="font-size: 12px; line-height: 1.5; color: #cbd5e1; margin: 0;">
-                  🛡️ <strong style="color: #ffffff;">¿No fuiste tú?</strong> Si no estás intentando iniciar sesión en este momento, alguien podría tener tu contraseña. Te recomendamos comunicarte inmediatamente con el administrador del sistema.
+              <div style="background-color: #fff1f2; border-left: 4px solid #fb3b4c; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;">
+                <p style="font-size: 12px; line-height: 1.5; color: #9f1239; margin: 0;">
+                  🛡️ <strong style="color: #881337;">¿No fuiste tú?</strong> Si no estás intentando iniciar sesión en este momento, alguien podría tener tu contraseña. Te recomendamos comunicarte inmediatamente con el administrador del sistema.
                 </p>
               </div>
             </td>
@@ -158,11 +180,11 @@ def generar_html_correo_2fa(nombre_usuario: str, codigo_plano: str) -> str:
 
           <!-- Pie de Página -->
           <tr>
-            <td style="background-color: #080d19; border-top: 1px solid #1e293b; padding: 20px 32px; text-align: center;">
-              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">
-                <strong style="color: #ffffff;">INCARSA</strong> · Industria de Alimentos y Concentrados de Santander · Plataforma PSI
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+              <p style="font-size: 11px; color: #64748b; line-height: 1.5; margin: 0;">
+                <strong style="color: #0f172a;">INCARSA S.A.S.</strong> · NIT 830.078.829-5 · Plataforma PSI
               </p>
-              <p style="font-size: 10px; color: #64748b; margin: 6px 0 0 0;">
+              <p style="font-size: 10px; color: #94a3b8; margin: 6px 0 0 0;">
                 Este es un mensaje generado automáticamente por el sistema de seguridad. Por favor, no respondas a este correo.
               </p>
             </td>
@@ -177,40 +199,11 @@ def generar_html_correo_2fa(nombre_usuario: str, codigo_plano: str) -> str:
 
 def enviar_correo_2fa(destinatario: str, nombre_usuario: str, codigo_plano: str) -> bool:
     html = generar_html_correo_2fa(nombre_usuario, codigo_plano)
-    enviado = enviar_correo_smtp(
+    return enviar_correo_smtp(
         destinatario=destinatario,
         asunto="Código de verificación en 2 pasos - INCARSA",
         cuerpo_html=html
     )
-    if not enviado:
-        load_dotenv()
-        api_key_actual = os.getenv("RESEND_API_KEY", resend.api_key)
-        resend.api_key = api_key_actual
-        if resend.api_key and not resend.api_key.startswith("re_XXXX"):
-            try:
-                resend.Emails.send({
-                    "from": "PSI Soporte <onboarding@resend.dev>",
-                    "to": [destinatario],
-                    "subject": "Código de verificación en 2 pasos - INCARSA",
-                    "html": html
-                })
-                enviado = True
-                print(f"[AUTH-RESEND] Correo 2FA enviado exitosamente a: {destinatario}")
-            except Exception as e:
-                err_msg = str(e)
-                print(f"[AUTH-RESEND] Intento de envio 2FA a {destinatario} devolvio: {err_msg}")
-                if "testing emails to your own email address" in err_msg:
-                    try:
-                        resend.Emails.send({
-                            "from": "PSI Soporte <onboarding@resend.dev>",
-                            "to": ["juandeveloper2427@gmail.com"],
-                            "subject": f"Código de verificación en 2 pasos ({destinatario}) - INCARSA",
-                            "html": html
-                        })
-                        enviado = True
-                    except Exception as e2:
-                        print(f"[AUTH-RESEND] Error enviando email 2FA a cuenta Resend: {e2}")
-    return enviado
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(payload: LoginInput, response: Response):
@@ -243,8 +236,10 @@ def login(payload: LoginInput, response: Response):
     # =========================================================================
     dos_pasos_activo = GET_dos_pasos_status()
     if dos_pasos_activo:
-        codigo_plano = f"{random.randint(100000, 999999)}"
-        codigo_hash = hashlib.sha256(codigo_plano.encode()).hexdigest()
+        # Iniciar cooldown de 2FA
+        _cooldown_2fa[usuario["id"]] = datetime.utcnow()
+        codigo_plano = generar_codigo_otp()
+        codigo_hash = hash_codigo_seguro(codigo_plano)
         expiracion = datetime.utcnow() + timedelta(minutes=10)
 
         POST_2faToken_db(usuario["id"], codigo_hash, expiracion)
@@ -270,10 +265,6 @@ def login(payload: LoginInput, response: Response):
             "correo_ofuscado": ofuscar_correo(usuario["correo"])
         }
 
-        # Si el correo no pudo ser despachado por SMTP/Resend en entorno local, incluir código demo
-        if not email_enviado:
-            res_payload["codigo_demo"] = codigo_plano
-
         return res_payload
 
     # =========================================================================
@@ -291,22 +282,25 @@ def login(payload: LoginInput, response: Response):
 
     permisos_info = GET_permisos_rol_db(int(usuario["id_rol"])) if usuario.get("id_rol") else {}
 
-    # Establecer cookies de autenticación para navegaciones directas del navegador
+    cookie_secure = os.getenv("ENVIRONMENT", "").lower() == "production" or os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    # Establecer cookies de autenticación HttpOnly para proteger contra robo vía XSS
     response.set_cookie(
         key="token",
         value=token,
-        httponly=False,
+        httponly=True,
         max_age=86400 * 7,
         path="/",
-        samesite="lax"
+        samesite="lax",
+        secure=cookie_secure
     )
     response.set_cookie(
         key="incarsa_token",
         value=token,
-        httponly=False,
+        httponly=True,
         max_age=86400 * 7,
         path="/",
-        samesite="lax"
+        samesite="lax",
+        secure=cookie_secure
     )
 
     return {
@@ -327,8 +321,12 @@ def login(payload: LoginInput, response: Response):
     }
 
 @router.post("/verificar-2fa", status_code=status.HTTP_200_OK)
-def verificar_2fa(payload: Verificar2FAInput, response: Response):
-    """Valida el código OTP de 6 dígitos ingresado por el usuario y emite la sesión final."""
+def verificar_2fa(payload: Verificar2FAInput, request: Request, response: Response):
+    """Valida el código OTP de 6 dígitos ingresado por el usuario, limita intentos a 5 y emite la sesión final."""
+    # 1. Limitación de tasa por dirección IP (anti fuerza bruta)
+    client_ip = obtener_ip_cliente(request)
+    verificar_rate_limit_ip(client_ip)
+
     token_data = decode_access_token(payload.temp_token)
     if not token_data or token_data.get("tipo") != "2fa_pending":
         raise HTTPException(
@@ -344,19 +342,18 @@ def verificar_2fa(payload: Verificar2FAInput, response: Response):
             detail="Identificador de usuario inválido en la sesión."
         )
 
-    codigo_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
-
-    token_info = GET_validate2faToken_db(user_id, codigo_hash)
-    if not token_info:
+    # 2. Consultar el último token 2FA activo generado
+    token_info = GET_latest_active_2fa_db(user_id)
+    if not token_info or token_info.get("used"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El código de verificación ingresado es incorrecto."
+            detail="El código de verificación ya ha sido utilizado o no existe. Solicita uno nuevo."
         )
 
-    if token_info.get("used"):
+    if token_info.get("intentos", 0) >= 5:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Este código de verificación ya ha sido utilizado."
+            detail="Has superado el límite de 5 intentos fallidos. El código ha sido invalidado por seguridad. Solicita uno nuevo."
         )
 
     expira_en = token_info.get("expiration_time")
@@ -366,7 +363,24 @@ def verificar_2fa(payload: Verificar2FAInput, response: Response):
             detail="El código de verificación ha expirado. Solicita un nuevo código."
         )
 
-    # Marcar token como utilizado
+    codigo_hash = hash_codigo_seguro(payload.codigo)
+    legacy_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
+
+    # 3. Validar coincidencia de hash
+    if token_info["code_hash"] != codigo_hash and token_info["code_hash"] != legacy_hash:
+        nuevos_intentos = INCREMENT_intentos_2fa_db(token_info["id"])
+        if nuevos_intentos >= 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Código incorrecto. Has alcanzado el límite de 5 intentos y el código ha sido invalidado. Solicita uno nuevo."
+            )
+        restantes = 5 - nuevos_intentos
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Código incorrecto. Te quedan {restantes} {'intento' if restantes == 1 else 'intentos'} antes de que el código sea bloqueado."
+        )
+
+    # Código correcto: marcar como utilizado
     MARK_2faToken_used_db(token_info["id"])
 
     # Obtener datos frescos del usuario para emitir la sesión final
@@ -397,22 +411,25 @@ def verificar_2fa(payload: Verificar2FAInput, response: Response):
     nombre_completo = f"{usuario.get('nombres', '')} {usuario.get('apellidos', '')}".strip()
     permisos_info = GET_permisos_rol_db(int(usuario["id_rol"])) if usuario.get("id_rol") else {}
 
-    # Establecer cookies de autenticación
+    cookie_secure = os.getenv("ENVIRONMENT", "").lower() == "production" or os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    # Establecer cookies de autenticación HttpOnly para proteger contra robo vía XSS
     response.set_cookie(
         key="token",
         value=final_token,
-        httponly=False,
+        httponly=True,
         max_age=86400 * 7,
         path="/",
-        samesite="lax"
+        samesite="lax",
+        secure=cookie_secure
     )
     response.set_cookie(
         key="incarsa_token",
         value=final_token,
-        httponly=False,
+        httponly=True,
         max_age=86400 * 7,
         path="/",
-        samesite="lax"
+        samesite="lax",
+        secure=cookie_secure
     )
 
     return {
@@ -458,8 +475,21 @@ def reenviar_2fa(payload: Reenviar2FAInput):
             detail="El usuario no se encuentra activo."
         )
 
-    codigo_plano = f"{random.randint(100000, 999999)}"
-    codigo_hash = hashlib.sha256(codigo_plano.encode()).hexdigest()
+    # Cooldown de 60 segundos en el servidor para prevenir abuso de reenvío
+    ahora = datetime.utcnow()
+    ultimo_2fa = _cooldown_2fa.get(user_id)
+    if ultimo_2fa:
+        delta = (ahora - ultimo_2fa).total_seconds()
+        if delta < 60:
+            restante = int(60 - delta)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Debes esperar {restante} segundos antes de solicitar otro código de verificación."
+            )
+    _cooldown_2fa[user_id] = ahora
+
+    codigo_plano = generar_codigo_otp()
+    codigo_hash = hash_codigo_seguro(codigo_plano)
     expiracion = datetime.utcnow() + timedelta(minutes=10)
 
     POST_2faToken_db(user_id, codigo_hash, expiracion)
@@ -467,14 +497,10 @@ def reenviar_2fa(payload: Reenviar2FAInput):
     nombre_usuario = usuario.get("nombres") if "nombres" in usuario else "Usuario"
     email_enviado = enviar_correo_2fa(correo, nombre_usuario, codigo_plano)
 
-    res = {
+    return {
         "exito": True,
         "mensaje": "Se ha enviado un nuevo código de verificación a tu correo corporativo."
     }
-    if not email_enviado:
-        res["codigo_demo"] = codigo_plano
-
-    return res
 
 
 @router.get("/me", summary="Obtener perfil del usuario autenticado", status_code=status.HTTP_200_OK)
@@ -494,7 +520,7 @@ def get_current_user_profile(current_user: dict = Depends(get_current_user)):
     }
 
 @router.patch("/me", summary="Actualizar perfil del usuario autenticado (teléfono y contraseña)", status_code=status.HTTP_200_OK)
-def update_current_user_profile(payload: PerfilUpdateInput, current_user: dict = Depends(get_current_user)):
+def update_current_user_profile(payload: PerfilUpdateInput, response: Response, current_user: dict = Depends(get_current_user)):
     user_id = current_user.get("id")
     if not user_id:
         raise HTTPException(
@@ -520,10 +546,10 @@ def update_current_user_profile(payload: PerfilUpdateInput, current_user: dict =
 
     if payload.contrasena is not None and str(payload.contrasena).strip():
         pwd = str(payload.contrasena).strip()
-        if len(pwd) < 6:
+        if len(pwd) < 8:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La contraseña debe tener al menos 6 caracteres."
+                detail="La contraseña debe tener al menos 8 caracteres."
             )
         if payload.confirmar_contrasena is not None:
             if pwd != str(payload.confirmar_contrasena).strip():
@@ -549,39 +575,63 @@ def update_current_user_profile(payload: PerfilUpdateInput, current_user: dict =
 
     from src.services.usuario import READ_user
     user_fresco = READ_user(int(user_id))
-    return {
+    res_data = {
         "exito": True,
         "mensaje": "Perfil actualizado exitosamente.",
         "usuario": user_fresco.get("data", {})
     }
 
+    # Si se actualizó la contraseña, emitir nuevo token válido para el usuario actual y renovar cookies
+    if "contrasena" in updates:
+        token_data = {
+            "sub": str(user_id),
+            "correo": user_fresco.get("data", {}).get("correo", current_user.get("correo")),
+            "rol": current_user.get("rol", "USUARIO"),
+            "id_rol": current_user.get("id_rol")
+        }
+        nuevo_token = create_access_token(data=token_data)
+        res_data["access_token"] = nuevo_token
+        res_data["token_type"] = "bearer"
+        cookie_secure = os.getenv("ENVIRONMENT", "").lower() == "production" or os.getenv("COOKIE_SECURE", "false").lower() == "true"
+        response.set_cookie(key="token", value=nuevo_token, httponly=True, max_age=86400 * 7, path="/", samesite="lax", secure=cookie_secure)
+        response.set_cookie(key="incarsa_token", value=nuevo_token, httponly=True, max_age=86400 * 7, path="/", samesite="lax", secure=cookie_secure)
+
+    return res_data
+
 @router.post("/solicitar_recuperacion", status_code=status.HTTP_200_OK)
 def solicitar_recuperacion(payload: RecuperacionInput):
     correo = payload.correo.strip().lower()
 
+    # Rate limiting / cooldown en el servidor (60 segundos por correo)
+    ahora = datetime.utcnow()
+    ultimo_intento = _cooldown_recuperacion.get(correo)
+    if ultimo_intento:
+        delta = (ahora - ultimo_intento).total_seconds()
+        if delta < 60:
+            restante = int(60 - delta)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Debes esperar {restante} segundos antes de solicitar otro código de recuperación."
+            )
+    _cooldown_recuperacion[correo] = ahora
+
+    # Mensaje genérico para prevenir enumeración de usuarios (CWE-204)
+    mensaje_generico = "Si la dirección de correo ingresada se encuentra registrada y activa, recibirás un código de verificación."
+
     usuario = SEARCH_userbyCorreo_db(correo)
 
-    if not usuario:
-        print(f"[AUTH] Solicitud de recuperacion para correo no registrado: {correo}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="El correo ingresado no se encuentra registrado en el sistema."
-        )
+    if not usuario or not usuario.get("is_active"):
+        if not usuario:
+            print(f"[AUTH] Solicitud de recuperacion para correo no registrado: {correo}")
+        else:
+            print(f"[AUTH] Solicitud de recuperacion para usuario inactivo: {correo}")
+        return {
+            "exito": True,
+            "mensaje": mensaje_generico
+        }
 
-    if not usuario.get("is_active"):
-        print(f"[AUTH] Solicitud de recuperacion para usuario inactivo: {correo}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El usuario asociado a este correo se encuentra inactivo. Comunícate con el administrador."
-        )
-
-    mensaje_exito = {
-        "exito": True,
-        "mensaje": "Se ha enviado un código de recuperación a tu correo electrónico."
-    }
-
-    codigo_plano = f"{random.randint(100000, 999999)}"
-    codigo_hash = hashlib.sha256(codigo_plano.encode()).hexdigest()
+    codigo_plano = generar_codigo_otp()
+    codigo_hash = hash_codigo_seguro(codigo_plano)
     expiracion = datetime.utcnow() + timedelta(minutes=15)
 
     POST_recoveryToken_db(usuario["id_usuario"], codigo_hash, expiracion)
@@ -591,71 +641,70 @@ def solicitar_recuperacion(payload: RecuperacionInput):
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark">
   <title>Recuperación de Contraseña — PSI INCARSA</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 36px 16px;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9; padding: 36px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 540px; background-color: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7); border: 1px solid #1e293b;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0;">
           
-          <!-- Franja superior en degradado Sky / Blue Neón -->
+          <!-- Franja superior en color Signal Red -->
           <tr>
-            <td style="height: 5px; background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
+            <td style="height: 5px; background: linear-gradient(90deg, #fb3b4c 0%, #dc2626 100%); line-height: 5px; font-size: 1px;">&nbsp;</td>
           </tr>
 
-          <!-- Encabezado Institucional Modo Oscuro -->
+          <!-- Encabezado Institucional -->
           <tr>
-            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #1e293b;">
-              <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px; font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-                INCARSA <span style="color: #38bdf8; font-weight: 300;">·</span> <span style="color: #cbd5e1; font-size: 18px; font-weight: 500;">Gestión de Acceso a Planta</span>
+            <td style="padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #f1f5f9; background-color: #ffffff;">
+              <h1 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.3px;">
+                INCARSA <span style="color: #fb3b4c; font-weight: 900;">·</span> <span style="color: #475569; font-size: 17px; font-weight: 500;">Control de Acceso</span>
               </h1>
-              <p style="color: #94a3b8; font-size: 12px; font-weight: 500; margin: 6px 0 0 0;">
+              <p style="color: #64748b; font-size: 12px; font-weight: 500; margin: 5px 0 0 0;">
                 Sistema de Control y Gestión de Seguridad · Plataforma PSI
               </p>
-              <div style="display: inline-block; background-color: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px;">
-                Seguridad de la Cuenta
+              <div style="display: inline-block; background-color: #fef2f2; color: #dc2626; border: 1px solid #fecdd3; border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 12px;">
+                🔑 Seguridad de la Cuenta
               </div>
             </td>
           </tr>
 
           <!-- Contenido Principal -->
           <tr>
-            <td style="padding: 28px 32px 32px 32px;">
-              <h2 style="color: #ffffff; font-size: 19px; font-weight: 800; margin: 0 0 12px 0; text-align: center;">
+            <td style="padding: 28px 32px 32px 32px; background-color: #ffffff;">
+              <h2 style="color: #0f172a; font-size: 19px; font-weight: 800; margin: 0 0 10px 0; text-align: center;">
                 Código de verificación
               </h2>
-              <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 24px 0; text-align: center;">
-                Has solicitado restablecer tu contraseña de acceso al sistema <strong style="color: #ffffff;">PSI</strong>. Utiliza el siguiente código para completar la verificación:
+              <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 24px 0; text-align: center;">
+                Has solicitado restablecer tu contraseña de acceso al sistema <strong style="color: #0f172a;">PSI</strong>. Utiliza el siguiente código para completar la verificación:
               </p>
 
-              <!-- Tarjeta OTP en Modo Oscuro (High Contrast Sky Blue) -->
-              <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 22px 16px; text-align: center; margin-bottom: 22px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);">
-                <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #38bdf8; line-height: 1; padding-left: 10px;">
+              <!-- Tarjeta OTP en Blanco y Signal Red -->
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #fb3b4c; border-radius: 12px; padding: 22px 16px; text-align: center; margin-bottom: 22px;">
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #fb3b4c; line-height: 1; padding-left: 10px;">
                   {codigo_plano}
                 </div>
-                <div style="margin-top: 10px; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;">
+                <div style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px;">
                   ⏱️ Válido por 15 minutos
                 </div>
               </div>
 
-              <!-- Aviso de seguridad en modo oscuro -->
-              <div style="background-color: rgba(56, 189, 248, 0.05); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;">
-                <p style="font-size: 12px; line-height: 1.5; color: #cbd5e1; margin: 0;">
-                  🛡️ <strong style="color: #ffffff;">¿No solicitaste este código?</strong> Si no realizaste esta solicitud, puedes ignorar este mensaje con total seguridad. Tu contraseña actual no se modificará.
+              <!-- Aviso de seguridad -->
+              <div style="background-color: #fff1f2; border-left: 4px solid #fb3b4c; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;">
+                <p style="font-size: 12px; line-height: 1.5; color: #9f1239; margin: 0;">
+                  🛡️ <strong style="color: #881337;">¿No solicitaste este código?</strong> Si no realizaste esta solicitud, puedes ignorar este mensaje con total seguridad. Tu contraseña actual no se modificará.
                 </p>
               </div>
             </td>
           </tr>
 
-          <!-- Pie de Página: Modo Oscuro -->
+          <!-- Pie de Página -->
           <tr>
-            <td style="background-color: #080d19; border-top: 1px solid #1e293b; padding: 20px 32px; text-align: center;">
-              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">
-                <strong style="color: #ffffff;">INCARSA</strong> · Industria de Alimentos y Concentrados de Santander · Plataforma PSI
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+              <p style="font-size: 11px; color: #64748b; line-height: 1.5; margin: 0;">
+                <strong style="color: #0f172a;">INCARSA S.A.S.</strong> · NIT 830.078.829-5 · Plataforma PSI
               </p>
-              <p style="font-size: 10px; color: #64748b; margin: 6px 0 0 0;">
+              <p style="font-size: 10px; color: #94a3b8; margin: 6px 0 0 0;">
                 Este es un mensaje generado automáticamente por el sistema. Por favor, no respondas a este correo.
               </p>
             </td>
@@ -670,101 +719,103 @@ def solicitar_recuperacion(payload: RecuperacionInput):
 
     email_enviado = False
 
-    # 1. Intentar enviar con SMTP directo (llega a CUALQUIER correo corporativo/externo)
+    # Despachar código por SMTP directo
     email_enviado = enviar_correo_smtp(
         destinatario=correo,
         asunto="Código de recuperación de contraseña - INCARSA",
         cuerpo_html=html_correo
     )
 
-    # 2. Si SMTP no está configurado, intentar con Resend como alternativa
-    if not email_enviado:
-        load_dotenv()
-        api_key_actual = os.getenv("RESEND_API_KEY", resend.api_key)
-        resend.api_key = api_key_actual
-
-        if resend.api_key and not resend.api_key.startswith("re_XXXX"):
-            try:
-                resend.Emails.send({
-                    "from": "PSI Soporte <onboarding@resend.dev>",
-                    "to": [correo],
-                    "subject": "Código de recuperación de contraseña - INCARSA",
-                    "html": html_correo
-                })
-                email_enviado = True
-                print(f"[AUTH-RESEND] Correo de recuperacion enviado exitosamente a: {correo}")
-            except Exception as e:
-                err_msg = str(e)
-                print(f"[AUTH-RESEND] Intento de envio a {correo} devolvio: {err_msg}")
-                if "testing emails to your own email address" in err_msg:
-                    try:
-                        resend.Emails.send({
-                            "from": "PSI Soporte <onboarding@resend.dev>",
-                            "to": ["juandeveloper2427@gmail.com"],
-                            "subject": f"Código de recuperación de contraseña ({correo}) - INCARSA",
-                            "html": html_correo
-                        })
-                        email_enviado = True
-                        print(f"[AUTH-RESEND] Correo de recuperacion enviado a juandeveloper2427@gmail.com (cuenta Resend)")
-                    except Exception as e2:
-                        print(f"[AUTH-RESEND] Error enviando email a cuenta Resend: {e2}")
-
     print(f"[RECUPERACION] Codigo generado para '{correo}': {codigo_plano} (Email enviado: {email_enviado})")
 
-    # Si el correo no pudo ser despachado, mostramos el código demo en el front para no bloquear la prueba
-    if not email_enviado:
-        mensaje_exito["codigo_demo"] = codigo_plano
-
-    return mensaje_exito
+    return {
+        "exito": True,
+        "mensaje": mensaje_generico
+    }
 
 @router.post("/verificar-codigo", status_code=status.HTTP_200_OK)
-def verificar_codigo(payload: VerificarCodigoInput):
+def verificar_codigo(payload: VerificarCodigoInput, request: Request):
+    # 1. Limitación de tasa por IP
+    client_ip = obtener_ip_cliente(request)
+    verificar_rate_limit_ip(client_ip)
+
     correo = payload.correo.strip().lower()
-    codigo_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
-
     usuario = SEARCH_userbyCorreo_db(correo)
-    if not usuario:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El correo no se encuentra registrado.")
+    if not usuario or not usuario.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto o ha expirado.")
 
-    if not usuario.get("is_active"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario se encuentra inactivo.")
+    token_info = GET_latest_active_reset_db(usuario["id_usuario"])
+    if not token_info or token_info.get("used"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto o ha expirado.")
 
-    token_info = GET_validateTokens_db(usuario["id_usuario"], codigo_hash)
-    if not token_info:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto.")
-
-    if token_info.get("used"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Este código ya ha sido utilizado.")
+    if token_info.get("intentos", 0) >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Has superado el límite de 5 intentos permitidos. El código ha sido invalidado por seguridad. Solicita uno nuevo."
+        )
 
     expira_en = token_info.get("expiration_time")
     if expira_en and datetime.utcnow() > expira_en:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ha expirado.")
+
+    codigo_hash = hash_codigo_seguro(payload.codigo)
+    legacy_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
+
+    if token_info["code_hash"] != codigo_hash and token_info["code_hash"] != legacy_hash:
+        nuevos_intentos = INCREMENT_intentos_reset_db(token_info["id"])
+        if nuevos_intentos >= 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Código incorrecto. Has alcanzado el límite de 5 intentos y el código ha sido invalidado. Solicita uno nuevo."
+            )
+        restantes = 5 - nuevos_intentos
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Código incorrecto. Te quedan {restantes} {'intento' if restantes == 1 else 'intentos'} antes de que el código sea bloqueado."
+        )
 
     return {"exito": True, "mensaje": "Código verificado correctamente."}
 
 @router.post("/restablecer-contrasena", status_code=status.HTTP_200_OK)
-def restablecer_contrasena(payload: RestablecerPasswordInput):
+def restablecer_contrasena(payload: RestablecerPasswordInput, request: Request):
+    # 1. Limitación de tasa por IP
+    client_ip = obtener_ip_cliente(request)
+    verificar_rate_limit_ip(client_ip)
+
     correo = payload.correo.strip().lower()
-    codigo_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
-
     usuario = SEARCH_userbyCorreo_db(correo)
-    if not usuario:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El correo no se encuentra registrado.")
+    if not usuario or not usuario.get("is_active"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto o ha expirado.")
 
-    if not usuario.get("is_active"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario se encuentra inactivo.")
+    token_info = GET_latest_active_reset_db(usuario["id_usuario"])
+    if not token_info or token_info.get("used"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto o ha expirado.")
 
-    token_info = GET_validateTokens_db(usuario["id_usuario"], codigo_hash)
-    
-    if not token_info:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ingresado es incorrecto.")
-
-    if token_info.get("used"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Este código ya ha sido utilizado.")
+    if token_info.get("intentos", 0) >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Has superado el límite de 5 intentos permitidos. El código ha sido invalidado por seguridad. Solicita uno nuevo."
+        )
 
     expira_en = token_info.get("expiration_time")
     if expira_en and datetime.utcnow() > expira_en:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código ha expirado.")
+
+    codigo_hash = hash_codigo_seguro(payload.codigo)
+    legacy_hash = hashlib.sha256(payload.codigo.strip().encode()).hexdigest()
+
+    if token_info["code_hash"] != codigo_hash and token_info["code_hash"] != legacy_hash:
+        nuevos_intentos = INCREMENT_intentos_reset_db(token_info["id"])
+        if nuevos_intentos >= 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Código incorrecto. Has alcanzado el límite de 5 intentos y el código ha sido invalidado. Solicita uno nuevo."
+            )
+        restantes = 5 - nuevos_intentos
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Código incorrecto. Te quedan {restantes} {'intento' if restantes == 1 else 'intentos'} antes de que el código sea bloqueado."
+        )
 
     # Hashear contraseña con bcrypt para compatibilidad total con el sistema
     password_bytes = payload.nueva_contrasena.encode('utf-8')
@@ -776,3 +827,11 @@ def restablecer_contrasena(payload: RestablecerPasswordInput):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo actualizar la contraseña.")
 
     return {"exito": True, "mensaje": "Contraseña actualizada correctamente."}
+
+@router.post("/logout", summary="Cerrar sesión y limpiar cookies HttpOnly", status_code=status.HTTP_200_OK)
+def logout_endpoint(response: Response):
+    """Elimina las cookies de autenticación HttpOnly emitidas por el servidor."""
+    response.delete_cookie(key="token", path="/")
+    response.delete_cookie(key="incarsa_token", path="/")
+    response.delete_cookie(key="access_token", path="/")
+    return {"exito": True, "mensaje": "Sesión cerrada exitosamente."}

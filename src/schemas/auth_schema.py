@@ -9,21 +9,21 @@ class RecuperacionInput(BaseModel):
 
 class VerificarCodigoInput(BaseModel):
     correo: EmailStr
-    codigo: str = Field(..., min_length=6, max_length=8, description="Código de verificación")
+    codigo: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="Código de verificación de 6 dígitos")
 
 class RestablecerPasswordInput(BaseModel):
     correo: EmailStr
-    codigo: str = Field(..., min_length=6, max_length=8, description="Código de restauración")
-    nueva_contrasena: str = Field(..., min_length=6, description="Nueva contraseña")
+    codigo: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="Código de restauración de 6 dígitos")
+    nueva_contrasena: str = Field(..., min_length=8, description="Nueva contraseña (mínimo 8 caracteres)")
 
 class PerfilUpdateInput(BaseModel):
     num_telefono: str | None = None
-    contrasena: str | None = None
+    contrasena: str | None = Field(None, min_length=8, description="Nueva contraseña (mínimo 8 caracteres)")
     confirmar_contrasena: str | None = None
 
 class Verificar2FAInput(BaseModel):
     temp_token: str = Field(..., description="Token temporal emitido tras login")
-    codigo: str = Field(..., min_length=6, max_length=6, description="Código OTP de 6 dígitos")
+    codigo: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="Código OTP de 6 dígitos")
 
 class Reenviar2FAInput(BaseModel):
     temp_token: str = Field(..., description="Token temporal emitido tras login")

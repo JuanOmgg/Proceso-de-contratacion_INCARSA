@@ -65,7 +65,8 @@ def upgrade() -> None:
         "personas",
         "procesamiento",
         "antecedentes",
-        "revision_solicitud"
+        "revision_solicitud",
+        "dispositivos"
     ]
     acciones = ["ver", "crear", "editar", "eliminar", "aprobar"]
 
@@ -75,36 +76,42 @@ def upgrade() -> None:
             "dashboard": True, "solicitudes": True, "nueva_solicitud": True, "usuarios": True,
             "nuevo_usuario": True, "plantas": True, "contratistas": True, "vehiculos": True,
             "personas": True, "procesamiento": True, "antecedentes": True, "revision_solicitud": True,
+            "dispositivos": True,
             "crear": True, "editar": True, "eliminar": True, "aprobar": True
         },
-        "GESTION DOCUMENTAL": {
+        "SOLICITANTE": {
             "dashboard": True, "solicitudes": True, "nueva_solicitud": True, "usuarios": False,
             "nuevo_usuario": False, "plantas": False, "contratistas": True, "vehiculos": True,
             "personas": True, "procesamiento": True, "antecedentes": False, "revision_solicitud": True,
+            "dispositivos": True,
             "crear": True, "editar": True, "eliminar": False, "aprobar": False
         },
         "SST": {
             "dashboard": True, "solicitudes": True, "nueva_solicitud": True, "usuarios": False,
             "nuevo_usuario": False, "plantas": False, "contratistas": False, "vehiculos": False,
             "personas": True, "procesamiento": True, "antecedentes": True, "revision_solicitud": True,
+            "dispositivos": True,
             "crear": False, "editar": False, "eliminar": False, "aprobar": True
         },
         "GESCO": {
             "dashboard": True, "solicitudes": True, "nueva_solicitud": True, "usuarios": False,
             "nuevo_usuario": False, "plantas": False, "contratistas": False, "vehiculos": False,
             "personas": True, "procesamiento": True, "antecedentes": False, "revision_solicitud": True,
+            "dispositivos": True,
             "crear": False, "editar": False, "eliminar": False, "aprobar": True
         },
         "SCR": {
             "dashboard": True, "solicitudes": True, "nueva_solicitud": True, "usuarios": False,
             "nuevo_usuario": False, "plantas": True, "contratistas": True, "vehiculos": True,
             "personas": True, "procesamiento": True, "antecedentes": True, "revision_solicitud": True,
+            "dispositivos": True,
             "crear": True, "editar": True, "eliminar": False, "aprobar": True
         },
         "VIGILANTE": {
             "dashboard": True, "solicitudes": True, "nueva_solicitud": False, "usuarios": False,
             "nuevo_usuario": False, "plantas": False, "contratistas": False, "vehiculos": False,
             "personas": True, "procesamiento": False, "antecedentes": False, "revision_solicitud": False,
+            "dispositivos": False,
             "crear": False, "editar": False, "eliminar": False, "aprobar": False
         }
     }

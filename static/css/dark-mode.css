@@ -18,7 +18,9 @@
   --steel-100:     #1e1e1e;
   --steel-200:     #262626;
   --steel-300:     #333333;
-  --signal-500: #ac020a;
+  --signal-500:    #fb3b4c;
+  --signal-600:    #fa2336;
+  --signal-100:    rgba(251, 59, 76, 0.15);
   --shadow-card:   0 1px 3px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.5);
   --shadow-panel:  0 4px 20px rgba(0,0,0,0.6);
   --shadow-modal:  0 20px 48px rgba(0,0,0,0.8);
@@ -712,30 +714,40 @@ html.dark select option:checked {
 
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser {
-  background: linear-gradient(135deg, #dc2626 0%, #f97316 100%) !important;
+  background: var(--signal-500) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
-  border: 1.5px solid rgba(249, 115, 22, 0.6) !important;
+  box-shadow: 0 0 10px rgba(251, 59, 76, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+  border: 1.5px solid rgba(251, 59, 76, 0.6) !important;
   letter-spacing: 0.02em;
   transition: all 0.25s ease;
 }
 
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .body{
+  background: #03202e;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .inicialesUser:hover,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn:hover .inicialesUser {
-  background: linear-gradient(135deg, #ef4444 0%, #fb923c 100%) !important;
+  background: var(--signal-500) !important;
+  filter: brightness(1.1) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
-  border-color: #f97316 !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  border-color: var(--signal-500) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn:hover,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .navbar-user-btn.navbar-user-btn-open {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
-  border-color: rgba(249, 115, 22, 0.55) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 16px rgba(249, 115, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(251, 59, 76, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 14px rgba(251, 59, 76, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 :root.dark .section-users:hover {
@@ -857,32 +869,32 @@ html.dark select option:checked {
   z-index: 2;
 }
 
-:root.dark .buttonUserSistem:hover {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%) !important;
-  border-color: rgba(0, 240, 255, 0.5) !important;
-  box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.25), inset 0 0 14px rgba(0, 240, 255, 0.06) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .buttonUserSistem:hover {
+  background: linear-gradient(135deg, rgba(240, 50, 62, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+  border-color: rgba(240, 50, 62, 0.55) !important;
+  box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(240, 50, 62, 0.28), inset 0 0 14px rgba(240, 50, 62, 0.06) !important;
   transform: translateY(-3px) !important;
 }
 
-:root.dark .buttonUserSistem .usuariosSistema {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(99, 102, 241, 0.2)) !important;
-  border: 1.5px solid rgba(0, 240, 255, 0.45) !important;
-  color: #38bdf8 !important;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3) !important;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .buttonUserSistem .usuariosSistema {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 0 6px rgba(255, 255, 255, 0.04) !important;
+  text-shadow: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.25s ease !important;
 }
 
-:root.dark .buttonUserSistem:hover .usuariosSistema {
-  background: linear-gradient(135deg, #00f0ff, #3b82f6) !important;
-  border-color: #ffffff !important;
-  color: #0d1117 !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .buttonUserSistem:hover .usuariosSistema {
+  background: linear-gradient(135deg, #f0323e 0%, #dc2626 100%) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
   font-weight: 800 !important;
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.7) !important;
-  text-shadow: none !important;
+  box-shadow: 0 0 18px rgba(240, 50, 62, 0.65) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
   transform: scale(1.08) !important;
 }
 
@@ -892,9 +904,9 @@ html.dark select option:checked {
   transition: color 0.2s ease, text-shadow 0.2s ease !important;
 }
 
-:root.dark .buttonUserSistem:hover .user-card-name {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .buttonUserSistem:hover .user-card-name {
   color: #ffffff !important;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.45) !important;
 }
 
 :root.dark .buttonUserSistem .user-card-email {
@@ -902,65 +914,96 @@ html.dark select option:checked {
   transition: color 0.2s ease, text-shadow 0.2s ease !important;
 }
 
-:root.dark .buttonUserSistem:hover .user-card-email {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .buttonUserSistem:hover .user-card-email {
+  color: #fca5a5 !important;
+  text-shadow: 0 0 8px rgba(240, 50, 62, 0.35) !important;
+}
+
+/* ===== ESTILO EXCLUSIVO SUPERADMIN (Gradiente Cían/Púrpura Animado) ===== */
+:root[data-role="SUPERADMIN"] .buttonUserSistem:hover,
+:root.role-superadmin .buttonUserSistem:hover,
+:root.dark[data-role="SUPERADMIN"] .buttonUserSistem:hover,
+:root.dark.role-superadmin .buttonUserSistem:hover {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%) !important;
+  border-color: rgba(6, 182, 212, 0.5) !important;
+  box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.35), 0 0 30px rgba(217, 70, 239, 0.25) !important;
+  transform: translateY(-3px) !important;
+}
+
+:root[data-role="SUPERADMIN"] .buttonUserSistem .usuariosSistema,
+:root.role-superadmin .buttonUserSistem .usuariosSistema,
+:root.dark[data-role="SUPERADMIN"] .buttonUserSistem .usuariosSistema,
+:root.dark.role-superadmin .buttonUserSistem .usuariosSistema {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.2)) !important;
+  border: 1.5px solid rgba(6, 182, 212, 0.45) !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.3) !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.25s ease !important;
+}
+
+:root[data-role="SUPERADMIN"] .buttonUserSistem:hover .usuariosSistema,
+:root.role-superadmin .buttonUserSistem:hover .usuariosSistema,
+:root.dark[data-role="SUPERADMIN"] .buttonUserSistem:hover .usuariosSistema,
+:root.dark.role-superadmin .buttonUserSistem:hover .usuariosSistema {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.6) !important;
+  text-shadow: none !important;
+  transform: scale(1.08) !important;
+}
+
+:root[data-role="SUPERADMIN"] .buttonUserSistem:hover .user-card-name,
+:root.role-superadmin .buttonUserSistem:hover .user-card-name,
+:root.dark[data-role="SUPERADMIN"] .buttonUserSistem:hover .user-card-name,
+:root.dark.role-superadmin .buttonUserSistem:hover .user-card-name {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+}
+
+:root[data-role="SUPERADMIN"] .buttonUserSistem:hover .user-card-email,
+:root.role-superadmin .buttonUserSistem:hover .user-card-email,
+:root.dark[data-role="SUPERADMIN"] .buttonUserSistem:hover .user-card-email,
+:root.dark.role-superadmin .buttonUserSistem:hover .user-card-email {
   color: #38bdf8 !important;
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.5) !important;
 }
 
-/* =========================================================
-   BOTONES PRINCIPALES (.btn-signal) EN MODO OSCURO
-   Estilo Aurora Flama (Gamas de Rojo y Naranja)
-   con resplandor difuso exterior y texto oscuro de alto contraste
-   ========================================================= */
-@keyframes flameGradientShift {
-  0% {
-    background-position: 0% 50%;
-    box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2);
-  }
-  25% {
-    background-position: 50% 50%;
-    box-shadow: 0 0 16px -2px rgba(234, 88, 12, 0.4), 0 0 32px rgba(249, 115, 22, 0.2);
-  }
-  50% {
-    background-position: 100% 50%;
-    box-shadow: 0 0 18px -2px rgba(249, 115, 22, 0.45), 0 0 34px rgba(220, 38, 38, 0.25);
-  }
-  75% {
-    background-position: 150% 50%;
-    box-shadow: 0 0 16px -2px rgba(255, 107, 53, 0.42), 0 0 32px rgba(220, 38, 38, 0.22);
-  }
-  100% {
-    background-position: 200% 50%;
-    box-shadow: 0 0 16px -2px rgba(220, 38, 38, 0.4), 0 0 32px rgba(239, 68, 68, 0.2);
-  }
-}
 
 /* =========================================================
-   ESTILO AURORA FLAMA EN ELEMENTOS ROJOS (MODO OSCURO)
+   ELEMENTOS ROJOS CORPORATIVOS (SIGNAL) EN MODO OSCURO
    Botones principales (.btn-signal), enlace activo del sidebar,
    logo de la empresa y chip de rol (.role-chip)
+   Mismo tono rojo corporativo que el modo claro, pero optimizado
+   con mayor luminosidad y brillo suave sin efecto multicolor.
    ========================================================= */
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *),
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip,
 :root.dark .sidebar div:has(> .fa-shield-halved),
 :root.dark .sidebar .bg-\[var\(--signal-500\)\] {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f75d20 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   text-shadow: none !important;
 }
 
@@ -970,6 +1013,10 @@ html.dark select option:checked {
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active *,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active i,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-active span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active *,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active i,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active span,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active .sidebar-chevron,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip *,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .role-chip span,
 :root.dark .sidebar div:has(> .fa-shield-halved) i,
@@ -986,30 +1033,31 @@ html.dark select option:checked {
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *):hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.1) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px rgba(251, 59, 76, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-signal:not(.login-page *):active {
   transform: translateY(0) scale(0.97) !important;
 }
 
-/* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con efecto neón */
+/* 2. Enlace activo en el sidebar (.sidebar-link.is-active) con brillo signal */
 :root.dark .sidebar-link.is-active {
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
 }
 
-:root.dark .sidebar-link.is-active:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15);
+:root.dark .sidebar-link.is-active:hover,
+:root.dark .sidebar-link.is-module-active:hover {
+  animation: none !important;
+  filter: brightness(1.1);
   transform: translateX(4px);
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px rgba(251, 59, 76, 0.65) !important;
 }
 
 /* Sub-enlaces de módulos en el sidebar */
@@ -1025,37 +1073,27 @@ html.dark select option:checked {
 :root.dark .sidebar-sublink:hover {
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.06) !important;
-  border-left-color: rgba(249, 115, 22, 0.5) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6) !important;
+  border-left-color: rgba(251, 59, 76, 0.5) !important;
+  text-shadow: none !important;
   transform: translateX(3px) !important;
 }
 
-/* Sub-enlace activo con efecto neón refinado */
-:root.dark .sidebar-sublink.is-active {
+/* Sub-enlace activo con efecto signal nítido y refinado */
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-sublink.is-active {
   color: #ffffff !important;
   font-weight: 700 !important;
-  border-left: 3px solid #f97316 !important;
-  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22) 0%, rgba(239, 68, 68, 0.08) 60%, transparent 100%) !important;
+  border-left: 3.5px solid var(--signal-500) !important;
+  background: linear-gradient(90deg, rgba(251, 59, 76, 0.25) 0%, rgba(251, 59, 76, 0.08) 65%, transparent 100%) !important;
   border-radius: 0 8px 8px 0 !important;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 2px 0 8px rgba(239, 68, 68, 0.15) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 14px rgba(249, 115, 22, 0.45) !important;
-  transform: translateX(2px) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.25), inset 2px 0 6px rgba(251, 59, 76, 0.12) !important;
+  text-shadow: none !important;
+  transform: translateX(3px) !important;
 }
 
-/* Módulo padre en el sidebar cuando contiene la sección activa */
-:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(249, 115, 22, 0.45) !important;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35), inset 0 0 6px rgba(249, 115, 22, 0.15) !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
-}
-:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active i.fa-solid {
-  color: #f97316 !important;
-  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.85));
-}
-:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-link.is-module-active:hover {
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 35px rgba(220, 38, 38, 0.4) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .sidebar-sublink.is-active:hover {
+  background: linear-gradient(90deg, rgba(251, 59, 76, 0.35) 0%, rgba(251, 59, 76, 0.12) 70%, transparent 100%) !important;
+  box-shadow: 0 0 18px rgba(251, 59, 76, 0.4), inset 2px 0 8px rgba(251, 59, 76, 0.2) !important;
+  transform: translateX(4px) !important;
 }
 
 /* Control inferior Modo Compacto (Sidebar footer) */
@@ -1068,21 +1106,21 @@ html.dark select option:checked {
 }
 
 :root.dark .sidebar-collapse-btn:hover {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
-  border-color: rgba(249, 115, 22, 0.55) !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.3), inset 0 0 8px rgba(249, 115, 22, 0.06) !important;
+  background: linear-gradient(135deg, rgba(251, 59, 76, 0.12) 0%, rgba(251, 59, 76, 0.05) 100%) !important;
+  border-color: rgba(251, 59, 76, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.25) !important;
   color: #ffffff !important;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
 }
 
 :root.dark .sidebar-collapse-btn i {
-  color: #f97316 !important;
-  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.6)) !important;
+  color: var(--signal-500) !important;
+  filter: drop-shadow(0 0 6px rgba(251, 59, 76, 0.5)) !important;
   transition: transform 0.2s ease, filter 0.2s ease !important;
 }
 
 :root.dark .sidebar-collapse-btn:hover i {
-  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.9)) !important;
+  filter: drop-shadow(0 0 10px rgba(251, 59, 76, 0.8)) !important;
 }
 
 /* 3. Logo del sidebar (estable, sin hover interactivo) */
@@ -1109,7 +1147,7 @@ html.dark select option:checked {
   transform: none !important;
   border-radius: 8px !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.45), 0 0 20px rgba(220, 38, 38, 0.25) !important;
+  box-shadow: 0 0 12px rgba(251, 59, 76, 0.4), 0 0 20px rgba(251, 59, 76, 0.2) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
   letter-spacing: 0.04em !important;
 }
@@ -1137,24 +1175,16 @@ html.dark select option:checked {
 }
 
 /* =========================================================
-   STEPPER / WIZARD EN MODO OSCURO (ESTILO AURORA FLAMA)
+   STEPPER / WIZARD EN MODO OSCURO (ESTILO SIGNAL CORPORATIVO)
    ========================================================= */
 :root.dark .step-circle.is-current {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   border: none !important;
-  box-shadow: 0 0 16px 2px rgba(249, 115, 22, 0.6), 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
+  box-shadow: 0 0 14px 2px rgba(251, 59, 76, 0.5), 0 0 0 3px rgba(251, 59, 76, 0.2) !important;
   transform: scale(1.15) !important;
 }
 
@@ -1257,41 +1287,32 @@ html.dark select option:checked {
 }
 .dark .tkt-duration-pill.is-idle:hover,
 :root.dark .tkt-duration-pill.is-idle:hover {
-  border-color: #f77920 !important;
+  border-color: var(--signal-500) !important;
   color: #ffffff !important;
-  background: rgba(247, 121, 32, 0.14) !important;
-  box-shadow: 0 0 12px rgba(247, 121, 32, 0.3) !important;
+  background: rgba(251, 59, 76, 0.14) !important;
+  box-shadow: 0 0 12px rgba(251, 59, 76, 0.3) !important;
 }
 .dark .tkt-duration-pill.is-active,
 :root.dark .tkt-duration-pill.is-active {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
   font-weight: 900 !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
 .dark .tkt-duration-pill.is-active:hover,
 :root.dark .tkt-duration-pill.is-active:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px 2px rgba(251, 59, 76, 0.65) !important;
 }
 
-/* Pestañas del Ticket en Modo Oscuro - Estilo Aurora Flama */
+/* Pestañas del Ticket en Modo Oscuro - Estilo Signal Corporativo */
 :root.dark .tkt-tab-btn,
 .dark .tkt-tab-btn {
   text-shadow: none !important;
@@ -1303,22 +1324,13 @@ html.dark select option:checked {
 }
 :root.dark .tkt-tab-btn.is-active,
 .dark .tkt-tab-btn.is-active {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
@@ -1333,9 +1345,9 @@ html.dark select option:checked {
 }
 :root.dark .tkt-tab-btn.is-active:hover,
 .dark .tkt-tab-btn.is-active:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
+  box-shadow: 0 0 20px 2px rgba(251, 59, 76, 0.65) !important;
 }
 
 :root.dark .tkt-tab-btn.is-idle,
@@ -1380,22 +1392,13 @@ html.dark select option:checked {
 }
 :root.dark .tkt-toggle-btn.is-active,
 .dark .tkt-toggle-btn.is-active {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.6), 0 0 28px rgba(220, 38, 38, 0.4) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.4) !important;
   text-shadow: none !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
@@ -1407,31 +1410,22 @@ html.dark select option:checked {
   filter: none !important;
 }
 :root.dark .tkt-toggle-btn.is-active:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
 }
 
-/* Botones de Pie de Ticket en Modo Oscuro - Estilo Aurora Flama */
+/* Botones de Pie de Ticket en Modo Oscuro - Estilo Signal Corporativo */
 :root.dark .tkt-btn-submit,
 .dark .tkt-btn-submit,
 :root.dark button[class*="bg-[var(--signal-500)]"],
 .dark button[class*="bg-[var(--signal-500)]"] {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
@@ -1448,10 +1442,10 @@ html.dark select option:checked {
 .dark .tkt-btn-submit:hover:not(:disabled),
 :root.dark button[class*="bg-[var(--signal-500)]"]:hover,
 .dark button[class*="bg-[var(--signal-500)]"]:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px 2px rgba(251, 59, 76, 0.65) !important;
 }
 
 :root.dark .tkt-btn-cancel,
@@ -1487,7 +1481,19 @@ html.dark select option:checked {
   color: #94a3b8 !important;
 }
 
-:root.dark .correomodal {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .correomodal {
+  color: #fca5a5 !important;
+}
+
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .correomodal:hover {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(240, 50, 62, 0.45) !important;
+}
+
+:root[data-role="SUPERADMIN"] .correomodal,
+:root.role-superadmin .correomodal,
+:root.dark[data-role="SUPERADMIN"] .correomodal,
+:root.dark.role-superadmin .correomodal {
   color: #38bdf8 !important;
 }
 
@@ -1659,9 +1665,16 @@ html.dark select option:checked {
 }
 
 /* 12. Inputs y selects dentro de modales estilo ticket */
-:root.dark .modal-panel input.input-field,
-:root.dark .modal-panel select.input-field {
+:root.dark .modal-panel input.input-field {
   background: #18181b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:root.dark .modal-panel select.input-field {
+  background-color: #18181b !important;
   color: #f1f5f9 !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   border-radius: 8px !important;
@@ -1769,17 +1782,9 @@ body.dark .input-field.has-error:focus {
 :root.dark .modal-stamp.rechazado,
 :root.dark .al-stamp.danger,
 :root.dark .al-stamp.error {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #db5f06 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f04507 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   color: #ffffff !important;
   font-weight: 600 !important;
   text-shadow: none !important;
@@ -1801,13 +1806,16 @@ body.dark .input-field.has-error:focus {
   color: #ffffff !important;
 }
 
-/* Botón de confirmación interactivo en el modal - Estilo Aurora Flama */
+/* Botón de confirmación interactivo en el modal - Estilo Signal Corporativo */
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm {
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border-radius: 10px !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
 }
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm i,
@@ -1821,10 +1829,10 @@ body.dark .input-field.has-error:focus {
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm:hover,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .al-btn-confirm:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px 2px rgba(251, 59, 76, 0.65) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-btn-confirm:active,
@@ -1874,18 +1882,12 @@ body.dark .input-field.has-error:focus {
 :root.dark .modal-stamp.signal,
 .dark .modal-stamp.signal,
 :root.dark .al-stamp.signal {
-  background-image: linear-gradient(
-    135deg,
-    #dc2626 0%,
-    #f77920 40%,
-    #ef4444 70%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 200% !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   border: 2px solid rgba(255, 255, 255, 0.25) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 25px rgba(247, 121, 32, 0.55), 0 0 50px rgba(220, 38, 38, 0.35) !important;
+  box-shadow: 0 0 20px rgba(251, 59, 76, 0.45) !important;
   cursor: default !important;
   pointer-events: none !important;
 }
@@ -3456,7 +3458,7 @@ body.dark .input-field.has-error:focus {
    ========================================================= */
 
 /* Chips en estado reposo / inactivo */
-:root.dark .chip-select {
+:root.dark .chip-select:not(.chip-riesgo) {
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #94a3b8 !important;
@@ -3465,7 +3467,7 @@ body.dark .input-field.has-error:focus {
   cursor: pointer !important;
 }
 
-:root.dark .chip-select:hover {
+:root.dark .chip-select:not(.chip-riesgo):hover {
   background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.28) !important;
   color: #ffffff !important;
@@ -3473,80 +3475,91 @@ body.dark .input-field.has-error:focus {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Base seleccionada con brillo neón */
-:root.dark .chip-select.is-selected {
+/* Base seleccionada con fondo visiblemente más claro y destacado (fallback) */
+:root.dark .chip-select:not(.chip-riesgo).is-selected {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
   transform: translateY(-1px) scale(1.03) !important;
   border-width: 1.5px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.12) !important;
 }
 
-/* 1. INCARSA (Cian Eléctrico Neón) */
-:root.dark .chip-select.is-selected.chip-emp-incarsa {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22) 0%, rgba(14, 165, 233, 0.38) 100%) !important;
-  border-color: #00f0ff !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.55), inset 0 0 8px rgba(0, 240, 255, 0.25) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+/* =========================================================
+   CHIPS Y GRUPOS DE OPCIONES PARA SUPERADMIN (MODO OSCURO)
+   Color y gradiente animado exclusivo de SuperAdmin.
+   Quita cualquier variedad de color por empresa/planta.
+   ========================================================= */
+:root.dark[data-role="SUPERADMIN"] .chip-select:not(.chip-riesgo).is-selected,
+:root.dark.role-superadmin .chip-select:not(.chip-riesgo).is-selected,
+:root.dark[data-role="SUPERADMIN"] .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected,
+:root.dark.role-superadmin .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(217, 70, 239, 0.5), 0 0 20px rgba(6, 182, 212, 0.35) !important;
 }
 
-:root.dark .empresa-plantas-group.group-emp-incarsa {
-  border-left: 3.5px solid #00f0ff !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(0, 240, 255, 0.12) !important;
-}
-:root.dark .empresa-plantas-group.group-emp-incarsa > p {
-  color: #00f0ff !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5) !important;
+:root.dark[data-role="SUPERADMIN"] .chip-select:not(.chip-riesgo):hover,
+:root.dark.role-superadmin .chip-select:not(.chip-riesgo):hover {
+  border-color: rgba(217, 70, 239, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.3) !important;
 }
 
-/* 2. MILPA (Morada / Amatista Neón) */
-:root.dark .chip-select.is-selected.chip-emp-milpa {
-  background: linear-gradient(135deg, rgba(192, 132, 252, 0.22) 0%, rgba(168, 85, 247, 0.38) 100%) !important;
-  border-color: #c084fc !important;
-  box-shadow: 0 0 16px rgba(192, 132, 252, 0.55), inset 0 0 8px rgba(192, 132, 252, 0.25) !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.8) !important;
+:root.dark[data-role="SUPERADMIN"] .empresa-plantas-group,
+:root.dark.role-superadmin .empresa-plantas-group {
+  border-left: 3.5px solid #d946ef !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(217, 70, 239, 0.22) !important;
 }
 
-:root.dark .empresa-plantas-group.group-emp-milpa {
-  border-left: 3.5px solid #c084fc !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(192, 132, 252, 0.12) !important;
-}
-:root.dark .empresa-plantas-group.group-emp-milpa > p {
+:root.dark[data-role="SUPERADMIN"] .empresa-plantas-group > p,
+:root.dark.role-superadmin .empresa-plantas-group > p {
   color: #c084fc !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.5) !important;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.4) !important;
 }
 
-/* 3. CARBOINSA (Ámbar / Oro Neón) */
-:root.dark .chip-select.is-selected.chip-emp-carboinsa {
-  background: linear-gradient(135deg, rgba(255, 183, 0, 0.22) 0%, rgba(245, 158, 11, 0.38) 100%) !important;
-  border-color: #ffb700 !important;
-  box-shadow: 0 0 16px rgba(255, 183, 0, 0.55), inset 0 0 8px rgba(255, 183, 0, 0.25) !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+/* =========================================================
+   CHIPS Y BOTONES ACTIVOS PARA ROLES NO SUPERADMIN
+   (Usa el color signal corporativo)
+   ========================================================= */
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .chip-select:not(.chip-riesgo).is-selected,
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected {
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(251, 59, 76, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  text-shadow: none !important;
 }
 
-:root.dark .empresa-plantas-group.group-emp-carboinsa {
-  border-left: 3.5px solid #ffb700 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(255, 183, 0, 0.12) !important;
-}
-:root.dark .empresa-plantas-group.group-emp-carboinsa > p {
-  color: #ffb700 !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.5) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .chip-select:not(.chip-riesgo):hover {
+  border-color: rgba(251, 59, 76, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(251, 59, 76, 0.25) !important;
 }
 
-/* 4. UNIMINAS (Verde Esmeralda Neón) */
-:root.dark .chip-select.is-selected.chip-emp-uniminas {
-  background: linear-gradient(135deg, rgba(0, 255, 157, 0.22) 0%, rgba(16, 185, 129, 0.38) 100%) !important;
-  border-color: #00ff9d !important;
-  box-shadow: 0 0 16px rgba(0, 255, 157, 0.55), inset 0 0 8px rgba(0, 255, 157, 0.25) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group {
+  border-left: 3.5px solid var(--signal-500) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(251, 59, 76, 0.15) !important;
 }
 
-:root.dark .empresa-plantas-group.group-emp-uniminas {
-  border-left: 3.5px solid #00ff9d !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(0, 255, 157, 0.12) !important;
-}
-:root.dark .empresa-plantas-group.group-emp-uniminas > p {
-  color: #00ff9d !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.5) !important;
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group > p {
+  color: var(--signal-500) !important;
+  text-shadow: 0 0 8px rgba(251, 59, 76, 0.35) !important;
 }
 
 /* Contenedor general de plantas de empresa */
@@ -3577,136 +3590,80 @@ body.dark .input-field.has-error:focus {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Plantas seleccionadas por empresa (Brillo con su color respectivo) */
-
-/* 1. Plantas INCARSA (Cian Eléctrico Neón) */
-:root.dark .group-emp-incarsa .chip-select:hover {
-  border-color: rgba(0, 240, 255, 0.5) !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3) !important;
-}
-:root.dark .group-emp-incarsa .chip-select.is-selected {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(14, 165, 233, 0.42) 100%) !important;
-  border: 1.5px solid #00f0ff !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6), inset 0 0 6px rgba(0, 240, 255, 0.3) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
-}
-
-/* 2. Plantas MILPA (Morada / Amatista Neón) */
-:root.dark .group-emp-milpa .chip-select:hover {
-  border-color: rgba(192, 132, 252, 0.5) !important;
-  box-shadow: 0 0 10px rgba(192, 132, 252, 0.3) !important;
-}
-:root.dark .group-emp-milpa .chip-select.is-selected {
-  background: linear-gradient(135deg, rgba(192, 132, 252, 0.25) 0%, rgba(168, 85, 247, 0.42) 100%) !important;
-  border: 1.5px solid #c084fc !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(192, 132, 252, 0.6), inset 0 0 6px rgba(192, 132, 252, 0.3) !important;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.8) !important;
-}
-
-/* 3. Plantas CARBOINSA (Ámbar / Oro Neón) */
-:root.dark .group-emp-carboinsa .chip-select:hover {
-  border-color: rgba(255, 183, 0, 0.5) !important;
-  box-shadow: 0 0 10px rgba(255, 183, 0, 0.3) !important;
-}
-:root.dark .group-emp-carboinsa .chip-select.is-selected {
-  background: linear-gradient(135deg, rgba(255, 183, 0, 0.25) 0%, rgba(245, 158, 11, 0.42) 100%) !important;
-  border: 1.5px solid #ffb700 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(255, 183, 0, 0.6), inset 0 0 6px rgba(255, 183, 0, 0.3) !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
-}
-
-/* 4. Plantas UNIMINAS (Verde Esmeralda Neón) */
-:root.dark .group-emp-uniminas .chip-select:hover {
-  border-color: rgba(0, 255, 157, 0.5) !important;
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.3) !important;
-}
-:root.dark .group-emp-uniminas .chip-select.is-selected {
-  background: linear-gradient(135deg, rgba(0, 255, 157, 0.25) 0%, rgba(16, 185, 129, 0.42) 100%) !important;
-  border: 1.5px solid #00ff9d !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(0, 255, 157, 0.6), inset 0 0 6px rgba(0, 255, 157, 0.3) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
-}
-
-/* Fallback general para cualquier otra empresa */
-:root.dark .empresa-plantas-group .chip-select.is-selected {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(14, 165, 233, 0.42) 100%) !important;
-  border: 1.5px solid #00f0ff !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6), inset 0 0 6px rgba(0, 240, 255, 0.3) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
-}
-
 /* =========================================================
    CHIPS DE NIVEL DE RIESGO (MODO OSCURO - WIZARD)
+   Colores nítidos, vibrantes y semánticos (Bajo, Medio, Alto)
    ========================================================= */
 
-/* 1. Nivel Bajo (Verde Esmeralda Neón) */
-:root.dark .chip-riesgo.chip-riesgo-bajo {
-  background: rgba(0, 255, 157, 0.05) !important;
-  border: 1px solid rgba(0, 255, 157, 0.25) !important;
-  color: #00ff9d !important;
+/* 1. Nivel Bajo (Verde Esmeralda) */
+:root.dark .chip-select.chip-riesgo.chip-riesgo-bajo {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.45) !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-bajo:hover {
-  background: rgba(0, 255, 157, 0.15) !important;
-  border-color: #00ff9d !important;
-  box-shadow: 0 0 12px rgba(0, 255, 157, 0.35) !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-bajo:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.4) !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-bajo.is-selected {
-  background: linear-gradient(135deg, rgba(0, 255, 157, 0.28) 0%, rgba(16, 185, 129, 0.45) 100%) !important;
-  border: 1.5px solid #00ff9d !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-bajo.is-selected {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: 1.5px solid #34d399 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(0, 255, 157, 0.65), inset 0 0 8px rgba(0, 255, 157, 0.3) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.8) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.65), inset 0 0 6px rgba(255, 255, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.8) !important;
   transform: scale(1.05) !important;
 }
 
-/* 2. Nivel Medio (Ámbar / Oro Neón) */
-:root.dark .chip-riesgo.chip-riesgo-medio {
-  background: rgba(255, 183, 0, 0.05) !important;
-  border: 1px solid rgba(255, 183, 0, 0.25) !important;
-  color: #ffb700 !important;
+/* 2. Nivel Medio (Ámbar / Oro) */
+:root.dark .chip-select.chip-riesgo.chip-riesgo-medio {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1.5px solid rgba(251, 191, 36, 0.45) !important;
+  color: #fbbf24 !important;
+  font-weight: 600 !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-medio:hover {
-  background: rgba(255, 183, 0, 0.15) !important;
-  border-color: #ffb700 !important;
-  box-shadow: 0 0 12px rgba(255, 183, 0, 0.35) !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-medio:hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.4) !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-medio.is-selected {
-  background: linear-gradient(135deg, rgba(255, 183, 0, 0.28) 0%, rgba(245, 158, 11, 0.45) 100%) !important;
-  border: 1.5px solid #ffb700 !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-medio.is-selected {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border: 1.5px solid #fbbf24 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(255, 183, 0, 0.65), inset 0 0 8px rgba(255, 183, 0, 0.3) !important;
-  text-shadow: 0 0 8px rgba(255, 183, 0, 0.8) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.65), inset 0 0 6px rgba(255, 255, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.8) !important;
   transform: scale(1.05) !important;
 }
 
-/* 3. Nivel Alto (Rojo Carmesí Neón) */
-:root.dark .chip-riesgo.chip-riesgo-alto {
-  background: rgba(255, 42, 85, 0.05) !important;
-  border: 1px solid rgba(255, 42, 85, 0.25) !important;
-  color: #ff2a55 !important;
+/* 3. Nivel Alto (Rojo Carmesí) */
+:root.dark .chip-select.chip-riesgo.chip-riesgo-alto {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border: 1.5px solid rgba(248, 113, 113, 0.45) !important;
+  color: #f87171 !important;
+  font-weight: 600 !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-alto:hover {
-  background: rgba(255, 42, 85, 0.15) !important;
-  border-color: #ff2a55 !important;
-  box-shadow: 0 0 12px rgba(255, 42, 85, 0.35) !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-alto:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.4) !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
 }
-:root.dark .chip-riesgo.chip-riesgo-alto.is-selected {
-  background: linear-gradient(135deg, rgba(255, 42, 85, 0.3) 0%, rgba(239, 68, 68, 0.5) 100%) !important;
-  border: 1.5px solid #ff2a55 !important;
+:root.dark .chip-select.chip-riesgo.chip-riesgo-alto.is-selected {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  border: 1.5px solid #f87171 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(255, 42, 85, 0.75), inset 0 0 8px rgba(255, 42, 85, 0.3) !important;
-  text-shadow: 0 0 8px rgba(255, 42, 85, 0.8) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.75), inset 0 0 6px rgba(255, 255, 255, 0.3) !important;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.8) !important;
   transform: scale(1.05) !important;
 }
 
@@ -3812,67 +3769,218 @@ html.dark .flatpickr-vigencia-wrapper .flatpickr-calendar.arrowBottom:after {
   left: auto !important;
 }
 
-/* Contenedor emergente de Flatpickr */
+/* =========================================================
+
+   FLATPICKR: CALENDARIO PERSONALIZADO SEGÚN EL ROL (MODO OSCURO)
+
+   Acomoda los colores según el rol activo:
+
+   - Roles Estándar: Paleta Signal (#fb3b4c / #dc2626)
+
+   - Superadmin: Paleta Neón Magenta, Púrpura y Cian (#d946ef / #38bdf8)
+
+   ========================================================= */
+
+
+
+/* 1. Base Dark Mode & Roles Estándar (GESCO, SST, Contratista, Supervisor, Portería, etc.) */
+
 :root.dark .flatpickr-calendar,
+
 html.dark .flatpickr-calendar {
+
+  --fp-accent: var(--signal-500, #fb3b4c);
+
+  --fp-accent-hover: var(--signal-600, #fa2336);
+
+  --fp-accent-soft: rgba(251, 59, 76, 0.16);
+
+  --fp-accent-border: rgba(251, 59, 76, 0.55);
+
+  --fp-accent-glow: rgba(251, 59, 76, 0.65);
+
+  --fp-arrow: var(--signal-500, #fb3b4c);
+
+  --fp-arrow-hover: var(--signal-500, #fb3b4c);
+
+  --fp-weekday: #94a3b8;
+
+  --fp-today-bg: rgba(251, 59, 76, 0.12);
+
+  --fp-today-border: var(--signal-500, #fb3b4c);
+
+  --fp-today-color: var(--signal-500, #fb3b4c);
+
+  --fp-selected-bg: linear-gradient(135deg, #fb3b4c 0%, #dc2626 100%);
+
+  --fp-card-border: rgba(251, 59, 76, 0.35);
+
+  --fp-card-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(251, 59, 76, 0.22);
+
+
+
   background: rgba(20, 20, 24, 0.96) !important;
+
   backdrop-filter: blur(16px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+
+  border: 1px solid var(--fp-card-border) !important;
+
   border-radius: 18px !important;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 240, 255, 0.2) !important;
+
+  box-shadow: var(--fp-card-shadow) !important;
+
   padding: 12px !important;
+
   width: 320px !important;
+
   color: #f1f5f9 !important;
+
   z-index: 99999 !important;
+
 }
+
+
+
+/* 2. Rol SUPERADMIN en Modo Oscuro (Acentos Neón Magenta, Púrpura y Cian) */
+
+:root.dark[data-role="SUPERADMIN"] .flatpickr-calendar,
+
+:root.dark.role-superadmin .flatpickr-calendar,
+
+html.dark[data-role="SUPERADMIN"] .flatpickr-calendar,
+
+html.dark.role-superadmin .flatpickr-calendar {
+
+  --fp-accent: #38bdf8;
+
+  --fp-accent-hover: #06b6d4;
+
+  --fp-accent-soft: rgba(217, 70, 239, 0.22);
+
+  --fp-accent-border: rgba(217, 70, 239, 0.45);
+
+  --fp-accent-glow: rgba(217, 70, 239, 0.7);
+
+  --fp-arrow: #d946ef;
+
+  --fp-arrow-hover: #38bdf8;
+
+  --fp-weekday: #c084fc;
+
+  --fp-today-bg: rgba(6, 182, 212, 0.12);
+
+  --fp-today-border: #38bdf8;
+
+  --fp-today-color: #38bdf8;
+
+  --fp-selected-bg: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%);
+
+  --fp-card-border: rgba(217, 70, 239, 0.4);
+
+  --fp-card-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(217, 70, 239, 0.25), 0 0 15px rgba(6, 182, 212, 0.15);
+
+}
+
+
 
 /* Flechas superiores e inferiores del popup */
+
 :root.dark .flatpickr-calendar.arrowTop:before,
+
 :root.dark .flatpickr-calendar.arrowTop:after,
+
 html.dark .flatpickr-calendar.arrowTop:before,
+
 html.dark .flatpickr-calendar.arrowTop:after {
+
   border-bottom-color: rgba(20, 20, 24, 0.96) !important;
+
 }
+
+
 
 :root.dark .flatpickr-calendar.arrowBottom:before,
+
 :root.dark .flatpickr-calendar.arrowBottom:after,
+
 html.dark .flatpickr-calendar.arrowBottom:before,
+
 html.dark .flatpickr-calendar.arrowBottom:after {
+
   border-top-color: rgba(20, 20, 24, 0.96) !important;
+
 }
+
+
 
 /* Encabezado del mes y año */
+
 :root.dark .flatpickr-months,
+
 html.dark .flatpickr-months {
+
   align-items: center !important;
+
   padding: 4px 2px 10px 2px !important;
+
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+
   margin-bottom: 8px !important;
+
 }
+
+
 
 :root.dark .flatpickr-current-month,
+
 html.dark .flatpickr-current-month {
+
   color: #ffffff !important;
+
 }
+
+
 
 :root.dark .flatpickr-current-month .cur-month,
+
 html.dark .flatpickr-current-month .cur-month {
+
   color: #ffffff !important;
+
   font-weight: 700 !important;
+
   font-size: 15px !important;
+
   letter-spacing: 0.02em !important;
+
 }
 
+
+
 :root.dark .flatpickr-current-month input.cur-year,
+
 html.dark .flatpickr-current-month input.cur-year {
-  color: #00f0ff !important;
+
+  color: var(--fp-accent) !important;
+
   font-weight: 700 !important;
+
   font-size: 15px !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+
+  text-shadow: 0 0 8px var(--fp-accent-glow) !important;
+
+}
+
+
+
+:root.dark .flatpickr-calendar,
+html.dark .flatpickr-calendar {
+  color-scheme: dark !important;
 }
 
 :root.dark .flatpickr-current-month .flatpickr-monthDropdown-months,
 html.dark .flatpickr-current-month .flatpickr-monthDropdown-months {
+  color-scheme: dark !important;
   background: transparent !important;
   border: none !important;
   color: #ffffff !important;
@@ -3880,230 +3988,466 @@ html.dark .flatpickr-current-month .flatpickr-monthDropdown-months {
   outline: none !important;
   cursor: pointer !important;
 }
+
 :root.dark .flatpickr-current-month .flatpickr-monthDropdown-months option,
-html.dark .flatpickr-current-month .flatpickr-monthDropdown-months option {
+html.dark .flatpickr-current-month .flatpickr-monthDropdown-months option,
+:root.dark .flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month,
+html.dark .flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
   background-color: #18181c !important;
   color: #ffffff !important;
 }
 
-/* Flechas de navegación (Mes anterior / siguiente) - Sin fondo, solo color e icono neón */
+
+
+/* Flechas de navegación (Mes anterior / siguiente) */
+
 :root.dark .flatpickr-months .flatpickr-prev-month,
+
 :root.dark .flatpickr-months .flatpickr-next-month,
+
 html.dark .flatpickr-months .flatpickr-prev-month,
+
 html.dark .flatpickr-months .flatpickr-next-month {
+
   background: transparent !important;
+
   border: none !important;
+
   box-shadow: none !important;
+
   display: flex !important;
+
   align-items: center !important;
+
   justify-content: center !important;
+
   transition: transform 0.2s ease !important;
+
   cursor: pointer !important;
+
 }
+
+
 
 :root.dark .flatpickr-months .flatpickr-prev-month:hover,
+
 :root.dark .flatpickr-months .flatpickr-next-month:hover,
+
 html.dark .flatpickr-months .flatpickr-prev-month:hover,
+
 html.dark .flatpickr-months .flatpickr-next-month:hover {
+
   background: transparent !important;
+
   border: none !important;
+
   box-shadow: none !important;
+
   transform: scale(1.25) !important;
+
 }
+
+
 
 :root.dark .flatpickr-months .flatpickr-prev-month svg,
+
 :root.dark .flatpickr-months .flatpickr-next-month svg,
+
 html.dark .flatpickr-months .flatpickr-prev-month svg,
+
 html.dark .flatpickr-months .flatpickr-next-month svg {
-  fill: #00f0ff !important;
-  color: #00f0ff !important;
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.9)) !important;
-  transition: filter 0.2s ease, transform 0.2s ease !important;
+
+  fill: var(--fp-arrow) !important;
+
+  color: var(--fp-arrow) !important;
+
+  filter: drop-shadow(0 0 6px var(--fp-accent-glow)) !important;
+
+  transition: filter 0.2s ease, transform 0.2s ease, fill 0.2s ease !important;
+
 }
+
+
 
 :root.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+
 :root.dark .flatpickr-months .flatpickr-next-month:hover svg,
+
 html.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+
 html.dark .flatpickr-months .flatpickr-next-month:hover svg {
-  fill: #00f0ff !important;
-  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 1)) drop-shadow(0 0 16px rgba(0, 240, 255, 0.8)) !important;
+
+  fill: var(--fp-arrow-hover) !important;
+
+  color: var(--fp-arrow-hover) !important;
+
+  filter: drop-shadow(0 0 10px var(--fp-accent-glow)) drop-shadow(0 0 16px var(--fp-accent-glow)) !important;
+
 }
+
+
 
 /* Nombres de los días de la semana */
+
 :root.dark span.flatpickr-weekday,
+
 html.dark span.flatpickr-weekday {
-  color: #94a3b8 !important;
+
+  color: var(--fp-weekday) !important;
+
   font-size: 11px !important;
+
   font-weight: 700 !important;
+
   text-transform: uppercase !important;
+
   letter-spacing: 0.05em !important;
+
 }
+
+
 
 /* Días */
+
 :root.dark .flatpickr-day,
+
 html.dark .flatpickr-day {
+
   color: #e2e8f0 !important;
+
   font-size: 13px !important;
+
   font-weight: 500 !important;
+
   border-radius: 8px !important;
+
   border: 1px solid transparent !important;
+
   transition: all 0.18s ease !important;
+
 }
+
+
 
 :root.dark .flatpickr-day:hover,
+
 html.dark .flatpickr-day:hover {
-  background: rgba(0, 240, 255, 0.15) !important;
-  border-color: rgba(0, 240, 255, 0.6) !important;
-  color: #00f0ff !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4) !important;
+
+  background: var(--fp-accent-soft) !important;
+
+  border-color: var(--fp-accent-border) !important;
+
+  color: #ffffff !important;
+
+  box-shadow: 0 0 10px var(--fp-accent-glow) !important;
+
   transform: scale(1.08) !important;
+
 }
+
+
 
 /* Día de hoy */
+
 :root.dark .flatpickr-day.today,
+
 html.dark .flatpickr-day.today {
-  border-color: #ffb700 !important;
-  color: #ffb700 !important;
+
+  border-color: var(--fp-today-border) !important;
+
+  color: var(--fp-today-color) !important;
+
   font-weight: 700 !important;
-  background: rgba(255, 183, 0, 0.12) !important;
-  box-shadow: 0 0 8px rgba(255, 183, 0, 0.4) !important;
+
+  background: var(--fp-today-bg) !important;
+
+  box-shadow: 0 0 8px var(--fp-accent-glow) !important;
+
 }
+
+
 
 :root.dark .flatpickr-day.today:hover,
+
 html.dark .flatpickr-day.today:hover {
-  background: rgba(255, 183, 0, 0.25) !important;
+
+  background: var(--fp-accent-border) !important;
+
   color: #ffffff !important;
+
 }
 
-/* Día seleccionado (Resplandor Cian Neón) */
+
+
+/* Día seleccionado */
+
 :root.dark .flatpickr-day.selected,
+
 :root.dark .flatpickr-day.selected:hover,
+
 :root.dark .flatpickr-day.selected:focus,
+
+:root.dark .flatpickr-day.startRange,
+
+:root.dark .flatpickr-day.endRange,
+
 html.dark .flatpickr-day.selected,
+
 html.dark .flatpickr-day.selected:hover,
-html.dark .flatpickr-day.selected:focus {
-  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%) !important;
-  border-color: #00f0ff !important;
+
+html.dark .flatpickr-day.selected:focus,
+
+html.dark .flatpickr-day.startRange,
+
+html.dark .flatpickr-day.endRange {
+
+  background: var(--fp-selected-bg) !important;
+
+  border-color: var(--fp-today-border) !important;
+
   color: #ffffff !important;
+
   font-weight: 800 !important;
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.7), inset 0 0 6px rgba(255, 255, 255, 0.35) !important;
+
+  box-shadow: 0 0 18px var(--fp-accent-glow), inset 0 0 6px rgba(255, 255, 255, 0.35) !important;
+
   transform: scale(1.05) !important;
+
 }
+
+
 
 /* Rango seleccionado */
+
 :root.dark .flatpickr-day.inRange,
+
 :root.dark .flatpickr-day.prevMonthDay.inRange,
+
 :root.dark .flatpickr-day.nextMonthDay.inRange,
+
 html.dark .flatpickr-day.inRange,
+
 html.dark .flatpickr-day.prevMonthDay.inRange,
+
 html.dark .flatpickr-day.nextMonthDay.inRange {
-  background: rgba(0, 240, 255, 0.18) !important;
+
+  background: var(--fp-accent-soft) !important;
+
   border-color: transparent !important;
+
   color: #ffffff !important;
-  box-shadow: -5px 0 0 rgba(0, 240, 255, 0.18), 5px 0 0 rgba(0, 240, 255, 0.18) !important;
+
+  box-shadow: -5px 0 0 var(--fp-accent-soft), 5px 0 0 var(--fp-accent-soft) !important;
+
 }
+
+
 
 /* Días de mes anterior / siguiente */
+
 :root.dark .flatpickr-day.prevMonthDay,
+
 :root.dark .flatpickr-day.nextMonthDay,
+
 html.dark .flatpickr-day.prevMonthDay,
+
 html.dark .flatpickr-day.nextMonthDay {
+
   color: #475569 !important;
+
 }
+
+
 
 /* Días deshabilitados */
+
 :root.dark .flatpickr-day.disabled,
+
 :root.dark .flatpickr-day.disabled:hover,
+
 html.dark .flatpickr-day.disabled,
+
 html.dark .flatpickr-day.disabled:hover {
+
   color: #334155 !important;
+
   opacity: 0.3 !important;
+
   cursor: not-allowed !important;
+
   transform: none !important;
+
   box-shadow: none !important;
+
 }
 
-/* Selector de tiempo de Flatpickr (Máxima especificidad para evitar fondo blanco en modo oscuro) */
+
+
+/* Selector de tiempo de Flatpickr */
+
 :root.dark .flatpickr-time,
+
 html.dark .flatpickr-time,
+
 .dark .flatpickr-time,
+
 :root.dark .flatpickr-calendar.hasTime .flatpickr-time,
+
 html.dark .flatpickr-calendar.hasTime .flatpickr-time,
+
 .dark .flatpickr-calendar.hasTime .flatpickr-time {
+
   background: #181c24 !important;
+
   border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+
   border-radius: 0 0 14px 14px !important;
+
 }
+
+
 
 :root.dark .flatpickr-time input,
+
 html.dark .flatpickr-time input,
+
 .dark .flatpickr-time input,
+
 :root.dark .flatpickr-calendar.hasTime .flatpickr-time input,
+
 html.dark .flatpickr-calendar.hasTime .flatpickr-time input,
+
 .dark .flatpickr-calendar.hasTime .flatpickr-time input {
+
   color: #ffffff !important;
+
   background: transparent !important;
+
   font-weight: 800 !important;
+
   font-size: 16px !important;
+
   font-family: monospace, sans-serif !important;
+
 }
+
+
 
 :root.dark .flatpickr-time .flatpickr-time-separator,
+
 html.dark .flatpickr-time .flatpickr-time-separator,
+
 .dark .flatpickr-time .flatpickr-time-separator,
+
 :root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator,
+
 html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator,
+
 .dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-time-separator {
+
   color: #94a3b8 !important;
+
   font-weight: 800 !important;
+
   font-size: 16px !important;
+
 }
+
+
 
 :root.dark .flatpickr-time .numInputWrapper span:hover,
+
 html.dark .flatpickr-time .numInputWrapper span:hover,
+
 .dark .flatpickr-time .numInputWrapper span:hover {
-  background: rgba(0, 240, 255, 0.2) !important;
+
+  background: var(--fp-accent-soft) !important;
+
 }
+
+
 
 :root.dark .flatpickr-time .numInputWrapper span.arrowUp:after,
+
 html.dark .flatpickr-time .numInputWrapper span.arrowUp:after,
+
 .dark .flatpickr-time .numInputWrapper span.arrowUp:after {
-  border-bottom-color: #00f0ff !important;
+
+  border-bottom-color: var(--fp-accent) !important;
+
 }
+
+
 
 :root.dark .flatpickr-time .numInputWrapper span.arrowDown:after,
+
 html.dark .flatpickr-time .numInputWrapper span.arrowDown:after,
+
 .dark .flatpickr-time .numInputWrapper span.arrowDown:after {
-  border-top-color: #00f0ff !important;
+
+  border-top-color: var(--fp-accent) !important;
+
 }
+
+
 
 :root.dark .flatpickr-time .flatpickr-am-pm,
+
 html.dark .flatpickr-time .flatpickr-am-pm,
+
 .dark .flatpickr-time .flatpickr-am-pm,
+
 :root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm,
+
 html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm,
+
 .dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm {
-  color: #00f0ff !important;
+
+  color: var(--fp-accent) !important;
+
   font-weight: 800 !important;
+
   font-size: 13px !important;
+
   border-radius: 8px !important;
-  background: rgba(0, 240, 255, 0.15) !important;
+
+  background: var(--fp-accent-soft) !important;
+
   padding: 4px 12px !important;
-  border: 1px solid rgba(0, 240, 255, 0.35) !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+
+  border: 1px solid var(--fp-accent-border) !important;
+
+  box-shadow: 0 0 10px var(--fp-accent-glow) !important;
+
   cursor: pointer !important;
+
 }
 
+
+
 :root.dark .flatpickr-time .flatpickr-am-pm:hover,
+
 html.dark .flatpickr-time .flatpickr-am-pm:hover,
+
 .dark .flatpickr-time .flatpickr-am-pm:hover,
+
 :root.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
+
 html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
+
 .dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover {
-  background: rgba(0, 240, 255, 0.35) !important;
+
+  background: var(--fp-accent-border) !important;
+
   color: #ffffff !important;
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
+
+  box-shadow: 0 0 14px var(--fp-accent-glow) !important;
+
 }
+
+
+
+
 
 /* =========================================================
    SELECTOR RÁPIDO DE OPCIONES EN WIZARD (MODO OSCURO - RESPLANDOR BLANCO)
@@ -5262,7 +5606,18 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
   text-shadow: 0 0 8px rgba(255, 42, 85, 0.5) !important;
 }
 
-:root.dark .user-role-modal-badge {
+:root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .user-role-modal-badge {
+  background: rgba(240, 50, 62, 0.12) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(240, 50, 62, 0.35) !important;
+  box-shadow: 0 0 8px rgba(240, 50, 62, 0.2) !important;
+  text-shadow: none !important;
+}
+
+:root[data-role="SUPERADMIN"] .user-role-modal-badge,
+:root.role-superadmin .user-role-modal-badge,
+:root.dark[data-role="SUPERADMIN"] .user-role-modal-badge,
+:root.dark.role-superadmin .user-role-modal-badge {
   background: rgba(56, 189, 248, 0.12) !important;
   color: #38bdf8 !important;
   border: 1px solid rgba(56, 189, 248, 0.35) !important;
@@ -5329,58 +5684,209 @@ html.dark .flatpickr-calendar.hasTime .flatpickr-time .flatpickr-am-pm:hover,
 /* =========================================================
    SELECTORES ESTILIZADOS EN MODO OSCURO (WIZARD & MODALES)
    ========================================================= */
+
+/* Reglas universales de select en modo oscuro (Fallback estándar) */
 :root.dark select,
 :root.dark select.input-field,
+:root.dark .modal-panel select,
+:root.dark .modal-panel select.input-field,
 html.dark select,
-html.dark select.input-field {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
+html.dark select.input-field,
+html.dark .modal-panel select,
+html.dark .modal-panel select.input-field {
+  color-scheme: dark !important;
+  accent-color: var(--signal-500, #fb3b4c) !important;
   background-color: #18181b !important;
   color: #f1f5f9 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 8px !important;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 10px !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
   background-position: right 0.75rem center !important;
   background-repeat: no-repeat !important;
   background-size: 1.15em 1.15em !important;
   padding-right: 2.5rem !important;
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-family: inherit !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
 }
 
 :root.dark select:hover,
 :root.dark select.input-field:hover,
+:root.dark .modal-panel select:hover,
+:root.dark .modal-panel select.input-field:hover,
 html.dark select:hover,
 html.dark select.input-field:hover {
-  border-color: rgba(250, 5, 26, 0.45) !important;
-  box-shadow: 0 0 10px rgba(250, 5, 26, 0.18) !important;
+  border-color: rgba(251, 59, 76, 0.5) !important;
+  box-shadow: 0 0 12px rgba(251, 59, 76, 0.2) !important;
 }
 
 :root.dark select:focus,
 :root.dark select.input-field:focus,
+:root.dark .modal-panel select:focus,
+:root.dark .modal-panel select.input-field:focus,
 html.dark select:focus,
 html.dark select.input-field:focus {
-  border-color: var(--signal-500, #fa051a) !important;
-  box-shadow: 0 0 14px rgba(250, 5, 26, 0.35), 0 0 0 2px rgba(250, 5, 26, 0.18) !important;
+  border-color: var(--signal-500, #fb3b4c) !important;
+  box-shadow: 0 0 16px rgba(251, 59, 76, 0.4), 0 0 0 2px rgba(251, 59, 76, 0.2) !important;
   outline: none !important;
 }
 
+/* SuperAdmin Focus glow */
+:root.dark[data-role="SUPERADMIN"] select:focus,
+:root.dark.role-superadmin select:focus,
+:root.dark[data-role="SUPERADMIN"] select.input-field:focus,
+:root.dark.role-superadmin select.input-field:focus,
+:root.dark[data-role="SUPERADMIN"] .modal-panel select.input-field:focus,
+:root.dark.role-superadmin .modal-panel select.input-field:focus {
+  border-color: #d946ef !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.45), 0 0 0 2px rgba(6, 182, 212, 0.25) !important;
+}
+
+/* Opciones nativas fallback */
 :root.dark select option,
 html.dark select option {
-  background-color: #18181b !important;
+  background-color: #18181c !important;
   color: #f1f5f9 !important;
   padding: 10px 14px !important;
   font-size: 13px !important;
-  font-family: var(--font-sans, 'Inter', sans-serif) !important;
 }
 
 :root.dark select option:checked,
 html.dark select option:checked {
-  background: linear-gradient(135deg, #fa051a, #dc2626) !important;
-  background-color: #fa051a !important;
+  background-color: var(--signal-500, #fb3b4c) !important;
   color: #ffffff !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+}
+
+:root.dark[data-role="SUPERADMIN"] select option:checked,
+:root.dark.role-superadmin select option:checked {
+  background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+  background-color: #a855f7 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Modern Customizable Select API (Chromium / Edge 130+) */
+@supports (appearance: base-select) {
+  :root.dark select,
+  :root.dark select.input-field,
+  :root.dark .modal-panel select,
+  :root.dark .modal-panel select.input-field,
+  :root.dark select::picker(select),
+  html.dark select,
+  html.dark select.input-field,
+  html.dark .modal-panel select,
+  html.dark .modal-panel select.input-field,
+  html.dark select::picker(select) {
+    appearance: base-select !important;
+  }
+
+  :root.dark select,
+  :root.dark select.input-field,
+  :root.dark .modal-panel select,
+  :root.dark .modal-panel select.input-field,
+  html.dark select,
+  html.dark select.input-field {
+    background-image: none !important;
+    padding-right: 1.15rem !important;
+  }
+
+  :root.dark select::picker-icon,
+  html.dark select::picker-icon {
+    color: #94a3b8 !important;
+    font-size: 12px !important;
+    opacity: 0.85 !important;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease !important;
+  }
+
+  :root.dark select:hover::picker-icon,
+  :root.dark select:focus::picker-icon,
+  html.dark select:hover::picker-icon,
+  html.dark select:focus::picker-icon {
+    color: var(--signal-500, #fb3b4c) !important;
+    opacity: 1 !important;
+  }
+
+  :root.dark[data-role="SUPERADMIN"] select:hover::picker-icon,
+  :root.dark[data-role="SUPERADMIN"] select:focus::picker-icon,
+  :root.dark.role-superadmin select:hover::picker-icon,
+  :root.dark.role-superadmin select:focus::picker-icon {
+    color: #d946ef !important;
+  }
+
+  :root.dark select:open::picker-icon,
+  html.dark select:open::picker-icon {
+    transform: rotate(180deg) !important;
+    color: var(--signal-500, #fb3b4c) !important;
+  }
+
+  :root.dark[data-role="SUPERADMIN"] select:open::picker-icon,
+  :root.dark.role-superadmin select:open::picker-icon {
+    color: #d946ef !important;
+  }
+
+  /* Popover Flotante (Top Layer) */
+  :root.dark select::picker(select),
+  html.dark select::picker(select) {
+    background-color: #18181c !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: 14px !important;
+    padding: 6px !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 59, 76, 0.15) !important;
+    backdrop-filter: blur(14px) !important;
+    margin-top: 4px !important;
+  }
+
+  :root.dark[data-role="SUPERADMIN"] select::picker(select),
+  :root.dark.role-superadmin select::picker(select) {
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(217, 70, 239, 0.2) !important;
+  }
+
+  :root.dark select option,
+  html.dark select option {
+    background-color: #18181c !important;
+    color: #f1f5f9 !important;
+    padding: 9px 13px !important;
+    margin: 2px 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+  }
+
+  :root.dark select option:hover,
+  :root.dark select option:focus,
+  html.dark select option:hover,
+  html.dark select option:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+
+  :root.dark select option:checked,
+  html.dark select option:checked {
+    background: var(--signal-500, #fb3b4c) !important;
+    background-color: var(--signal-500, #fb3b4c) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+
+  :root.dark[data-role="SUPERADMIN"] select option:checked,
+  :root.dark.role-superadmin select option:checked {
+    background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+    background-color: #a855f7 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+
+  :root.dark select option::checkmark,
+  html.dark select option::checkmark {
+    color: #ffffff !important;
+  }
 }
 
 /* =========================================================
@@ -5568,6 +6074,27 @@ html.dark .swal2-popup:not(.swal2-toast) {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 28px rgba(250, 5, 26, 0.2) !important;
 }
 
+:root.dark .swal2-popup.swal2-compact-modal,
+html.dark .swal2-popup.swal2-compact-modal {
+  width: 330px !important;
+  max-width: 90vw !important;
+  padding: 18px 20px 22px 20px !important;
+  border-radius: 20px !important;
+}
+:root.dark .swal2-popup.swal2-compact-modal .swal2-title,
+html.dark .swal2-popup.swal2-compact-modal .swal2-title {
+  font-size: 17px !important;
+  margin: 0 0 6px 0 !important;
+  padding: 0 !important;
+}
+:root.dark .swal2-popup.swal2-compact-modal .swal2-html-container,
+html.dark .swal2-popup.swal2-compact-modal .swal2-html-container {
+  font-size: 13px !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  line-height: 1.45 !important;
+}
+
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-title,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-title {
   color: #ffffff !important;
@@ -5586,35 +6113,26 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-html-container {
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f77920 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 10px !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   padding: 10px 24px !important;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 32px rgba(220, 38, 38, 0.45) !important;
+  box-shadow: 0 0 14px rgba(251, 59, 76, 0.45) !important;
   text-shadow: none !important;
   transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.3s ease !important;
 }
 
 :root.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover,
 html.dark .swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
-  animation: flameGradientShift 0.8s linear infinite !important;
-  filter: brightness(1.15) !important;
+  animation: none !important;
+  filter: brightness(1.12) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 0 24px 2px rgba(249, 115, 22, 0.85), 0 0 44px 4px rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 20px 2px rgba(251, 59, 76, 0.65) !important;
 }
 
 /* Botón de Confirmación SweetAlert2 cuando el usuario activo es SuperAdmin */
@@ -6126,6 +6644,11 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root.role-superadmin .role-chip,
 :root.dark[data-role="SUPERADMIN"] .role-chip,
 :root.dark.role-superadmin .role-chip,
+:root[data-role="SUPERADMIN"] .topbar .role-chip,
+:root.role-superadmin .topbar .role-chip,
+:root.dark[data-role="SUPERADMIN"] .topbar .role-chip,
+:root.dark.role-superadmin .topbar .role-chip,
+.role-chip.is-superadmin-chip,
 :root[data-role="SUPERADMIN"] .inicialesUser,
 :root.role-superadmin .inicialesUser,
 :root.dark[data-role="SUPERADMIN"] .inicialesUser,
@@ -6224,6 +6747,11 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 :root.role-superadmin .role-chip *,
 :root.dark[data-role="SUPERADMIN"] .role-chip *,
 :root.dark.role-superadmin .role-chip *,
+:root[data-role="SUPERADMIN"] .topbar .role-chip *,
+:root.role-superadmin .topbar .role-chip *,
+:root.dark[data-role="SUPERADMIN"] .topbar .role-chip *,
+:root.dark.role-superadmin .topbar .role-chip *,
+.role-chip.is-superadmin-chip *,
 :root[data-role="SUPERADMIN"] .inicialesUser *,
 :root.role-superadmin .inicialesUser *,
 :root.dark[data-role="SUPERADMIN"] .inicialesUser *,
@@ -6719,29 +7247,21 @@ html.dark .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
 /* 6.9. MODO OSCURO GENERAL (Para roles que no son SuperAdmin) */
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-detalle,
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .modal-panel a[class*="bg-[var(--signal-500)]"] {
-  background-image: linear-gradient(
-    90deg,
-    #dc2626 0%,
-    #f75d20 20%,
-    #ef4444 40%,
-    #dc2626 60%,
-    #f3561d 80%,
-    #dc2626 100%
-  ) !important;
-  background-size: 200% 100% !important;
-  animation: flameGradientShift 6s linear infinite !important;
+  background: var(--signal-500) !important;
+  background-image: none !important;
+  animation: none !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.6) !important;
+  box-shadow: 0 0 12px rgba(251, 59, 76, 0.4) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas {
-  color: #f75d20 !important;
+  color: var(--signal-500) !important;
 }
 
 :root.dark:not([data-role="SUPERADMIN"]):not(.role-superadmin) .btn-notif-ver-todas:hover {
-  background: rgba(247, 93, 32, 0.15) !important;
-  color: #fb923c !important;
+  background: rgba(251, 59, 76, 0.15) !important;
+  color: #ffffff !important;
 }
 
 /* =========================================================
@@ -7085,6 +7605,44 @@ body.role-superadmin .modal-ticket input:focus,
 :root.dark.role-superadmin .modal-tipo-solicitud-card:hover {
   border-color: rgba(217, 70, 239, 0.75) !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 0 22px rgba(217, 70, 239, 0.45), 0 0 35px rgba(6, 182, 212, 0.3) !important;
+}
+
+/* =========================================================
+   6.12. AVISO OBLIGATORIO LEY 1581 (MODO OSCURO)
+   ========================================================= */
+:root.dark .aviso-ingreso-planta,
+html.dark .aviso-ingreso-planta {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  border-left-color: #f59e0b !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-icono-escudo,
+html.dark .aviso-ingreso-planta .aviso-icono-escudo {
+  color: #fbbf24 !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-titulo,
+html.dark .aviso-ingreso-planta .aviso-titulo {
+  color: #fcd34d !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-cuerpo,
+html.dark .aviso-ingreso-planta .aviso-cuerpo {
+  color: #e2e8f0 !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-cuerpo strong,
+html.dark .aviso-ingreso-planta .aviso-cuerpo strong {
+  color: #ffffff !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-spam,
+html.dark .aviso-ingreso-planta .aviso-spam {
+  color: #fda4af !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-porteria,
+html.dark .aviso-ingreso-planta .aviso-porteria {
+  color: #fda4af !important;
+}
+:root.dark .aviso-ingreso-planta .aviso-porteria i,
+html.dark .aviso-ingreso-planta .aviso-porteria i {
+  color: #f87171 !important;
 }
 
 

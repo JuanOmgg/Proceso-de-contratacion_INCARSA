@@ -2,8 +2,8 @@ import unittest
 from datetime import datetime, timedelta
 from database import GET_conexion
 from src.loaders.solicitudes_loaders import (
-    CREAR_token_formulario_db,
-    OBTENER_token_formulario_db,
+    CREATE_token_formulario_db,
+    GET_token_formulario_db,
     LISTAR_tokens_formulario_db,
     REVOCAR_token_formulario_db,
     MARCAR_token_usado_db,
@@ -19,7 +19,7 @@ class TestFormularioTemporal(unittest.TestCase):
         self.admin_id = 1
 
     def test_01_crear_y_validar_token(self):
-        res = CREAR_token_formulario_db(
+        res = CREATE_token_formulario_db(
             id_usuario=self.solicitante_id,
             duracion_horas=12.0,
             destinatario_nombre="Contratista Demo S.A.S.",
@@ -30,14 +30,14 @@ class TestFormularioTemporal(unittest.TestCase):
         self.assertTrue(token)
 
         # Validar token
-        info = OBTENER_token_formulario_db(token)
+        info = GET_token_formulario_db(token)
         self.assertTrue(info.get("valido"))
         self.assertEqual(info.get("destinatario_nombre"), "Contratista Demo S.A.S.")
         self.assertIn("empresas", info.get("catalogos", {}))
         self.assertIn("contratistas", info.get("catalogos", {}))
 
     def test_02_revocar_token(self):
-        res = CREAR_token_formulario_db(
+        res = CREATE_token_formulario_db(
             id_usuario=self.solicitante_id,
             duracion_horas=2.0
         )
@@ -47,13 +47,13 @@ class TestFormularioTemporal(unittest.TestCase):
         rev_res = REVOCAR_token_formulario_db(token_id=token_id, id_usuario=self.solicitante_id)
         self.assertTrue(rev_res.get("exito"))
 
-        check = OBTENER_token_formulario_db(token)
+        check = GET_token_formulario_db(token)
         self.assertFalse(check.get("valido"))
         self.assertIn("revocado", check.get("mensaje", "").lower())
 
     def test_03_flujo_pre_enviado_y_aprobacion(self):
         # 1. Crear token
-        res_tok = CREAR_token_formulario_db(id_usuario=self.solicitante_id, duracion_horas=24.0)
+        res_tok = CREATE_token_formulario_db(id_usuario=self.solicitante_id, duracion_horas=24.0)
         token = res_tok["datos"]["token"]
 
         # 2. Crear solicitud con estado PRE-ENVIADO
@@ -90,7 +90,7 @@ class TestFormularioTemporal(unittest.TestCase):
 
         # 3. Marcar token usado
         MARCAR_token_usado_db(token, sol_id)
-        tok_check = OBTENER_token_formulario_db(token)
+        tok_check = GET_token_formulario_db(token)
         self.assertFalse(tok_check.get("valido"))
 
         # 4. Verificar que esté en PRE-ENVIADO
@@ -120,7 +120,7 @@ class TestFormularioTemporal(unittest.TestCase):
         import random
 
         # 1. Crear token
-        res_tok = CREAR_token_formulario_db(id_usuario=self.solicitante_id, duracion_horas=2.0)
+        res_tok = CREATE_token_formulario_db(id_usuario=self.solicitante_id, duracion_horas=2.0)
         token = res_tok["datos"]["token"]
 
         # 2. Guardar persona con documentos
@@ -193,7 +193,7 @@ class TestFormularioTemporal(unittest.TestCase):
         c_nombre = contratista["nombre"]
 
         # 2. Crear token asignado a esta contratista
-        res_tok = CREAR_token_formulario_db(
+        res_tok = CREATE_token_formulario_db(
             id_usuario=self.solicitante_id,
             duracion_horas=24.0,
             id_empresa_contratista=c_id
@@ -202,7 +202,7 @@ class TestFormularioTemporal(unittest.TestCase):
         token = res_tok["datos"]["token"]
 
         # 3. Validar token público
-        info = OBTENER_token_formulario_db(token)
+        info = GET_token_formulario_db(token)
         self.assertTrue(info.get("valido"))
         self.assertEqual(info.get("id_empresa_contratista"), c_id)
         self.assertEqual(info.get("contratista_nombre"), c_nombre)

@@ -23,8 +23,8 @@ from src.loaders.solicitudes_loaders import (
     GET_detalle_autorizacion_datos_db,
     REGISTRAR_respuesta_autorizacion_datos_db,
     REENVIAR_correo_autorizacion_datos_db,
-    CREAR_token_formulario_db,
-    OBTENER_token_formulario_db,
+    CREATE_token_formulario_db,
+    GET_token_formulario_db,
     LISTAR_tokens_formulario_db,
     REVOCAR_token_formulario_db,
     MARCAR_token_usado_db,
@@ -162,8 +162,8 @@ def GET_ALL_solicitudes(
     if id_rol_user in (6, 7) or rol_user in ("SST", "GESCO"):
         id_usuario = current_user.get("id")
 
-    # Si el usuario autenticado es Gestión Documental (5), SIEMPRE filtrar estrictamente por las que él haya diligenciado
-    if id_rol_user == 5 or "GESTION DOCUMENTAL" in rol_user or "GESTIÓN DOCUMENTAL" in rol_user:
+    # Si el usuario autenticado es SOLICITANTE (5), SIEMPRE filtrar estrictamente por las que él haya diligenciado
+    if id_rol_user == 5 or "SOLICITANTE" in rol_user or "SOLICITANTE" in rol_user:
         diligenciado_por = current_user.get("id")
 
     print(f"🔍 [GET] Consultando solicitudes (page={page}, limit={limit}, search={search}, estado={estado}, empresa={empresa}, active={active}, id_usuario={id_usuario}, diligenciado_por={diligenciado_por}, excluir_inactivas_vencidas={excluir_inactivas_vencidas})...")
@@ -675,6 +675,7 @@ def DESCARGAR_certificado_autorizacion_pdf(token: str, request: Request):
             "codigo_radicado": "RAD-LGKS84",
             "empresa_contratista": "AGRÍCOLA & SERVICIOS INDUSTRIALES S.A.S.",
             "empresa_origen": "INCARSA S.A.S.",
+            "nit_empresa": "830.078.829-5",
             "correo_institucional": "incarsasas@incarsa.com.co",
             "plantas_texto": "PLANTA 1 INCARSA"
         }
@@ -760,7 +761,7 @@ def CREAR_token_formulario_rt(
     id_rol = current_user.get("id_rol")
     rol_nom = str(current_user.get("rol") or current_user.get("nombre_rol") or "").strip().upper()
 
-    es_autorizado = (id_rol in (1, 2, 5)) or any(r in rol_nom for r in ("ADMIN", "SOLICITANTE", "GESTION DOCUMENTAL"))
+    es_autorizado = (id_rol in (1, 2, 5)) or any(r in rol_nom for r in ("ADMIN", "SOLICITANTE", "SOLICITANTE"))
     if not es_autorizado:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -773,7 +774,7 @@ def CREAR_token_formulario_rt(
             detail="Debes seleccionar la Empresa Contratista para emitir el pase de diligenciamiento."
         )
 
-    resultado = CREAR_token_formulario_db(
+    resultado = CREATE_token_formulario_db(
         id_usuario=user_id,
         duracion_horas=payload.duracion_horas or 24.0,
         destinatario_nombre=payload.destinatario_nombre,
@@ -836,7 +837,7 @@ def OBTENER_formulario_temporal_publico_rt(token: str):
     Ruta pública: Valida el token temporal y retorna los metadatos necesarios
     para el diligenciamiento externo junto con los catálogos requeridos.
     """
-    resultado = OBTENER_token_formulario_db(token)
+    resultado = GET_token_formulario_db(token)
     if not resultado.get("valido"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=resultado.get("mensaje"))
     return resultado
@@ -852,7 +853,7 @@ async def SUBIR_documento_formulario_temporal_rt(
     Ruta pública segura: Permite a un tercero adjuntar documentos requeridos
     (cédula, ARL, SOAT, exámenes) validando que el token temporal esté activo.
     """
-    val = OBTENER_token_formulario_db(token)
+    val = GET_token_formulario_db(token)
     if not val.get("valido"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=val.get("mensaje"))
 
@@ -876,7 +877,7 @@ def GUARDAR_persona_formulario_temporal_rt(token: str, payload: dict = Body(...)
     Ruta pública segura: Permite a un tercero registrar o actualizar una persona
     durante el diligenciamiento del formulario temporal.
     """
-    val = OBTENER_token_formulario_db(token)
+    val = GET_token_formulario_db(token)
     if not val.get("valido"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=val.get("mensaje"))
 
@@ -957,7 +958,7 @@ def GUARDAR_vehiculo_formulario_temporal_rt(token: str, payload: dict = Body(...
     Ruta pública segura: Permite a un tercero registrar o actualizar un vehículo
     durante el diligenciamiento del formulario temporal.
     """
-    val = OBTENER_token_formulario_db(token)
+    val = GET_token_formulario_db(token)
     if not val.get("valido"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=val.get("mensaje"))
 
@@ -1023,7 +1024,7 @@ def ENVIAR_formulario_temporal_publico_rt(token: str, payload: SolicitudInput):
     - Se marca el token temporal como consumido.
     - Notifica internamente al Solicitante para su aprobación.
     """
-    val = OBTENER_token_formulario_db(token)
+    val = GET_token_formulario_db(token)
     if not val.get("valido"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=val.get("mensaje"))
 

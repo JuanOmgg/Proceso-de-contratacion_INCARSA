@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class InduccionCreate(BaseModel):
     id_persona: int
+    id_formulario: Optional[int] = None
     responsable: Optional[str] = None
     anotaciones: Optional[str] = None
     id_empresa: Optional[int] = None
@@ -27,6 +28,7 @@ class InduccionCreate(BaseModel):
 
 
 class InduccionUpdate(BaseModel):
+    id_formulario: Optional[int] = None
     responsable: Optional[str] = None
     anotaciones: Optional[str] = None
     id_empresa: Optional[int] = None
@@ -51,6 +53,8 @@ class InduccionUpdate(BaseModel):
 class InduccionResponse(BaseModel):
     id: Optional[int] = None
     id_persona: int
+    id_formulario: Optional[int] = None
+    nombre_formulario: Optional[str] = None
     responsable: Optional[str] = None
     anotaciones: Optional[str] = None
     id_empresa: Optional[int] = None

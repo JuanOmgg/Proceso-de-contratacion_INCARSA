@@ -63,6 +63,13 @@
               <span x-text="dosPasos.activo ? '2FA ACTIVO (POR CORREO)' : '2FA DESACTIVADO'"></span>
             </div>
 
+            <!-- Badge Modo Inducción -->
+            <div class="px-3.5 py-2 rounded-xl border flex items-center gap-2.5 text-xs font-medium transition-all"
+              :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'">
+              <i class="fa-solid" :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'fa-bolt text-amber-400' : 'fa-envelope text-emerald-400'"></i>
+              <span x-text="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'INDUCCIÓN: MODO PRUEBAS' : 'INDUCCIÓN: VÍA CORREO'"></span>
+            </div>
+
             <!-- Badge Mantenimiento -->
             <div class="px-3.5 py-2 rounded-xl border flex items-center gap-3 text-xs font-medium"
               :class="mantenimiento.activo ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'">
@@ -137,6 +144,289 @@
             </div>
           </div>
         </section>
+
+        <!-- ============================================================
+           SECCIÓN: CONTROL DE CORREOS Y FLUJO DE INDUCCIONES (MODO PRUEBAS)
+        ============================================================= -->
+        <section id="seccion-correos-inducciones" style="scroll-margin-top: 85px;" class="p-6 rounded-2xl bg-[var(--card-bg,#1e293b)] border border-[var(--border-color,#334155)] shadow-xl relative overflow-hidden space-y-6">
+          <!-- Efectos sutiles de fondo neón -->
+          <div class="absolute -right-12 -top-12 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none"
+            :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'bg-amber-500' : 'bg-emerald-500'"></div>
+          <div class="absolute -left-12 -bottom-12 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none bg-indigo-500"></div>
+
+          <!-- Encabezado de la Sección -->
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[var(--border-color,#334155)] pb-6 relative z-10">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl superadmin-shield-icon flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/25 flex-shrink-0"
+                :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'bg-gradient-to-br from-amber-500 to-rose-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'">
+                <i class="fa-solid fa-envelope-circle-check"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h2 class="text-lg sm:text-xl font-bold font-display text-[var(--text-primary)]">
+                    Control de Correos y Flujo de Inducciones
+                  </h2>
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                    :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'"
+                    x-text="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'Modo Pruebas (Directo)' : 'Modo Producción (Correos)'">
+                  </span>
+                </div>
+                <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+                  Gestiona si el usuario recibe el enlace de inducción por <strong>correo electrónico</strong> o si se le <strong>muestra directamente el formulario asignado</strong> según su tipo de personal (Contratista, Proveedor, Visitante, Interno) para realizar pruebas inmediatas.
+                </p>
+              </div>
+            </div>
+
+            <!-- Estado Rápido y Botón Guardar -->
+            <div class="flex items-center gap-2.5 flex-shrink-0">
+              <button type="button"
+                @click="guardarConfiguracionCorreosInduccion()"
+                :disabled="correosInduccion.guardando"
+                class="btn-signal rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-lg shadow-rose-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <i class="fa-solid fa-spinner fa-spin" x-show="correosInduccion.guardando"></i>
+                <i class="fa-solid fa-floppy-disk" x-show="!correosInduccion.guardando"></i>
+                <span>Guardar Configuración</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CUERPO DE LA SECCIÓN: 2 BLOQUES DE CONFIGURACIÓN + SIMULADOR INTERACTIVO -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+
+            <!-- COLUMNA IZQUIERDA: CONTROLES MAESTROS (7 cols) -->
+            <div class="lg:col-span-7 space-y-5">
+
+              <!-- TARJETA 1: MODO DE ENTREGA DE LA INDUCCIÓN -->
+              <div class="p-5 rounded-2xl bg-[var(--table-header,#0f172a)]/80 border border-[var(--border-color,#334155)] shadow-inner space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400 text-xs"></i>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Modo de Entrega de Inducción</span>
+                  </div>
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700"
+                    x-text="'Actual: ' + correosInduccion.induccion_modo_entrega"></span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <!-- Opción CORREO -->
+                  <div 
+                    @click="setModoEntregaInduccion('CORREO')"
+                    class="p-4 rounded-xl border transition-all cursor-pointer relative select-none flex flex-col justify-between"
+                    :class="correosInduccion.induccion_modo_entrega === 'CORREO' 
+                      ? 'bg-emerald-500/10 border-emerald-500/50 shadow-md shadow-emerald-500/10 text-white' 
+                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300'">
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                          :class="correosInduccion.induccion_modo_entrega === 'CORREO' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'">
+                          <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-base" x-show="correosInduccion.induccion_modo_entrega === 'CORREO'"></i>
+                      </div>
+                      <h4 class="text-xs sm:text-sm font-bold">Enviar por Correo (Producción)</h4>
+                      <p class="text-[11.5px] text-slate-400 mt-1 leading-snug">
+                        El enlace de autorización y curso se envía formalmente al buzón de correo del titular.
+                      </p>
+                    </div>
+                    <span class="text-[10px] font-semibold text-emerald-400/90 mt-2 block" x-show="correosInduccion.induccion_modo_entrega === 'CORREO'">
+                      ✓ Flujo Operativo Normal
+                    </span>
+                  </div>
+
+                  <!-- Opción DIRECTO (MODO PRUEBAS) -->
+                  <div 
+                    @click="setModoEntregaInduccion('DIRECTO')"
+                    class="p-4 rounded-xl border transition-all cursor-pointer relative select-none flex flex-col justify-between"
+                    :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' 
+                      ? 'bg-amber-500/15 border-amber-500/50 shadow-md shadow-amber-500/15 text-white' 
+                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300'">
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                          :class="correosInduccion.induccion_modo_entrega === 'DIRECTO' ? 'bg-amber-500/25 text-amber-300' : 'bg-slate-800 text-slate-400'">
+                          <i class="fa-solid fa-bolt-lightning"></i>
+                        </span>
+                        <i class="fa-solid fa-circle-check text-amber-400 text-base" x-show="correosInduccion.induccion_modo_entrega === 'DIRECTO'"></i>
+                      </div>
+                      <h4 class="text-xs sm:text-sm font-bold">Mostrar Directo (Modo Pruebas)</h4>
+                      <p class="text-[11.5px] text-slate-400 mt-1 leading-snug">
+                        Se muestra y abre de inmediato en pantalla el formulario asignado según su tipo de personal sin esperar correos.
+                      </p>
+                    </div>
+                    <span class="text-[10px] font-semibold text-amber-400/90 mt-2 block" x-show="correosInduccion.induccion_modo_entrega === 'DIRECTO'">
+                      ⚡ Ideal para pruebas de inducciones
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TARJETA 2: CONTROL DE DESPACHO SMTP Y DESTINO DE ENLACES -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <!-- Switch: Envío de Correos SMTP -->
+                <div class="p-4 rounded-2xl bg-[var(--table-header,#0f172a)]/80 border border-[var(--border-color,#334155)] shadow-inner space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Despacho SMTP Real</span>
+                    <button type="button"
+                      @click="toggleCorreosHabilitados(!correosInduccion.correos_habilitados)"
+                      class="relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-md"
+                      :class="correosInduccion.correos_habilitados ? 'bg-emerald-600' : 'bg-slate-700'">
+                      <span class="sr-only">Toggle correos</span>
+                      <span aria-hidden="true"
+                        class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white switch-thumb-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                        :class="correosInduccion.correos_habilitados ? 'translate-x-7' : 'translate-x-0'"></span>
+                    </button>
+                  </div>
+
+                  <p class="text-[11.5px] text-slate-400 leading-snug">
+                    <strong :class="correosInduccion.correos_habilitados ? 'text-emerald-400' : 'text-amber-400'"
+                      x-text="correosInduccion.correos_habilitados ? '• Correos HABILITADOS:' : '• Correos PAUSADOS:'"></strong>
+                    <span x-text="correosInduccion.correos_habilitados ? ' Despacho SMTP normal hacia destinatarios externos.' : ' Las operaciones simulan el envío con éxito sin enviar emails reales, ideal para tests.'"></span>
+                  </p>
+                </div>
+
+                <!-- Selector: Destino del Enlace de Inducción -->
+                <div class="p-4 rounded-2xl bg-[var(--table-header,#0f172a)]/80 border border-[var(--border-color,#334155)] shadow-inner space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Destino de Inducción</span>
+                    <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded"
+                      :class="correosInduccion.induccion_tipo_enlace === 'GESCO' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'"
+                      x-text="correosInduccion.induccion_tipo_enlace"></span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button type="button"
+                      @click="setTipoEnlaceInduccion('GESCO')"
+                      class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer"
+                      :class="correosInduccion.induccion_tipo_enlace === 'GESCO' ? 'bg-indigo-600 border-indigo-500 text-white shadow-md' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'">
+                      <i class="fa-solid fa-graduation-cap mr-1"></i> Form GESCO
+                    </button>
+                    <button type="button"
+                      @click="setTipoEnlaceInduccion('WIX')"
+                      class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer"
+                      :class="correosInduccion.induccion_tipo_enlace === 'WIX' ? 'bg-slate-700 border-slate-600 text-white shadow-md' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'">
+                      <i class="fa-solid fa-globe mr-1"></i> Portal Wix
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-400 leading-snug">
+                    <span x-text="correosInduccion.induccion_tipo_enlace === 'GESCO' ? 'Enlaza al formulario dinámico interno (/evaluacion-induccion) según tipo de personal.' : 'Enlaza al sitio web externo Wix de la empresa origen.'"></span>
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- COLUMNA DERECHA: PROBADOR / SIMULADOR DE ASIGNACIÓN EN VIVO (5 cols) -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="p-5 rounded-2xl bg-gradient-to-b from-[var(--table-header,#0f172a)] to-slate-950/80 border border-indigo-500/30 shadow-xl space-y-4">
+                
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                    <i class="fa-solid fa-flask-vial"></i>
+                    <span>Probador de Inducción Directa</span>
+                  </span>
+                  <span class="text-[10px] font-semibold text-slate-400">Pruebas en Vivo</span>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">
+                  Selecciona el <strong>tipo de personal</strong> para ver qué formulario de inducción GESCO tiene asignado el usuario en la solicitud y pruébalo de inmediato:
+                </p>
+
+                <!-- Píldoras de Selección de Tipo de Personal -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <template x-for="tipo in ['Contratista', 'Proveedor', 'Visitante', 'Interno', 'TODOS']" :key="tipo">
+                    <button type="button"
+                      @click="probarFormularioAsignado(tipo)"
+                      class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer"
+                      :class="correosInduccion.probadorTipoPersonal === tipo 
+                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30 font-bold' 
+                        : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'">
+                      <span x-text="tipo"></span>
+                    </button>
+                  </template>
+                </div>
+
+                <!-- Tarjeta de Resultado del Probador -->
+                <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3 relative overflow-hidden">
+                  
+                  <!-- Cargando indicador -->
+                  <div x-show="correosInduccion.probadorCargando" class="py-6 text-center text-xs text-slate-400">
+                    <i class="fa-solid fa-spinner fa-spin text-lg text-indigo-400 mb-2 block"></i>
+                    <span>Buscando formulario asignado...</span>
+                  </div>
+
+                  <!-- Error / No encontrado -->
+                  <div x-show="!correosInduccion.probadorCargando && correosInduccion.probadorError" class="py-3 text-center space-y-2">
+                    <i class="fa-solid fa-circle-exclamation text-amber-400 text-xl"></i>
+                    <p class="text-xs text-amber-300 font-medium" x-text="correosInduccion.probadorError"></p>
+                    <a href="/formularios-gesco" class="inline-block text-[11px] text-indigo-400 hover:underline">
+                      <i class="fa-solid fa-plus-circle mr-1"></i> Ir al Creador de Formularios GESCO
+                    </a>
+                  </div>
+
+                  <!-- Formulario Asignado Encontrado -->
+                  <div x-show="!correosInduccion.probadorCargando && correosInduccion.probadorFormulario" class="space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="space-y-0.5 min-w-0">
+                        <span class="text-[10px] font-mono text-indigo-400 font-bold uppercase tracking-wider block"
+                          x-text="'FORMULARIO #' + (correosInduccion.probadorFormulario?.id || '')"></span>
+                        <h4 class="text-sm font-bold text-white leading-tight truncate" x-text="correosInduccion.probadorFormulario?.nombre"></h4>
+                      </div>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0"
+                        :class="correosInduccion.probadorFormulario?.es_interno ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'"
+                        x-text="correosInduccion.probadorFormulario?.es_interno ? 'Interno' : 'Externo'"></span>
+                    </div>
+
+                    <!-- Metadatos de la Inducción -->
+                    <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">Aplica a:</span>
+                        <strong class="text-slate-200 truncate block" x-text="correosInduccion.probadorFormulario?.tipo_personal || 'TODOS'"></strong>
+                      </div>
+                      <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">Vigencia:</span>
+                        <strong class="text-slate-200 truncate block" x-text="correosInduccion.probadorFormulario?.vigencia || '1 año'"></strong>
+                      </div>
+                      <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">Preguntas:</span>
+                        <strong class="text-indigo-300" x-text="(correosInduccion.probadorFormulario?.cantidad_preguntas || 10) + ' preguntas'"></strong>
+                      </div>
+                      <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                        <span class="text-slate-400 text-[10px] block">Responsable:</span>
+                        <strong class="text-slate-200 truncate block" x-text="correosInduccion.probadorFormulario?.creador_nombre || 'Auditor GESCO'"></strong>
+                      </div>
+                    </div>
+
+                    <!-- Botones de Acción de Prueba -->
+                    <div class="flex items-center gap-2 pt-1">
+                      <a :href="correosInduccion.probadorFormulario?.url_simulacion"
+                        target="_blank"
+                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02] cursor-pointer"
+                        title="Abrir este formulario en modo prueba en una pestaña nueva">
+                        <i class="fa-solid fa-play text-[11px]"></i>
+                        <span>Probar Inducción</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-80"></i>
+                      </a>
+
+                      <button type="button"
+                        @click="copiarEnlaceInduccion(correosInduccion.probadorFormulario?.url_evaluacion)"
+                        class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+                        title="Copiar URL directa de evaluación">
+                        <i class="fa-solid fa-copy"></i>
+                      </button>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </section>
+
 
         <!-- ============================================================
            SECCIÓN 1: MODO MANTENIMIENTO AVANZADO (GENERAL Y POR MÓDULOS)
@@ -1112,7 +1402,7 @@
                 <div x-show="mensajeForm.destinatarioTipo === 'todos'" x-transition class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
                   <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5 flex-shrink-0"></i>
                   <div class="text-xs text-amber-200/90 leading-relaxed">
-                    <strong>Difusión Masiva General:</strong> El comunicado se registrará y notificará a todas las cuentas activas de los roles operativos del sistema (SST, GESCO, SCR, Gestión Documental, Vigilantes y Administradores).
+                    <strong>Difusión Masiva General:</strong> El comunicado se registrará y notificará a todas las cuentas activas de los roles operativos del sistema (SST, GESCO, SCR, Solicitantes, Vigilantes y Administradores).
                   </div>
                 </div>
               </div>

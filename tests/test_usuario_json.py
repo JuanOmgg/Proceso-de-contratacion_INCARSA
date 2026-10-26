@@ -19,7 +19,7 @@ from database import GET_conexion
 #   2 = SUPERADMIN
 #   3 = VIGILANTE
 #   4 = EQUIPO SCR - RADICADOS
-#   5 = GESTION DOCUMENTAL
+#   5 = SOLICITANTE
 #   6 = SST (Seguridad y Salud en el Trabajo)
 #   7 = GESCO (Gestión del conocimiento)
 #   8 = SCR (Seguridad corporativa y riesgo)
@@ -30,7 +30,7 @@ ROLES_NOMBRE = {
     2: "SUPERADMIN",
     3: "VIGILANTE",
     4: "EQUIPO SCR - RADICADOS",
-    5: "GESTION DOCUMENTAL",
+    5: "SOLICITANTE",
     6: "SST",
     7: "GESCO",
     8: "SCR",
@@ -52,7 +52,7 @@ USUARIOS_SEED = [
     {"nombres": "Miguel",    "apellidos": "Hernandez Vega",   "tipo_documento": "CC", "num_documento": "20000004", "num_telefono": "3100000004", "correo": "miguel.hernandez@incarsa.com", "contrasena": "Password123*", "id_rol": 4},
     {"nombres": "Paola",     "apellidos": "Medina Acosta",    "tipo_documento": "CC", "num_documento": "20000013", "num_telefono": "3100000013", "correo": "paola.medina@incarsa.com",     "contrasena": "Password123*", "id_rol": 4},
 
-    # ─── ROL 5: GESTION DOCUMENTAL ────────────────────────────────────
+    # ─── ROL 5: SOLICITANTE ────────────────────────────────────
     {"nombres": "Andres",    "apellidos": "Torres Gomez",     "tipo_documento": "CC", "num_documento": "20000002", "num_telefono": "3100000002", "correo": "andres.torres@incarsa.com",    "contrasena": "Password123*", "id_rol": 5},
     {"nombres": "Valentina", "apellidos": "Lopez Castillo",   "tipo_documento": "CC", "num_documento": "20000005", "num_telefono": "3100000005", "correo": "valentina.lopez@incarsa.com",  "contrasena": "Password123*", "id_rol": 5},
     {"nombres": "Juan",      "apellidos": "Moreno Salcedo",   "tipo_documento": "CC", "num_documento": "20000010", "num_telefono": "3100000010", "correo": "juan.moreno@incarsa.com",      "contrasena": "Password123*", "id_rol": 5},

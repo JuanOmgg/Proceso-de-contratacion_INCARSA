@@ -45,17 +45,22 @@ def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS empresa (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre_empresa VARCHAR(50) NOT NULL UNIQUE
+            nombre_empresa VARCHAR(50) NOT NULL UNIQUE,
+            correo VARCHAR(100) NOT NULL,
+            nit VARCHAR(20) NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """)
 
     op.execute("""
-        INSERT INTO empresa (nombre_empresa) VALUES
-        ('INCARSA S.A.S.'),
-        ('MILPA S.A.'),
-        ('CARBOINSA S.A.S.'),
-        ('UNIMINAS S.A.S.')
-        ON DUPLICATE KEY UPDATE nombre_empresa = VALUES(nombre_empresa);
+        INSERT INTO empresa (nombre_empresa, correo, nit) VALUES
+        ('INCARSA S.A.S.', 'incarsasas@incarsa.com.co', '830.078.829-5'),
+        ('MILPA S.A.', 'cimilpa@milpa.com.co', '860.513.970-1'),
+        ('CARBOINSA S.A.S.', 'carboinsasas@carboinsa.com.co', '830.106.265-2'),
+        ('UNIMINAS S.A.S.', 'uniminas@uniminas.com.co', '832.002.451-6')
+        ON DUPLICATE KEY UPDATE 
+            nombre_empresa = VALUES(nombre_empresa),
+            correo = VALUES(correo),
+            nit = VALUES(nit);
     """)
 
     # 3. Empresa Contratista (sin datos semilla)
@@ -63,6 +68,7 @@ def upgrade() -> None:
         CREATE TABLE IF NOT EXISTS emp_contratista (
             id INT AUTO_INCREMENT PRIMARY KEY,
             nombre VARCHAR(100) NOT NULL UNIQUE,
+            nit VARCHAR(20) NULL UNIQUE,
             observacion VARCHAR(250) NULL,
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -92,6 +98,7 @@ def upgrade() -> None:
             contrasena VARCHAR(250) NOT NULL,
             id_rol INT NOT NULL,
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            password_changed_at DATETIME NULL,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -112,6 +119,7 @@ def upgrade() -> None:
             tipo_doc VARCHAR(70) NOT NULL,
             identificacion INT NOT NULL,
             cargo VARCHAR(30) NOT NULL,
+            correo VARCHAR(255) NOT NULL,
             observacion VARCHAR(250) NULL,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -145,6 +153,10 @@ def upgrade() -> None:
             actividad TEXT NOT NULL,
             observaciones TEXT NULL,
             estado VARCHAR(30) NOT NULL DEFAULT 'ENVIADO',
+            pre_aprobado BOOLEAN NOT NULL DEFAULT 0,
+            token_edicion VARCHAR(64) NULL,
+            token_edicion_usado BOOLEAN NOT NULL DEFAULT 0,
+            motivo_devolucion TEXT NULL,
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (empresa_origen) REFERENCES empresa(id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -171,9 +183,19 @@ def upgrade() -> None:
             id_persona INT NOT NULL,
             autorizado BOOLEAN NOT NULL DEFAULT TRUE,
             motivo VARCHAR(255) NULL,
+            token_autorizacion VARCHAR(100) NULL,
+            estado_datos VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+            fecha_respuesta_datos DATETIME NULL,
+            ip_datos VARCHAR(50) NULL,
+            dispositivo_datos VARCHAR(255) NULL,
+            motivo_rechazo_datos TEXT NULL,
+            denegado_por INT NULL,
             PRIMARY KEY (id_solicitud, id_persona),
             FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE
+            FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE CASCADE,
+            FOREIGN KEY (denegado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+            KEY idx_ingresantes_token (token_autorizacion),
+            KEY idx_ingresantes_denegado_por (denegado_por)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """)
 
@@ -182,10 +204,14 @@ def upgrade() -> None:
         CREATE TABLE IF NOT EXISTS Veh_ingreso (
             id_solicitud INT NOT NULL,
             id_vehiculo INT NOT NULL,
+            id_persona INT NULL,
             licencia_doc VARCHAR(255) NULL,
+            autorizado BOOLEAN NOT NULL DEFAULT 1,
+            motivo VARCHAR(255) NULL,
             PRIMARY KEY (id_solicitud, id_vehiculo),
             FOREIGN KEY (id_solicitud) REFERENCES solicitudes(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id) ON DELETE CASCADE
+            FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id) ON DELETE CASCADE,
+            FOREIGN KEY (id_persona) REFERENCES personas(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """)
 
@@ -196,6 +222,7 @@ def upgrade() -> None:
             persona_id INT NOT NULL,
             tipo_doc VARCHAR(50) NOT NULL,
             nombre_archivo VARCHAR(255) NOT NULL,
+            vigencia DATE NULL,
             FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """)

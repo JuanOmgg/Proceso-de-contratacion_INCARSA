@@ -50,6 +50,12 @@ function induccionesModule() {
     showSuccessModal: false,
     datosExitoRenovacion: {},
 
+    // Modal 5: Descarga de Certificados (Selección de Empresa o ZIP)
+    showCertificadoModal: false,
+    personaCertificado: null,
+    formularioSeleccionadoCertificado: null,
+    empresaSeleccionadaCertificado: "INCARSA",
+
     // ---------------------------------------------------
     // Inicialización
     // ---------------------------------------------------
@@ -131,7 +137,10 @@ function induccionesModule() {
           const cargo = String(item.cargo || "").toLowerCase();
           const empresa = String(item.nombre_empresa || "").toLowerCase();
           const resp = String(item.responsable || "").toLowerCase();
-          return nombre.includes(term) || doc.includes(term) || cargo.includes(term) || empresa.includes(term) || resp.includes(term);
+          const matchForm = Array.isArray(item.formularios_realizados) && item.formularios_realizados.some(f => 
+            String(f.nombre_formulario || "").toLowerCase().includes(term)
+          );
+          return nombre.includes(term) || doc.includes(term) || cargo.includes(term) || empresa.includes(term) || resp.includes(term) || matchForm;
         });
       }
 
@@ -289,17 +298,131 @@ function induccionesModule() {
       }
     },
 
+    getFormVigenciaInfo(f) {
+      if (!f) return { badgeClass: "", icono: "", texto: "—" };
+      const estado = f.estado_vigencia || "sin_induccion";
+      const dias = f.dias_restantes;
+
+      switch (estado) {
+        case "vigente":
+          return {
+            badgeClass: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30",
+            dotClass: "bg-emerald-500",
+            icono: "fa-solid fa-circle-check",
+            texto: dias !== null ? `${dias}d rest. (Vigente)` : "Vigente"
+          };
+        case "por_vencer":
+          return {
+            badgeClass: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30",
+            dotClass: "bg-amber-500",
+            icono: "fa-solid fa-triangle-exclamation",
+            texto: dias !== null ? `${dias}d rest. (Por vencer)` : "Por vencer"
+          };
+        case "vencido":
+          return {
+            badgeClass: "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30",
+            dotClass: "bg-red-500",
+            icono: "fa-solid fa-circle-xmark",
+            texto: dias !== null ? `Vencido (${Math.abs(dias)}d)` : "Vencido"
+          };
+        default:
+          return {
+            badgeClass: "bg-slate-500/15 text-slate-500 border border-slate-500/30",
+            dotClass: "bg-slate-400",
+            icono: "fa-solid fa-clock-rotate-left",
+            texto: "Sin vigencia"
+          };
+      }
+    },
+
     // ---------------------------------------------------
     // Modal Ficha Ticket (Detalle Solo Lectura)
     // ---------------------------------------------------
     abrirFichaInduccion(item) {
-      this.detalleInduccion = { ...item };
+      this.detalleInduccion = { 
+        ...item,
+        formularios_realizados: item.formularios_realizados ? [...item.formularios_realizados] : []
+      };
       this.showFichaModal = true;
     },
 
     cerrarFichaModal() {
       this.showFichaModal = false;
       this.detalleInduccion = {};
+    },
+
+    // ---------------------------------------------------
+    // Modal Descarga de Certificados (Selección de Empresa / ZIP)
+    // ---------------------------------------------------
+    abrirModalCertificado(item, formItem = null) {
+      if (!item) return;
+      const forms = item.formularios_realizados || [];
+      if (forms.length === 0 && !item.id_formulario) {
+        if (typeof Swal !== "undefined") {
+          Swal.fire({
+            icon: "info",
+            title: "Sin inducción registrada",
+            text: "Esta persona aún no cuenta con inducciones aprobadas para descargar certificados.",
+            confirmButtonColor: "#7c3aed"
+          });
+        } else {
+          alert("Esta persona aún no cuenta con inducciones aprobadas para descargar certificados.");
+        }
+        return;
+      }
+
+      this.personaCertificado = { 
+        ...item,
+        nombre_completo: item.nombre_completo || `${item.persona_nombre || ""} ${item.persona_apellido || ""}`.trim()
+      };
+      if (formItem && formItem.id_formulario) {
+        this.formularioSeleccionadoCertificado = formItem.id_formulario;
+      } else if (forms.length > 0 && forms[0].id_formulario) {
+        this.formularioSeleccionadoCertificado = forms[0].id_formulario;
+      } else {
+        this.formularioSeleccionadoCertificado = item.id_formulario || null;
+      }
+      this.empresaSeleccionadaCertificado = "INCARSA";
+      this.showCertificadoModal = true;
+    },
+
+    cerrarModalCertificado() {
+      this.showCertificadoModal = false;
+      this.personaCertificado = null;
+      this.formularioSeleccionadoCertificado = null;
+    },
+
+    descargarCertificadoEmpresa(empresaNombre) {
+      if (!this.personaCertificado || !this.personaCertificado.id_persona) return;
+      const pid = this.personaCertificado.id_persona;
+      const fid = this.formularioSeleccionadoCertificado || "";
+      const emp = empresaNombre ? encodeURIComponent(empresaNombre) : "INCARSA";
+      const url = `/api/v1/inducciones/persona/${pid}/certificado?empresa=${emp}&descargar=true` + (fid ? `&id_form=${fid}` : "");
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      }, 100);
+    },
+
+    descargarCertificadosZip() {
+      if (!this.personaCertificado || !this.personaCertificado.id_persona) return;
+      const pid = this.personaCertificado.id_persona;
+      const fid = this.formularioSeleccionadoCertificado || "";
+      const url = `/api/v1/inducciones/persona/${pid}/certificado/zip` + (fid ? `?id_form=${fid}` : "");
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      }, 100);
     },
 
     // ---------------------------------------------------
@@ -316,32 +439,155 @@ function induccionesModule() {
     // ---------------------------------------------------
     // Modal Formulario de Renovación
     // ---------------------------------------------------
+    get esFechaHoy() {
+      const hoy = new Date();
+      const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+      return this.formInduccion.fecha_induccion === hoyIso;
+    },
+
+    actualizarFechasInduccion(nuevaFechaStr) {
+      if (!nuevaFechaStr) return;
+      let y, m, d;
+      const strLimpia = String(nuevaFechaStr).split("T")[0].split(" ")[0];
+      if (strLimpia.includes("-")) {
+        const partes = strLimpia.split("-");
+        y = parseInt(partes[0], 10);
+        m = parseInt(partes[1], 10);
+        d = parseInt(partes[2], 10);
+      } else {
+        const fechaObj = new Date(nuevaFechaStr);
+        if (isNaN(fechaObj.getTime())) return;
+        y = fechaObj.getFullYear();
+        m = fechaObj.getMonth() + 1;
+        d = fechaObj.getDate();
+      }
+
+      const isoInd = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      this.formInduccion.fecha_induccion = isoInd;
+      this.formInduccion.fecha_induccion_texto = this.formatearFecha(isoInd);
+
+      // Calcular vigencia exacta (+1 Año)
+      const yVig = y + 1;
+      let dVig = d;
+      if (m === 2 && d === 29) {
+        dVig = 28; // Manejo seguro de año bisiesto
+      }
+      const isoVig = `${yVig}-${String(m).padStart(2, "0")}-${String(dVig).padStart(2, "0")}`;
+      this.formInduccion.fecha_vigencia = isoVig;
+      this.formInduccion.fecha_vigencia_texto = this.formatearFecha(isoVig);
+
+      // Calcular días restantes de vigencia a partir de hoy
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const fechaVigObj = new Date(yVig, m - 1, dVig);
+      fechaVigObj.setHours(0, 0, 0, 0);
+      const diffMs = fechaVigObj.getTime() - hoy.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      this.formInduccion.dias_restantes = diffDias;
+    },
+
+    fijarFechaHoy() {
+      const hoy = new Date();
+      const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+      this.actualizarFechasInduccion(hoyIso);
+      if (this.$refs.fechaInduccionInput && this.$refs.fechaInduccionInput._flatpickr) {
+        this.$refs.fechaInduccionInput._flatpickr.setDate(hoyIso, true);
+      }
+    },
+
+    initFlatpickrFechaInduccion(el) {
+      if (typeof flatpickr === "undefined" || !el) return;
+      if (el._flatpickr) {
+        el._flatpickr.destroy();
+      }
+      const self = this;
+      flatpickr(el, {
+        locale: (typeof flatpickr !== "undefined" && flatpickr.l10ns && flatpickr.l10ns.es) ? flatpickr.l10ns.es : "es",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d M Y",
+        altInputClass: "text-xs font-bold text-[var(--paper-ink)] dark:text-white bg-transparent border-0 p-0 focus:ring-0 cursor-pointer w-full truncate mt-0.5",
+        defaultDate: self.formInduccion.fecha_induccion || "today",
+        onChange(selectedDates, dateStr) {
+          if (dateStr) {
+            self.actualizarFechasInduccion(dateStr);
+          }
+        }
+      });
+    },
+
+    normalizarAFechaIso(val) {
+      if (!val || val === "None" || val === "null" || val === "—") return null;
+      try {
+        const str = String(val).trim();
+        const limpia = str.replace("T", " ").split(" ")[0].trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(limpia)) {
+          return limpia;
+        }
+        if (limpia.includes("/")) {
+          const partes = limpia.split("/");
+          if (partes.length === 3) {
+            const d = String(parseInt(partes[0], 10)).padStart(2, "0");
+            const m = String(parseInt(partes[1], 10)).padStart(2, "0");
+            const y = parseInt(partes[2], 10);
+            if (!isNaN(y) && y > 1900) {
+              return `${y}-${m}-${d}`;
+            }
+          }
+        }
+        const dObj = new Date(str);
+        if (!isNaN(dObj.getTime())) {
+          const y = dObj.getFullYear();
+          const m = String(dObj.getMonth() + 1).padStart(2, "0");
+          const d = String(dObj.getDate()).padStart(2, "0");
+          return `${y}-${m}-${d}`;
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    },
+
     abrirFormularioInduccion(item) {
       const hoy = new Date();
-      const fechaHoyTexto = this.formatearFecha(hoy);
+      const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
 
-      const fechaMasUnAno = new Date(hoy);
-      fechaMasUnAno.setFullYear(fechaMasUnAno.getFullYear() + 1);
-      const fechaVigTexto = this.formatearFecha(fechaMasUnAno);
+      const fechaRegistradaIso = this.normalizarAFechaIso(item.fecha_induccion);
+      const fechaInicialIso = fechaRegistradaIso || hoyIso;
 
       this.formInduccion = {
         id_persona: item.id_persona,
-        persona_nombre: item.nombre_completo || `${item.persona_nombre} ${item.persona_apellido || ""}`.trim(),
+        persona_nombre: item.nombre_completo || `${item.persona_nombre || ""} ${item.persona_apellido || ""}`.trim(),
         persona_identificacion: item.identificacion,
         persona_tipo_doc: item.tipo_doc || "CC",
         persona_cargo: item.cargo || "General",
         id_empresa: item.id_empresa || null,
         nombre_empresa: item.nombre_empresa || "Sin empresa asignada",
         responsable: this.auditorActualNombre,
-        fecha_induccion_texto: fechaHoyTexto,
-        fecha_vigencia_texto: fechaVigTexto,
+        fecha_induccion: fechaInicialIso,
+        fecha_induccion_texto: this.formatearFecha(fechaInicialIso),
+        fecha_vigencia: "",
+        fecha_vigencia_texto: "",
+        dias_restantes: 365,
         anotaciones: item.anotaciones || ""
       };
+
+      this.actualizarFechasInduccion(fechaInicialIso);
 
       this.mensajeExitoForm = "";
       this.mensajeErrorForm = "";
       this.guardandoInduccion = false;
       this.showFormModal = true;
+
+      this.$nextTick(() => {
+        if (this.$refs.fechaInduccionInput) {
+          if (this.$refs.fechaInduccionInput._flatpickr) {
+            this.$refs.fechaInduccionInput._flatpickr.setDate(this.formInduccion.fecha_induccion, true);
+          } else {
+            this.initFlatpickrFechaInduccion(this.$refs.fechaInduccionInput);
+          }
+        }
+      });
     },
 
     cerrarFormModal() {
@@ -366,7 +612,9 @@ function induccionesModule() {
         const payload = {
           responsable: this.auditorActualNombre,
           anotaciones: this.formInduccion.anotaciones ? this.formInduccion.anotaciones.trim() : null,
-          id_empresa: this.formInduccion.id_empresa || null
+          id_empresa: this.formInduccion.id_empresa || null,
+          fecha_induccion: this.formInduccion.fecha_induccion,
+          fecha_vigencia: this.formInduccion.fecha_vigencia
         };
 
         const res = await fetch(`/api/v1/inducciones/persona/${this.formInduccion.id_persona}`, {
@@ -387,8 +635,29 @@ function induccionesModule() {
           nombre_empresa: this.formInduccion.nombre_empresa,
           fecha_induccion: this.formInduccion.fecha_induccion_texto,
           fecha_vigencia: this.formInduccion.fecha_vigencia_texto,
-          dias_restantes: 365
+          dias_restantes: this.formInduccion.dias_restantes
         };
+
+        // Sincronizar inmediatamente en memoria para evitar discrepancias
+        const idPersonaActual = this.formInduccion.id_persona;
+        const itemEnLista = this.inducciones.find(i => i.id_persona === idPersonaActual);
+        if (itemEnLista) {
+          itemEnLista.fecha_induccion = this.formInduccion.fecha_induccion;
+          itemEnLista.fecha_vigencia = this.formInduccion.fecha_vigencia;
+          itemEnLista.responsable = payload.responsable;
+          itemEnLista.anotaciones = payload.anotaciones;
+          itemEnLista.dias_restantes = this.formInduccion.dias_restantes;
+          itemEnLista.estado_vigencia = this.formInduccion.dias_restantes < 0 ? "vencido" : (this.formInduccion.dias_restantes <= 30 ? "por_vencer" : "vigente");
+        }
+
+        if (this.detalleInduccion && this.detalleInduccion.id_persona === idPersonaActual) {
+          this.detalleInduccion.fecha_induccion = this.formInduccion.fecha_induccion;
+          this.detalleInduccion.fecha_vigencia = this.formInduccion.fecha_vigencia;
+          this.detalleInduccion.responsable = payload.responsable;
+          this.detalleInduccion.anotaciones = payload.anotaciones;
+          this.detalleInduccion.dias_restantes = this.formInduccion.dias_restantes;
+          this.detalleInduccion.estado_vigencia = itemEnLista ? itemEnLista.estado_vigencia : "vigente";
+        }
 
         this.cerrarFormModal();
         this.showSuccessModal = true;

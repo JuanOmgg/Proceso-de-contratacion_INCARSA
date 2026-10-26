@@ -1,0 +1,1105 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}{{ 'Editar formulario GESCO' if formulario_id else 'Nuevo formulario GESCO' }} · PSI{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/usuarios-listado.css') }}?v=1.1">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/formulario-gesco.css') }}?v=4.4">
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    window.__FORMULARIO_ID__ = "{{ formulario_id | default('', true) }}";
+  </script>
+  <script src="{{ url_for('static', path='js/formulario-gesco.js') }}?v=4.6"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- SIDEBAR -->
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="formularioGescoForm()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      <header class="topbar flex items-center justify-between px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button type="button" @click="sidebarOpenMobile = true" class="mobile-menu-btn" aria-label="Abrir menú de navegación">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <a href="/formularios-gesco" class="action-icon-btn text-white hidden sm:inline-flex" title="Volver a la tabla de formularios">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+          <div>
+            <h1 class="font-display font-semibold text-lg text-white"
+              x-text="isEdit ? 'Editar Formulario GESCO' : 'Nuevo Formulario GESCO'"></h1>
+            <p class="text-xs text-slate-300 hidden sm:block">Parámetros oficiales y banco interactivo de preguntas</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <!-- Botón Simular Examen (Solo en edición) -->
+          <template x-if="isEdit && formId">
+            <a :href="urlSimulacion" target="_blank"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-400/40 transition-all shadow-xs cursor-pointer"
+              title="Abrir simulador en vivo para probar preguntas y cuotas">
+              <i class="fa-solid fa-flask-vial text-purple-400"></i>
+              <span class="hidden sm:inline">Simular Formulario</span>
+            </a>
+          </template>
+
+          <!-- Modo oscuro -->
+          <button type="button" @click="toggleDarkMode()"
+            class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-white/10 cursor-pointer"
+            :title="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+            <i class="fa-solid text-sm sm:text-base transition-all duration-300"
+               :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon'"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8">
+        <div class="max-w-4xl mx-auto space-y-6">
+
+          <!-- ===== 1. Pantalla de Éxito ===== -->
+          <div x-show="submitted" x-cloak
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 -translate-y-4"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            class="wizard-card p-10 text-center">
+            
+            <div class="w-16 h-16 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-500/30 text-2xl shadow-lg shadow-emerald-500/20">
+              <i class="fa-solid fa-check-double"></i>
+            </div>
+            
+            <h2 class="font-display font-bold text-2xl text-[var(--text-primary)] mb-1"
+                x-text="isEdit ? 'Formulario y preguntas actualizados' : 'Formulario y preguntas creados exitosamente'"></h2>
+            
+            <p class="text-sm text-[var(--text-muted)] mb-4" x-text="mensajeExito || 'Redirigiendo a la tabla de formularios GESCO...'"></p>
+
+            <div class="inline-flex items-center gap-2 text-xs font-semibold text-[var(--signal-500)]">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span>Cargando listado...</span>
+            </div>
+          </div>
+
+          <!-- ===== 2. Estado de Carga (Modo Edición) ===== -->
+          <div x-show="cargando && !submitted" class="wizard-card p-12 text-center text-[var(--text-muted)]">
+            <i class="fa-solid fa-spinner fa-spin text-3xl text-[var(--signal-500)] mb-3"></i>
+            <p class="text-sm font-semibold">Cargando datos del formulario GESCO...</p>
+          </div>
+
+          <!-- ===== 3. STEPPER DE 2 PASOS ===== -->
+          <div class="gesco-stepper-container" x-show="!submitted && !cargando" x-cloak>
+            <!-- Paso 1 -->
+            <button type="button" @click="irAlPaso(1)"
+              class="gesco-stepper-item cursor-pointer"
+              :class="currentStep === 1 ? 'is-active' : (isPaso1Completado ? 'is-completed' : '')">
+              <div class="gesco-stepper-circle">
+                <i class="fa-solid fa-check text-xs" x-show="currentStep > 1 && isPaso1Completado"></i>
+                <span x-show="currentStep === 1 || !isPaso1Completado">1</span>
+              </div>
+              <div class="text-left min-w-0">
+                <span class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Paso 1</span>
+                <span class="block text-xs sm:text-sm font-bold text-[var(--text-primary)] truncate">Parámetros del Formato</span>
+              </div>
+              <div class="gesco-stepper-badge"
+                :class="currentStep === 1
+                  ? 'bg-red-500/15 text-[var(--signal-500)] border border-red-500/25 shadow-xs'
+                  : (isPaso1Completado ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25' : 'bg-white/5 text-[var(--text-muted)] border border-white/5')">
+                <span x-text="currentStep === 1 ? 'En curso' : (isPaso1Completado ? 'Listo' : 'Pendiente')"></span>
+                <i class="fa-solid" :class="currentStep === 1 ? 'fa-pen-to-square text-[10px]' : (isPaso1Completado ? 'fa-check text-[10px]' : 'fa-circle text-[6px]')"></i>
+              </div>
+            </button>
+
+            <div class="gesco-stepper-line" :class="currentStep === 2 ? 'is-active' : ''"></div>
+
+            <!-- Paso 2 -->
+            <button type="button" @click="irAlPaso(2)"
+              class="gesco-stepper-item cursor-pointer"
+              :class="currentStep === 2 ? 'is-active' : ''">
+              <div class="gesco-stepper-circle">
+                <span>2</span>
+              </div>
+              <div class="text-left min-w-0">
+                <span class="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Paso 2</span>
+                <span class="block text-xs sm:text-sm font-bold text-[var(--text-primary)] truncate">Preguntas y Respuestas</span>
+              </div>
+              <div class="gesco-stepper-badge"
+                :class="currentStep === 2
+                  ? 'bg-red-500/15 text-[var(--signal-500)] border border-red-500/25 shadow-xs'
+                  : 'bg-white/5 text-[var(--text-muted)] border border-white/5'">
+                <span x-text="currentStep === 2 ? 'En curso' : 'Pendiente'"></span>
+                <i class="fa-solid" :class="currentStep === 2 ? 'fa-list-check text-[10px]' : 'fa-lock text-[10px] opacity-60'"></i>
+              </div>
+            </button>
+          </div>
+
+          <!-- ===== 4. Formulario Principal ===== -->
+          <form @submit.prevent="currentStep === 1 ? irAlPaso(2) : submitForm()" x-show="!submitted && !cargando" x-cloak
+            class="space-y-6">
+
+            <!-- Alerta de Error Superior -->
+            <div x-show="mensajeError" x-transition
+              class="p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-sm flex items-center gap-3 font-medium">
+              <i class="fa-solid fa-triangle-exclamation text-base flex-shrink-0"></i>
+              <span x-text="mensajeError"></span>
+            </div>
+
+            <!-- ========================================================
+                 PASO 1: PARÁMETROS DEL FORMULARIO
+            ======================================================== -->
+            <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-200"
+              class="space-y-6">
+
+              <!-- BANNER / SWITCH DESTACADO: FORMULARIO INTERNO & DIÁLOGOS MENSUALES -->
+              <div class="gesco-section-card gesco-interno-card p-5 sm:p-6 transition-all duration-300 shadow-sm"
+                   :class="form.es_interno ? 'is-interno' : ''">
+                <div class="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
+                  <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="gesco-header-icon"
+                         :class="form.es_interno ? '' : 'emerald'">
+                      <i class="fa-solid fa-building-user"></i>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="font-display font-bold text-base text-[var(--text-primary)]">
+                          ¿Formulario para personal interno?
+                        </h2>
+                      </div>
+                      <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                        Activa esta opción para hacer el formulario para publico específico.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Switch interactivo de alta visibilidad (Signal / iOS Style) -->
+                  <button type="button" @click="toggleEsInterno()"
+                    class="gesco-toggle-switch self-end sm:self-center"
+                    :class="form.es_interno ? 'is-active' : ''"
+                    role="switch"
+                    :aria-checked="form.es_interno"
+                    title="Alternar modo interno">
+                    <span class="gesco-toggle-thumb"></span>
+                  </button>
+                </div>
+
+                <!-- CONFIGURACIÓN ADICIONAL CUANDO ES INTERNO: LÍMITE DE FECHA OPCIONAL (FLATPICKR SISTEMA) -->
+                <div x-show="form.es_interno" x-transition class="pt-4 mt-4 border-t border-[var(--border-subtle)] space-y-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label class="form-label font-bold text-xs flex items-center gap-1.5 text-[var(--signal-500)] dark:text-[#fb7185]">
+                        <i class="fa-regular fa-calendar-xmark text-sm"></i>
+                        <span>Límite de fecha para contestar (Opcional)</span>
+                      </label>
+                      <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
+                        Plazo máximo para que los trabajadores diligencien el formulario. Tras vencerse la fecha, el formulario no admitirá nuevas respuestas.
+                      </p>
+                    </div>
+                    
+                    <!-- Input Fecha Límite Integrado con Flatpickr (Solo Fecha, sin hora) -->
+                    <div class="flex items-center gap-2">
+                      <div class="gesco-date-picker-wrap cursor-pointer"
+                           @click="$refs.fechaLimiteInput && $refs.fechaLimiteInput._flatpickr && $refs.fechaLimiteInput._flatpickr.open()">
+                        <i class="fa-solid fa-calendar-day gesco-date-icon-left"></i>
+                        <input type="text"
+                               x-ref="fechaLimiteInput"
+                               x-init="$nextTick(() => initFlatpickrFechaLimite($el))"
+                               placeholder="Sin fecha límite"
+                               readonly>
+                        <i class="fa-solid fa-chevron-down gesco-date-icon-right"></i>
+                      </div>
+
+                      <!-- Botón para quitar el límite de fecha -->
+                      <button type="button"
+                              x-show="form.fecha_limite"
+                              @click="quitarFechaLimite()"
+                              class="gesco-date-clear-btn"
+                              title="Quitar límite de fecha">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Presets Rápidos de Fecha Límite con Estilo Signal (Sin bordes blancos) -->
+                  <div class="flex items-center gap-2 flex-wrap pt-0.5 text-[11px]">
+                    <span class="text-[var(--text-muted)] font-medium">Accesos rápidos:</span>
+                    <button type="button" @click="establecerFechaLimite(7)"
+                      class="gesco-preset-signal-btn"
+                      :class="isPresetActive(7) ? 'is-active' : ''">
+                      <span>+7 días</span>
+                    </button>
+                    <button type="button" @click="establecerFechaLimite(15)"
+                      class="gesco-preset-signal-btn"
+                      :class="isPresetActive(15) ? 'is-active' : ''">
+                      <span>+15 días</span>
+                    </button>
+                    <button type="button" @click="establecerFechaLimite(30)"
+                      class="gesco-preset-signal-btn"
+                      :class="isPresetActive(30) ? 'is-active' : ''">
+                      <span>+1 mes</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TARJETA 1: IDENTIFICACIÓN DEL FORMULARIO -->
+              <div class="gesco-section-card p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center gap-3 pb-4 border-b border-[var(--border-subtle)]">
+                  <div class="gesco-header-icon">
+                    <i class="fa-solid" :class="isEdit ? 'fa-pen-to-square' : 'fa-clipboard-list'"></i>
+                  </div>
+                  <div>
+                    <h2 class="font-display font-bold text-lg text-[var(--text-primary)]">
+                      Identificación del Formato
+                    </h2>
+                  </div>
+                </div>
+
+                <div class="space-y-5">
+                  
+                  <!-- Campo: Nombre -->
+                  <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="form-label font-bold text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-signature gesco-role-icon text-xs"></i>
+                        <span>Nombre oficial del formulario *</span>
+                      </label>
+                      <span class="text-[11px] text-[var(--text-muted)] font-mono" x-text="(form.nombre || '').length + ' / 100'"></span>
+                    </div>
+                    <input type="text" x-model="form.nombre" maxlength="100"
+                      placeholder="Ej: Inducción General SST y Riesgos Mineros"
+                      class="gesco-input"
+                      :class="errors.nombre ? 'has-error' : ''">
+                    <p class="form-error" x-show="errors.nombre" x-text="errors.nombre"></p>
+                  </div>
+
+                  <!-- Campo: Descripción / Alcance -->
+                  <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="form-label font-bold text-xs flex items-center gap-1.5"></br>
+                        <i class="fa-solid fa-align-left text-slate-400 text-xs"></i>
+                        <span>Descripción y alcance del formato</span>
+                      </label></br>
+                      <span class="text-[11px] text-[var(--text-muted)] font-mono" x-text="(form.descripcion || '').length + ' / 255'"></span>
+                    </div>
+                    <textarea x-model="form.descripcion" rows="3" maxlength="255"
+                      placeholder="Describe el objetivo, normas obligatorias o requisitos de ingreso cubiertos por este formato..."
+                      class="gesco-input custom-scroll resize-none"
+                      :class="errors.descripcion ? 'has-error' : ''"></textarea>
+                  </div>
+
+                  <!-- Campo Informativo: Responsable / Creador -->
+                  <div x-show="isEdit && form.creador_nombre" class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                      <i class="fa-solid fa-user-shield text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <span class="text-[10px] uppercase font-bold tracking-wider text-purple-600 dark:text-purple-400 block">Responsable de las inducciones</span>
+                      <p class="text-xs font-bold text-[var(--text-primary)] truncate mt-0.5" x-text="form.creador_nombre"></p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- TARJETA 2: VIGENCIA Y VALIDEZ TEMPORAL -->
+              <div class="gesco-section-card p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center gap-3 pb-4 border-b border-[var(--border-subtle)]">
+                  <div class="gesco-header-icon">
+                    <i class="fa-solid fa-calendar-check"></i>
+                  </div>
+                  <div>
+                    <h2 class="font-display font-bold text-lg text-[var(--text-primary)]">
+                      Vigencia y Tiempo de Validez
+                    </h2>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  
+                  <!-- Input de días y selección rápida -->
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <div class="sm:col-span-1">
+                      <label class="form-label font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-stopwatch gesco-role-icon text-xs"></i>
+                        <span>Días de vigencia *</span>
+                      </label>
+                      <input type="number" min="1" max="3650" x-model.number="form.vigencia"
+                        placeholder="365"
+                        class="gesco-input font-bold font-mono text-base"
+                        :class="errors.vigencia ? 'has-error' : ''">
+                      <p class="form-error" x-show="errors.vigencia" x-text="errors.vigencia"></p>
+                    </div>
+
+                    <!-- Banner Informativo de cálculo -->
+                    <div class="sm:col-span-2 gesco-calc-banner">
+                      <i class="fa-solid fa-shield-halved"></i>
+                      <div class="text-xs">
+                        <p class="font-bold">Equivalencia aproximada:</p>
+                        <p class="text-[var(--text-muted)] font-medium" x-text="vigenciaLegible(form.vigencia)"></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botones de Presets de Vigencia -->
+                  <div>
+                    <span class="text-xs font-semibold text-[var(--text-muted)] block mb-2">Selección rápida predefinida:</span>
+                    <div class="flex flex-wrap gap-2">
+                      <template x-for="preset in presetsVigencia" :key="preset.dias">
+                        <button type="button" @click="setVigenciaPreset(preset.dias)"
+                          class="gesco-preset-btn"
+                          :class="Number(form.vigencia) === preset.dias ? 'is-active' : ''">
+                          <i class="fa-regular fa-clock text-[10px]"></i>
+                          <span x-text="preset.label"></span>
+                          <span x-show="preset.destacado" class="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ml-0.5"
+                            :class="Number(form.vigencia) === preset.dias ? 'bg-white/20 text-white' : 'gesco-preset-badge-standard'">Estándar</span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-red-500 font-medium" x-show="errors.vigencia" x-text="errors.vigencia"></p>
+                </div>
+              </div>
+
+              <!-- BANNER INFORMATIVO: MUESTREO DESACTIVADO CUANDO ES INTERNO -->
+              <div x-show="form.es_interno" x-transition class="gesco-section-card p-5 sm:p-6 border-indigo-500/30 bg-indigo-950/15 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-base shrink-0">
+                    <i class="fa-solid fa-list-check"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white">Evaluación Completa de Diálogo Interno</h3>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">El muestreo aleatorio está desactivado para formularios internos. Los trabajadores responderán todas las preguntas configuradas en el Paso 2.</p>
+                  </div>
+                </div>
+                <span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+                  100% Preguntas Activas
+                </span>
+              </div>
+
+              <!-- TARJETA: MUESTREO ALEATORIO (BANCO DE PREGUNTAS) (SOLO SI NO ES INTERNO) -->
+              <div x-show="!form.es_interno" x-transition class="gesco-section-card p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)] flex-wrap gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="gesco-header-icon">
+                      <i class="fa-solid fa-dice text-base"></i>
+                    </div>
+                    <div>
+                      <h2 class="font-display font-bold text-lg text-[var(--text-primary)]">
+                        Muestreo aleatorio del banco de preguntas
+                      </h2>
+                    </div>
+                  </div>
+
+                  <span class="text-xs font-bold px-3 py-1.5 rounded-xl gesco-role-pill border flex items-center gap-1.5"
+                    x-show="totalCuotasConfiguradas > 0">
+                    <i class="fa-solid fa-shuffle"></i>
+                    <span x-text="'Total por cuotas: ' + totalCuotasConfiguradas + ' preguntas'"></span>
+                  </span>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- SECCIÓN A: CUOTAS INDEPENDIENTES POR CATEGORÍA -->
+                  <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                      <label class="form-label font-bold text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group gesco-role-icon text-xs"></i>
+                        <span>Control de preguntas por formulario según el tema a presentar.</span>
+                      </label>
+                    </div>
+
+                    <!-- Grid de Cuotas por Categoría -->
+                    <div class="gesco-cuotas-grid pt-1">
+                      <template x-for="cat in catalogoCategorias" :key="cat.id">
+                        <div class="gesco-cuota-card">
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="cat-badge" :class="cat.colorClass">
+                              <i :class="cat.icon"></i>
+                              <span x-text="cat.label"></span>
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono"
+                              x-text="getConteoBancoPorCategoria(cat.id) + ' en banco'"></span>
+                          </div>
+
+                          <div class="flex items-center gap-2 pt-1">
+                            <input type="number" min="0" max="100"
+                              x-model.number="form.config_cuotas[cat.id]"
+                              placeholder="0 (Sin cuota)"
+                              class="gesco-cuota-input">
+                            <span class="text-[11px] text-[var(--text-muted)] font-medium">aleatorias</span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- SECCIÓN B: CUOTA GLOBAL ALTERNATIVA -->
+                  <div class="pt-4 border-t border-[var(--border-subtle)]">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                      <div class="sm:col-span-1">
+                        <label class="form-label font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                          <i class="fa-solid fa-calculator gesco-role-icon text-xs"></i>
+                          <span>Cuota global de respaldo (Opcional)</span>
+                        </label>
+                        <input type="number" min="1" max="200" x-model.number="form.cantidad_preguntas"
+                          placeholder="Todas las del banco"
+                          class="gesco-input font-bold font-mono text-base">
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">Aplica si no configuras cuotas por categoría.</p>
+                      </div>
+
+                      <div class="sm:col-span-2 gesco-calc-banner">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <div class="text-xs">
+                          <p class="font-bold text-[var(--text-primary)]"
+                             x-text="totalCuotasConfiguradas > 0 ? ('Configuración activa: ' + totalCuotasConfiguradas + ' preguntas por cuotas independientes de categoría') : (form.cantidad_preguntas && form.cantidad_preguntas > 0 ? ('Se presentarán ' + form.cantidad_preguntas + ' preguntas aleatorias globales') : 'Se presentarán todas las preguntas registradas en el banco')"></p>
+                          <p class="text-[var(--text-muted)] font-medium mt-0.5">
+                            Las preguntas abiertas reciben automáticamente 1.0 punto de calificación al responderse para evitar que el usuario deba esperar revisión manual.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BANNER INFORMATIVO: PERSONAL APLICABLE CUANDO ES INTERNO -->
+              <div x-show="form.es_interno" x-transition class="gesco-section-card p-5 sm:p-6 border-indigo-500/30 bg-indigo-950/15 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-base shrink-0">
+                    <i class="fa-solid fa-building-user"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white">Destinatario Exclusivo: Personal Interno</h3>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">Dirigido automáticamente a trabajadores de planta y personal propio sin necesidad de registro previo en el sistema.</p>
+                  </div>
+                </div>
+                <span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+                  Personal Interno
+                </span>
+              </div>
+
+              <!-- TARJETA 3: PERSONAL DESTINATARIO (SOLO SI NO ES INTERNO) -->
+              <div x-show="!form.es_interno" x-transition class="gesco-section-card p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)] flex-wrap gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="gesco-header-icon">
+                      <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <div>
+                      <h2 class="font-display font-bold text-lg text-[var(--text-primary)]">
+                        Tipo de personal aplicable
+                      </h2>
+                    </div>
+                  </div>
+
+                  <!-- Helper badge resumen -->
+                  <div class="text-xs px-3 py-1.5 rounded-xl gesco-role-pill font-medium border">
+                    <span>Selección: </span>
+                    <span class="font-bold text-[var(--text-primary)]" x-text="tipoPersonalTexto"></span>
+                  </div>
+                </div>
+
+                <!-- Grid de Tarjetas de Tipo de Personal Rediseñadas -->
+                <div class="gesco-persona-grid">
+                  <template x-for="cat in catalogoTipos" :key="cat.id">
+                    <div @click="toggleTipo(cat.id)"
+                      class="gesco-persona-card"
+                      :class="isTipoSeleccionado(cat.id) ? 'is-selected' : ''">
+                      
+                      <!-- Icon Box con temática según categoría -->
+                      <div class="gesco-persona-icon">
+                        <i :class="cat.icon"></i>
+                      </div>
+
+                      <!-- Contenido Informativo -->
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-[var(--text-primary)]" x-text="cat.label"></span>
+                            <span class="gesco-persona-badge" x-text="cat.tag"></span>
+                          </div>
+
+                          <!-- Check Indicator / Badge -->
+                          <div class="gesco-persona-checkbox">
+                            <i class="fa-solid fa-check" x-show="isTipoSeleccionado(cat.id)"></i>
+                          </div>
+                        </div>
+
+                        <p class="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed" x-text="cat.desc"></p>
+                      </div>
+
+                    </div>
+                  </template>
+                </div>
+
+                <p class="form-error" x-show="errors.tipo_personal" x-text="errors.tipo_personal"></p>
+              </div>
+
+              <!-- TARJETA 4: ESTADO OPERATIVO -->
+              <div class="gesco-section-card p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="gesco-header-icon emerald">
+                      <i class="fa-solid fa-power-off"></i>
+                    </div>
+                    <div>
+                      <h2 class="font-display font-bold text-base text-[var(--text-primary)]">
+                        Estado Operativo del Formulario
+                      </h2>
+                    </div>
+                  </div>
+
+                  <!-- Switch Interactivo -->
+                  <button type="button" @click="form.is_active = !form.is_active"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                    :class="form.is_active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'">
+                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                      :class="form.is_active ? 'translate-x-5' : 'translate-x-0'"></span>
+                  </button>
+                </div>
+
+                <div class="p-3.5 rounded-xl border text-xs"
+                  :class="form.is_active
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'">
+                  <p class="font-semibold flex items-center gap-2">
+                    <i class="fa-solid" :class="form.is_active ? 'fa-circle-check' : 'fa-circle-pause'"></i>
+                    <span x-text="form.is_active ? 'Formulario Activo: Exigido a solicitudes de ingreso y evaluado por el sistema.' : 'Formulario Pausado / Inactivo: No bloqueará solicitudes ni será requerido temporalmente.'"></span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- TARJETA 5: VISTA PREVIA EN VIVO (Ticket Voucher) -->
+              <div class="gesco-ticket-card space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye gesco-role-icon"></i> Vista previa de la Ficha Técnica
+                  </span>
+                  <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase"
+                    :class="form.is_active ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'"
+                    x-text="form.is_active ? 'Activo' : 'Inactivo'"></span>
+                </div>
+
+                <div class="gesco-ticket-inner space-y-2">
+                  <h3 class="font-display font-bold text-base text-[var(--text-primary)]"
+                      x-text="form.nombre.trim() || 'Nombre del formulario...'"></h3>
+                  <p class="text-xs text-[var(--text-muted)] italic"
+                     x-text="form.descripcion.trim() || 'Sin descripción ingresada...'"></p>
+                  
+                  <div class="flex items-center gap-4 pt-2 border-t border-dashed border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex-wrap">
+                    <span><i class="fa-regular fa-calendar-check gesco-role-icon mr-1"></i> <span x-text="vigenciaLegible(form.vigencia)"></span></span>
+                    <span><i class="fa-solid fa-users text-slate-400 mr-1"></i> <span x-text="tipoPersonalTexto"></span></span>
+                    <span><i class="fa-solid fa-shuffle text-amber-500 mr-1"></i> <span x-text="form.cantidad_preguntas && form.cantidad_preguntas > 0 ? (form.cantidad_preguntas + ' aleatorias') : 'Banco completo'"></span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BARRA DE ACCIÓN: PASO 1 -->
+              <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[var(--border-subtle)]">
+                <a href="/formularios-gesco"
+                  class="modal-btn-cancel px-6 py-2.5 text-center w-full sm:w-auto cursor-pointer">
+                  Cancelar y volver
+                </a>
+
+                <button type="button" @click="irAlPaso(2)"
+                  class="btn-signal rounded-xl px-7 py-2.5 text-sm font-bold flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer shadow-md">
+                  <span>Siguiente</span>
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- ========================================================
+                 PASO 2: BANCO DE PREGUNTAS Y RESPUESTAS
+            ======================================================== -->
+            <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-200"
+              class="space-y-6">
+
+              <!-- Cabecera del Banco de Preguntas -->
+              <div class="gesco-section-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="gesco-header-icon">
+                    <i class="fa-solid fa-list-check"></i>
+                  </div>
+                  <div>
+                    <h2 class="font-display font-bold text-lg text-[var(--text-primary)]">
+                      Banco de Preguntas de Inducción
+                    </h2>
+                    <p class="text-xs text-[var(--text-muted)]">Crea el cuestionario, define opciones y marca la(s) respuesta(s) correcta(s).</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 flex-wrap">
+                  <span class="text-xs font-bold px-3 py-1.5 rounded-xl gesco-role-pill border flex items-center gap-1.5">
+                    <span>Banco: <strong x-text="preguntas.length"></strong> preg.</span>
+                    <template x-if="form.cantidad_preguntas && form.cantidad_preguntas > 0">
+                      <span class="text-amber-500 font-bold border-l border-slate-300 dark:border-white/10 pl-1.5" x-text="form.cantidad_preguntas + ' aleatorias'"></span>
+                    </template>
+                  </span>
+
+                  <template x-if="isEdit && formId">
+                    <a :href="urlSimulacion" target="_blank"
+                      class="px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      title="Probar este cuestionario en el simulador">
+                      <i class="fa-solid fa-flask-vial text-purple-400"></i>
+                      <span>Simular</span>
+                    </a>
+                  </template>
+
+                  <button type="button" @click="agregarPregunta()"
+                    class="btn-signal rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Agregar Pregunta</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Alerta si las preguntas en banco son menores a las configuradas -->
+              <div x-show="form.cantidad_preguntas && form.cantidad_preguntas > preguntas.length && preguntas.length > 0"
+                class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2.5 font-medium">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm flex-shrink-0"></i>
+                <span>
+                  Configuraste evaluar <strong><span x-text="form.cantidad_preguntas"></span></strong> preguntas, pero actualmente hay <strong><span x-text="preguntas.length"></span></strong> en el banco. Se presentarán las que estén disponibles hasta que agregues más preguntas.
+                </span>
+              </div>
+
+              <!-- Estado Vacío (si no hay preguntas) -->
+              <div x-show="preguntas.length === 0" class="gesco-section-card p-12 text-center text-[var(--text-muted)] space-y-3">
+                <div class="w-14 h-14 rounded-2xl gesco-role-empty-icon flex items-center justify-center mx-auto text-2xl">
+                  <i class="fa-solid fa-clipboard-question"></i>
+                </div>
+                <h3 class="font-bold text-base text-[var(--text-primary)]">No hay preguntas registradas todavía</h3>
+                <p class="text-xs max-w-sm mx-auto">Agrega al menos una pregunta para que los ingresantes puedan ser evaluados en su inducción.</p>
+                <button type="button" @click="agregarPregunta()"
+                  class="btn-signal rounded-xl px-5 py-2 text-xs font-bold inline-flex items-center gap-2 cursor-pointer mt-2 shadow-sm">
+                  <i class="fa-solid fa-plus"></i>
+                  <span>Crear la primera pregunta</span>
+                </button>
+              </div>
+
+              <!-- Barra de Filtros por Categoría Temática -->
+              <div class="flex items-center gap-2 overflow-x-auto pb-1" x-show="preguntas.length > 0">
+                <span class="text-xs font-semibold text-[var(--text-muted)] flex-shrink-0">Filtrar por área:</span>
+                <button type="button" @click="filtroCategoriaStep2 = 'TODAS'"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer flex-shrink-0"
+                  :class="filtroCategoriaStep2 === 'TODAS'
+                    ? 'bg-[var(--signal-500)] text-white border-[var(--signal-500)] shadow-xs'
+                    : 'bg-white dark:bg-white/5 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  <span>Todas</span>
+                  <span class="ml-1 opacity-80" x-text="'(' + preguntas.length + ')'"></span>
+                </button>
+                <template x-for="cat in catalogoCategorias" :key="cat.id">
+                  <button type="button" @click="filtroCategoriaStep2 = cat.id"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                    :class="filtroCategoriaStep2 === cat.id
+                      ? 'bg-[var(--signal-500)] text-white border-[var(--signal-500)] shadow-xs'
+                      : 'bg-white dark:bg-white/5 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                    <i :class="cat.icon" class="text-[10px]"></i>
+                    <span x-text="cat.label"></span>
+                    <span class="ml-0.5 opacity-80" x-text="'(' + getConteoBancoPorCategoria(cat.id) + ')'"></span>
+                  </button>
+                </template>
+              </div>
+
+              <!-- Lista de Preguntas Dinámica -->
+              <div class="space-y-5">
+                <template x-for="(q, qIdx) in preguntas" :key="qIdx">
+                  <div class="gesco-pregunta-card space-y-4"
+                    x-show="filtroCategoriaStep2 === 'TODAS' || q.tipo_pregunta === filtroCategoriaStep2">
+                    
+                    <!-- Barra superior de la pregunta -->
+                    <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)] gap-3 flex-wrap">
+                      <div class="flex items-center gap-2.5 flex-wrap">
+                        <span class="gesco-pregunta-num-badge">
+                          <i class="fa-solid fa-circle-question"></i>
+                          <span x-text="'Pregunta #' + (qIdx + 1)"></span>
+                        </span>
+
+                        <!-- Selector de Categoría Temática (SST, AMBIENTAL, SEGURIDAD_VIAL, CALIDAD, BIOMECANICA, GENERAL) -->
+                        <div class="flex items-center gap-1.5">
+                          <select x-model="q.tipo_pregunta" class="gesco-cat-selector" title="Selecciona la categoría temática de esta pregunta">
+                            <template x-for="cat in catalogoCategorias" :key="cat.id">
+                              <option :value="cat.id" x-text="cat.label" :selected="q.tipo_pregunta === cat.id"></option>
+                            </template>
+                          </select>
+                        </div>
+
+                        <!-- Selector de Tipo de Respuesta -->
+                        <select x-model="q.tipo_respuesta" @change="cambiarTipoPregunta(qIdx, q.tipo_respuesta)"
+                          class="gesco-tipo-select" title="Tipo de respuesta evaluada">
+                          <template x-for="tp in tiposPreguntaDisponibles" :key="tp.id">
+                            <option :value="tp.id" x-text="tp.label" :selected="q.tipo_respuesta === tp.id"></option>
+                          </template>
+                        </select>
+
+                        <!-- Toggle Calificable / Informativa -->
+                        <button type="button" @click="q.es_calificable = !q.es_calificable"
+                          class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer flex items-center gap-1.5"
+                          :class="q.es_calificable
+                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400'
+                            : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'"
+                          :title="q.es_calificable ? 'Pregunta calificable: suma al puntaje de aprobación (80%)' : 'Pregunta informativa: no altera el cálculo de aprobación'">
+                          <i class="fa-solid" :class="q.es_calificable ? 'fa-award text-blue-500' : 'fa-circle-info text-amber-500'"></i>
+                          <span x-text="q.es_calificable ? 'Calificable' : 'Informativa'"></span>
+                        </button>
+
+                        <!-- Botón Toggle Multimedia con Indicador de Formato Único -->
+                        <button type="button" @click="toggleMultimedia(q)"
+                          class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer flex items-center gap-1.5"
+                          :class="q.tipo_multimedia === 'VIDEO'
+                            ? 'bg-red-500/15 border-red-500/35 text-red-600 dark:text-red-400'
+                            : (q.tipo_multimedia === 'IMAGEN'
+                              ? 'bg-purple-500/15 border-purple-500/35 text-purple-600 dark:text-purple-300'
+                              : (q._showMedia
+                                ? 'bg-slate-200 dark:bg-white/10 border-slate-300 dark:border-white/20 text-[var(--text-primary)]'
+                                : 'bg-slate-100 dark:bg-white/5 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'))"
+                          title="Adjuntar recurso multimedia exclusivo (Foto o Video)">
+                          <template x-if="q.tipo_multimedia === 'VIDEO'">
+                            <span class="flex items-center gap-1.5">
+                              <i class="fa-brands fa-youtube text-red-500 text-xs"></i>
+                              <span>Video activo</span>
+                            </span>
+                          </template>
+                          <template x-if="q.tipo_multimedia === 'IMAGEN'">
+                            <span class="flex items-center gap-1.5">
+                              <i class="fa-regular fa-image text-purple-500 text-xs"></i>
+                              <span>Foto activa</span>
+                            </span>
+                          </template>
+                          <template x-if="!q.tipo_multimedia || q.tipo_multimedia === 'NINGUNO'">
+                            <span class="flex items-center gap-1.5">
+                              <i class="fa-solid fa-photo-film text-xs"></i>
+                              <span x-text="q._showMedia ? 'Cerrar multimedia' : '+ Multimedia'"></span>
+                            </span>
+                          </template>
+                        </button>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <!-- Switch Activa/Inactiva -->
+                        <button type="button" @click="q.estado = !q.estado"
+                          class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer flex items-center gap-1.5"
+                          :class="q.estado
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-slate-100 dark:bg-white/5 border-[var(--border-subtle)] text-[var(--text-muted)]'"
+                          :title="q.estado ? 'Pregunta activa en examen' : 'Pregunta en pausa'">
+                          <i class="fa-solid" :class="q.estado ? 'fa-check' : 'fa-pause'"></i>
+                          <span x-text="q.estado ? 'Activa' : 'Pausada'"></span>
+                        </button>
+
+                        <!-- Botón Eliminar Pregunta -->
+                        <button type="button" @click="eliminarPregunta(qIdx)"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500/15 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
+                          title="Eliminar esta pregunta">
+                          <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Enunciado de la Pregunta -->
+                    <div>
+                      <label class="form-label font-bold text-xs mb-1.5 block">
+                        <span>Enunciado de la pregunta *</span>
+                      </label>
+                      <input type="text" x-model="q.pregunta"
+                        placeholder="Ej: ¿Cuáles son los tres elementos indispensables del permiso de trabajo en alturas?"
+                        class="gesco-input">
+                    </div>
+
+                    <!-- Panel Multimedia Opcional (Formato Único Exclusivo: Foto O Video) -->
+                    <div x-show="q._showMedia" x-transition
+                      class="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-[var(--border-subtle)] space-y-4">
+                      
+                      <!-- Header del Panel: Selector Exclusivo de Formato -->
+                      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+                        <div class="flex items-center gap-2">
+                          <span class="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Formato permitido:</span>
+                          
+                          <!-- Selector Botón Imagen -->
+                          <button type="button" @click="cambiarTipoMultimedia(q, 'IMAGEN')"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                            :class="q.tipo_multimedia === 'IMAGEN'
+                              ? 'bg-purple-600 text-white shadow-xs'
+                              : 'bg-white dark:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Foto / Imagen</span>
+                          </button>
+
+                          <!-- Selector Botón Video -->
+                          <button type="button" @click="cambiarTipoMultimedia(q, 'VIDEO')"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                            :class="q.tipo_multimedia === 'VIDEO'
+                              ? 'bg-red-600 text-white shadow-xs'
+                              : 'bg-white dark:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'">
+                            <i class="fa-brands fa-youtube"></i>
+                            <span>Video YouTube</span>
+                          </button>
+                        </div>
+
+                        <!-- Acciones Derecha: Quitar multimedia o Plegar -->
+                        <div class="flex items-center gap-2">
+                          <button type="button" @click="cambiarTipoMultimedia(q, 'NINGUNO')"
+                            x-show="q.tipo_multimedia !== 'NINGUNO' && (q.imagen_url || q.video_url)"
+                            class="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer flex items-center gap-1"
+                            title="Eliminar contenido multimedia de esta pregunta">
+                            <i class="fa-solid fa-trash-can text-[11px]"></i>
+                            <span>Quitar</span>
+                          </button>
+
+                          <button type="button" @click="q._showMedia = false"
+                            class="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 cursor-pointer"
+                            title="Plegar panel multimedia">
+                            <i class="fa-solid fa-chevron-up"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- ==============================================
+                           CONTENIDO SEGÚN EL FORMATO SELECCIONADO
+                      ============================================== -->
+
+                      <!-- CASO 1: FOTO / IMAGEN (Subida directa a uploads/gesco o URL) -->
+                      <div x-show="q.tipo_multimedia === 'IMAGEN'" x-transition class="space-y-3">
+                        <div class="flex items-center justify-between">
+                          <label class="form-label font-bold text-xs flex items-center gap-1.5">
+                            <i class="fa-regular fa-image text-purple-500"></i>
+                            <span>Imagen de Apoyo para la Pregunta</span>
+                          </label>
+                          <span class="text-[10px] text-[var(--text-muted)]">PNG, JPG, JPEG, WEBP, SVG o GIF (Máx. 15 MB)</span>
+                        </div>
+
+                        <!-- Zona de Subida / File Dropzone -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
+                          <!-- Opción A: Botón de Subida Directa -->
+                          <div class="p-4 rounded-xl border-2 border-dashed border-purple-500/30 hover:border-purple-500/60 bg-purple-500/[0.03] transition-colors text-center relative flex flex-col items-center justify-center min-h-[140px]">
+                            <!-- Input File Oculto -->
+                            <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,image/gif"
+                              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              :disabled="q._uploading"
+                              @change="subirImagenPregunta($event, q)">
+
+                            <template x-if="!q._uploading">
+                              <div class="space-y-1.5 pointer-events-none">
+                                <div class="w-10 h-10 mx-auto rounded-full bg-purple-500/15 text-purple-500 flex items-center justify-center">
+                                  <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                                </div>
+                                <p class="text-xs font-bold text-[var(--text-primary)]">
+                                  Haz clic o arrastra para subir imagen
+                                </p>
+                                <p class="text-[10px] text-[var(--text-muted)]">
+                                  Se almacenará en la carpeta segura uploads/gesco
+                                </p>
+                              </div>
+                            </template>
+
+                            <template x-if="q._uploading">
+                              <div class="space-y-2 pointer-events-none py-2">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl text-purple-500"></i>
+                                <p class="text-xs font-bold text-purple-600 dark:text-purple-300">
+                                  Subiendo imagen a uploads/gesco...
+                                </p>
+                              </div>
+                            </template>
+                          </div>
+
+                          <!-- Opción B: Previsualización de la Imagen Cargada o URL directa -->
+                          <div class="space-y-2">
+                            <div>
+                              <label class="form-label text-[11px] font-medium text-[var(--text-muted)] mb-1 block">
+                                O introduce una URL directa:
+                              </label>
+                              <div class="flex items-center gap-1.5">
+                                <input type="text" x-model="q.imagen_url"
+                                  placeholder="/uploads/gesco/... o https://..."
+                                  class="gesco-input text-xs flex-1">
+                                <button type="button" @click="eliminarImagen(q)" x-show="q.imagen_url"
+                                  class="px-2 py-2 text-xs text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                                  title="Quitar imagen">
+                                  <i class="fa-solid fa-xmark"></i>
+                                </button>
+                              </div>
+                            </div>
+
+                            <!-- Preview Imagen -->
+                            <template x-if="q.imagen_url && q.imagen_url.trim().length > 3">
+                              <div class="relative rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-black/10 dark:bg-black/40 p-2 flex items-center justify-center max-h-48">
+                                <img :src="q.imagen_url" alt="Previsualización" class="max-h-44 w-auto object-contain rounded-lg"
+                                  @error="$el.parentElement.style.display='none'">
+                                <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[10px] font-mono text-white flex items-center gap-1">
+                                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                                  <span>Imagen lista</span>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- CASO 2: VIDEO DE YOUTUBE -->
+                      <div x-show="q.tipo_multimedia === 'VIDEO'" x-transition class="space-y-3">
+                        <div class="flex items-center justify-between">
+                          <label class="form-label font-bold text-xs flex items-center gap-1.5">
+                            <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
+                            <span>Enlace o ID del Video de YouTube</span>
+                          </label>
+                          <span class="text-[10px] text-[var(--text-muted)]">Soporta videos, Shorts, directos y enlaces compartidos</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                          <div class="relative flex-1">
+                            <i class="fa-brands fa-youtube text-red-500 absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"></i>
+                            <input type="text" x-model="q.video_url"
+                              placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
+                              class="gesco-input text-xs pl-9">
+                          </div>
+                          <button type="button" @click="eliminarVideo(q)" x-show="q.video_url"
+                            class="px-2.5 py-2 text-xs text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                            title="Quitar video">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+
+                        <!-- Preview Video 16:9 con soporte móvil playsinline -->
+                        <template x-if="getYouTubeEmbedUrl(q.video_url)">
+                          <div class="space-y-1.5 w-full max-w-2xl">
+                            <div class="aspect-video rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-black shadow-md" style="aspect-ratio: 16/9; width: 100%;">
+                              <iframe :src="getYouTubeEmbedUrl(q.video_url)"
+                                class="w-full h-full" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                            </div>
+                            <div class="flex items-center justify-between px-1">
+                              <a :href="q.video_url" target="_blank" rel="noopener noreferrer"
+                                class="inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors">
+                                <i class="fa-brands fa-youtube text-xs"></i>
+                                <span>Abrir en YouTube</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                              </a>
+                              <span class="text-[10px] text-[var(--text-muted)]">Vista previa del video</span>
+                            </div>
+                          </div>
+                        </template>
+
+                        <template x-if="q.video_url && q.video_url.trim().length > 3 && !getYouTubeEmbedUrl(q.video_url)">
+                          <p class="text-[11px] text-amber-500 mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Enlace no reconocido. Pega el enlace de compartir o la URL completa de YouTube.</span>
+                          </p>
+                        </template>
+                      </div>
+
+                    </div>
+
+                    <!-- Opciones de Respuesta (Para preguntas con opciones) -->
+                    <div x-show="q.tipo_respuesta !== 'TEXTO'" class="space-y-2.5 pt-1">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                          <i class="fa-solid fa-list-ol gesco-role-icon text-[11px]"></i>
+                          <span>Opciones de Respuesta</span>
+                          <span class="text-[10px] text-[var(--text-muted)] font-normal hidden sm:inline">(Haz clic en el botón circular para marcar la respuesta correcta)</span>
+                        </span>
+                        
+                        <button type="button" @click="agregarOpcion(qIdx)"
+                          x-show="q.tipo_respuesta !== 'VERDADERO_FALSO'"
+                          class="gesco-btn-add-opcion">
+                          <i class="fa-solid fa-plus text-[10px]"></i>
+                          <span>Añadir opción</span>
+                        </button>
+                      </div>
+
+                      <div class="space-y-2.5">
+                        <template x-for="(opc, oIdx) in q.opciones" :key="oIdx">
+                          <div class="gesco-opcion-item" :class="opc.is_correct ? 'is-correct' : ''">
+                            
+                            <!-- Botón Circular Correcta / Incorrecta -->
+                            <button type="button" @click="marcarCorrecta(qIdx, oIdx)"
+                              class="gesco-correct-btn"
+                              :class="opc.is_correct ? 'is-correct' : ''"
+                              :title="opc.is_correct ? 'Respuesta correcta seleccionada' : 'Clic para marcar como correcta'">
+                              <i class="fa-solid fa-check text-[11px]" x-show="opc.is_correct"></i>
+                            </button>
+
+                            <!-- Badge Letra Indicadora (A, B, C...) -->
+                            <span class="gesco-opcion-letra"
+                              x-text="String.fromCharCode(65 + oIdx)"></span>
+
+                            <!-- Input del texto de la opción -->
+                            <input type="text" x-model="opc.opcion"
+                              :placeholder="'Escribe la opción ' + String.fromCharCode(65 + oIdx) + '...'"
+                              class="gesco-opcion-input">
+
+                            <!-- Badge interactivo 'Correcta' -->
+                            <span x-show="opc.is_correct" @click="marcarCorrecta(qIdx, oIdx)"
+                              class="gesco-badge-correcta"
+                              title="Respuesta correcta (clic para alternar)">
+                              <i class="fa-solid fa-circle-check"></i>
+                              <span>Correcta</span>
+                            </span>
+
+                            <!-- Botón Eliminar Opción -->
+                            <button type="button" @click="eliminarOpcion(qIdx, oIdx)"
+                              x-show="q.tipo_respuesta !== 'VERDADERO_FALSO' && q.opciones.length > 2"
+                              class="gesco-btn-delete-opcion" title="Quitar opción">
+                              <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+
+                    <!-- Mensaje para Tipo Pregunta TEXTO -->
+                    <div x-show="q.tipo_respuesta === 'TEXTO'" class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-2.5">
+                      <i class="fa-solid fa-circle-info text-base flex-shrink-0"></i>
+                      <span>Esta pregunta se responderá con texto abierto por parte del ingresante y será revisada por el evaluador de SST/GESCO.</span>
+                    </div>
+
+                  </div>
+                </template>
+              </div>
+
+              <!-- BARRA DE ACCIÓN: PASO 2 -->
+              <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[var(--border-subtle)]">
+                <button type="button" @click="irAlPaso(1)"
+                  class="modal-btn-cancel px-6 py-2.5 text-center w-full sm:w-auto cursor-pointer flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-arrow-left text-xs"></i>
+                  <span>Atrás: Parámetros</span>
+                </button>
+
+                <button type="submit" :disabled="guardando"
+                  class="btn-signal rounded-xl px-7 py-2.5 text-sm font-bold flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                  <i class="fa-solid" :class="guardando ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+                  <span x-text="guardando ? 'Guardando cuestionario...' : (isEdit ? 'Actualizar Formulario y Preguntas' : 'Finalizar y Crear Formulario GESCO')"></span>
+                </button>
+              </div>
+
+            </div>
+
+          </form>
+
+        </div>
+      </main>
+
+      <!-- Footer Compartido -->
+      {% set footer_modulo = 'Módulo de Formularios GESCO' %}
+      {% include 'pages/footer.html' %}
+
+    </div>
+  </div>
+{% endblock %}

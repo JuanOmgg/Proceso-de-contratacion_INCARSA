@@ -47,15 +47,15 @@ input[type="search"]::-webkit-search-results-decoration {
   --steel-200: #E2E6EE;
   --steel-300: #C9D0DE;
 
-  --signal-500: #fa051a;
-  --signal-600: #df5050;
-  --signal-100: #FCE8DC;
+  --signal-500: #F0323E;
+  --signal-600: #dc0517;
+  --signal-100: #fee2e5;
 
   --state-enviado: #0C767D;
   --state-enviado-bg: #d9f7f8;
   --state-revision: #A722C1;
   --state-revision-bg: #eee6f1; 
-  --state-aprobar: #bd9b02;
+  --state-aprobar: #ecc207;
   --state-aprobar-bg: #f6f8d3;
   --state-aprobado: #05ae05;
   --state-aprobado-bg: #e1f8e2;
@@ -275,6 +275,8 @@ select:focus-visible,
 
 /* ---------- Selectores estilizados universales ---------- */
 select {
+  color-scheme: light;
+  accent-color: var(--signal-500, #fb3b4c);
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -285,6 +287,17 @@ select {
   padding-right: 2.25rem !important;
   cursor: pointer;
   border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select:hover {
+  border-color: rgba(251, 59, 76, 0.4);
+}
+
+select:focus {
+  border-color: var(--signal-500, #fb3b4c);
+  box-shadow: 0 0 0 3px rgba(251, 59, 76, 0.15);
+  outline: none;
 }
 
 select option {
@@ -292,6 +305,108 @@ select option {
   color: #1c2033;
   padding: 8px 12px;
   font-weight: 500;
+}
+
+select option:checked {
+  background-color: var(--signal-500, #fb3b4c);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+:root[data-role="SUPERADMIN"] select option:checked,
+:root.role-superadmin select option:checked {
+  background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%);
+  background-color: #a855f7;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+@supports (appearance: base-select) {
+  select,
+  select::picker(select) {
+    appearance: base-select;
+  }
+
+  select {
+    background-image: none;
+    padding-right: 1.15rem !important;
+  }
+
+  select::picker-icon {
+    color: #64748b;
+    font-size: 12px;
+    opacity: 0.85;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  select:hover::picker-icon,
+  select:focus::picker-icon {
+    color: var(--signal-500, #fb3b4c);
+    opacity: 1;
+  }
+
+  :root[data-role="SUPERADMIN"] select:hover::picker-icon,
+  :root[data-role="SUPERADMIN"] select:focus::picker-icon,
+  :root.role-superadmin select:hover::picker-icon,
+  :root.role-superadmin select:focus::picker-icon {
+    color: #d946ef;
+  }
+
+  select:open::picker-icon {
+    transform: rotate(180deg);
+    color: var(--signal-500, #fb3b4c);
+  }
+
+  :root[data-role="SUPERADMIN"] select:open::picker-icon,
+  :root.role-superadmin select:open::picker-icon {
+    color: #d946ef;
+  }
+
+  select::picker(select) {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 16px rgba(251, 59, 76, 0.08);
+    margin-top: 4px;
+  }
+
+  select option {
+    background-color: #ffffff;
+    color: #1e293b;
+    padding: 9px 13px;
+    margin: 2px 0;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  select option:hover,
+  select option:focus {
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+
+  select option:checked {
+    background: var(--signal-500, #fb3b4c);
+    background-color: var(--signal-500, #fb3b4c);
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  :root[data-role="SUPERADMIN"] select option:checked,
+  :root.role-superadmin select option:checked {
+    background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%);
+    background-color: #a855f7;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  select option::checkmark {
+    color: #ffffff;
+  }
 }
 
 /* =========================================================
@@ -1617,10 +1732,66 @@ textarea.input-field.has-error:focus {
   transform: translateY(0) scale(0.94);
 }
 
-.chip-select.is-selected {
+.chip-select:not(.chip-riesgo).is-selected {
   background: var(--ink-800);
   color: #fff;
   animation: popIn 0.35s var(--ease-emphasized);
+}
+
+.chip-select.chip-tipo-contratista.is-selected {
+  background: var(--ink-700);
+  border-color: var(--ink-900);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* Para rol SuperAdmin en modo claro: usar gradiente animado exclusivo de SuperAdmin */
+:root[data-role="SUPERADMIN"] .chip-select:not(.chip-riesgo).is-selected,
+:root.role-superadmin .chip-select:not(.chip-riesgo).is-selected,
+:root[data-role="SUPERADMIN"] .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected,
+:root.role-superadmin .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected {
+  background-image: linear-gradient(
+    90deg,
+    #d946ef 0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #38bdf8 75%,
+    #d946ef 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: superadminFlowLeft 3s linear infinite !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 18px rgba(217, 70, 239, 0.4), 0 0 16px rgba(6, 182, 212, 0.25) !important;
+}
+
+:root[data-role="SUPERADMIN"] .empresa-plantas-group,
+:root.role-superadmin .empresa-plantas-group {
+  border-left: 3.5px solid #d946ef !important;
+  box-shadow: 0 4px 16px rgba(217, 70, 239, 0.15) !important;
+}
+
+:root[data-role="SUPERADMIN"] .empresa-plantas-group > p,
+:root.role-superadmin .empresa-plantas-group > p {
+  color: #9333ea !important;
+}
+
+/* Para roles que no sean superadmin en modo claro: usar signal en la opción activa */
+:root:not([data-role="SUPERADMIN"]):not(.role-superadmin) .chip-select:not(.chip-riesgo).is-selected,
+:root:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group .chip-select:not(.chip-riesgo).is-selected {
+  background: var(--signal-500) !important;
+  border-color: var(--signal-600) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(240, 50, 62, 0.35) !important;
+}
+
+:root:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group {
+  border-left: 3.5px solid var(--signal-500) !important;
+}
+
+:root:not([data-role="SUPERADMIN"]):not(.role-superadmin) .empresa-plantas-group > p {
+  color: var(--signal-500) !important;
 }
 
 /* ==========================================================================
@@ -1628,25 +1799,28 @@ textarea.input-field.has-error:focus {
    ========================================================================== */
 .chip-riesgo.chip-riesgo-bajo {
   background: #f0fdf4 !important;
-  border: 1px solid #bbf7d0 !important;
+  border: 1.5px solid #86efac !important;
   color: #15803d !important;
+  font-weight: 600 !important;
 }
 .chip-riesgo.chip-riesgo-bajo:hover {
   background: #dcfce7 !important;
-  border-color: #86efac !important;
+  border-color: #4ade80 !important;
   color: #166534 !important;
 }
 .chip-riesgo.chip-riesgo-bajo.is-selected {
   background: #16a34a !important;
   border-color: #15803d !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.45) !important;
 }
 
 .chip-riesgo.chip-riesgo-medio {
   background: #fffbeb !important;
-  border: 1px solid #fde68a !important;
+  border: 1.5px solid #fde68a !important;
   color: #b45309 !important;
+  font-weight: 600 !important;
 }
 .chip-riesgo.chip-riesgo-medio:hover {
   background: #fef3c7 !important;
@@ -1657,13 +1831,15 @@ textarea.input-field.has-error:focus {
   background: #d97706 !important;
   border-color: #b45309 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.45) !important;
 }
 
 .chip-riesgo.chip-riesgo-alto {
   background: #fef2f2 !important;
-  border: 1px solid #fecaca !important;
+  border: 1.5px solid #fecaca !important;
   color: #b91c1c !important;
+  font-weight: 600 !important;
 }
 .chip-riesgo.chip-riesgo-alto:hover {
   background: #fee2e2 !important;
@@ -1674,7 +1850,8 @@ textarea.input-field.has-error:focus {
   background: #dc2626 !important;
   border-color: #b91c1c !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45) !important;
 }
 
 .entry-card {
@@ -1763,151 +1940,366 @@ textarea.input-field.has-error:focus {
 }
 
 /* =========================================================
-   FLATPICKR: Calendario personalizado
+
+   FLATPICKR: CALENDARIO PERSONALIZADO SEGÚN EL ROL (MODO CLARO / BASE)
+
    ========================================================= */
+
 .flatpickr-calendar {
-  background: var(--ink-900) !important;
-  border: 1px solid var(--border-subtle) !important;
+
+  --fp-light-accent: var(--signal-500, #fa051a);
+
+  --fp-light-accent-hover: var(--signal-600, #dc0517);
+
+  --fp-light-arrow: var(--signal-500, #fa051a);
+
+  --fp-light-today-border: var(--signal-500, #fa051a);
+
+  --fp-light-today-color: var(--signal-500, #fa051a);
+
+  --fp-light-today-bg: rgba(250, 5, 26, 0.06);
+
+  --fp-light-selected-bg: var(--signal-500, #fa051a);
+
+  --fp-light-selected-shadow: 0 4px 14px rgba(250, 5, 26, 0.35);
+
+
+
+  background: #ffffff !important;
+
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+
   border-radius: 16px !important;
+
   box-shadow: 0 12px 32px rgba(18, 18, 18, 0.12), 0 2px 6px rgba(18, 18, 18, 0.04) !important;
+
   font-family: var(--font-body) !important;
+
   padding: 12px !important;
+
   width: 308px !important;
+
   animation: modalPopIn 0.22s var(--ease-out) forwards !important;
+
   z-index: 99999 !important;
+
 }
+
+
+
+/* Rol SUPERADMIN en Modo Claro */
+
+:root[data-role="SUPERADMIN"] .flatpickr-calendar,
+
+:root.role-superadmin .flatpickr-calendar {
+
+  --fp-light-accent: #a855f7;
+
+  --fp-light-accent-hover: #9333ea;
+
+  --fp-light-arrow: #d946ef;
+
+  --fp-light-today-border: #88ddec;
+
+  --fp-light-today-color: #0284c7;
+
+  --fp-light-today-bg: rgba(6, 182, 212, 0.08);
+
+  --fp-light-selected-bg: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%);
+
+  --fp-light-selected-shadow: 0 4px 14px rgba(217, 70, 239, 0.4);
+
+  border: 1px solid rgba(217, 70, 239, 0.35) !important;
+
+  box-shadow: 0 14px 40px rgba(217, 70, 239, 0.18), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+
+}
+
+
 
 .flatpickr-calendar::before,
+
 .flatpickr-calendar::after {
+
   display: none !important;
+
   /* Quitar triángulos por defecto */
+
 }
+
+
 
 .flatpickr-months {
+
   align-items: center !important;
+
   padding: 4px 0 10px 0 !important;
+
 }
+
+
 
 .flatpickr-months .flatpickr-month {
-  color: var(--ink-600) !important;
-  fill: var(--ink-600) !important;
+
+  color: var(--ink-800) !important;
+
+  fill: var(--ink-800) !important;
+
   height: 34px !important;
+
 }
+
+
 
 .flatpickr-current-month {
+
   font-family: var(--font-display) !important;
+
   font-size: 14px !important;
+
   font-weight: 700 !important;
-  color: var(--steel-300) !important;
+
+  color: #0f172a !important;
+
   padding-top: 0 !important;
+
   display: flex !important;
+
   align-items: center !important;
+
   justify-content: center !important;
+
   gap: 4px !important;
+
 }
+
+
 
 .flatpickr-current-month .cur-month {
+
   font-weight: 700 !important;
-  color: var(--ink-600) !important;
+
+  color: #0f172a !important;
+
 }
+
+
 
 .flatpickr-current-month input.cur-year {
+
   font-weight: 700 !important;
-  color: var(--steel-300) !important;
+
+  color: var(--fp-light-accent) !important;
+
 }
+
+
 
 .flatpickr-months .flatpickr-prev-month,
+
 .flatpickr-months .flatpickr-next-month {
+
   border-radius: 8px !important;
+
   height: 30px !important;
+
   width: 30px !important;
+
   padding: 7px !important;
+
   display: flex !important;
+
   align-items: center !important;
+
   justify-content: center !important;
+
   transition: background-color 0.18s ease, color 0.18s ease !important;
+
 }
+
+
 
 .flatpickr-months .flatpickr-prev-month:hover,
+
 .flatpickr-months .flatpickr-next-month:hover {
-  background: var(--signal-500) !important;
+
+  background: rgba(0, 0, 0, 0.06) !important;
+
 }
+
+
 
 .flatpickr-months .flatpickr-prev-month svg,
+
 .flatpickr-months .flatpickr-next-month svg {
-  fill: var(--ink-600) !important;
+
+  fill: var(--fp-light-arrow) !important;
+
   width: 12px !important;
+
   height: 12px !important;
+
 }
+
+
 
 span.flatpickr-weekday {
-  color: var(--surface) !important;
+
+  color: #64748b !important;
+
   font-size: 11px !important;
+
   font-weight: 700 !important;
+
   text-transform: uppercase !important;
+
   letter-spacing: 0.04em !important;
+
 }
+
+
 
 .flatpickr-days {
+
   width: 100% !important;
+
 }
+
+
 
 .dayContainer {
+
   width: 100% !important;
+
   min-width: 100% !important;
+
   max-width: 100% !important;
+
   gap: 2px !important;
+
 }
+
+
 
 .flatpickr-day {
+
   border-radius: 8px !important;
+
   font-size: 13px !important;
+
   font-weight: 500 !important;
-  color: var(--steel-300) !important;
+
+  color: #1e293b !important;
+
   height: 36px !important;
+
   line-height: 36px !important;
+
   max-width: 36px !important;
+
   margin: 1px auto !important;
+
   border: 1px solid transparent !important;
+
   transition: all 0.15s ease !important;
+
 }
+
+
 
 .flatpickr-day:hover {
-  background: var(--steel-100) !important;
-  color: var(--ink-950) !important;
+
+  background: rgba(0, 0, 0, 0.06) !important;
+
+  color: var(--fp-light-accent) !important;
+
 }
+
+
 
 .flatpickr-day.today {
-  border-color: var(--signal-500) !important;
-  color: var(--signal-500) !important;
+
+  border-color: var(--fp-light-today-border) !important;
+
+  color: var(--fp-light-today-color) !important;
+
   font-weight: 700 !important;
-  background: transparent !important;
+
+  background: var(--fp-light-today-bg) !important;
+
 }
+
+
 
 .flatpickr-day.today:hover {
-  background: var(--signal-100) !important;
+
+  background: rgba(0, 0, 0, 0.08) !important;
+
 }
+
+
 
 .flatpickr-day.selected,
+
 .flatpickr-day.selected:hover,
-.flatpickr-day.selected:focus {
-  background: var(--signal-500) !important;
-  border-color: var(--signal-500) !important;
+
+.flatpickr-day.selected:focus,
+
+.flatpickr-day.startRange,
+
+.flatpickr-day.endRange {
+
+  background: var(--fp-light-selected-bg) !important;
+
+  border-color: var(--fp-light-today-border) !important;
+
   color: #ffffff !important;
+
   font-weight: 700 !important;
-  box-shadow: 0 2px 6px rgba(250, 5, 26, 0.35) !important;
+
+  box-shadow: var(--fp-light-selected-shadow) !important;
+
 }
+
+
+
+.flatpickr-day.inRange,
+
+.flatpickr-day.prevMonthDay.inRange,
+
+.flatpickr-day.nextMonthDay.inRange {
+
+  background: rgba(250, 5, 26, 0.12) !important;
+
+  color: var(--fp-light-accent) !important;
+
+}
+
+
 
 .flatpickr-day.disabled,
+
 .flatpickr-day.disabled:hover {
-  color: var(--steel-300) !important;
+
+  color: #94a3b8 !important;
+
   cursor: not-allowed !important;
+
 }
 
+
+
 .flatpickr-day.prevMonthDay,
+
 .flatpickr-day.nextMonthDay {
-  color: var(--text-muted) !important;
+
+  color: #94a3b8 !important;
+
 }
+
+
+
+
 
 /* Input alt estilizado de Flatpickr */
 .flatpickr-input[readonly] {
@@ -2564,8 +2956,8 @@ table td .inline-flex {
 }
 
 .buttonUserSistem:hover {
-  border-color: var(--steel-300);
-  box-shadow: var(--shadow-panel);
+  border-color: rgba(240, 50, 62, 0.4);
+  box-shadow: 0 6px 20px rgba(240, 50, 62, 0.18), var(--shadow-panel);
   background-color: var(--ink-800);
   color: white;
   transform: translateY(-3px);
@@ -4029,6 +4421,29 @@ table td .inline-flex {
   border-radius: 3px !important;
 }
 
+/* Modal compacto de SweetAlert2 */
+.swal2-popup.swal2-compact-modal {
+  width: 330px !important;
+  max-width: 90vw !important;
+  padding: 18px 20px 22px 20px !important;
+  border-radius: 20px !important;
+}
+.swal2-popup.swal2-compact-modal .swal2-icon {
+  transform: scale(0.72) !important;
+  margin: 6px auto 10px auto !important;
+}
+.swal2-popup.swal2-compact-modal .swal2-title {
+  font-size: 17px !important;
+  margin: 0 0 6px 0 !important;
+  padding: 0 !important;
+}
+.swal2-popup.swal2-compact-modal .swal2-html-container {
+  font-size: 13px !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  line-height: 1.45 !important;
+}
+
 
 /* =========================================================
    DICTÁMENES EN MODAL TICKET (MODO CLARO)
@@ -4474,5 +4889,334 @@ table td .inline-flex {
   border: 1.5px solid rgba(148, 163, 184, 0.75) !important;
   color: #475569 !important;
   background: rgba(148, 163, 184, 0.12) !important;
+}
+
+/* ==========================================================================
+   AVISO OBLIGATORIO LEY 1581 / INGRESO A PLANTA (ALTO CONTRASTE MODO CLARO)
+   ========================================================================== */
+.aviso-ingreso-planta {
+  background-color: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+  border-left: 4px solid #d97706 !important;
+}
+.aviso-ingreso-planta .aviso-icono-escudo {
+  color: #d97706 !important;
+}
+.aviso-ingreso-planta .aviso-titulo {
+  color: #92400e !important;
+}
+.aviso-ingreso-planta .aviso-cuerpo {
+  color: #334155 !important;
+}
+.aviso-ingreso-planta .aviso-cuerpo strong {
+  color: #0f172a !important;
+}
+.aviso-ingreso-planta .aviso-spam {
+  color: #b91c1c !important;
+  font-weight: 600 !important;
+}
+.aviso-ingreso-planta .aviso-porteria {
+  color: #b91c1c !important;
+  font-weight: 600 !important;
+}
+.aviso-ingreso-planta .aviso-porteria i {
+  color: #dc2626 !important;
+}
+
+/* ==========================================================================
+   TEMA GLOBAL SWEETALERT2 DARK LUXURY & GLASSMORPHISM
+   ========================================================================== */
+
+/* 1. Backdrop general: ÚNICAMENTE para modales regulares, NUNCA para toasts */
+body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show,
+body.swal2-shown:not(.swal2-toast-shown) .swal2-container.swal2-noanimation {
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* 2. Contenedor de Toasts: Previene cualquier estiramiento de pantalla */
+body.swal2-toast-shown .swal2-container {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  bottom: auto !important;
+  left: auto !important;
+  inset: 16px 16px auto auto !important;
+  width: auto !important;
+  max-width: calc(100vw - 32px) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  z-index: 10000 !important;
+}
+
+/* 3. Popup del Toast: Tarjeta compacta, altura estrictamente automática */
+body.swal2-toast-shown .swal2-popup.swal2-toast,
+.swal2-popup.swal2-toast {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  grid-template-rows: auto auto !important;
+  align-items: flex-start !important;
+  width: auto !important;
+  min-width: 290px !important;
+  max-width: 380px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  align-self: flex-end !important;
+  justify-self: flex-end !important;
+  padding: 14px 18px 16px 16px !important;
+  margin: 0 !important;
+  background: rgba(22, 22, 26, 0.96) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+  color: #f4f4f5 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Ícono del Toast */
+.swal2-popup.swal2-toast .swal2-icon {
+  grid-column: 1 !important;
+  grid-row: 1 / 3 !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  margin: 2px 12px 0 0 !important;
+  border-width: 2px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: flex-start !important;
+  flex-shrink: 0 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-info {
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-info .swal2-icon-content {
+  color: #38bdf8 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-success {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #34d399 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-warning .swal2-icon-content {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon.swal2-error {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.14) !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #f87171 !important;
+}
+
+/* Título del Toast */
+.swal2-popup.swal2-toast .swal2-title {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  color: #ffffff !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  line-height: 1.3 !important;
+}
+
+/* Texto descriptivo del Toast */
+.swal2-popup.swal2-toast .swal2-html-container {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #a1a1aa !important;
+  font-size: 0.775rem !important;
+  line-height: 1.4 !important;
+  margin: 3px 0 0 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+/* Barra de progreso de Toast */
+.swal2-popup.swal2-toast .swal2-timer-progress-bar-container {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3px !important;
+  border-radius: 0 0 16px 16px !important;
+  overflow: hidden !important;
+}
+.swal2-popup.swal2-toast .swal2-timer-progress-bar {
+  background: var(--role-gradient, linear-gradient(90deg, #F0323E, #fb7185)) !important;
+  height: 100% !important;
+}
+
+/* 3. MODALES / DIÁLOGOS ESTÁNDAR */
+.swal2-popup:not(.swal2-toast) {
+  background: rgba(18, 18, 22, 0.98) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+  padding: 32px 26px 26px 26px !important;
+  max-width: 440px !important;
+  color: #f4f4f5 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-title {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  color: #ffffff !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 12px 0 8px 0 !important;
+  padding: 0 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-html-container {
+  font-family: 'Inter', sans-serif !important;
+  color: #a1a1aa !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+  margin: 0 0 20px 0 !important;
+  padding: 0 10px !important;
+}
+
+/* Íconos de Modales Estándar */
+.swal2-popup:not(.swal2-toast) .swal2-icon {
+  transform: scale(0.75) !important;
+  margin: 4px auto 0 auto !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-ring {
+  border: 4px solid rgba(16, 185, 129, 0.25) !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #34d399 !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-left,
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-circular-line-right,
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success .swal2-success-fix {
+  background: transparent !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: #fbbf24 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #f87171 !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #f87171 !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  color: #38bdf8 !important;
+}
+
+/* Botones de Acción en Modales */
+.swal2-popup:not(.swal2-toast) .swal2-actions {
+  margin-top: 14px !important;
+  gap: 12px !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-confirm {
+  background: var(--role-gradient, linear-gradient(135deg, #F0323E 0%, #d62833 100%)) !important;
+  color: #ffffff !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  padding: 11px 26px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(240, 50, 62, 0.35) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-confirm:hover {
+  filter: brightness(1.1) !important;
+  transform: translateY(-1px) !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-confirm:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.35) !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-cancel {
+  background: rgba(39, 39, 42, 0.7) !important;
+  color: #d4d4d8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 11px 22px !important;
+  border-radius: 12px !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}
+.swal2-popup:not(.swal2-toast) .swal2-cancel:hover {
+  background: rgba(63, 63, 70, 0.8) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.swal2-close {
+  color: #71717a !important;
+  transition: color 0.15s ease !important;
+}
+.swal2-close:hover {
+  color: #ffffff !important;
 }
 
