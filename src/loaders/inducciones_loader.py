@@ -207,7 +207,7 @@ def GET_OR_CREATE_induccion_persona_db(id_persona: int, auto_renovar: bool = Fal
                 all_ind = cursor.fetchall() or []
 
                 cursor.execute("""
-                    SELECT id_formulario, resultado, estado, fecha_realizacion
+                    SELECT id_formulario, resultado, estado, fecha_realizacion, foto_evidencia_url
                     FROM resultados_formulario
                     WHERE id_persona = %s
                     ORDER BY fecha_realizacion DESC
@@ -244,6 +244,7 @@ def GET_OR_CREATE_induccion_persona_db(id_persona: int, auto_renovar: bool = Fal
                         "responsable": ind_item["responsable"],
                         "resultado": rf_item["resultado"] if rf_item else None,
                         "aprobado": bool(rf_item["estado"]) if rf_item else True,
+                        "foto_evidencia_url": rf_item.get("foto_evidencia_url") if rf_item else None,
                         "url_certificado": f"/api/v1/inducciones/persona/{id_persona}/certificado" + (f"?id_form={ind_item['id_formulario']}" if ind_item['id_formulario'] else "")
                     })
 
@@ -525,7 +526,7 @@ def GET_ALL_inducciones_db() -> Dict[str, Any]:
 
                 # 3. Consultar últimos resultados de evaluaciones realizadas
                 cursor.execute("""
-                    SELECT rf.id_persona, rf.id_formulario, rf.resultado, rf.estado, rf.fecha_realizacion
+                    SELECT rf.id_persona, rf.id_formulario, rf.resultado, rf.estado, rf.fecha_realizacion, rf.foto_evidencia_url
                     FROM resultados_formulario rf
                     ORDER BY rf.fecha_realizacion DESC
                 """)
@@ -569,6 +570,7 @@ def GET_ALL_inducciones_db() -> Dict[str, Any]:
                         "responsable": ind["responsable"],
                         "resultado": rf_item["resultado"] if rf_item else None,
                         "aprobado": bool(rf_item["estado"]) if rf_item else True,
+                        "foto_evidencia_url": rf_item.get("foto_evidencia_url") if rf_item else None,
                         "url_certificado": f"/api/v1/inducciones/persona/{pid}/certificado" + (f"?id_form={ind['id_formulario']}" if ind['id_formulario'] else "")
                     })
 
