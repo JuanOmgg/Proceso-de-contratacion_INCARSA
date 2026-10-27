@@ -38,6 +38,13 @@ function evaluacionInduccionApp() {
     },
     mostrarCamposCompletos: false,
 
+    // Captura de foto en vivo / evidencia biométrica
+    streamCamara: null,
+    camaraActiva: false,
+    camaraIniciando: false,
+    camaraError: null,
+    fotoCapturadaDataUrl: null,
+
     formularioExpirado: false,
     formularioExpiradoMensaje: '',
 
@@ -441,7 +448,10 @@ function evaluacionInduccionApp() {
         this.preguntas = listaPreguntas;
         this.reformularFrom();
         this.respuestas = {};
-        this.estado = "EVALUACION";
+
+        // Paso obligatorio o sugerido de foto en vivo de validación antes de comenzar
+        this.estado = "FOTO";
+        this.iniciarCamara();
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (err) {
         console.error("Error al verificar documento:", err);
@@ -454,6 +464,95 @@ function evaluacionInduccionApp() {
       } finally {
         this.verificando = false;
       }
+    },
+
+    /**
+     * Inicia el flujo de cámara web/móvil para captura de foto de validación
+     */
+    async iniciarCamara() {
+      this.camaraError = null;
+      this.camaraActiva = false;
+      this.camaraIniciando = true;
+      this.$nextTick(async () => {
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            this.camaraError = "Tu navegador o dispositivo no soporta acceso directo a la cámara.";
+            return;
+          }
+          this.streamCamara = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 640 },
+              height: { ideal: 480 }
+            },
+            audio: false
+          });
+          const videoEl = this.$refs.videoCamara;
+          if (videoEl) {
+            videoEl.srcObject = this.streamCamara;
+            await videoEl.play().catch(() => {});
+            this.camaraActiva = true;
+          }
+        } catch (err) {
+          console.warn("Aviso cámara:", err);
+          if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+            this.camaraError = "Permiso de cámara denegado en el navegador. Puedes habilitarlo o continuar.";
+          } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+            this.camaraError = "No se detectó ninguna cámara conectada.";
+          } else {
+            this.camaraError = "No se pudo activar la cámara web.";
+          }
+        } finally {
+          this.camaraIniciando = false;
+        }
+      });
+    },
+
+    /**
+     * Captura el fotograma actual del elemento <video> en un canvas y genera el Base64 JPEG
+     */
+    capturarFoto() {
+      const video = this.$refs.videoCamara;
+      if (!video) return;
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      // Efecto espejo si es cámara frontal
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+      this.fotoCapturadaDataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      this.apagarCamara();
+    },
+
+    repetirFoto() {
+      this.fotoCapturadaDataUrl = null;
+      this.iniciarCamara();
+    },
+
+    apagarCamara() {
+      if (this.streamCamara) {
+        this.streamCamara.getTracks().forEach(t => t.stop());
+        this.streamCamara = null;
+      }
+      this.camaraActiva = false;
+      this.camaraIniciando = false;
+    },
+
+    confirmarFotoYComenzar() {
+      this.apagarCamara();
+      this.estado = "EVALUACION";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+
+    omitirFotoYComenzar() {
+      this.apagarCamara();
+      this.fotoCapturadaDataUrl = null;
+      this.estado = "EVALUACION";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
 
     toggleRespuesta(idPregunta, idOpcion, tipoRespuesta) {
@@ -521,7 +620,9 @@ function evaluacionInduccionApp() {
         apellido: (this.trabajador.apellidos || (this.personaInfo ? this.personaInfo.apellidos : '')).trim(),
         correo: (this.trabajador.correo || (this.personaInfo ? this.personaInfo.correo : '')).trim(),
         cargo: (this.trabajador.cargo || (this.personaInfo ? this.personaInfo.cargo : '')).trim(),
+        area_sede: (this.trabajador.cargo || '').trim(),
         tipo_doc: this.trabajador.tipo_doc || 'CC',
+        foto_en_vivo: this.fotoCapturadaDataUrl || null,
         respuestas: payloadRespuestas
       };
 

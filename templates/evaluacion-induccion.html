@@ -252,6 +252,111 @@
       </form>
     </div>
 
+    <!-- ESTADO 1.5: FOTO DE VALIDACIÓN EN VIVO (EVIDENCIA BIOMÉTRICA) -->
+    <div x-show="!cargando && estado === 'FOTO'" x-transition class="glass-card rounded-2xl p-6 sm:p-8 space-y-6 max-w-xl mx-auto text-center">
+      
+      <div class="space-y-2">
+        <div class="w-14 h-14 rounded-2xl role-icon-box flex items-center justify-center text-2xl mx-auto mb-2 text-indigo-400 bg-indigo-500/15 border border-indigo-500/30">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-bold font-brand text-white">Validación de Foto en Vivo</h2>
+        <p class="text-xs sm:text-sm text-zinc-400">
+          Toma una foto en vivo para registrar tu asistencia y vincular tu evidencia a las respuestas de la evaluación.
+        </p>
+      </div>
+
+      <!-- Marco de la Cámara / Vista previa de la foto -->
+      <div class="relative w-full max-w-sm mx-auto aspect-[4/3] rounded-2xl overflow-hidden bg-black/80 border-2 border-zinc-700 shadow-2xl flex items-center justify-center group"
+           :class="fotoCapturadaDataUrl ? 'border-emerald-500 ring-4 ring-emerald-500/20' : (camaraActiva ? 'border-indigo-500/60' : 'border-zinc-700')">
+        
+        <!-- Video en Vivo de la Cámara -->
+        <video x-show="camaraActiva && !fotoCapturadaDataUrl"
+               x-ref="videoCamara"
+               autoplay
+               playsinline
+               muted
+               class="w-full h-full object-cover transform -scale-x-100"></video>
+
+        <!-- Foto congelada capturada -->
+        <template x-if="fotoCapturadaDataUrl">
+          <img :src="fotoCapturadaDataUrl" alt="Foto capturada" class="w-full h-full object-cover">
+        </template>
+
+        <!-- Indicador de cargando cámara -->
+        <div x-show="camaraIniciando && !fotoCapturadaDataUrl" class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-black/70 text-zinc-300 space-y-2">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i>
+          <span class="text-xs font-medium">Iniciando cámara web...</span>
+        </div>
+
+        <!-- Mensaje de error / cámara no disponible -->
+        <div x-show="camaraError && !fotoCapturadaDataUrl && !camaraIniciando" class="absolute inset-0 flex flex-col items-center justify-center p-5 text-center bg-zinc-950/90 text-zinc-300 space-y-3">
+          <div class="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl mx-auto">
+            <i class="fa-solid fa-video-slash"></i>
+          </div>
+          <p class="text-xs text-amber-300 font-medium leading-relaxed" x-text="camaraError"></p>
+          <button type="button" @click="iniciarCamara()"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 transition-all cursor-pointer">
+            <i class="fa-solid fa-rotate-right mr-1"></i> Reintentar acceso
+          </button>
+        </div>
+
+        <!-- Guía facial sutil (cuando la cámara está activa y no se ha tomado foto) -->
+        <div x-show="camaraActiva && !fotoCapturadaDataUrl" class="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div class="w-48 h-56 rounded-full border-2 border-dashed border-white/30"></div>
+        </div>
+
+        <!-- Badge indicativo de foto lista -->
+        <div x-show="fotoCapturadaDataUrl" class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span>Foto lista</span>
+        </div>
+      </div>
+
+      <!-- Acciones de captura -->
+      <div class="space-y-3 pt-1 max-w-sm mx-auto">
+        <!-- Caso A: Cámara activa, aún no se ha tomado foto -->
+        <div x-show="camaraActiva && !fotoCapturadaDataUrl" class="space-y-2">
+          <button type="button" @click="capturarFoto()"
+            class="w-full py-3 px-5 rounded-xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01]">
+            <i class="fa-solid fa-camera text-base"></i>
+            <span>Tomar Foto de Validación</span>
+          </button>
+        </div>
+
+        <!-- Caso B: Foto ya tomada -->
+        <div x-show="fotoCapturadaDataUrl" class="space-y-2">
+          <button type="button" @click="confirmarFotoYComenzar()"
+            class="w-full py-3 px-5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01]">
+            <span>Confirmar y Comenzar Evaluación</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+
+          <button type="button" @click="repetirFoto()"
+            class="w-full py-2 px-4 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 transition-all cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Tomar otra foto</span>
+          </button>
+        </div>
+
+        <!-- Caso C: Fallback / Omitir si hay problema o no hay cámara -->
+        <div x-show="camaraError && !fotoCapturadaDataUrl" class="pt-1">
+          <button type="button" @click="omitirFotoYComenzar()"
+            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-600 cursor-pointer flex items-center justify-center gap-2 transition-all">
+            <span>Continuar sin foto a la evaluación</span>
+            <i class="fa-solid fa-arrow-right text-[11px]"></i>
+          </button>
+        </div>
+
+        <!-- Botón para regresar a editar datos -->
+        <button type="button" @click="apagarCamara(); estado = 'IDENTIFICACION'"
+          class="text-xs text-zinc-400 hover:text-zinc-200 inline-flex items-center gap-1 transition-colors cursor-pointer pt-1">
+          <i class="fa-solid fa-chevron-left text-[10px]"></i>
+          <span>Volver a corregir datos personales</span>
+        </button>
+      </div>
+
+    </div>
+
     <!-- ESTADO 2: INDUCCIÓN VIGENTE ACTIVA (YA NO REQUIERE EXAMEN) -->
     <div x-show="!cargando && estado === 'VIGENTE'" x-transition class="glass-card rounded-2xl p-8 sm:p-10 text-center space-y-6">
       <div class="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-3xl mx-auto shadow-lg shadow-emerald-500/10">
@@ -588,6 +693,22 @@
               </div>
             </div>
 
+            <!-- Evidencia Fotográfica en Vivo Vinculada -->
+            <template x-if="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl">
+              <div class="max-w-md mx-auto p-3 rounded-2xl bg-zinc-900/80 border border-zinc-700/60 flex items-center gap-3.5 text-left shadow-lg">
+                <img :src="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl" alt="Evidencia de asistencia"
+                     class="w-14 h-14 rounded-xl object-cover border border-emerald-500/40 shadow-md shrink-0">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Evidencia Biométrica Registrada</span>
+                  </div>
+                  <p class="text-xs font-bold text-white truncate" x-text="(trabajador.nombres || '') + ' ' + (trabajador.apellidos || '')"></p>
+                  <p class="text-[11px] text-zinc-400 font-mono" x-text="(trabajador.tipo_doc || 'CC') + ': ' + (trabajador.numero_documento || cedula)"></p>
+                </div>
+              </div>
+            </template>
+
             <!-- Mensaje Exclusivo Modo Simulación -->
             <div x-show="esSimulacion" class="max-w-md mx-auto p-4 rounded-xl bg-purple-500/10 border border-purple-500/25 text-xs text-left space-y-1.5">
               <div class="font-bold flex items-center gap-1.5 text-purple-300">
@@ -760,6 +881,22 @@
               </div>
             </div>
 
+            <!-- Evidencia Fotográfica en Vivo Vinculada -->
+            <template x-if="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl">
+              <div class="max-w-md mx-auto p-3 rounded-2xl bg-zinc-900/80 border border-zinc-700/60 flex items-center gap-3.5 text-left shadow-lg">
+                <img :src="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl" alt="Evidencia de asistencia"
+                     class="w-14 h-14 rounded-xl object-cover border border-red-500/40 shadow-md shrink-0">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Evidencia Biométrica Registrada</span>
+                  </div>
+                  <p class="text-xs font-bold text-white truncate" x-text="(trabajador.nombres || '') + ' ' + (trabajador.apellidos || '')"></p>
+                  <p class="text-[11px] text-zinc-400 font-mono" x-text="(trabajador.tipo_doc || 'CC') + ': ' + (trabajador.numero_documento || cedula)"></p>
+                </div>
+              </div>
+            </template>
+
             <!-- Bloque de Reintento para la Persona (Visible tanto en Producción como en Simulación) -->
             <div class="max-w-md mx-auto space-y-3 pt-2">
               <button type="button" @click="reintentar()"
@@ -820,7 +957,16 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <template x-if="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl">
+              <div class="relative group/evidencia" title="Evidencia biométrica del evaluado">
+                <img :src="resultadoEvaluacion?.foto_evidencia_url || fotoCapturadaDataUrl" alt="Foto evaluado"
+                     class="w-11 h-11 rounded-xl object-cover border border-purple-500/40 shadow-md">
+                <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px] shadow-xs">
+                  <i class="fa-solid fa-camera"></i>
+                </span>
+              </div>
+            </template>
             <span class="text-xs font-mono px-3.5 py-1.5 rounded-xl font-bold shadow-xs"
                   :class="resultadoEvaluacion?.aprobado ? 'pill-metric-green' : 'pill-metric-red'"
                   x-text="'Puntaje: ' + (resultadoEvaluacion?.resultado || '')"></span>

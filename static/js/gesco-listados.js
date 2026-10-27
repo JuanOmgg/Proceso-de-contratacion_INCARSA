@@ -97,6 +97,7 @@ function formulariosGescoTable() {
     showStatsModal: false,
     cargandoStats: false,
     estadisticasData: null,
+    statsTab: "preguntas", // 'preguntas' | 'evaluaciones'
     statsSearchPregunta: "",
     statsFiltroCategoria: "TODAS",
 
@@ -327,6 +328,7 @@ function formulariosGescoTable() {
       this.showStatsModal = true;
       this.cargandoStats = true;
       this.estadisticasData = null;
+      this.statsTab = "preguntas";
       this.statsSearchPregunta = "";
       this.statsFiltroCategoria = "TODAS";
 

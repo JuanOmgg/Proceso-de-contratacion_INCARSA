@@ -434,6 +434,19 @@
                       </div>
                     </div>
 
+                    <!-- Miniatura de Foto de Evidencia en Vivo -->
+                    <template x-if="f.foto_evidencia_url">
+                      <a :href="f.foto_evidencia_url" target="_blank"
+                         class="block shrink-0 relative group/foto"
+                         title="Ver foto tomada en vivo durante la evaluación">
+                        <img :src="f.foto_evidencia_url" alt="Evidencia en vivo"
+                             class="w-10 h-10 rounded-lg object-cover border border-purple-300 dark:border-purple-700/60 shadow-xs group-hover/foto:scale-105 group-hover/foto:border-purple-500 transition-all">
+                        <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px] shadow-xs">
+                          <i class="fa-solid fa-camera"></i>
+                        </span>
+                      </a>
+                    </template>
+
                     <!-- Botón de Certificado específico de este formulario -->
                     <button type="button" @click="abrirModalCertificado(detalleInduccion, f)"
                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-100 transition-colors flex items-center gap-1.5 flex-shrink-0 cursor-pointer"

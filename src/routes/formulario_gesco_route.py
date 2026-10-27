@@ -3,6 +3,9 @@ import os
 import shutil
 import uuid
 import zipfile
+import base64
+import re
+import time
 from fastapi import APIRouter, HTTPException, status, Query, Depends, Response, Request, UploadFile, File
 from typing import Optional, List
 from datetime import datetime
@@ -364,7 +367,9 @@ class EvaluacionSubmission(BaseModel):
     apellido: Optional[str] = None
     correo: Optional[str] = None
     cargo: Optional[str] = None
+    area_sede: Optional[str] = None
     tipo_doc: Optional[str] = "CC"
+    foto_en_vivo: Optional[str] = None  # Base64 data URL capturado en vivo por la cámara
     respuestas: List[RespuestaEvaluacionItem]
 
 
@@ -517,23 +522,46 @@ def SUBMIT_evaluacion_formulario(
     target_persona_id = payload.id_persona
     doc_clean = str(payload.numero_documento or "").strip()
 
+    # 1. Procesar y guardar foto de evidencia en vivo si viene adjunta
+    foto_url = None
+    if payload.foto_en_vivo and "base64," in payload.foto_en_vivo:
+        try:
+            header, encoded = payload.foto_en_vivo.split("base64,", 1)
+            data_bytes = base64.b64decode(encoded)
+            if len(data_bytes) < 8 * 1024 * 1024:
+                folder_path = os.path.join("uploads", "gesco", "evidencias", str(id_form_real))
+                os.makedirs(folder_path, exist_ok=True)
+                clean_name = re.sub(r"[^\w\-]", "_", doc_clean or "participante")
+                filename = f"evidencia_{clean_name}_{int(time.time())}.jpg"
+                file_path = os.path.join(folder_path, filename)
+                with open(file_path, "wb") as f_out:
+                    f_out.write(data_bytes)
+                foto_url = f"/uploads/gesco/evidencias/{id_form_real}/{filename}"
+        except Exception as e_foto:
+            print(f"⚠️ Error al guardar foto de evidencia en vivo: {e_foto}")
+
+    es_interno_form = False
+    datos_participante_interno = None
+
     try:
         with GET_conexion() as conexion:
             with conexion.cursor() as cursor:
-                # Comprobar límite de fecha del formulario
-                cursor.execute("SELECT fecha_limite, nombre FROM formularioGesco WHERE id = %s", (id_form_real,))
+                # Comprobar límite de fecha del formulario y si es interno
+                cursor.execute("SELECT fecha_limite, nombre, es_interno, tipo_personal FROM formularioGesco WHERE id = %s", (id_form_real,))
                 form_row = cursor.fetchone()
-                if form_row and form_row.get("fecha_limite"):
-                    fl_dt = form_row["fecha_limite"]
-                    if isinstance(fl_dt, str):
-                        fl_dt = datetime.fromisoformat(fl_dt)
-                    if fl_dt.hour == 0 and fl_dt.minute == 0 and fl_dt.second == 0:
-                        fl_dt = fl_dt.replace(hour=23, minute=59, second=59)
-                    if datetime.now() > fl_dt:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"El plazo para responder este formulario finalizó el {fl_dt.strftime('%d/%m/%Y')}."
-                        )
+                if form_row:
+                    es_interno_form = bool(form_row.get("es_interno")) or "interno" in str(form_row.get("tipo_personal") or "").lower()
+                    if form_row.get("fecha_limite"):
+                        fl_dt = form_row["fecha_limite"]
+                        if isinstance(fl_dt, str):
+                            fl_dt = datetime.fromisoformat(fl_dt)
+                        if fl_dt.hour == 0 and fl_dt.minute == 0 and fl_dt.second == 0:
+                            fl_dt = fl_dt.replace(hour=23, minute=59, second=59)
+                        if datetime.now() > fl_dt:
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"El plazo para responder este formulario finalizó el {fl_dt.strftime('%d/%m/%Y')}."
+                            )
 
                 row = None
                 if target_persona_id:
@@ -564,8 +592,20 @@ def SUBMIT_evaluacion_formulario(
                         u_vals.append(target_persona_id)
                         cursor.execute(f"UPDATE personas SET {', '.join(updates)} WHERE id = %s", tuple(u_vals))
                         conexion.commit()
-                else:
-                    # Registrar automáticamente al trabajador/persona si no existe en la base de datos
+
+                # Para formularios internos: estructurar datos específicos en tabla aparte
+                if es_interno_form:
+                    datos_participante_interno = {
+                        "numero_documento": doc_clean or str(target_persona_id or "0"),
+                        "tipo_doc": payload.tipo_doc or "CC",
+                        "nombre": (payload.nombre or (row.get("nombre") if row else "Trabajador")).strip(),
+                        "apellido": (payload.apellido or (row.get("apellido") if row else "")).strip(),
+                        "correo": (payload.correo or (row.get("correo") if row else "")).strip(),
+                        "cargo": (payload.cargo or (row.get("cargo") if row else "Personal Interno")).strip(),
+                        "area_sede": (payload.area_sede or "").strip()
+                    }
+                elif not row:
+                    # Formulario de contratistas/externos: Registrar automáticamente en personas si no existe
                     if not doc_clean and not payload.nombre:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
@@ -577,7 +617,6 @@ def SUBMIT_evaluacion_formulario(
                     cgo = str(payload.cargo or "Personal Interno").strip()[:30]
                     cor = (str(payload.correo or "").strip()[:255]) or None
                     
-                    import re
                     solo_digitos = re.sub(r"\D", "", doc_clean)
                     if solo_digitos:
                         try:
@@ -603,14 +642,20 @@ def SUBMIT_evaluacion_formulario(
     except Exception as e:
         print(f"[ERROR] Error al resolver o registrar persona en evaluacion: {e}")
 
-    if not target_persona_id:
+    if not target_persona_id and not datos_participante_interno:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Se requiere un número de documento para registrar la evaluación."
         )
 
     respuestas_dict = [r.model_dump() for r in payload.respuestas]
-    res = CALCULAR_Y_REGISTRAR_EVALUACION_DB(id_form_real, target_persona_id, respuestas_dict)
+    res = CALCULAR_Y_REGISTRAR_EVALUACION_DB(
+        id_formulario=id_form_real,
+        id_persona=target_persona_id,
+        respuestas=respuestas_dict,
+        foto_evidencia_url=foto_url,
+        datos_participante_interno=datos_participante_interno
+    )
 
     if not res.get("exito"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=res.get("mensaje"))

@@ -582,19 +582,22 @@ def SYNC_preguntas_formulario_db(id_formulario: int, preguntas_list: list) -> Di
 
 def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
     id_formulario: int,
-    id_persona: int,
-    respuestas: List[dict]
+    id_persona: Optional[int],
+    respuestas: List[dict],
+    foto_evidencia_url: Optional[str] = None,
+    datos_participante_interno: Optional[dict] = None
 ) -> Dict[str, Any]:
     """
-    Evalúa las respuestas de un cuestionario presentado por una persona:
+    Evalúa las respuestas de un cuestionario presentado por una persona o trabajador interno:
     - Base de puntaje: Cada pregunta equivale a 1.0 punto base.
     - Preguntas abiertas (TEXTO / ABIERTA): Se les otorga automáticamente 1.0 punto (sin requerir auditor manual).
     - Preguntas de selección única / V/F: 1.0 punto si acertó, 0.0 si no.
-    - Preguntas múltiples (MULTIPLE): El punto se divide equitativamente entre las respuestas correctas
-      (ej. 2 correctas = 0.5 pts por acierto; 3 correctas = ~0.33 pts por acierto).
+    - Preguntas múltiples (MULTIPLE): El punto se divide equitativamente entre las respuestas correctas.
     - Aprobación: (total_puntos / total_preguntas) * 100 >= 80%.
-    - Inserta resultado en resultados_formulario.
-    - Si aprueba: actualiza o crea vigencia (+1 año) en inducciones y evalúa auto-aprobación GESCO.
+    - Inserta resultado en resultados_formulario (con foto_evidencia_url del intento).
+    - Guarda respuestas individuales en respuestas_usuario_formulario.
+    - Si es participante interno, registra sus datos específicos en participantes_formulario_interno.
+    - Si aprueba y tiene id_persona: actualiza o crea vigencia (+1 año) en inducciones y evalúa auto-aprobación GESCO.
     """
     try:
         with GET_conexion() as conexion:
@@ -608,14 +611,16 @@ def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
                 if not form:
                     return {"exito": False, "mensaje": f"Formulario #{id_formulario} no encontrado."}
 
-                # 2. Verificar persona
-                cursor.execute(
-                    "SELECT id, nombre, apellido, identificacion FROM personas WHERE id = %s",
-                    (id_persona,)
-                )
-                persona = cursor.fetchone()
-                if not persona:
-                    return {"exito": False, "mensaje": f"Persona #{id_persona} no encontrada."}
+                # 2. Verificar persona (opcional si es personal interno registrado en tabla aparte)
+                persona = None
+                if id_persona:
+                    cursor.execute(
+                        "SELECT id, nombre, apellido, identificacion FROM personas WHERE id = %s",
+                        (id_persona,)
+                    )
+                    persona = cursor.fetchone()
+                elif not datos_participante_interno:
+                    return {"exito": False, "mensaje": "Se requiere identificar a la persona o participante para evaluar."}
 
                 if not respuestas:
                     return {"exito": False, "mensaje": "No se recibieron respuestas para evaluar."}
@@ -752,10 +757,10 @@ def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
                 # 4. Insertar en resultados_formulario
                 cursor.execute(
                     """
-                    INSERT INTO resultados_formulario (id_persona, id_formulario, resultado, estado, fecha_realizacion)
-                    VALUES (%s, %s, %s, %s, NOW())
+                    INSERT INTO resultados_formulario (id_persona, id_formulario, resultado, estado, foto_evidencia_url, fecha_realizacion)
+                    VALUES (%s, %s, %s, %s, %s, NOW())
                     """,
-                    (id_persona, id_formulario, resultado_str, 1 if aprobado else 0)
+                    (id_persona, id_formulario, resultado_str, 1 if aprobado else 0, foto_evidencia_url)
                 )
                 id_resultado_generado = cursor.lastrowid
 
@@ -778,9 +783,28 @@ def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
                             )
                         )
 
-                # 5. Si aprueba, registrar/actualizar vigencia en inducciones (+1 año o form.vigencia)
+                # 4c. Si es participante interno, registrar en participantes_formulario_interno
+                if id_resultado_generado and datos_participante_interno:
+                    cursor.execute(
+                        """
+                        INSERT INTO participantes_formulario_interno
+                        (id_formulario, id_resultado, tipo_documento, numero_documento, nombres, apellidos, correo, created_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                        """,
+                        (
+                            id_formulario,
+                            id_resultado_generado,
+                            datos_participante_interno.get("tipo_doc") or "CC",
+                            str(datos_participante_interno.get("numero_documento") or "").strip(),
+                            str(datos_participante_interno.get("nombre") or "").strip(),
+                            str(datos_participante_interno.get("apellido") or "").strip() or None,
+                            str(datos_participante_interno.get("correo") or "").strip() or None
+                        )
+                    )
+
+                # 5. Si aprueba y tiene id_persona, registrar/actualizar vigencia en inducciones (+1 año o form.vigencia)
                 vigencia_dias = int(form.get("vigencia") or 365)
-                if aprobado:
+                if aprobado and id_persona:
                     # Obtener el creador del formulario como responsable de la inducción
                     cursor.execute(
                         """
@@ -858,8 +882,10 @@ def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
                     "total": total_preguntas,
                     "porcentaje": porcentaje,
                     "resultado": resultado_str,
+                    "id_resultado": id_resultado_generado,
+                    "foto_evidencia_url": foto_evidencia_url,
                     "mensaje": (
-                        f"¡Felicitaciones! Has aprobado la inducción con {resultado_str}. Tu vigencia de inducción ha sido activada exitosamente."
+                        f"¡Felicitaciones! Has aprobado la inducción con {resultado_str}. Tu vigencia de inducción y evidencia han sido registradas exitosamente."
                         if aprobado
                         else f"No has alcanzado el puntaje mínimo de aprobación (80%). Obtuviste {resultado_str}. Puedes intentarlo nuevamente."
                     )
@@ -1254,6 +1280,36 @@ def GET_estadisticas_formulario_db(id_formulario: int) -> Dict[str, Any]:
                         "respuestas_abiertas": textos_por_pregunta.get(pid, [])
                     })
 
+                # 9. Evaluaciones y participantes recientes con su foto en vivo y resultado
+                cursor.execute(
+                    """
+                    SELECT 
+                        rf.id as id_resultado,
+                        rf.id_formulario,
+                        rf.resultado,
+                        rf.estado,
+                        rf.foto_evidencia_url,
+                        rf.fecha_realizacion,
+                        p.id as id_persona,
+                        COALESCE(p.nombre, pfi.nombres, 'Trabajador') as persona_nombre,
+                        COALESCE(p.apellido, pfi.apellidos, '') as persona_apellido,
+                        COALESCE(p.identificacion, pfi.numero_documento, 'Sin doc') as persona_documento,
+                        COALESCE(p.tipo_doc, pfi.tipo_documento, 'CC') as persona_tipo_doc,
+                        COALESCE(p.correo, pfi.correo, '') as persona_correo,
+                        CASE WHEN pfi.id IS NOT NULL THEN 'Interno' ELSE 'Contratista' END as tipo_evaluado
+                    FROM resultados_formulario rf
+                    LEFT JOIN personas p ON rf.id_persona = p.id
+                    LEFT JOIN participantes_formulario_interno pfi ON rf.id = pfi.id_resultado
+                    WHERE rf.id_formulario = %s
+                    ORDER BY rf.fecha_realizacion DESC
+                    LIMIT 100
+                    """,
+                    (id_formulario,)
+                )
+                evaluaciones_recientes = cursor.fetchall() or []
+                for ev in evaluaciones_recientes:
+                    ev["fecha_realizacion"] = _formatear_fecha(ev.get("fecha_realizacion"))
+
                 return {
                     "exito": True,
                     "formulario": {
@@ -1273,7 +1329,8 @@ def GET_estadisticas_formulario_db(id_formulario: int) -> Dict[str, Any]:
                         "porcentaje_aprobacion": porcentaje_aprobacion,
                         "total_preguntas": len(preguntas_db)
                     },
-                    "estadisticas_preguntas": lista_estadisticas
+                    "estadisticas_preguntas": lista_estadisticas,
+                    "evaluaciones_recientes": evaluaciones_recientes
                 }
     except Exception as e:
         print(f"[ERROR] Error en GET_estadisticas_formulario_db #{id_formulario}: {e}")
