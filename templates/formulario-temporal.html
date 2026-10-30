@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', path='js/formulario-temporal.js') }}?v=3.5"></script>
+<script src="{{ url_for('static', path='js/formulario-temporal.js') }}?v=3.6"></script>
 {% endblock %}
 
 {% block header_width %}max-w-6xl{% endblock %}
@@ -1412,7 +1412,12 @@
     </div>
   </div>
 
-  {% endblock %}
+  <!-- ============================================================
+     MODAL OBLIGATORIO: AVISO 48 HORAS DE PROCESO
+  ============================================================= -->
+  {% include 'components/formulario/modal-aviso-48h.html' %}
+
+{% endblock %}
 
   <!-- Pie de página -->
   {% block footer %}

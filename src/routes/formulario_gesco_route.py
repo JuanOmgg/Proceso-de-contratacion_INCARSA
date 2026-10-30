@@ -24,7 +24,8 @@ from src.loaders.formulario_gesco_loader import (
     GET_formulario_gesco_por_id_db,
     CREATE_formulario_gesco_db,
     UPDATE_formulario_gesco_db,
-    DELETE_formulario_gesco_db
+    DELETE_formulario_gesco_db,
+    slugify_formulario
 )
 from src.schemas.pregunta_schema import PreguntaInput, PreguntasSyncPayload
 from src.loaders.pregunta_loader import (
@@ -518,27 +519,11 @@ def SUBMIT_evaluacion_formulario(
     if not res_f.get("exito") or not res_f.get("datos"):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Formulario '{id_form}' no encontrado.")
     id_form_real = int(res_f["datos"]["id"])
+    nombre_form_raw = res_f["datos"].get("nombre") or f"formulario_{id_form_real}"
+    clean_form_name = re.sub(r"[^\w\-]", "_", slugify_formulario(nombre_form_raw)).strip("_") or f"form_{id_form_real}"
 
     target_persona_id = payload.id_persona
     doc_clean = str(payload.numero_documento or "").strip()
-
-    # 1. Procesar y guardar foto de evidencia en vivo si viene adjunta
-    foto_url = None
-    if payload.foto_en_vivo and "base64," in payload.foto_en_vivo:
-        try:
-            header, encoded = payload.foto_en_vivo.split("base64,", 1)
-            data_bytes = base64.b64decode(encoded)
-            if len(data_bytes) < 8 * 1024 * 1024:
-                folder_path = os.path.join("uploads", "gesco", "evidencias", str(id_form_real))
-                os.makedirs(folder_path, exist_ok=True)
-                clean_name = re.sub(r"[^\w\-]", "_", doc_clean or "participante")
-                filename = f"evidencia_{clean_name}_{int(time.time())}.jpg"
-                file_path = os.path.join(folder_path, filename)
-                with open(file_path, "wb") as f_out:
-                    f_out.write(data_bytes)
-                foto_url = f"/uploads/gesco/evidencias/{id_form_real}/{filename}"
-        except Exception as e_foto:
-            print(f"⚠️ Error al guardar foto de evidencia en vivo: {e_foto}")
 
     es_interno_form = False
     datos_participante_interno = None
@@ -551,6 +536,8 @@ def SUBMIT_evaluacion_formulario(
                 form_row = cursor.fetchone()
                 if form_row:
                     es_interno_form = bool(form_row.get("es_interno")) or "interno" in str(form_row.get("tipo_personal") or "").lower()
+                    if form_row.get("nombre"):
+                        clean_form_name = re.sub(r"[^\w\-]", "_", slugify_formulario(form_row["nombre"])).strip("_") or clean_form_name
                     if form_row.get("fecha_limite"):
                         fl_dt = form_row["fecha_limite"]
                         if isinstance(fl_dt, str):
@@ -565,10 +552,12 @@ def SUBMIT_evaluacion_formulario(
 
                 row = None
                 if target_persona_id:
-                    cursor.execute("SELECT id, nombre, apellido, correo, cargo FROM personas WHERE id = %s", (target_persona_id,))
+                    cursor.execute("SELECT id, nombre, apellido, correo, cargo, identificacion FROM personas WHERE id = %s", (target_persona_id,))
                     row = cursor.fetchone()
+                    if row and not doc_clean and row.get("identificacion"):
+                        doc_clean = str(row["identificacion"]).strip()
                 elif doc_clean:
-                    cursor.execute("SELECT id, nombre, apellido, correo, cargo FROM personas WHERE identificacion = %s", (doc_clean,))
+                    cursor.execute("SELECT id, nombre, apellido, correo, cargo, identificacion FROM personas WHERE identificacion = %s", (doc_clean,))
                     row = cursor.fetchone()
 
                 if row:
@@ -647,6 +636,24 @@ def SUBMIT_evaluacion_formulario(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Se requiere un número de documento para registrar la evaluación."
         )
+
+    # Procesar y guardar foto de evidencia con formato: {numero_documento}_{nombre_formulario}_{timestamp}.jpg
+    foto_url = None
+    if payload.foto_en_vivo and "base64," in payload.foto_en_vivo:
+        try:
+            header, encoded = payload.foto_en_vivo.split("base64,", 1)
+            data_bytes = base64.b64decode(encoded)
+            if len(data_bytes) < 8 * 1024 * 1024:
+                folder_path = os.path.join("uploads", "gesco", "evidencias")
+                os.makedirs(folder_path, exist_ok=True)
+                doc_for_file = re.sub(r"[^\w\-]", "", doc_clean or str(target_persona_id or "participante")).strip("_")
+                filename = f"{doc_for_file}_{clean_form_name}_{int(time.time())}.jpg"
+                file_path = os.path.join(folder_path, filename)
+                with open(file_path, "wb") as f_out:
+                    f_out.write(data_bytes)
+                foto_url = f"/uploads/gesco/evidencias/{filename}"
+        except Exception as e_foto:
+            print(f"⚠️ Error al guardar foto de evidencia en vivo: {e_foto}")
 
     respuestas_dict = [r.model_dump() for r in payload.respuestas]
     res = CALCULAR_Y_REGISTRAR_EVALUACION_DB(

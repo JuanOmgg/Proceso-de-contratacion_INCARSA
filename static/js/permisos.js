@@ -120,6 +120,7 @@
       'revision_solicitud': ['ADMINISTRADOR', 'SCR', 'GESCO', 'SST', 'VIGILANTE'].includes(miRol),
       'correspondencias': true,
       'nueva_correspondencia': true,
+      'parqueos': true,
       'formularios_gesco': ['ADMINISTRADOR', 'GESCO', 'SCR', 'SUPERADMIN', 'SST'].includes(miRol),
       'superadmin': miRol === 'SUPERADMIN'
     };

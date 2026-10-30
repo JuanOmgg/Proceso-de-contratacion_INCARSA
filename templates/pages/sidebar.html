@@ -186,6 +186,16 @@
           <span x-show="isModuloMantenimiento('correspondencias')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
         </a>
 
+        <!-- Módulo independiente: Parqueos -->
+        <a href="/parqueos" x-show="puedeModulo('parqueos')" class="sidebar-link flex items-center justify-between px-3 py-2.5"
+          :class="isActive('/parqueos') ? 'is-active' : ''">
+          <span class="flex items-center gap-3">
+            <i class="fa-solid fa-square-parking w-4 text-center"></i>
+            <span class="sidebar-label">Parqueos</span>
+          </span>
+          <span x-show="isModuloMantenimiento('parqueos')" class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 sidebar-label">503</span>
+        </a>
+
 
 
         <a href="/procesamiento" x-show="puedeModulo('procesamiento')" class="sidebar-link flex items-center justify-between px-3 py-2.5"

@@ -431,29 +431,7 @@ def UPDATE_induccion_persona_db(id_persona: int, data: Dict[str, Any], responsab
 
                 conexion.commit()
 
-                # Reevaluar auto-aprobación GESCO en solicitudes activas de esta persona
-                try:
-                    cursor.execute(
-                        """
-                        SELECT s.id, s.tipo_personal
-                        FROM solicitudes s
-                        INNER JOIN ingresantes ing ON ing.id_solicitud = s.id
-                        WHERE ing.id_persona = %s AND s.estado NOT IN ('Aprobada', 'APROBADO', 'Rechazada', 'RECHAZADO', 'Cancelada')
-                        GROUP BY s.id
-                        """,
-                        (id_persona,)
-                    )
-                    sols_afectadas = cursor.fetchall() or []
-                    from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
-                    for s_af in sols_afectadas:
-                        EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
-                            cursor,
-                            id_solicitud=s_af["id"],
-                            tipo_personal=s_af.get("tipo_personal") or "Contratista"
-                        )
-                    conexion.commit()
-                except Exception as auto_err:
-                    print(f"⚠️ Aviso evaluando auto-aprobación GESCO tras actualización manual de inducción: {auto_err}")
+
 
                 return {"exito": True, "mensaje": "Vigencia de inducción actualizada exitosamente (+1 año)."}
 

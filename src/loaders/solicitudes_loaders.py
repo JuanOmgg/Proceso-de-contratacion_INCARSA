@@ -191,6 +191,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                 ids_generados = []
                 codigos_generados = []
                 personas_para_notificar = []
+                es_pre_envio = (str(solicitud.get("estado", "ENVIADO")).strip().upper() in ("PRE-ENVIADO", "PREENVIADO"))
 
                 # 2. Crear una solicitud independiente por cada empresa_origen
                 for emp_origen, sub_plantas in empresa_plantas_map.items():
@@ -408,6 +409,10 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 row_ec = cursor.fetchone()
                                 nom_contratista_email = (row_ec.get("nombre") if row_ec else "") or "Empresa Contratista"
 
+                                cursor.execute("SELECT nombre_empresa FROM empresa WHERE id = %s", (emp_origen,))
+                                row_emp = cursor.fetchone()
+                                nom_empresa_email = (row_emp.get("nombre_empresa") if row_emp else "") or "INCARSA S.A.S."
+
                                 sql_ingresantes = """
                                     INSERT INTO ingresantes (id_solicitud, id_persona, autorizado, motivo, token_autorizacion, estado_datos)
                                     VALUES (%s, %s, 1, NULL, %s, 'PENDIENTE')
@@ -419,17 +424,20 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
                                     c_email = str(p_row.get("correo") or "").strip()
                                     if c_email and "@" in c_email:
-                                        p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
-                                        tipo_pers_crea = solicitud.get("tipo_personal", "Contratista")
-                                        info_ind = OBTENER_info_induccion_para_correo(cursor, p_id, emp_origen, nom_empresa_email, tipo_personal=tipo_pers_crea)
-                                        personas_para_notificar.append({
-                                            "destinatario": c_email,
-                                            "nombre": p_nom,
-                                            "radicado": cod_val,
-                                            "contratista": nom_contratista_email,
-                                            "token": tok,
-                                            **info_ind
-                                        })
+                                        try:
+                                            p_nom = f"{p_row.get('nombre') or ''} {p_row.get('apellido') or ''}".strip()
+                                            tipo_pers_crea = solicitud.get("tipo_personal", "Contratista")
+                                            info_ind = OBTENER_info_induccion_para_correo(cursor, p_id, emp_origen, nom_empresa_email, tipo_personal=tipo_pers_crea)
+                                            personas_para_notificar.append({
+                                                "destinatario": c_email,
+                                                "nombre": p_nom,
+                                                "radicado": cod_val,
+                                                "contratista": nom_contratista_email,
+                                                "token": tok,
+                                                **info_ind
+                                            })
+                                        except Exception as e_ind_p:
+                                            print(f"⚠️ [WARN] Error preparando datos de inducción/correo para persona {p_id}: {e_ind_p}")
 
                                 # Sincronizar automáticamente antecedentes y antecedentes_historial_solicitudes
                                 for p_row in valid_personas:
@@ -578,20 +586,6 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                     else:
                         # Notificar a los usuarios revisores (SST y GESCO) cuyas plantas asignadas coincidan con la solicitud
                         try:
-                            # 1. Evaluar si GESCO se auto-aprueba porque todo el personal tiene inducciones vigentes
-                            gesco_autoaprobado = False
-                            try:
-                                from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
-                                res_auto_g = EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
-                                    cursor=cursor,
-                                    id_solicitud=solicitud_id,
-                                    tipo_personal=solicitud.get("tipo_personal", "Contratista"),
-                                    plantas_ids=sub_plantas
-                                )
-                                gesco_autoaprobado = bool(res_auto_g.get("auto_aprobado"))
-                            except Exception as e_ag:
-                                print(f"⚠️ Aviso al evaluar auto-aprobación GESCO: {e_ag}")
-
                             revisores_dest = obtener_usuarios_revisores_por_planta(
                                 cursor,
                                 id_solicitud=solicitud_id,
@@ -602,12 +596,8 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                 if cod_val:
                                     rol_nom = u_rev.get("nombre_rol") or "SST"
                                     u_id = u_rev["id"]
-                                    if rol_nom == "GESCO" and gesco_autoaprobado:
-                                        tit_notif = "Visto bueno GESCO automático"
-                                        msg_notif = f"La solicitud {cod_val} cuenta con visto bueno automático de GESCO (todo el personal tiene inducciones vigentes)."
-                                    else:
-                                        tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
-                                        msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {rol_nom}."
+                                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                                    msg_notif = f"Se radicó la solicitud {cod_val} y requiere revisión de {rol_nom}."
                                     cursor.execute(
                                         """
                                         INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
@@ -666,8 +656,6 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
                                         if dest_email and "@" in dest_email:
                                             r_nom = f"{r_u.get('nombres') or ''} {r_u.get('apellidos') or ''}".strip() or "Revisor"
                                             r_rol = r_u.get("nombre_rol") or "SST"
-                                            if r_rol == "GESCO" and gesco_autoaprobado:
-                                                continue
                                             try:
                                                 send_notificationRevision(
                                                     destinatario=dest_email,
@@ -705,6 +693,7 @@ def CREATE_solicitud_bd(solicitud: dict) -> dict:
 
                 # Despachar correos automáticos de autorización de datos en segundo plano (solo si no es PRE-ENVIADO)
                 if personas_para_notificar and not es_pre_envio:
+                    print(f"📧 [EMAIL] Despachando {len(personas_para_notificar)} correo(s) de autorización de datos en segundo plano...")
                     def _despachar_correos_creacion(lista):
                         for item in lista:
                             try:
@@ -4179,31 +4168,14 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                 # 3. Transicionar a ENVIADO
                 cursor.execute("UPDATE solicitudes SET estado = 'ENVIADO' WHERE id = %s", (real_id,))
 
-                # 4. Evaluar si GESCO se auto-aprueba porque todo el personal tiene inducciones vigentes
-                gesco_autoaprobado = False
-                try:
-                    from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
-                    res_auto_g = EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
-                        cursor=cursor,
-                        id_solicitud=real_id,
-                        tipo_personal=sol.get("tipo_personal", "Contratista")
-                    )
-                    gesco_autoaprobado = bool(res_auto_g.get("auto_aprobado"))
-                except Exception as e_ag:
-                    print(f"⚠️ Aviso al evaluar auto-aprobación GESCO tras aprobación de pre-envío: {e_ag}")
-
                 # Generar notificaciones oficiales para SST y GESCO solo si la solicitud tiene una de sus plantas asignadas
                 revisores_dest = obtener_usuarios_revisores_por_planta(cursor, id_solicitud=real_id)
                 now_notif_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 for u_rev in revisores_dest:
                     rol_nom = u_rev.get("nombre_rol") or "SST"
                     u_id = u_rev["id"]
-                    if rol_nom == "GESCO" and gesco_autoaprobado:
-                        tit_notif = "Visto bueno GESCO automático"
-                        msg_notif = f"La solicitud {cod_val} cuenta con visto bueno automático de GESCO (todo el personal tiene inducciones vigentes)."
-                    else:
-                        tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
-                        msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {rol_nom}."
+                    tit_notif = f"Nueva solicitud para revisión ({rol_nom})"
+                    msg_notif = f"Se aprobó el envío de la solicitud {cod_val} y requiere revisión de {rol_nom}."
                     cursor.execute("""
                         INSERT INTO notificaciones (id_usuario, titulo, mensaje, tipo, enlace, leido, fecha_creacion)
                         VALUES (%s, %s, %s, %s, %s, FALSE, %s)
@@ -4272,8 +4244,6 @@ def APROBAR_envio_solicitud_db(solicitud_id: Any, id_usuario: int, es_admin: boo
                             if dest_email and "@" in dest_email:
                                 r_nom = f"{r_u.get('nombres') or ''} {r_u.get('apellidos') or ''}".strip() or "Revisor"
                                 r_rol = r_u.get("nombre_rol") or "SST"
-                                if r_rol == "GESCO" and gesco_autoaprobado:
-                                    continue
                                 try:
                                     send_notificationRevision(
                                         destinatario=dest_email,

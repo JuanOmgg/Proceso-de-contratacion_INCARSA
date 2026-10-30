@@ -323,89 +323,111 @@ select option:checked {
 
 @supports (appearance: base-select) {
   select,
+  select.input-field,
+  select.custom-styled-select,
+  .custom-styled-select,
   select::picker(select) {
-    appearance: base-select;
+    appearance: base-select !important;
   }
 
-  select {
-    background-image: none;
+  select,
+  select.input-field,
+  select.custom-styled-select,
+  .custom-styled-select {
+    background-image: none !important;
     padding-right: 1.15rem !important;
   }
 
   select::picker-icon {
-    color: #64748b;
-    font-size: 12px;
-    opacity: 0.85;
-    transition: transform 0.2s ease, color 0.2s ease;
+    color: #64748b !important;
+    font-size: 12px !important;
+    opacity: 0.85 !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
   }
 
   select:hover::picker-icon,
   select:focus::picker-icon {
-    color: var(--signal-500, #fb3b4c);
-    opacity: 1;
+    color: var(--signal-500, #fb3b4c) !important;
+    opacity: 1 !important;
   }
 
   :root[data-role="SUPERADMIN"] select:hover::picker-icon,
   :root[data-role="SUPERADMIN"] select:focus::picker-icon,
   :root.role-superadmin select:hover::picker-icon,
   :root.role-superadmin select:focus::picker-icon {
-    color: #d946ef;
+    color: #d946ef !important;
   }
 
   select:open::picker-icon {
-    transform: rotate(180deg);
-    color: var(--signal-500, #fb3b4c);
+    transform: rotate(180deg) !important;
+    color: var(--signal-500, #fb3b4c) !important;
   }
 
   :root[data-role="SUPERADMIN"] select:open::picker-icon,
   :root.role-superadmin select:open::picker-icon {
-    color: #d946ef;
+    color: #d946ef !important;
   }
 
+  /* Popover Flotante en Modo Claro (Base) */
+  :root:not(.dark) select::picker(select),
+  html:not(.dark) select::picker(select),
   select::picker(select) {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 6px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 16px rgba(251, 59, 76, 0.08);
-    margin-top: 4px;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 6px !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 16px rgba(251, 59, 76, 0.08) !important;
+    backdrop-filter: blur(14px) !important;
+    margin-top: 4px !important;
   }
 
+  :root:not(.dark) select option,
+  html:not(.dark) select option,
   select option {
-    background-color: #ffffff;
-    color: #1e293b;
-    padding: 9px 13px;
-    margin: 2px 0;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    padding: 9px 13px !important;
+    margin: 2px 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
   }
 
+  :root:not(.dark) select option:hover,
+  :root:not(.dark) select option:focus,
+  html:not(.dark) select option:hover,
+  html:not(.dark) select option:focus,
   select option:hover,
   select option:focus {
-    background-color: #f1f5f9;
-    color: #0f172a;
+    background-color: #f1f5f9 !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
   }
 
+  :root:not(.dark) select option:checked,
+  html:not(.dark) select option:checked,
   select option:checked {
-    background: var(--signal-500, #fb3b4c);
-    background-color: var(--signal-500, #fb3b4c);
-    color: #ffffff;
-    font-weight: 700;
+    background: var(--signal-500, #fb3b4c) !important;
+    background-color: var(--signal-500, #fb3b4c) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
   }
 
   :root[data-role="SUPERADMIN"] select option:checked,
-  :root.role-superadmin select option:checked {
-    background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%);
-    background-color: #a855f7;
-    color: #ffffff;
-    font-weight: 700;
+  :root.role-superadmin select option:checked,
+  html[data-role="SUPERADMIN"] select option:checked,
+  html.role-superadmin select option:checked {
+    background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+    background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+    background-color: #a855f7 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
   }
 
   select option::checkmark {
-    color: #ffffff;
+    color: #ffffff !important;
   }
 }
 
@@ -431,7 +453,7 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   color: var(--signal-500) !important;
 }
 
-/* ---------- Scrollbar discreto ---------- */
+/* ---------- Scrollbars del Sistema (Color Signal vs SuperAdmin) ---------- */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -441,13 +463,104 @@ div[x-show^="open"].rounded-xl div[class*="cursor-pointer"]:hover {
   background: transparent;
 }
 
+/* Usuario Normal: Color Signal Corporativo */
 ::-webkit-scrollbar-thumb {
-  background: var(--steel-300);
-  border-radius: 8px;
+  background: var(--signal-500, #f0323e) !important;
+  border-radius: 9999px !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-600);
+  background: var(--signal-600, #d92430) !important;
+  filter: brightness(0.92) !important;
+}
+
+:root:not([data-role="SUPERADMIN"]):not(.role-superadmin),
+html:not([data-role="SUPERADMIN"]):not(.role-superadmin) {
+  scrollbar-color: var(--signal-500, #f0323e) transparent !important;
+}
+
+/* SuperAdmin Scrollbar: Multicolor Personalizado */
+:root[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+:root.role-superadmin ::-webkit-scrollbar-thumb,
+html[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+html.role-superadmin ::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+.role-superadmin ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%) !important;
+  border-radius: 9999px !important;
+}
+
+:root[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+:root.role-superadmin ::-webkit-scrollbar-thumb:hover,
+html[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+html.role-superadmin ::-webkit-scrollbar-thumb:hover,
+[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+.role-superadmin ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #22d3ee 100%) !important;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.45) !important;
+}
+
+:root[data-role="SUPERADMIN"],
+:root.role-superadmin,
+html[data-role="SUPERADMIN"],
+html.role-superadmin {
+  scrollbar-color: #a855f7 transparent !important;
+}
+
+/* =========================================================
+   SCROLLBAR INVISIBLE EN SIDEBAR (TODOS LOS MODOS Y ROLES)
+   ========================================================= */
+.sidebar,
+.sidebar nav,
+aside.sidebar,
+aside.sidebar nav {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar nav::-webkit-scrollbar,
+aside.sidebar::-webkit-scrollbar,
+aside.sidebar nav::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar,
+aside.sidebar *::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.sidebar nav::-webkit-scrollbar-thumb,
+aside.sidebar::-webkit-scrollbar-thumb,
+aside.sidebar nav::-webkit-scrollbar-thumb,
+.sidebar *::-webkit-scrollbar-thumb,
+aside.sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar *::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  box-shadow: none !important;
+  display: none !important;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.sidebar nav::-webkit-scrollbar-track,
+aside.sidebar::-webkit-scrollbar-track,
+aside.sidebar nav::-webkit-scrollbar-track,
+.sidebar *::-webkit-scrollbar-track,
+aside.sidebar *::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
 }
 
 /* =========================================================

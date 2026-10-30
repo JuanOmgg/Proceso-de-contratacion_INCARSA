@@ -1664,6 +1664,96 @@ html.dark select option:checked {
   background: transparent;
 }
 
+/* Scrollbars generales en Modo Oscuro (Usuario Normal: Color Signal) */
+:root.dark ::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb {
+  background: var(--signal-500, #f0323e) !important;
+  border-radius: 9999px !important;
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover,
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--signal-600, #d92430) !important;
+  filter: brightness(1.15) !important;
+}
+
+/* SuperAdmin Scrollbar en Modo Oscuro (Multicolor exclusivo) */
+:root.dark[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+:root.dark.role-superadmin ::-webkit-scrollbar-thumb,
+html.dark[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+html.dark.role-superadmin ::-webkit-scrollbar-thumb,
+:root.dark[data-role="SUPERADMIN"] .custom-scroll::-webkit-scrollbar-thumb,
+:root.dark.role-superadmin .custom-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%) !important;
+  border-radius: 9999px !important;
+}
+
+:root.dark[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+:root.dark.role-superadmin ::-webkit-scrollbar-thumb:hover,
+html.dark[data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+html.dark.role-superadmin ::-webkit-scrollbar-thumb:hover,
+:root.dark[data-role="SUPERADMIN"] .custom-scroll::-webkit-scrollbar-thumb:hover,
+:root.dark.role-superadmin .custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #22d3ee 100%) !important;
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.6) !important;
+}
+
+/* =========================================================
+   SCROLLBAR INVISIBLE EN SIDEBAR (TODOS LOS MODOS Y ROLES)
+   ========================================================= */
+.sidebar,
+.sidebar nav,
+aside.sidebar,
+aside.sidebar nav {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar nav::-webkit-scrollbar,
+aside.sidebar::-webkit-scrollbar,
+aside.sidebar nav::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar,
+aside.sidebar *::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.sidebar nav::-webkit-scrollbar-thumb,
+aside.sidebar::-webkit-scrollbar-thumb,
+aside.sidebar nav::-webkit-scrollbar-thumb,
+.sidebar *::-webkit-scrollbar-thumb,
+aside.sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar *::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  box-shadow: none !important;
+  display: none !important;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.sidebar nav::-webkit-scrollbar-track,
+aside.sidebar::-webkit-scrollbar-track,
+aside.sidebar nav::-webkit-scrollbar-track,
+.sidebar *::-webkit-scrollbar-track,
+aside.sidebar *::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
+}
+
 /* 12. Inputs y selects dentro de modales estilo ticket */
 :root.dark .modal-panel input.input-field {
   background: #18181b !important;

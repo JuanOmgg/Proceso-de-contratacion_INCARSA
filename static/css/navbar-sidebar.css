@@ -656,18 +656,60 @@
   border-color: rgba(244, 63, 94, 0.25) !important;
 }
 
-/* Scrollbar en navegación */
-:root:not(.dark) .sidebar nav::-webkit-scrollbar {
-  width: 4px;
+/* =========================================================
+   SCROLLBAR INVISIBLE EN SIDEBAR (TODOS LOS MODOS Y ROLES)
+   ========================================================= */
+.sidebar,
+.sidebar nav,
+aside.sidebar,
+aside.sidebar nav {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-:root:not(.dark) .sidebar nav::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+.sidebar::-webkit-scrollbar,
+.sidebar nav::-webkit-scrollbar,
+aside.sidebar::-webkit-scrollbar,
+aside.sidebar nav::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar,
+aside.sidebar *::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
 }
 
-:root:not(.dark) .sidebar nav::-webkit-scrollbar-track {
-  background: transparent;
+.sidebar::-webkit-scrollbar-thumb,
+.sidebar nav::-webkit-scrollbar-thumb,
+aside.sidebar::-webkit-scrollbar-thumb,
+aside.sidebar nav::-webkit-scrollbar-thumb,
+.sidebar *::-webkit-scrollbar-thumb,
+aside.sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] .sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin .sidebar *::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar nav::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar nav::-webkit-scrollbar-thumb,
+[data-role="SUPERADMIN"] aside.sidebar *::-webkit-scrollbar-thumb,
+.role-superadmin aside.sidebar *::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  box-shadow: none !important;
+  display: none !important;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.sidebar nav::-webkit-scrollbar-track,
+aside.sidebar::-webkit-scrollbar-track,
+aside.sidebar nav::-webkit-scrollbar-track,
+.sidebar *::-webkit-scrollbar-track,
+aside.sidebar *::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
 }
 
 /* Sección SuperAdmin en el sidebar en modo claro */

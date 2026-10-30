@@ -1,0 +1,2041 @@
+{% extends 'pages/base.html' %}
+
+{% block title %}Control de Parqueos Nocturnos · PSI{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/usuarios-listado.css') }}?v=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/correspondencia-listado.css') }}?v=1.0">
+  <style>
+    /* Estilos de alta estética para Parqueos por Zona */
+    .obs-verde {
+      background-color: rgba(16, 185, 129, 0.15) !important;
+      color: #047857 !important;
+      border: 1px solid rgba(16, 185, 129, 0.35) !important;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .dark .obs-verde {
+      background-color: rgba(16, 185, 129, 0.25) !important;
+      color: #34d399 !important;
+      border-color: rgba(16, 185, 129, 0.5) !important;
+    }
+    .obs-amarillo {
+      background-color: rgba(245, 158, 11, 0.15) !important;
+      color: #b45309 !important;
+      border: 1px solid rgba(245, 158, 11, 0.35) !important;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .dark .obs-amarillo {
+      background-color: rgba(245, 158, 11, 0.2) !important;
+      color: #fbbf24 !important;
+      border-color: rgba(245, 158, 11, 0.5) !important;
+    }
+    .obs-rojo {
+      background-color: rgba(239, 68, 68, 0.15) !important;
+      color: #b91c1c !important;
+      border: 1px solid rgba(239, 68, 68, 0.35) !important;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .dark .obs-rojo {
+      background-color: rgba(239, 68, 68, 0.25) !important;
+      color: #f87171 !important;
+      border-color: rgba(239, 68, 68, 0.5) !important;
+    }
+    .vehiculo-toggle-btn {
+      transition: all 0.15s ease-in-out;
+    }
+    .vehiculo-toggle-btn.is-quedo {
+      background-color: rgba(16, 185, 129, 0.2) !important;
+      color: #047857 !important;
+      border-color: rgba(16, 185, 129, 0.5) !important;
+    }
+    .dark .vehiculo-toggle-btn.is-quedo {
+      background-color: rgba(16, 185, 129, 0.25) !important;
+      color: #34d399 !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+    }
+    .vehiculo-toggle-btn.is-no-quedo {
+      background-color: rgba(239, 68, 68, 0.15) !important;
+      color: #b91c1c !important;
+      border-color: rgba(239, 68, 68, 0.4) !important;
+    }
+    .dark .vehiculo-toggle-btn.is-no-quedo {
+      background-color: rgba(239, 68, 68, 0.2) !important;
+      color: #f87171 !important;
+      border-color: rgba(239, 68, 68, 0.5) !important;
+    }
+
+    /* =========================================================
+       ESTILOS PERSONALIZADOS PARA SELECTS Y OPCIONES (SIGNAL Y SUPERADMIN)
+       ========================================================= */
+    /* Selects base comunes (Fallback estándar) */
+    select.custom-styled-select,
+    .custom-styled-select {
+      border-radius: 0.75rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      background-repeat: no-repeat !important;
+      background-position: right 0.75rem center !important;
+      background-size: 0.95rem 0.95rem !important;
+      padding-right: 2.2rem !important;
+      transition: all 0.2s ease !important;
+      outline: none !important;
+    }
+
+    /* MODO CLARO - Select principal */
+    :root:not(.dark) select.custom-styled-select,
+    :root:not(.dark) .custom-styled-select,
+    html:not(.dark) select.custom-styled-select,
+    html:not(.dark) .custom-styled-select {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      color-scheme: light !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f0323e' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    /* MODO CLARO - Flecha SuperAdmin en fallback */
+    :root:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select,
+    :root:not(.dark).role-superadmin select.custom-styled-select,
+    html:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select,
+    html:not(.dark).role-superadmin select.custom-styled-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d946ef' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    /* Focus en Modo Claro (Usuario Normal: Signal) */
+    :root:not(.dark) select.custom-styled-select:focus,
+    :root:not(.dark) .custom-styled-select:focus,
+    html:not(.dark) select.custom-styled-select:focus,
+    html:not(.dark) .custom-styled-select:focus {
+      border-color: var(--signal-500, #f0323e) !important;
+      box-shadow: 0 0 0 3px rgba(240, 50, 62, 0.25) !important;
+    }
+
+    /* Focus en Modo Claro (SuperAdmin: Multicolor / Magenta) */
+    :root:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select:focus,
+    :root:not(.dark).role-superadmin select.custom-styled-select:focus,
+    html:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select:focus,
+    html:not(.dark).role-superadmin select.custom-styled-select:focus {
+      border-color: #d946ef !important;
+      box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.25), 0 0 14px rgba(6, 182, 212, 0.2) !important;
+    }
+
+    /* MODO CLARO - Opciones del Select (Fallback estándar) */
+    :root:not(.dark) select.custom-styled-select option,
+    :root:not(.dark) .custom-styled-select option,
+    html:not(.dark) select.custom-styled-select option,
+    html:not(.dark) .custom-styled-select option {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      padding: 10px 14px !important;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+    }
+
+    /* Opción seleccionada en Modo Claro (Usuario Normal: Signal) */
+    :root:not(.dark) select.custom-styled-select option:hover,
+    :root:not(.dark) select.custom-styled-select option:focus,
+    :root:not(.dark) select.custom-styled-select option:checked,
+    html:not(.dark) select.custom-styled-select option:hover,
+    html:not(.dark) select.custom-styled-select option:focus,
+    html:not(.dark) select.custom-styled-select option:checked {
+      background-color: var(--signal-500, #f0323e) !important;
+      background: var(--signal-500, #f0323e) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+
+    /* Opción seleccionada en Modo Claro (SuperAdmin: Multicolor) */
+    :root:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+    :root:not(.dark).role-superadmin select.custom-styled-select option:checked,
+    html:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+    html:not(.dark).role-superadmin select.custom-styled-select option:checked {
+      background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+      background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+      background-color: #a855f7 !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+
+    /* MODO OSCURO - Select principal */
+    .dark select.custom-styled-select,
+    .dark .custom-styled-select,
+    :root.dark select.custom-styled-select,
+    :root.dark .custom-styled-select,
+    html.dark select.custom-styled-select,
+    html.dark .custom-styled-select {
+      background-color: #151921 !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      color-scheme: dark !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f0323e' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    /* MODO OSCURO - Flecha SuperAdmin en fallback */
+    .dark[data-role="SUPERADMIN"] select.custom-styled-select,
+    .dark.role-superadmin select.custom-styled-select,
+    :root.dark[data-role="SUPERADMIN"] select.custom-styled-select,
+    :root.dark.role-superadmin select.custom-styled-select,
+    html.dark[data-role="SUPERADMIN"] select.custom-styled-select,
+    html.dark.role-superadmin select.custom-styled-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d946ef' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    }
+
+    /* Focus en Modo Oscuro (Usuario Normal: Signal) */
+    .dark select.custom-styled-select:focus,
+    .dark .custom-styled-select:focus,
+    :root.dark select.custom-styled-select:focus,
+    :root.dark .custom-styled-select:focus,
+    html.dark select.custom-styled-select:focus,
+    html.dark .custom-styled-select:focus {
+      border-color: var(--signal-500, #f0323e) !important;
+      box-shadow: 0 0 16px rgba(240, 50, 62, 0.4), 0 0 0 2px rgba(240, 50, 62, 0.2) !important;
+    }
+
+    /* Focus en Modo Oscuro (SuperAdmin: Multicolor / Magenta) */
+    .dark[data-role="SUPERADMIN"] select.custom-styled-select:focus,
+    .dark.role-superadmin select.custom-styled-select:focus,
+    :root.dark[data-role="SUPERADMIN"] select.custom-styled-select:focus,
+    :root.dark.role-superadmin select.custom-styled-select:focus,
+    html.dark[data-role="SUPERADMIN"] select.custom-styled-select:focus,
+    html.dark.role-superadmin select.custom-styled-select:focus {
+      border-color: #d946ef !important;
+      box-shadow: 0 0 16px rgba(217, 70, 239, 0.45), 0 0 0 2px rgba(6, 182, 212, 0.25) !important;
+    }
+
+    /* MODO OSCURO - Opciones del Select (Fallback estándar) */
+    .dark select.custom-styled-select option,
+    .dark .custom-styled-select option,
+    :root.dark select.custom-styled-select option,
+    :root.dark .custom-styled-select option,
+    html.dark select.custom-styled-select option,
+    html.dark .custom-styled-select option {
+      background-color: #151921 !important;
+      color: #f8fafc !important;
+      padding: 10px 14px !important;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+    }
+
+    /* Opción seleccionada en Modo Oscuro (Usuario Normal: Signal) */
+    .dark select.custom-styled-select option:checked,
+    :root.dark select.custom-styled-select option:checked,
+    html.dark select.custom-styled-select option:checked {
+      background-color: var(--signal-500, #f0323e) !important;
+      background: var(--signal-500, #f0323e) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+
+    /* Opción seleccionada en Modo Oscuro (SuperAdmin: Multicolor) */
+    .dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+    .dark.role-superadmin select.custom-styled-select option:checked,
+    :root.dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+    :root.dark.role-superadmin select.custom-styled-select option:checked,
+    html.dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+    html.dark.role-superadmin select.custom-styled-select option:checked {
+      background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+      background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+      background-color: #a855f7 !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+
+    /* =========================================================
+       API MODERNA: Customizable Select (Chromium / Edge 130+)
+       ========================================================= */
+    @supports (appearance: base-select) {
+      select.custom-styled-select,
+      .custom-styled-select,
+      select.custom-styled-select::picker(select) {
+        appearance: base-select !important;
+      }
+
+      select.custom-styled-select,
+      .custom-styled-select {
+        background-image: none !important;
+        padding-right: 1.15rem !important;
+      }
+
+      /* Flecha Picker (Usuario Normal: Signal) */
+      select.custom-styled-select::picker-icon,
+      .custom-styled-select::picker-icon {
+        color: var(--signal-500, #f0323e) !important;
+        font-size: 12px !important;
+        opacity: 0.9 !important;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease !important;
+      }
+
+      select.custom-styled-select:hover::picker-icon,
+      select.custom-styled-select:focus::picker-icon,
+      .custom-styled-select:hover::picker-icon,
+      .custom-styled-select:focus::picker-icon {
+        color: var(--signal-500, #f0323e) !important;
+        opacity: 1 !important;
+      }
+
+      select.custom-styled-select:open::picker-icon,
+      .custom-styled-select:open::picker-icon {
+        transform: rotate(180deg) !important;
+        color: var(--signal-500, #f0323e) !important;
+      }
+
+      /* Flecha Picker (SuperAdmin: Multicolor / Magenta) */
+      [data-role="SUPERADMIN"] select.custom-styled-select::picker-icon,
+      .role-superadmin select.custom-styled-select::picker-icon,
+      [data-role="SUPERADMIN"] .custom-styled-select::picker-icon,
+      .role-superadmin .custom-styled-select::picker-icon,
+      [data-role="SUPERADMIN"] select.custom-styled-select:hover::picker-icon,
+      .role-superadmin select.custom-styled-select:hover::picker-icon,
+      [data-role="SUPERADMIN"] select.custom-styled-select:focus::picker-icon,
+      .role-superadmin select.custom-styled-select:focus::picker-icon {
+        color: #d946ef !important;
+      }
+
+      [data-role="SUPERADMIN"] select.custom-styled-select:open::picker-icon,
+      .role-superadmin select.custom-styled-select:open::picker-icon,
+      [data-role="SUPERADMIN"] .custom-styled-select:open::picker-icon,
+      .role-superadmin .custom-styled-select:open::picker-icon {
+        transform: rotate(180deg) !important;
+        color: #d946ef !important;
+      }
+
+      /* Popover flotante en Modo Claro */
+      :root:not(.dark) select.custom-styled-select::picker(select),
+      html:not(.dark) select.custom-styled-select::picker(select) {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 14px !important;
+        padding: 6px !important;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 16px rgba(240, 50, 62, 0.08) !important;
+        backdrop-filter: blur(14px) !important;
+        margin-top: 4px !important;
+      }
+
+      /* Popover flotante Modo Claro (SuperAdmin) */
+      :root:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select::picker(select),
+      :root:not(.dark).role-superadmin select.custom-styled-select::picker(select),
+      html:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select::picker(select),
+      html:not(.dark).role-superadmin select.custom-styled-select::picker(select) {
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 18px rgba(217, 70, 239, 0.15) !important;
+      }
+
+      :root:not(.dark) select.custom-styled-select option,
+      html:not(.dark) select.custom-styled-select option {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        padding: 9px 13px !important;
+        margin: 2px 0 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
+      }
+
+      :root:not(.dark) select.custom-styled-select option:hover,
+      :root:not(.dark) select.custom-styled-select option:focus,
+      html:not(.dark) select.custom-styled-select option:hover,
+      html:not(.dark) select.custom-styled-select option:focus {
+        background: #f1f5f9 !important;
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+
+      /* Opción seleccionada Modo Claro (Usuario Normal: Signal) */
+      :root:not(.dark) select.custom-styled-select option:checked,
+      html:not(.dark) select.custom-styled-select option:checked {
+        background: var(--signal-500, #f0323e) !important;
+        background-color: var(--signal-500, #f0323e) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+      }
+
+      /* Opción seleccionada Modo Claro (SuperAdmin: Multicolor) */
+      :root:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+      :root:not(.dark).role-superadmin select.custom-styled-select option:checked,
+      html:not(.dark)[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+      html:not(.dark).role-superadmin select.custom-styled-select option:checked {
+        background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+        background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+        background-color: #a855f7 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+      }
+
+      :root:not(.dark) select.custom-styled-select option::checkmark,
+      html:not(.dark) select.custom-styled-select option::checkmark {
+        color: #ffffff !important;
+      }
+
+      /* Popover flotante en Modo Oscuro */
+      :root.dark select.custom-styled-select::picker(select),
+      html.dark select.custom-styled-select::picker(select),
+      .dark select.custom-styled-select::picker(select) {
+        background-color: #18181c !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border-radius: 14px !important;
+        padding: 6px !important;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(240, 50, 62, 0.15) !important;
+        backdrop-filter: blur(14px) !important;
+        margin-top: 4px !important;
+      }
+
+      /* Popover flotante Modo Oscuro (SuperAdmin) */
+      :root.dark[data-role="SUPERADMIN"] select.custom-styled-select::picker(select),
+      :root.dark.role-superadmin select.custom-styled-select::picker(select),
+      html.dark[data-role="SUPERADMIN"] select.custom-styled-select::picker(select),
+      html.dark.role-superadmin select.custom-styled-select::picker(select),
+      .dark[data-role="SUPERADMIN"] select.custom-styled-select::picker(select),
+      .dark.role-superadmin select.custom-styled-select::picker(select) {
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(217, 70, 239, 0.25) !important;
+      }
+
+      :root.dark select.custom-styled-select option,
+      html.dark select.custom-styled-select option,
+      .dark select.custom-styled-select option {
+        background-color: #18181c !important;
+        color: #f1f5f9 !important;
+        padding: 9px 13px !important;
+        margin: 2px 0 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
+      }
+
+      :root.dark select.custom-styled-select option:hover,
+      :root.dark select.custom-styled-select option:focus,
+      html.dark select.custom-styled-select option:hover,
+      html.dark select.custom-styled-select option:focus,
+      .dark select.custom-styled-select option:hover,
+      .dark select.custom-styled-select option:focus {
+        background: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+      }
+
+      /* Opción seleccionada Modo Oscuro (Usuario Normal: Signal) */
+      :root.dark select.custom-styled-select option:checked,
+      html.dark select.custom-styled-select option:checked,
+      .dark select.custom-styled-select option:checked {
+        background: var(--signal-500, #f0323e) !important;
+        background-color: var(--signal-500, #f0323e) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+      }
+
+      /* Opción seleccionada Modo Oscuro (SuperAdmin: Multicolor) */
+      :root.dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+      :root.dark.role-superadmin select.custom-styled-select option:checked,
+      html.dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+      html.dark.role-superadmin select.custom-styled-select option:checked,
+      .dark[data-role="SUPERADMIN"] select.custom-styled-select option:checked,
+      .dark.role-superadmin select.custom-styled-select option:checked {
+        background: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+        background-image: linear-gradient(90deg, #d946ef 0%, #a855f7 35%, #06b6d4 100%) !important;
+        background-color: #a855f7 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+      }
+
+      :root.dark select.custom-styled-select option::checkmark,
+      html.dark select.custom-styled-select option::checkmark,
+      .dark select.custom-styled-select option::checkmark {
+        color: #ffffff !important;
+      }
+    }
+    
+/* Estilos del dropdown del buscador general y scroll */
+    .buscador-general-dropdown {
+      background-color: #11151f !important;
+      background: #11151f !important;
+      opacity: 1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 0, 0, 0.85) !important;
+      border-radius: 1rem !important;
+      z-index: 60 !important;
+      max-height: 275px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+      padding: 0.45rem !important;
+    }
+    :root:not(.dark) .buscador-general-dropdown,
+    html:not(.dark) .buscador-general-dropdown {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.15), 0 0 20px rgba(0, 0, 0, 0.05) !important;
+    }
+    :root:not(.dark) .buscador-general-item,
+    html:not(.dark) .buscador-general-item {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+    }
+    :root:not(.dark) .buscador-general-item:hover,
+    html:not(.dark) .buscador-general-item:hover {
+      background-color: #f1f5f9 !important;
+      border-color: rgba(249, 115, 22, 0.5) !important;
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.08) !important;
+    }
+    /* =========================================================
+       SCROLLBARS: COLOR SIGNAL (USUARIO NORMAL) VS MULTICOLOR (SUPERADMIN)
+       ========================================================= */
+    /* Ancho y riel base para scrollbars */
+    ::-webkit-scrollbar,
+    .buscador-general-dropdown::-webkit-scrollbar,
+    .lista-vehiculos-ingresados::-webkit-scrollbar,
+    .modal-scrollable-body::-webkit-scrollbar {
+      width: 7px !important;
+      height: 7px !important;
+    }
+    ::-webkit-scrollbar-track,
+    .buscador-general-dropdown::-webkit-scrollbar-track,
+    .lista-vehiculos-ingresados::-webkit-scrollbar-track,
+    .modal-scrollable-body::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+
+    /* USUARIO NORMAL: Color Signal Corporativo */
+    ::-webkit-scrollbar-thumb,
+    .buscador-general-dropdown::-webkit-scrollbar-thumb,
+    .lista-vehiculos-ingresados::-webkit-scrollbar-thumb,
+    .modal-scrollable-body::-webkit-scrollbar-thumb,
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: var(--signal-500, #f0323e) !important;
+      border-radius: 9999px !important;
+    }
+
+    ::-webkit-scrollbar-thumb:hover,
+    .buscador-general-dropdown::-webkit-scrollbar-thumb:hover,
+    .lista-vehiculos-ingresados::-webkit-scrollbar-thumb:hover,
+    .modal-scrollable-body::-webkit-scrollbar-thumb:hover,
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: var(--signal-600, #d92430) !important;
+      filter: brightness(0.92) !important;
+    }
+
+    /* Firefox Scrollbar Usuario Normal */
+    :root:not([data-role="SUPERADMIN"]):not(.role-superadmin),
+    html:not([data-role="SUPERADMIN"]):not(.role-superadmin) {
+      scrollbar-color: var(--signal-500, #f0323e) transparent !important;
+    }
+
+    .buscador-general-item {
+      background-color: rgba(255, 255, 255, 0.03) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border-radius: 0.65rem !important;
+      margin-bottom: 0.35rem !important;
+      transition: all 0.16s ease !important;
+    }
+    .buscador-general-item:last-child {
+      margin-bottom: 0 !important;
+    }
+    .buscador-general-item:hover {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(240, 50, 62, 0.45) !important;
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.6) !important;
+      transform: translateX(2px);
+    }
+    [data-role="SUPERADMIN"] .buscador-general-item:hover,
+    .role-superadmin .buscador-general-item:hover {
+      border-color: rgba(217, 70, 239, 0.55) !important;
+      box-shadow: 0 4px 14px -2px rgba(217, 70, 239, 0.25) !important;
+    }
+
+    .lista-vehiculos-ingresados {
+      max-height: 280px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+    }
+
+    /* Modales: altura contenida y scroll garantizado en cualquier pantalla */
+    .modal-backdrop-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background-color: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      overflow-y: auto;
+    }
+    .modal-dialog-card {
+      width: 100%;
+      max-height: calc(100vh - 2.5rem) !important;
+      height: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      margin: auto;
+    }
+    .modal-dialog-header,
+    .modal-dialog-footer {
+      flex-shrink: 0 !important;
+    }
+    .modal-scrollable-body {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+    }
+
+    /* =========================================================
+       SUPERADMIN SCROLLBARS PERSONALIZADAS (MULTICOLOR EXCLUSIVO)
+       ========================================================= */
+    [data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb,
+    .role-superadmin ::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .buscador-general-dropdown::-webkit-scrollbar-thumb,
+    .role-superadmin .buscador-general-dropdown::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .lista-vehiculos-ingresados::-webkit-scrollbar-thumb,
+    .role-superadmin .lista-vehiculos-ingresados::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .modal-scrollable-body::-webkit-scrollbar-thumb,
+    .role-superadmin .modal-scrollable-body::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .overflow-x-auto::-webkit-scrollbar-thumb,
+    .role-superadmin .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #06b6d4 100%) !important;
+      border-radius: 9999px !important;
+    }
+
+    [data-role="SUPERADMIN"] ::-webkit-scrollbar-thumb:hover,
+    .role-superadmin ::-webkit-scrollbar-thumb:hover,
+    [data-role="SUPERADMIN"] .buscador-general-dropdown::-webkit-scrollbar-thumb:hover,
+    .role-superadmin .buscador-general-dropdown::-webkit-scrollbar-thumb:hover,
+    [data-role="SUPERADMIN"] .lista-vehiculos-ingresados::-webkit-scrollbar-thumb:hover,
+    .role-superadmin .lista-vehiculos-ingresados::-webkit-scrollbar-thumb:hover,
+    [data-role="SUPERADMIN"] .modal-scrollable-body::-webkit-scrollbar-thumb:hover,
+    .role-superadmin .modal-scrollable-body::-webkit-scrollbar-thumb:hover,
+    [data-role="SUPERADMIN"] .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+    .role-superadmin .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #22d3ee 100%) !important;
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.5) !important;
+    }
+
+    [data-role="SUPERADMIN"],
+    .role-superadmin {
+      scrollbar-color: #a855f7 transparent !important;
+    }
+
+    /* =========================================================
+       SCROLLBAR INVISIBLE EN SIDEBAR (TODOS LOS MODOS Y ROLES)
+       ========================================================= */
+    .sidebar,
+    .sidebar nav,
+    aside.sidebar,
+    aside.sidebar nav {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    
+    .sidebar::-webkit-scrollbar,
+    .sidebar nav::-webkit-scrollbar,
+    aside.sidebar::-webkit-scrollbar,
+    aside.sidebar nav::-webkit-scrollbar,
+    .sidebar *::-webkit-scrollbar,
+    aside.sidebar *::-webkit-scrollbar {
+      width: 0px !important;
+      height: 0px !important;
+      display: none !important;
+      background: transparent !important;
+    }
+    
+    .sidebar::-webkit-scrollbar-thumb,
+    .sidebar nav::-webkit-scrollbar-thumb,
+    aside.sidebar::-webkit-scrollbar-thumb,
+    aside.sidebar nav::-webkit-scrollbar-thumb,
+    .sidebar *::-webkit-scrollbar-thumb,
+    aside.sidebar *::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .sidebar::-webkit-scrollbar-thumb,
+    .role-superadmin .sidebar::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .sidebar nav::-webkit-scrollbar-thumb,
+    .role-superadmin .sidebar nav::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] .sidebar *::-webkit-scrollbar-thumb,
+    .role-superadmin .sidebar *::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] aside.sidebar::-webkit-scrollbar-thumb,
+    .role-superadmin aside.sidebar::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] aside.sidebar nav::-webkit-scrollbar-thumb,
+    .role-superadmin aside.sidebar nav::-webkit-scrollbar-thumb,
+    [data-role="SUPERADMIN"] aside.sidebar *::-webkit-scrollbar-thumb,
+    .role-superadmin aside.sidebar *::-webkit-scrollbar-thumb {
+      background: transparent !important;
+      box-shadow: none !important;
+      display: none !important;
+    }
+    
+    .sidebar::-webkit-scrollbar-track,
+    .sidebar nav::-webkit-scrollbar-track,
+    aside.sidebar::-webkit-scrollbar-track,
+    aside.sidebar nav::-webkit-scrollbar-track,
+    .sidebar *::-webkit-scrollbar-track,
+    aside.sidebar *::-webkit-scrollbar-track {
+      background: transparent !important;
+      display: none !important;
+    }
+
+    /* Tooltip multilínea enriquecido para observaciones */
+    .incarsa-global-tooltip {
+      white-space: normal !important;
+      max-width: 360px !important;
+      word-break: break-word !important;
+      line-height: 1.45 !important;
+      padding: 7px 12px !important;
+    }
+  </style>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/parqueos.js') }}?v=4.2"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="app-shell" x-data="appShellStub()" @keydown.escape.window="sidebarOpenMobile = false">
+
+    <!-- Backdrop del drawer móvil -->
+    <div class="sidebar-backdrop" :class="sidebarOpenMobile ? 'is-visible' : ''" @click="sidebarOpenMobile = false" x-cloak></div>
+
+    <!-- SIDEBAR -->
+    {% include 'pages/sidebar.html' %}
+
+    <!-- ============================================================
+       MAIN COLUMN
+    ============================================================= -->
+    <div class="flex-1 min-w-0 flex flex-col" x-data="parqueosModule()">
+
+      <!-- ---------- TOPBAR ---------- -->
+      {% set page_title = "Control de parqueos nocturnos" %}
+      {% include 'pages/navbar.html' %}
+
+      <!-- ---------- CONTENT ---------- -->
+      <main class="flex-1 p-4 sm:p-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+          <!-- ===== 1. CABECERA Y BOTONES DE ACCIÓN ===== -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-[var(--signal-500)]/15 text-[var(--signal-500)] flex items-center justify-center">
+                  <i class="fa-solid fa-square-parking text-xl"></i>
+                </div>
+                <div>
+                  <h1 class="text-lg sm:text-xl font-bold text-[var(--text-primary)]">Control de Parqueos Nocturnos</h1>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones Superiores -->
+            <div class="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              <!-- Switch de Vista (Reportes vs Catálogo) -->
+              <div class="p-1 rounded-xl bg-slate-100 dark:bg-[#1a1f26] border border-[var(--border-subtle)] inline-flex shrink-0">
+                <button type="button" @click="tabActiva = 'reportes'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+                  :class="tabActiva === 'reportes' ? 'bg-white dark:bg-[#252b36] text-[var(--signal-500)] shadow-sm' : 'text-[var(--text-muted)]'">
+                  <i class="fa-solid fa-clipboard-list mr-1"></i> Reportes
+                </button>
+                <button type="button" @click="tabActiva = 'vehiculos'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+                  :class="tabActiva === 'vehiculos' ? 'bg-white dark:bg-[#252b36] text-[var(--signal-500)] shadow-sm' : 'text-[var(--text-muted)]'">
+                  <i class="fa-solid fa-car mr-1"></i> Vehículos Internos
+                </button>
+              </div>
+
+              <!-- Botón Primario: Nuevo Reporte -->
+              <button type="button" @click="abrirModalNuevoReporte()"
+                class="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--signal-500)] hover:bg-[var(--signal-600)] text-white shadow-md shadow-[var(--signal-500)]/25 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Nuevo Reporte de Zona</span>
+              </button>
+
+              <!-- Enlace a Formulario Externo (Público) -->
+              <a href="/reporte-parqueo" target="_blank"
+                class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-[#1a1f26] hover:bg-slate-50 dark:hover:bg-slate-800 text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-[var(--signal-500)] transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+                title="Abrir formulario externo para vigilantes (sin requerir inicio de sesión)">
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-[var(--signal-500)]"></i>
+                <span>Formulario Externo</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- ============================================================
+               VISTA 1: TABLA PRINCIPAL DE REPORTES (FECHA, ZONA, REPORTADOR)
+          ============================================================= -->
+          <div x-show="tabActiva === 'reportes'" x-cloak class="space-y-4">
+
+            <!-- Barra de Filtros Mejorada -->
+            <div class="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 w-full">
+              
+              <!-- Buscador (min-w-0 permite que se ajuste perfectamente sin empujar nada afuera) -->
+              <div class="relative flex-1 min-w-0">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+                <input type="text" x-model.debounce.300ms="busqueda" @input="cargarReportes()" placeholder="Buscar por reportador, zona u observaciones..."
+                  class="w-full text-xs pl-9 pr-8 py-2 rounded-xl bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--signal-500)] transition-colors">
+                <button type="button" x-show="busqueda" @click="busqueda = ''; cargarReportes()"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Controles: Filtro Segmentado de Fechas + Selector de Zona (shrink-0 garantiza que no se deforme ni desborde) -->
+              <div class="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap justify-start sm:justify-end">
+                
+                <!-- Filtro Rápido de Fecha (Segmented Pill Switcher) -->
+                <div class="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-[#151921] border border-[var(--border-subtle)] shrink-0 shadow-inner">
+                  <button type="button" @click="filtroFecha = 'hoy'; cargarReportes()"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                    :class="filtroFecha === 'hoy' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                    Hoy
+                  </button>
+                  <button type="button" @click="filtroFecha = 'ayer'; cargarReportes()"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                    :class="filtroFecha === 'ayer' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                    Ayer
+                  </button>
+                  <button type="button" @click="filtroFecha = '7dias'; cargarReportes()"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                    :class="filtroFecha === '7dias' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                    7 días
+                  </button>
+                  <button type="button" @click="filtroFecha = 'todos'; cargarReportes()"
+                    class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                    :class="filtroFecha === 'todos' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                    Todos
+                  </button>
+                </div>
+
+                <!-- Selector de Zona con Icono -->
+                <div class="relative shrink-0 w-full sm:w-44">
+                  <i class="fa-solid fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--signal-500)] pointer-events-none z-10"></i>
+                  <select x-model="filtroZona" @change="cargarReportes()"
+                    class="custom-styled-select w-full text-xs font-semibold pl-8 pr-7 py-2 rounded-xl">
+                    <option value="TODAS">Todas las zonas</option>
+                    <template x-for="z in zonasDisponibles" :key="z">
+                      <option :value="z" x-text="z"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <!-- Botón Exportar Reporte / Auditoría en Excel -->
+                <button type="button" @click="abrirModalExportarExcel()"
+                  title="Exportar reporte y auditoría detallada en Excel por mes o periodo"
+                  class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
+                  <i class="fa-solid fa-file-excel"></i>
+                  <span class="hidden sm:inline">Descargar Excel</span>
+                </button>
+
+              </div>
+
+            </div>
+
+            <!-- ===== Tabla Principal de Reportes (Estilo Estándar del Sistema) ===== -->
+            <div class="wizard-card overflow-hidden">
+              <div class="w-full overflow-x-auto">
+                <table class="w-full text-sm data-table usuarios-tabla align-middle">
+                  <thead>
+                    <tr class="border-b border-[var(--border-subtle)]">
+                      <th class="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Fecha y hora</th>
+                      <th class="px-3 py-3 text-center whitespace-nowrap">Zona</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Diligenciado por</th>
+                      <th class="px-3 py-3 text-center whitespace-nowrap">Carros que pernoctaron</th>
+                      <th class="px-3 py-3 text-center whitespace-nowrap">Carros ausentes</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Observaciones</th>
+                      <th class="px-3 py-3 text-center whitespace-nowrap">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="(r, index) in reportesPagina" :key="r.id">
+                      <tr x-transition:enter="transition ease-out duration-[200ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                        
+                        <!-- Columna Contador de Fila -->
+                        <td class="w-12 px-3 py-3 text-center font-medium text-xs text-[var(--text-muted)] whitespace-nowrap"
+                          x-text="(currentPage - 1) * pageSize + index + 1"></td>
+
+                        <!-- Fecha y Hora -->
+                        <td class="px-4 py-3 text-center font-medium text-[var(--text-primary)] whitespace-nowrap">
+                          <div class="font-bold text-xs sm:text-sm" x-text="formatearFecha(r.fecha)"></div>
+                          <div class="text-[11px] text-[var(--text-muted)] mt-0.5" x-show="r.created_at" x-text="formatearHora(r.created_at)"></div>
+                        </td>
+
+                        <!-- Zona (Pill cromático por zona) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                          <span class="status-usuario-rol select-none whitespace-nowrap"
+                            :class="r.zona === 'UBATÉ' ? 'status-rol-gesco' : (r.zona === 'SAMACÁ' ? 'status-rol-admin' : 'status-rol-vigilante')"
+                            x-text="r.zona"></span>
+                        </td>
+
+                        <!-- Diligenciado por -->
+                        <td class="px-4 py-3 text-center text-sm whitespace-nowrap">
+                          <span class="font-medium text-[var(--text-primary)]" x-text="r.reportador || '—'"></span>
+                        </td>
+
+                        <!-- Carros que pernoctaron (Pill verde estilo Activo de las demás tablas) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                          <span class="status-pill status-usuario-activo select-none shadow-sm whitespace-nowrap">
+                            <span x-text="r.total_quedados + (r.total_quedados === 1 ? ' carro' : ' carros')"></span>
+                          </span>
+                          <template x-if="r.total_foraneos > 0">
+                            <div class="mt-1">
+                              <span class="text-[10px] font-semibold text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1 select-none"
+                                :title="r.total_foraneos + (r.total_foraneos === 1 ? ' vehículo de otra sede durmió en este patio' : ' vehículos de otras sedes durmieron en este patio')">
+                                <i class="fa-solid fa-arrow-right-to-bracket text-[8px]"></i>
+                                <span x-text="'+ ' + r.total_foraneos + (r.total_foraneos === 1 ? ' foráneo' : ' foráneos')"></span>
+                              </span>
+                            </div>
+                          </template>
+                        </td>
+
+                        <!-- Carros ausentes (Pill o 0) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                          <template x-if="r.total_no_quedados > 0">
+                            <span class="status-pill status-usuario-inactivo bg-rose-500/15 text-rose-400 border border-rose-500/30 select-none shadow-sm whitespace-nowrap">
+                              <span x-text="r.total_no_quedados + (r.total_no_quedados === 1 ? ' ausente' : ' ausentes')"></span>
+                            </span>
+                          </template>
+                          <template x-if="!r.total_no_quedados || r.total_no_quedados === 0">
+                            <span class="text-xs text-[var(--text-muted)]">0 ausentes</span>
+                          </template>
+                          <template x-if="r.total_otra_zona > 0">
+                            <div class="mt-1">
+                              <span class="text-[10px] font-semibold text-amber-500/90 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1 select-none"
+                                :title="r.total_otra_zona + ' vehículo(s) asignados a ' + r.zona + ' durmieron en otro patio'">
+                                <i class="fa-solid fa-location-arrow text-[8px]"></i>
+                                <span x-text="r.total_otra_zona + (r.total_otra_zona === 1 ? ' en otra sede' : ' en otras sedes')"></span>
+                              </span>
+                            </div>
+                          </template>
+                        </td>
+
+                        <!-- Observaciones generales (Solo visibles en hover) -->
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                          <template x-if="r.observaciones && r.observaciones.trim()">
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-500 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all cursor-help select-none shadow-xs"
+                              :data-tooltip="r.observaciones"
+                              :title="r.observaciones">
+                              <i class="fa-solid fa-message text-xs"></i>
+                            </span>
+                          </template>
+                          <template x-if="!r.observaciones || !r.observaciones.trim()">
+                            <span class="text-xs text-[var(--text-muted)] select-none">—</span>
+                          </template>
+                        </td>
+
+                        <!-- Acciones (Iconos estándar del sistema: ojo cyan y papelera roja) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                          <div class="flex items-center justify-center gap-1.5 text-center whitespace-nowrap">
+                            <button type="button" @click="verCarrosZona(r.id)"
+                              class="action-icon-btn text-cyan-400 hover:text-cyan-300 transition-colors"
+                              data-tooltip="Ver carros de la zona" title="Ver carros de la zona">
+                              <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button type="button" @click="eliminarReporte(r)"
+                              class="action-icon-btn text-red-500 hover:text-red-400 transition-colors"
+                              data-tooltip="Eliminar reporte" title="Eliminar reporte">
+                              <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                          </div>
+                        </td>
+
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Mensaje de Carga -->
+              <div class="text-center py-12" x-show="cargandoReportes">
+                <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)]"></i>
+                <p class="text-xs text-[var(--text-muted)] mt-2">Cargando reportes...</p>
+              </div>
+
+              <!-- Mensaje de Estado Vacío idéntico a las demás tablas -->
+              <p class="text-sm text-[var(--text-muted)] text-center py-10" x-show="!cargandoReportes && reportesPagina.length === 0">
+                No se encontraron reportes con los filtros seleccionados.
+              </p>
+
+              <!-- ===== Paginación Estándar ===== -->
+              {% include 'components/pagination.html' %}
+            </div>
+
+          </div>
+
+
+          <!-- ============================================================
+               VISTA 2: CATÁLOGO DE VEHÍCULOS INTERNOS (PLACA, ZONA, DESCRIPCIÓN)
+          ============================================================= -->
+          <div x-show="tabActiva === 'vehiculos'" x-cloak class="space-y-4">
+
+            <!-- Encabezado con contador y botón Nuevo Vehículo -->
+            <div class="p-4 rounded-2xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-[var(--text-primary)]">Catálogo de Vehículos Internos y Zona Asignada</h3>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-white/10 text-[var(--text-muted)]"
+                    x-text="(vehiculosFiltradosCatalogo.length) + (vehiculosFiltradosCatalogo.length === 1 ? ' vehículo' : ' vehículos')"></span>
+                </div>
+                <p class="text-xs text-[var(--text-muted)] mt-0.5">Cada vehículo tiene una zona asignada oficial por defecto.</p>
+              </div>
+              <button type="button" @click="abrirModalNuevoVehiculo()"
+                class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--signal-500)] text-white shadow-sm flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity shrink-0">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nuevo Vehículo</span>
+              </button>
+            </div>
+
+            <!-- Barra de Filtros y Búsqueda de Vehículos (Placa y Zona) -->
+            <div class="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              
+              <!-- Buscador por Placa o Descripción -->
+              <div class="relative flex-1 min-w-0">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none"></i>
+                <input type="text" x-model="filtroPlacaVehiculo" @input="resetPageVehiculos()" placeholder="Buscar por placa (ej: DFD678) o descripción..."
+                  class="w-full text-xs pl-9 pr-8 py-2 rounded-xl bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder-[var(--text-muted)] uppercase placeholder:normal-case font-mono placeholder:font-sans focus:outline-none focus:border-[var(--signal-500)] transition-colors">
+                <button type="button" x-show="filtroPlacaVehiculo" @click="filtroPlacaVehiculo = ''; resetPageVehiculos()"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 cursor-pointer"
+                  title="Borrar búsqueda">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Selector de Filtro por Zona -->
+              <div class="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                <div class="relative shrink-0 w-full sm:w-48">
+                  <i class="fa-solid fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--signal-500)] pointer-events-none"></i>
+                  <select x-model="filtroZonaVehiculo" @change="resetPageVehiculos()"
+                    class="custom-styled-select w-full text-xs font-semibold pl-8 pr-7 py-2 rounded-xl">
+                    <option value="TODAS">Todas las zonas</option>
+                    <template x-for="z in zonasDisponibles" :key="z">
+                      <option :value="z" x-text="z"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <!-- Botón de Limpiar filtros si alguno está activo -->
+                <button type="button" x-show="filtroPlacaVehiculo || filtroZonaVehiculo !== 'TODAS'"
+                  @click="limpiarFiltrosVehiculos()"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-[#151921] hover:bg-slate-200 dark:hover:bg-[#1e2633] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Restablecer filtros">
+                  <i class="fa-solid fa-filter-circle-xmark"></i>
+                  <span class="hidden md:inline">Limpiar</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- ===== Tabla de Vehículos Internos (Estilo Estándar del Sistema) ===== -->
+            <div class="wizard-card overflow-hidden">
+              <div class="w-full overflow-x-auto">
+                <table class="w-full text-sm data-table usuarios-tabla align-middle">
+                  <thead>
+                    <tr class="border-b border-[var(--border-subtle)]">
+                      <th class="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Placa</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Zona Asignada Oficial</th>
+                      <th class="px-4 py-3 text-center whitespace-nowrap">Descripción</th>
+                      <th class="px-3 py-3 text-center whitespace-nowrap">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="(v, index) in vehiculosPagina" :key="v.id">
+                      <tr x-transition:enter="transition ease-out duration-[200ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                        <td class="w-12 px-3 py-3 text-center font-medium text-xs text-[var(--text-muted)] whitespace-nowrap"
+                          x-text="(currentPageVehiculos - 1) * pageSizeVehiculos + index + 1"></td>
+                        <td class="px-4 py-3 text-center font-mono font-bold text-sm text-[var(--text-primary)] whitespace-nowrap" x-text="v.placa"></td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                          <span class="status-usuario-rol select-none whitespace-nowrap"
+                            :class="v.zona === 'UBATÉ' ? 'status-rol-gesco' : (v.zona === 'SAMACÁ' ? 'status-rol-admin' : 'status-rol-vigilante')"
+                            x-text="v.zona"></span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-sm text-[var(--text-muted)]" x-text="v.descripcion || '—'"></td>
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                          <div class="flex items-center justify-center gap-1.5 text-center whitespace-nowrap">
+                            <button type="button" @click="abrirModalEditarVehiculo(v)"
+                              class="action-icon-btn text-yellow-500 hover:text-yellow-400 transition-colors cursor-pointer"
+                              data-tooltip="Editar vehículo" title="Editar vehículo">
+                              <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" @click="eliminarVehiculoInterno(v)"
+                              class="action-icon-btn text-red-500 hover:text-red-400 transition-colors cursor-pointer"
+                              data-tooltip="Eliminar vehículo" title="Eliminar vehículo">
+                              <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Mensaje de Carga -->
+              <div class="text-center py-12" x-show="cargandoVehiculos">
+                <i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--signal-500)]"></i>
+                <p class="text-xs text-[var(--text-muted)] mt-2">Cargando catálogo de vehículos...</p>
+              </div>
+
+              <!-- Mensaje de Estado Vacío -->
+              <p class="text-sm text-[var(--text-muted)] text-center py-10" x-show="!cargandoVehiculos && vehiculosFiltradosCatalogo.length === 0">
+                <span x-show="vehiculosInternos.length === 0">No hay vehículos internos registrados.</span>
+                <span x-show="vehiculosInternos.length > 0">No se encontraron vehículos con los filtros aplicados.</span>
+              </p>
+
+              <!-- ===== Paginación de Vehículos ===== -->
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[var(--border-subtle)] text-xs sm:text-sm text-[var(--text-muted)]"
+                x-show="!cargandoVehiculos && vehiculosFiltradosCatalogo.length > 0">
+                <div class="flex items-center gap-2">
+                  <span>Mostrar</span>
+                  <select x-model.number="pageSizeVehiculos" @change="resetPageVehiculos()"
+                    class="custom-styled-select rounded-lg px-2 py-1 text-xs font-semibold cursor-pointer">
+                    <option value="5">5</option>
+                    <option value="8">8</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                  </select>
+                  <span>registros</span>
+                  <span class="text-[var(--text-muted)] font-medium">· <strong class="text-[var(--text-primary)] font-semibold" x-text="rangoMostradoVehiculos"></strong></span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <button type="button" @click="goToPageVehiculos(currentPageVehiculos - 1)" :disabled="currentPageVehiculos === 1"
+                    class="action-icon-btn px-2 py-1 rounded-md cursor-pointer"
+                    :class="currentPageVehiculos === 1 ? 'opacity-40 cursor-not-allowed' : ''" title="Página anterior">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                  </button>
+                  
+                  <span class="text-[var(--text-muted)] select-none">
+                    Página <span x-text="currentPageVehiculos" class="font-semibold text-[var(--text-primary)]"></span> de <span x-text="totalPaginasVehiculos"></span>
+                  </span>
+                  
+                  <button type="button" @click="goToPageVehiculos(currentPageVehiculos + 1)" :disabled="currentPageVehiculos === totalPaginasVehiculos"
+                    class="action-icon-btn px-2 py-1 rounded-md cursor-pointer"
+                    :class="currentPageVehiculos === totalPaginasVehiculos ? 'opacity-40 cursor-not-allowed' : ''" title="Página siguiente">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </main>
+
+
+      <!-- ============================================================
+           MODAL 1: VER CARROS DE LA ZONA (DETALLE EXACTO SOLICITADO)
+      ============================================================= -->
+      <div x-show="showModalDetalle" x-cloak
+        class="modal-backdrop-wrap"
+        @keydown.escape.window="cerrarModalDetalle()">
+        
+        <div class="modal-dialog-card max-w-4xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-2xl"
+          @click.outside="cerrarModalDetalle()">
+          
+          <!-- Encabezado del Modal -->
+          <div class="modal-dialog-header p-4 sm:p-5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-slate-50 dark:bg-[#151921]">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-black bg-[var(--signal-500)] text-white" x-text="detalleReporte.reporte.zona"></span>
+                <h3 class="text-base font-bold text-[var(--text-primary)]">Vehículos en la Zona</h3>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-1.5 flex-wrap">
+                <span><i class="fa-regular fa-calendar text-[var(--signal-500)] mr-1"></i> Fecha: <strong class="text-[var(--text-primary)] capitalize" x-text="formatearFechaLarga(detalleReporte.reporte.fecha)"></strong></span>
+                <span class="hidden sm:inline">•</span>
+                <span><i class="fa-solid fa-user-shield text-[var(--signal-500)] mr-1"></i> Reportado por: <strong class="text-[var(--text-primary)]" x-text="detalleReporte.reporte.reportador"></strong></span>
+              </div>
+            </div>
+
+            <button type="button" @click="cerrarModalDetalle()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl p-1 cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Contenido scrolleable -->
+          <div class="modal-scrollable-body p-4 sm:p-5 space-y-6">
+            
+            <template x-if="cargandoDetalle">
+              <div class="text-center py-12">
+                <i class="fa-solid fa-spinner fa-spin text-3xl text-[var(--signal-500)]"></i>
+                <p class="text-xs text-[var(--text-muted)] mt-2">Consultando vehículos de la zona y validando cruces de permanencia...</p>
+              </div>
+            </template>
+
+            <template x-if="!cargandoDetalle">
+              <div class="space-y-6">
+
+                <!-- Resumen balance de la zona -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Pernoctaron</span>
+                    <span class="text-lg font-black text-emerald-500 mt-0.5" x-text="detalleReporte.resumen.total_pernoctaron_aqui || 0"></span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">En otra zona</span>
+                    <span class="text-lg font-black text-amber-500 mt-0.5" x-text="detalleReporte.resumen.total_otra_zona || 0"></span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Ausentes</span>
+                    <span class="text-lg font-black text-rose-500 mt-0.5" x-text="detalleReporte.resumen.total_no_pernoctaron || 0"></span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Externos a la zona</span>
+                    <span class="text-lg font-black text-sky-500 mt-0.5" x-text="detalleReporte.resumen.total_foraneos_aqui || 0"></span>
+                  </div>
+                </div>
+
+                <!-- 1. TABLA SUPERIOR: TODOS LOS VEHÍCULOS ASIGNADOS A LA ZONA -->
+                <div>
+                  <div class="flex items-center justify-between mb-2.5">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--signal-500)] flex items-center gap-2">
+                      <i class="fa-solid fa-truck"></i>
+                      <span>Vehículos Asignados a la Zona</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] bg-[var(--signal-500)]/20 text-[var(--signal-500)] font-bold"
+                        x-text="(detalleReporte.vehiculos_zona || []).length"></span>
+                    </h4>
+                    <span class="text-[11px] text-[var(--text-muted)] hidden sm:inline">
+                      Flota oficial de <strong class="text-[var(--text-primary)]" x-text="detalleReporte.reporte.zona"></strong> y su balance
+                    </span>
+                  </div>
+
+                  <template x-if="!detalleReporte.vehiculos_zona || detalleReporte.vehiculos_zona.length === 0">
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-center text-xs text-[var(--text-muted)]">
+                      No hay vehículos registrados para esta zona en el catálogo.
+                    </div>
+                  </template>
+
+                  <template x-if="detalleReporte.vehiculos_zona && detalleReporte.vehiculos_zona.length > 0">
+                    <div class="rounded-xl border border-[var(--border-subtle)] overflow-hidden">
+                      <table class="parqueos-table w-full text-left text-xs">
+                        <thead class="bg-slate-50 dark:bg-[#151921] border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-muted)] uppercase">
+                          <tr>
+                            <th class="py-2.5 px-3">Vehículo</th>
+                            <th class="py-2.5 px-3">Zona Asignada</th>
+                            <th class="py-2.5 px-3">Estado</th>
+                            <th class="py-2.5 px-3">Observación</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[var(--border-subtle)]">
+                          <template x-for="c in detalleReporte.vehiculos_zona" :key="c.vehiculo">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                              <td class="py-2.5 px-3 font-mono font-bold text-sm text-[var(--text-primary)]" x-text="c.vehiculo"></td>
+                              <td class="py-2.5 px-3 text-[var(--text-muted)] font-semibold" x-text="c.zona_asignada"></td>
+                              
+                              <!-- ESTADO: Pernoctó aquí (verde) | Pernoctó en otra zona (amarillo) | No pernoctó (rojo) -->
+                              <td class="py-2.5 px-3">
+                                <template x-if="c.color_estado === 'verde'">
+                                  <span class="obs-verde">
+                                    <i class="fa-solid fa-circle-check text-[10px]"></i>
+                                    <span x-text="c.estado_label || 'Pernoctó aquí'"></span>
+                                  </span>
+                                </template>
+
+                                <template x-if="c.color_estado === 'amarillo'">
+                                  <span class="obs-amarillo">
+                                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                                    <span x-text="c.estado_label || 'Pernoctó en otra zona'"></span>
+                                  </span>
+                                </template>
+
+                                <template x-if="c.color_estado === 'rojo'">
+                                  <span class="obs-rojo">
+                                    <i class="fa-solid fa-circle-xmark text-[10px]"></i>
+                                    <span x-text="c.estado_label || 'No pernoctó'"></span>
+                                  </span>
+                                </template>
+                              </td>
+
+                              <!-- OBSERVACIÓN -->
+                              <td class="py-2.5 px-3">
+                                <template x-if="c.color_observacion === 'amarillo'">
+                                  <span class="obs-amarillo">
+                                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                                    <span x-text="c.observacion"></span>
+                                  </span>
+                                </template>
+
+                                <template x-if="c.color_observacion === 'rojo'">
+                                  <span class="obs-rojo">
+                                    <i class="fa-solid fa-circle-xmark text-[10px]"></i>
+                                    <span x-text="c.observacion || 'No pernoctó en ninguna zona'"></span>
+                                  </span>
+                                </template>
+
+                                <template x-if="c.color_observacion !== 'amarillo' && c.color_observacion !== 'rojo'">
+                                  <span class="text-[var(--text-muted)] italic text-[11px]">- Sin novedad (En su zona) -</span>
+                                </template>
+                              </td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- 2. TABLA INFERIOR: CARROS DE OTRA ZONA QUE PERNOCTARON AQUÍ (FORÁNEOS) -->
+                <div>
+                  <div class="flex items-center justify-between mb-2.5 pt-2 border-t border-[var(--border-subtle)]">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                      <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                      <span>Carros de otra zona que pernoctaron aquí</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold"
+                        x-text="(detalleReporte.vehiculos_foraneos || []).length"></span>
+                    </h4>
+                    <span class="text-[11px] text-[var(--text-muted)] hidden sm:inline">
+                      Vehículos asignados a otra sede que durmieron en este patio
+                    </span>
+                  </div>
+
+                  <template x-if="!detalleReporte.vehiculos_foraneos || detalleReporte.vehiculos_foraneos.length === 0">
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-center text-xs text-[var(--text-muted)]">
+                      <i class="fa-solid fa-circle-check text-emerald-500 mr-1.5"></i> No se registraron vehículos de otras zonas pernoctando aquí ese día.
+                    </div>
+                  </template>
+
+                  <template x-if="detalleReporte.vehiculos_foraneos && detalleReporte.vehiculos_foraneos.length > 0">
+                    <div class="rounded-xl border border-[var(--border-subtle)] overflow-hidden">
+                      <table class="parqueos-table w-full text-left text-xs">
+                        <thead class="bg-slate-50 dark:bg-[#151921] border-b border-[var(--border-subtle)] text-[10px] font-bold text-[var(--text-muted)] uppercase">
+                          <tr>
+                            <th class="py-2.5 px-3">Vehículo</th>
+                            <th class="py-2.5 px-3">Zona Asignada</th>
+                            <th class="py-2.5 px-3">Estado</th>
+                            <th class="py-2.5 px-3">Observación</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[var(--border-subtle)]">
+                          <template x-for="f in detalleReporte.vehiculos_foraneos" :key="f.vehiculo">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                              <td class="py-2.5 px-3 font-mono font-bold text-sm text-[var(--text-primary)]" x-text="f.vehiculo"></td>
+                              <td class="py-2.5 px-3 text-[var(--text-muted)] font-semibold" x-text="f.zona_asignada"></td>
+                              <td class="py-2.5 px-3">
+                                <span class="obs-amarillo">
+                                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                                  <span x-text="f.estado_label || 'Pernoctó aquí (Foráneo)'"></span>
+                                </span>
+                              </td>
+                              <td class="py-2.5 px-3">
+                                <span class="obs-amarillo">
+                                  <i class="fa-solid fa-circle-info text-[10px]"></i>
+                                  <span x-text="f.observacion"></span>
+                                </span>
+                              </td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+                  </template>
+                </div>
+
+              </div>
+            </template>
+
+          </div>
+
+          <div class="modal-dialog-footer p-4 border-t border-[var(--border-subtle)] flex justify-end bg-slate-50 dark:bg-[#151921]">
+            <button type="button" @click="cerrarModalDetalle()"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-800 text-[var(--text-primary)] hover:bg-slate-300 dark:hover:bg-slate-700 transition-all cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ============================================================
+           MODAL 2: NUEVO REPORTE DE ZONA (FORMULARIO ÁGIL)
+      ============================================================= -->
+      <div x-show="showModalNuevoReporte" x-cloak
+        class="modal-backdrop-wrap"
+        @keydown.escape.window="cerrarModalNuevoReporte()">
+        
+        <div class="modal-dialog-card max-w-3xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-2xl"
+          @click.outside="cerrarModalNuevoReporte()">
+          
+          <div class="modal-dialog-header p-4 sm:p-5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-slate-50 dark:bg-[#151921]">
+            <h3 class="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <i class="fa-solid fa-clipboard-check text-[var(--signal-500)]"></i>
+              <span>Reporte Nocturno por Zona</span>
+            </h3>
+            <button type="button" @click="cerrarModalNuevoReporte()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 cursor-pointer">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-scrollable-body p-4 sm:p-5 space-y-4">
+            
+            <!-- Fecha de Registro Automática (Sin selector manual) -->
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[var(--signal-500)]/15 border border-[var(--signal-500)]/30 text-[var(--signal-500)] flex items-center justify-center">
+                  <i class="fa-regular fa-calendar-check text-sm"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Fecha de Registro</span>
+                  <span class="text-xs sm:text-sm font-bold text-[var(--text-primary)] capitalize" x-text="fechaActualFormateada"></span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Hoy
+              </span>
+            </div>
+
+            <!-- Datos de Cabecera: Zona y Reportador en Renglones Separados -->
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                  <i class="fa-solid fa-location-dot text-[var(--signal-500)] mr-1"></i> Zona a Reportar *
+                </label>
+                <div class="relative">
+                  <select x-model="formReporte.zona" @change="alCambiarZonaReporte()"
+                    class="custom-styled-select w-full rounded-xl py-2 px-3 text-xs font-bold text-[var(--text-primary)]">
+                    <template x-for="z in zonasDisponibles" :key="z">
+                      <option :value="z" x-text="z"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                  <i class="fa-solid fa-user-shield text-[var(--signal-500)] mr-1"></i> Nombre en 'Reportador' *
+                </label>
+                <input type="text" x-model="formReporte.reportador" placeholder="Ej: Vigilante Juan Pérez"
+                  class="input-field w-full rounded-xl py-2 px-3 text-xs bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)]">
+              </div>
+            </div>
+
+            <!-- Sección: Identificación y Registro de Vehículos a través del Buscador -->
+            <div class="pt-2 border-t border-[var(--border-subtle)] space-y-3.5 relative"
+              @click.outside="mostrarDropdownBusqueda = false; mostrarDropdownForaneos = false">
+
+              <!-- Encabezado con contador de vehículos registrados -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2 uppercase tracking-wide">
+                    <i class="fa-solid fa-square-parking text-[var(--signal-500)] text-sm"></i>
+                    <span>Vehículos que pernoctaron en <span class="text-[var(--signal-500)]" x-text="formReporte.zona || 'el patio'"></span></span>
+                  </span>
+                  <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
+                    Identifica e ingresa las placas. El sistema detecta automáticamente si pertenecen a la zona o son foráneas.
+                  </p>
+                </div>
+                <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-200 dark:bg-white/10 text-[var(--text-primary)] border border-[var(--border-subtle)] whitespace-nowrap"
+                  x-text="formReporte.vehiculos.length + (formReporte.vehiculos.length === 1 ? ' ingresado' : ' ingresados')"></span>
+              </div>
+
+              <!-- Buscador Principal -->
+              <div class="relative">
+                <div class="relative flex items-center">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-xs pointer-events-none"></i>
+                  
+                  <input type="text"
+                    x-model="busquedaGeneral"
+                    @focus="mostrarDropdownBusqueda = true"
+                    @input="mostrarDropdownBusqueda = true"
+                    @keydown="onKeydownBuscarGeneral($event)"
+                    placeholder="Escribe la placa (Ej: DFD678, WWW333) y presiona Enter..."
+                    autocomplete="off"
+                    class="w-full text-xs rounded-xl pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)] uppercase font-mono tracking-wider placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-[var(--signal-500)] focus:ring-1 focus:ring-[var(--signal-500)]/30">
+
+                  <!-- Botón limpiar búsqueda si hay texto -->
+                  <button type="button" x-show="busquedaGeneral" @click="busquedaGeneral = ''; mostrarDropdownBusqueda = false"
+                    class="absolute right-2.5 text-slate-400 hover:text-[var(--text-primary)] p-1 text-xs cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <!-- Dropdown de resultados con fondo 100% sólido y scroll fluido -->
+                <div x-show="mostrarDropdownBusqueda" x-cloak
+                  class="buscador-general-dropdown absolute z-50 left-0 right-0 mt-1.5 rounded-2xl shadow-2xl">
+                  
+                  <!-- Resultados filtrados del catálogo -->
+                  <template x-for="v in vehiculosFiltrados" :key="v.placa">
+                    <div @click="seleccionarVehiculoGeneral(v)"
+                      class="buscador-general-item px-3.5 py-2.5 flex items-center justify-between cursor-pointer group">
+                      
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <!-- Placa en formato ficha/badge -->
+                        <span class="font-mono font-bold text-xs sm:text-sm px-2.5 py-1 rounded-md bg-black/40 border border-white/10 text-white tracking-wider group-hover:border-[var(--signal-500)]/60 group-hover:text-[var(--signal-500)] transition-colors shrink-0"
+                          x-text="v.placa"></span>
+                        
+                        <!-- Auto-detección: Si es de la zona seleccionada -->
+                        <template x-if="esDeEstaZona(v.zona)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 truncate">
+                            <i class="fa-solid fa-circle-check text-[10px] text-emerald-400 shrink-0"></i>
+                            <span class="truncate">De la zona (<span x-text="v.zona"></span>)</span>
+                          </span>
+                        </template>
+
+                        <!-- Auto-detección: Si es foráneo (otra zona) -->
+                        <template x-if="!esDeEstaZona(v.zona)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 truncate">
+                            <i class="fa-solid fa-triangle-exclamation text-[10px] text-amber-400 shrink-0"></i>
+                            <span class="truncate">Foráneo (<span x-text="v.zona"></span>)</span>
+                          </span>
+                        </template>
+                      </div>
+
+                      <!-- Estado: En lista o + Registrar en píldora interactiva -->
+                      <div class="shrink-0 ml-2">
+                        <template x-if="estaEnLista(v.placa)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            <i class="fa-solid fa-check text-[10px]"></i>
+                            <span>Ya ingresado</span>
+                          </span>
+                        </template>
+                        <template x-if="!estaEnLista(v.placa)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/5 border border-white/10 text-slate-300 group-hover:bg-[var(--signal-500)] group-hover:text-white group-hover:border-[var(--signal-500)] group-hover:shadow-[0_0_12px_rgba(249,115,22,0.4)] transition-all">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>Registrar</span>
+                          </span>
+                        </template>
+                      </div>
+
+                    </div>
+                  </template>
+
+                  <!-- Si no coincide en el catálogo oficial: permitir adjuntar placa manual -->
+                  <template x-if="vehiculosFiltrados.length === 0 && busquedaGeneral.trim()">
+                    <div @click="seleccionarVehiculoGeneral(busquedaGeneral.trim())"
+                      class="buscador-general-item px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-xs group">
+                      <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                          <i class="fa-solid fa-plus text-[10px]"></i>
+                        </div>
+                        <span class="text-slate-300">Registrar placa manual: <strong class="font-mono text-white text-xs sm:text-sm tracking-wider px-1.5 py-0.5 rounded bg-black/40 border border-white/10" x-text="busquedaGeneral.trim().toUpperCase()"></strong></span>
+                      </div>
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-[9px]"></i> Como foráneo
+                      </span>
+                    </div>
+                  </template>
+
+                  <!-- Si la lista está vacía y no ha escrito -->
+                  <template x-if="vehiculosFiltrados.length === 0 && !busquedaGeneral.trim()">
+                    <div class="py-5 px-3 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-1.5">
+                      <i class="fa-solid fa-car-side text-slate-500 text-base"></i>
+                      <span>Escribe la placa de un vehículo para buscarlo y registrarlo.</span>
+                    </div>
+                  </template>
+
+                </div>
+              </div>
+
+              <!-- Estado Vacío: Ningún vehículo ingresado aún -->
+              <template x-if="formReporte.vehiculos.length === 0">
+                <div class="flex flex-col items-center justify-center py-9 px-4 rounded-2xl border border-dashed border-[var(--border-subtle)] bg-slate-50/50 dark:bg-[#151921]/60 text-center">
+                  <div class="w-12 h-12 rounded-2xl bg-slate-200/60 dark:bg-white/[0.05] border border-[var(--border-subtle)] flex items-center justify-center text-slate-400 mb-3.5 shadow-sm">
+                    <i class="fa-solid fa-car-side text-xl text-slate-400"></i>
+                  </div>
+                  <p class="font-medium text-xs sm:text-sm text-[var(--text-primary)]">Ningún vehículo registrado en este reporte aún.</p>
+                </div>
+              </template>
+
+              <!-- Listado de vehículos ingresados -->
+              <div class="space-y-2 lista-vehiculos-ingresados pr-1" x-show="formReporte.vehiculos.length > 0">
+                <template x-for="(item, idx) in formReporte.vehiculos" :key="item.vehiculo">
+                  <div class="p-2.5 rounded-xl border flex items-center justify-between gap-3 bg-slate-50 dark:bg-[#151921] border-[var(--border-subtle)]">
+                    
+                    <div class="flex items-center gap-2.5">
+                      <span class="font-mono font-bold text-xs sm:text-sm text-[var(--text-primary)] tracking-wider" x-text="item.vehiculo"></span>
+                      
+                      <!-- Auto-detección visual de la zona -->
+                      <template x-if="!item.es_foraneo">
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <i class="fa-solid fa-circle-check text-[8px]"></i>
+                          <span>De la zona (<span x-text="item.zona_asignada"></span>)</span>
+                        </span>
+                      </template>
+                      <template x-if="item.es_foraneo">
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                          <i class="fa-solid fa-triangle-exclamation text-[8px]"></i>
+                          <span>Asignado a <span x-text="item.zona_asignada"></span></span>
+                        </span>
+                      </template>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-check text-[10px]"></i> Pernoctó
+                      </span>
+
+                      <!-- Botón eliminar de este reporte -->
+                      <button type="button" @click="quitarVehiculoDeReporte(item)" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="Quitar de este reporte">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                      </button>
+                    </div>
+
+                  </div>
+                </template>
+              </div>
+
+            </div>
+
+            <!-- Observaciones del Turno -->
+            <div>
+              <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Observaciones Generales</label>
+              <textarea x-model="formReporte.observaciones" rows="2" placeholder="Novedades del turno..."
+                class="w-full text-xs rounded-xl py-2 px-3 bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)]"></textarea>
+            </div>
+
+          </div>
+
+          <div class="modal-dialog-footer p-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2.5 bg-slate-50 dark:bg-[#151921]">
+            <button type="button" @click="cerrarModalNuevoReporte()"
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-[var(--text-muted)] hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" @click="guardarReporteZona()" :disabled="guardandoReporte"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-[var(--signal-500)] hover:bg-[var(--signal-600)] text-white shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+              <i x-show="guardandoReporte" class="fa-solid fa-spinner fa-spin"></i>
+              <span x-text="guardandoReporte ? 'Guardando...' : 'Guardar Reporte'"></span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ============================================================
+           MODAL 3: CREAR / EDITAR VEHÍCULO INTERNO (PLACA, ZONA, DESCRIPCIÓN)
+      ============================================================= -->
+      <div x-show="showModalVehiculo" x-cloak
+        class="modal-backdrop-wrap"
+        @keydown.escape.window="cerrarModalVehiculo()">
+        
+        <div class="modal-dialog-card max-w-md bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-2xl p-5 space-y-4"
+          @click.outside="cerrarModalVehiculo()">
+          
+          <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
+            <h3 class="text-sm font-bold text-[var(--text-primary)]" x-text="editandoVehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo Interno'"></h3>
+            <button type="button" @click="cerrarModalVehiculo()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Placa *</label>
+              <input type="text" x-model="formVehiculo.placa" placeholder="Ej: INC-001"
+                class="input-field w-full rounded-xl py-2 px-3 text-xs font-mono font-bold uppercase bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)]">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Zona Asignada Oficial *</label>
+              <select x-model="formVehiculo.zona"
+                class="custom-styled-select w-full rounded-xl py-2 px-3 text-xs font-bold uppercase cursor-pointer">
+                <option value="">-- Seleccionar Zona --</option>
+                <template x-for="z in zonasDisponibles" :key="z">
+                  <option :value="z" x-text="z" :selected="formVehiculo.zona === z"></option>
+                </template>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Descripción</label>
+              <textarea x-model="formVehiculo.descripcion" rows="2" placeholder="Opcional..."
+                class="w-full rounded-xl py-2 px-3 text-xs bg-slate-50 dark:bg-[#151921] border border-[var(--border-subtle)] text-[var(--text-primary)]"></textarea>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
+            <button type="button" @click="cerrarModalVehiculo()" class="px-4 py-2 rounded-xl text-xs bg-slate-200 dark:bg-slate-800 text-[var(--text-muted)]">
+              Cancelar
+            </button>
+            <button type="button" @click="guardarVehiculoInterno()" :disabled="guardandoVehiculo"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-[var(--signal-500)] text-white shadow-sm disabled:opacity-50">
+              Guardar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ============================================================
+           MODAL 4: EXPORTAR AUDITORÍA A EXCEL (POR MES O PERIODO)
+      ============================================================= -->
+      <div x-show="showModalExportarExcel" x-cloak
+        class="modal-backdrop-wrap"
+        @keydown.escape.window="cerrarModalExportarExcel()">
+        
+        <div class="modal-dialog-card max-w-lg bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] shadow-2xl"
+          @click.outside="if (!$event.target.closest('.flatpickr-calendar')) cerrarModalExportarExcel()">
+          
+          <!-- Encabezado del Modal -->
+          <div class="modal-dialog-header p-4 sm:p-5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-slate-50 dark:bg-[#151921]">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-file-excel"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-[var(--text-primary)]">Exportar Auditoría a Excel</h3>
+                <p class="text-xs text-[var(--text-muted)]">Elige el mes o periodo de fechas a descargar</p>
+              </div>
+            </div>
+            <button type="button" @click="cerrarModalExportarExcel()" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl p-1 cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Contenido del Modal -->
+          <div class="modal-scrollable-body p-5 space-y-4">
+
+            <!-- Switcher de Tipo de Selección -->
+            <div>
+              <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase mb-2">
+                <i class="fa-regular fa-calendar text-[var(--signal-500)] mr-1"></i> Tipo de Selección
+              </label>
+              <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-[#151921] border border-[var(--border-subtle)]">
+                <button type="button" @click="formExcel.modo = 'mes'"
+                  class="py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                  :class="formExcel.modo === 'mes' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  <i class="fa-regular fa-calendar-days text-[11px]"></i>
+                  <span>Por Mes</span>
+                </button>
+                <button type="button" @click="formExcel.modo = 'rango'; $nextTick(() => sincronizarFlatpickrExcel())"
+                  class="py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                  :class="formExcel.modo === 'rango' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  <i class="fa-solid fa-calendar-week text-[11px]"></i>
+                  <span>Rango</span>
+                </button>
+                <button type="button" @click="formExcel.modo = 'rapido'"
+                  class="py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                  :class="formExcel.modo === 'rapido' ? 'bg-[var(--signal-500)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  <i class="fa-solid fa-bolt text-[11px]"></i>
+                  <span>Rápido</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- MODO 1: POR MES (SELECTS DE MES Y AÑO) -->
+            <div x-show="formExcel.modo === 'mes'" x-cloak class="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-[#151921]/60 border border-[var(--border-subtle)]">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Select Mes -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar text-[var(--signal-500)]"></i>
+                    <span>Mes</span>
+                  </label>
+                  <div class="relative">
+                    <select x-model="formExcel.mesNumero"
+                      @change="formExcel.mes = `${formExcel.anio}-${formExcel.mesNumero}`"
+                      class="custom-styled-select w-full text-xs font-semibold px-3 py-2.5 rounded-xl">
+                      <template x-for="m in mesesDisponibles" :key="m.valor">
+                        <option :value="m.valor" x-text="m.nombre" :selected="m.valor === formExcel.mesNumero"></option>
+                      </template>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Select Año -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-check text-[var(--signal-500)]"></i>
+                    <span>Año</span>
+                  </label>
+                  <div class="relative">
+                    <select x-model="formExcel.anio"
+                      @change="formExcel.mes = `${formExcel.anio}-${formExcel.mesNumero}`"
+                      class="custom-styled-select w-full text-xs font-semibold px-3 py-2.5 rounded-xl">
+                      <template x-for="a in aniosDisponibles" :key="a">
+                        <option :value="a.toString()" x-text="a" :selected="a.toString() === formExcel.anio.toString()"></option>
+                      </template>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Indicador del mes seleccionado y botones rápidos -->
+              <div class="flex items-center justify-between pt-1 text-xs border-t border-[var(--border-subtle)]/60">
+                <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                  <span>Selección:</span>
+                  <span class="font-bold text-[var(--signal-500)]" x-text="getNombreMesSeleccionadoExcel() + ' ' + formExcel.anio"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" @click="setMesActualExcel()"
+                    class="text-[11px] font-semibold text-[var(--signal-500)] hover:underline cursor-pointer">
+                    Mes actual
+                  </button>
+                  <span class="text-[var(--text-muted)]">•</span>
+                  <button type="button" @click="setMesAnteriorExcel()"
+                    class="text-[11px] font-semibold text-[var(--signal-500)] hover:underline cursor-pointer">
+                    Mes anterior
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODO 2: RANGO DE FECHAS (CALENDARIOS FLATPICKR ESTILIZADOS) -->
+            <div x-show="formExcel.modo === 'rango'" x-cloak class="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-[#151921]/60 border border-[var(--border-subtle)]">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar text-[var(--signal-500)]"></i>
+                    <span>Fecha Inicio (Desde)</span>
+                  </label>
+                  <div class="relative cursor-pointer" @click="$refs.fpExcelDesde && $refs.fpExcelDesde._flatpickr && $refs.fpExcelDesde._flatpickr.open()">
+                    <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--signal-500)] pointer-events-none z-10"></i>
+                    <input type="text" x-ref="fpExcelDesde"
+                      x-init="initFlatpickrExcelDesde($el)"
+                      placeholder="dd/mm/aaaa"
+                      readonly
+                      class="w-full text-xs font-semibold pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--signal-500)] cursor-pointer shadow-xs transition-all">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar-check text-[var(--signal-500)]"></i>
+                    <span>Fecha Fin (Hasta)</span>
+                  </label>
+                  <div class="relative cursor-pointer" @click="$refs.fpExcelHasta && $refs.fpExcelHasta._flatpickr && $refs.fpExcelHasta._flatpickr.open()">
+                    <i class="fa-regular fa-calendar-check absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--signal-500)] pointer-events-none z-10"></i>
+                    <input type="text" x-ref="fpExcelHasta"
+                      x-init="initFlatpickrExcelHasta($el)"
+                      placeholder="dd/mm/aaaa"
+                      readonly
+                      class="w-full text-xs font-semibold pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-[#1a1f26] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--signal-500)] cursor-pointer shadow-xs transition-all">
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-1 text-xs border-t border-[var(--border-subtle)]/60">
+                <span class="text-[11px] text-[var(--text-muted)]" x-show="formExcel.fechaInicio || formExcel.fechaFin">
+                  Rango: <strong class="text-[var(--signal-500)]" x-text="formatearRangoTextoExcel()"></strong>
+                </span>
+                <button type="button" x-show="formExcel.fechaInicio || formExcel.fechaFin"
+                  @click="limpiarRangoFechasExcel()"
+                  class="text-[11px] font-semibold text-[var(--signal-500)] hover:underline cursor-pointer ml-auto">
+                  Limpiar fechas
+                </button>
+              </div>
+            </div>
+
+            <!-- MODO 3: PERIODOS RÁPIDOS -->
+            <div x-show="formExcel.modo === 'rapido'" x-cloak class="space-y-2 p-4 rounded-xl bg-slate-50 dark:bg-[#151921]/60 border border-[var(--border-subtle)]">
+              <label class="block text-xs font-bold text-[var(--text-primary)] mb-2">Selecciona un periodo predeterminado</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button type="button" @click="setPeriodoRapidoExcel('hoy')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === 'hoy' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Hoy
+                </button>
+                <button type="button" @click="setPeriodoRapidoExcel('ayer')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === 'ayer' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Ayer
+                </button>
+                <button type="button" @click="setPeriodoRapidoExcel('7dias')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === '7dias' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Últimos 7 días
+                </button>
+                <button type="button" @click="setPeriodoRapidoExcel('este_mes')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === 'este_mes' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Este mes
+                </button>
+                <button type="button" @click="setPeriodoRapidoExcel('mes_anterior')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === 'mes_anterior' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Mes anterior
+                </button>
+                <button type="button" @click="setPeriodoRapidoExcel('todos')"
+                  class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer"
+                  :class="formExcel.rapido === 'todos' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold' : 'bg-white dark:bg-[#1a1f26] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'">
+                  Histórico (Todo)
+                </button>
+              </div>
+            </div>
+
+            <!-- Selector de Zona a Exportar -->
+            <div>
+              <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                <i class="fa-solid fa-location-dot text-[var(--signal-500)] mr-1"></i> Filtrar por Zona
+              </label>
+              <div class="relative">
+                <select x-model="formExcel.zona"
+                  class="custom-styled-select w-full text-xs font-semibold px-3 py-2.5 rounded-xl">
+                  <option value="TODAS">Todas las zonas (Consolidado general)</option>
+                  <template x-for="z in zonasDisponibles" :key="z">
+                    <option :value="z" x-text="z"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+
+            <!-- Banner Informativo -->
+            <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 flex items-start gap-2.5">
+              <i class="fa-solid fa-circle-info text-emerald-500 mt-0.5 text-sm shrink-0"></i>
+              <div class="leading-relaxed">
+                El archivo Excel se generará con <strong>2 hojas de auditoría</strong>:
+                <ul class="list-disc list-inside mt-1 space-y-0.5 text-[11px] opacity-90">
+                  <li><strong>Resumen de Reportes:</strong> Totales de pernoctas, ausencias y anomalías por zona.</li>
+                  <li><strong>Auditoría Detallada:</strong> Verificación individual de cada vehículo con estados.</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Pie del Modal -->
+          <div class="modal-dialog-footer p-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2.5 bg-slate-50 dark:bg-[#151921]">
+            <button type="button" @click="cerrarModalExportarExcel()"
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-[var(--text-muted)] hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" @click="ejecutarDescargaExcel()" :disabled="exportandoExcelModal"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              <i class="fa-solid" :class="exportandoExcelModal ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i>
+              <span x-text="exportandoExcelModal ? 'Generando Excel...' : 'Descargar Excel (.xlsx)'"></span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+           MODAL 5: CONFIRMACIÓN DE ELIMINACIÓN (ESTILO TICKET)
+           ============================================================ -->
+      <div x-show="showModalConfirmarEliminar" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto"
+        style="background-color: rgba(10, 15, 29, 0.75); backdrop-filter: blur(6px);"
+        @keydown.escape.window="cerrarModalConfirmarEliminar()">
+
+        <div x-show="showModalConfirmarEliminar"
+          @click.outside="cerrarModalConfirmarEliminar()"
+          x-transition:enter="transition ease-out duration-250"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+          x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+          class="modal-panel modal-ticket w-full max-w-md pt-7 px-6 sm:px-8 pb-9 relative text-center flex flex-col" x-cloak>
+
+          <!-- Botón de Cerrar (X) -->
+          <button type="button" @click="cerrarModalConfirmarEliminar()" :disabled="modalConfirmar.eliminando"
+            class="subtitles-modal absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center hover:text-[var(--paper-ink)] hover:bg-black/5 dark:hover:bg-white/10 transition-all z-20 cursor-pointer"
+            title="Cerrar modal">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+
+          <!-- Encabezado estilo Ticket con Estampa de Peligro -->
+          <div class="text-center mb-4">
+            <div class="modal-stamp danger mb-3">
+              <i class="fa-solid fa-trash-can text-2xl text-[var(--paper-err)]"></i>
+            </div>
+            <h2 class="font-display font-bold text-2xl text-[var(--paper-ink)] tracking-tight mb-1"
+              x-text="modalConfirmar.titulo || '¿Confirmar eliminación?'"></h2>
+            <p class="text-xs text-[var(--paper-muted)] leading-relaxed"
+              x-text="modalConfirmar.subtitulo || 'Esta acción no se puede deshacer.'"></p>
+          </div>
+
+          <!-- Mensaje de error si la API falla -->
+          <div x-show="modalConfirmar.errorMsg" x-cloak
+            class="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 text-left">
+            <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+            <span x-text="modalConfirmar.errorMsg"></span>
+          </div>
+
+          <!-- Detalle del ítem a eliminar en formato Ticket / Recibo limpio -->
+          <div class="text-left border-y border-dashed border-[var(--paper-shadow)] py-3 my-2 space-y-2.5">
+            <!-- Caso Reporte de Parqueo -->
+            <template x-if="modalConfirmar.tipo === 'reporte'">
+              <div class="space-y-2">
+                <div class="grid grid-cols-2 gap-3 py-1 border-b border-dashed border-[var(--paper-shadow)]">
+                  <div>
+                    <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Zona / Sede</span>
+                    <span class="font-bold text-[var(--paper-ink)] text-sm tracking-wide" x-text="modalConfirmar.zona || '—'"></span>
+                  </div>
+                  <div>
+                    <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Fecha Auditoría</span>
+                    <span class="font-semibold text-[var(--paper-ink)] text-sm" x-text="modalConfirmar.fecha || '—'"></span>
+                  </div>
+                </div>
+                <div class="py-1">
+                  <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Diligenciado por</span>
+                  <span class="text-xs font-semibold text-[var(--paper-ink)]" x-text="modalConfirmar.reportador || '—'"></span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Caso Vehículo del Catálogo -->
+            <template x-if="modalConfirmar.tipo === 'vehiculo'">
+              <div class="space-y-2">
+                <div class="grid grid-cols-2 gap-3 py-1 border-b border-dashed border-[var(--paper-shadow)]">
+                  <div>
+                    <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Placa</span>
+                    <span class="font-mono font-bold text-[var(--paper-ink)] text-base tracking-wider" x-text="modalConfirmar.placa || '—'"></span>
+                  </div>
+                  <div>
+                    <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Zona Asignada</span>
+                    <span class="font-bold text-[var(--paper-ink)] text-sm" x-text="modalConfirmar.zona || '—'"></span>
+                  </div>
+                </div>
+                <div class="py-1" x-show="modalConfirmar.descripcion">
+                  <span class="subtitles-modal text-[10px] font-bold tracking-wider uppercase block">Descripción</span>
+                  <span class="text-xs text-[var(--paper-ink)]" x-text="modalConfirmar.descripcion || '—'"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Alerta informativa de irreversibilidad -->
+          <div class="p-3 my-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5 text-left">
+            <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+            <span>Esta acción es irreversible y eliminará el registro permanentemente del sistema.</span>
+          </div>
+
+          <!-- Pie del modal estilo Ticket con botones Cancelar / Eliminar -->
+          <div class="flex items-center justify-center gap-3 pt-3 mt-1">
+            <button type="button" @click="cerrarModalConfirmarEliminar()" :disabled="modalConfirmar.eliminando"
+              class="modal-btn-cancel flex-1 cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" @click="ejecutarEliminacionConfirmada()" :disabled="modalConfirmar.eliminando"
+              class="modal-btn-confirm flex-1 flex items-center justify-center gap-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white"
+              :class="modalConfirmar.eliminando ? 'opacity-70 cursor-not-allowed' : ''">
+              <i class="fa-solid fa-spinner fa-spin text-xs" x-show="modalConfirmar.eliminando"></i>
+              <i class="fa-solid fa-trash-can text-xs" x-show="!modalConfirmar.eliminando"></i>
+              <span x-text="modalConfirmar.eliminando ? 'Eliminando...' : 'Sí, eliminar'"></span>
+            </button>
+          </div>
+
+          <!-- Borde dentado característico de ticket -->
+          <div class="modal-serrated"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}
