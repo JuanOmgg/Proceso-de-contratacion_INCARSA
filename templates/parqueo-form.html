@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reporte de Parqueo Nocturno · PSI</title>
+
+  <!-- Favicon / Ícono de la pestaña del navegador -->
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', path='img/icono.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icono.png') }}">
+
+  <!-- Tailwind CSS Compilado Local -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tailwind.css') }}">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Google Fonts: Space Grotesk + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos del Formulario con estética oscura y glow -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}?v=3.8">
+
+  <style>
+    .vehiculo-item-card {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-toggle-quedo {
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-toggle-quedo.active-si {
+      background-color: rgba(16, 185, 129, 0.25) !important;
+      color: #34d399 !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+    .btn-toggle-quedo.active-no {
+      background-color: rgba(239, 68, 68, 0.2) !important;
+      color: #f87171 !important;
+      border-color: rgba(239, 68, 68, 0.5) !important;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+    }
+    [x-cloak] {
+      display: none !important;
+    }
+
+    /* Estilos de alta estética para selects y opciones en modo oscuro */
+    select.custom-styled-select,
+    select.input-field {
+      background-color: #151921 !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 0.75rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 0.85rem center !important;
+      background-size: 0.95rem 0.95rem !important;
+      padding-right: 2.5rem !important;
+      transition: all 0.2s ease !important;
+      outline: none !important;
+    }
+    select.custom-styled-select:focus,
+    select.input-field:focus {
+      border-color: var(--signal-500) !important;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25) !important;
+    }
+    select option {
+      background-color: #151921 !important;
+      color: #f8fafc !important;
+      padding: 10px 14px !important;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+    }
+    select option:hover,
+    select option:focus,
+    select option:checked {
+      background-color: #242c38 !important;
+      color: #fb923c !important;
+    }
+
+    /* Estilos del dropdown del buscador general y scroll */
+    .buscador-general-dropdown {
+      background-color: #11151f !important;
+      background: #11151f !important;
+      opacity: 1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 0, 0, 0.85) !important;
+      border-radius: 1rem !important;
+      z-index: 60 !important;
+      max-height: 275px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+      padding: 0.45rem !important;
+    }
+    .buscador-general-dropdown::-webkit-scrollbar {
+      width: 6px !important;
+    }
+    .buscador-general-dropdown::-webkit-scrollbar-track {
+      background: rgba(15, 20, 28, 0.75) !important;
+      border-radius: 9999px !important;
+      margin: 6px 0 !important;
+    }
+    .buscador-general-dropdown::-webkit-scrollbar-thumb {
+      background: rgba(249, 115, 22, 0.45) !important;
+      border-radius: 9999px !important;
+    }
+    .buscador-general-dropdown::-webkit-scrollbar-thumb:hover {
+      background: rgba(249, 115, 22, 0.85) !important;
+    }
+    .buscador-general-item {
+      background-color: rgba(255, 255, 255, 0.03) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border-radius: 0.65rem !important;
+      margin-bottom: 0.35rem !important;
+      transition: all 0.16s ease !important;
+    }
+    .buscador-general-item:last-child {
+      margin-bottom: 0 !important;
+    }
+    .buscador-general-item:hover {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(249, 115, 22, 0.45) !important;
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.6) !important;
+      transform: translateX(2px);
+    }
+    .lista-vehiculos-ingresados {
+      max-height: 280px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+    }
+    .lista-vehiculos-ingresados::-webkit-scrollbar {
+      width: 5px !important;
+    }
+    .lista-vehiculos-ingresados::-webkit-scrollbar-track {
+      background: rgba(15, 20, 28, 0.4) !important;
+      border-radius: 9999px !important;
+    }
+    .lista-vehiculos-ingresados::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border-radius: 9999px !important;
+    }
+    .lista-vehiculos-ingresados::-webkit-scrollbar-thumb:hover {
+      background: rgba(249, 115, 22, 0.6) !important;
+    }
+
+    /* Ancho amplio y cómodo para el formulario de parqueo */
+    .login-glow-wrap {
+      max-width: 860px !important;
+      width: 100% !important;
+    }
+  </style>
+
+  <!-- Script de la lógica pública de parqueo -->
+  <script src="{{ url_for('static', path='js/parqueo-form.js') }}?v=2.3"></script>
+
+  <!-- Alpine.js Core Local -->
+  <script defer src="{{ url_for('static', path='js/vendor/alpine-collapse.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/vendor/alpine.min.js') }}"></script>
+</head>
+
+<body class="antialiased">
+<div class="login-page min-h-screen py-6 px-3 sm:px-4" x-data="reporteParqueoPublico()">
+  <div class="login-page-stripes"></div>
+
+  <!-- Marca / Logo superior -->
+  <div class="error-brand-mark mb-4">
+    <img src="{{ url_for('static', path='img/logo-sidebar.png') }}" alt="INCARSA" 
+      class="h-10 w-auto object-contain select-none"
+      style="mix-blend-mode: screen;">
+  </div>
+
+  <div class="login-glow-wrap anim-fade-up w-full mx-auto" style="max-width: 860px !important;">
+    <div class="login-glow-border">
+      <div class="login-form-card p-5 sm:p-8">
+
+        <!-- ============ ESTADO 1: FORMULARIO DE REPORTE NOCTURNO ============ -->
+        <div x-show="!submitted">
+
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--signal-500)]/15 border border-[var(--signal-500)]/30 text-[var(--signal-500)] mb-3 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+              <i class="fa-solid fa-square-parking text-2xl"></i>
+            </div>
+            <h2 class="font-display font-semibold text-2xl text-[var(--ink-900)] tracking-tight">Reporte Nocturno de Parqueo</h2>
+            <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+              Registro de permanencia de vehículos por zona para vigilancia y control
+            </p>
+          </div>
+
+          <form @submit.prevent="submit()" class="space-y-5">
+
+            <!-- Alerta de error -->
+            <div class="login-alert-error rounded-xl text-xs px-3.5 py-2.5 flex items-center gap-2.5"
+                 x-show="error" x-cloak>
+              <i class="fa-solid fa-triangle-exclamation text-sm text-red-400 flex-shrink-0"></i>
+              <span x-text="error" class="font-medium leading-snug"></span>
+            </div>
+
+            <!-- Paso 1: Fecha Automática de Registro (Sin selector manual) -->
+            <div class="p-3.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[var(--signal-500)]/15 border border-[var(--signal-500)]/30 text-[var(--signal-500)] flex items-center justify-center">
+                  <i class="fa-regular fa-calendar-check text-sm"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Fecha de Registro</span>
+                  <span class="text-xs sm:text-sm font-bold text-white capitalize" x-text="fechaActualFormateada"></span>
+                </div>
+              </div></br>
+            </div>
+
+            <!-- Zona a Reportar y Reportador en renglones separados -->
+            <div class="space-y-3.5 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+              
+              <!-- Renglón 1: Zona a Reportar -->
+              <div>
+                <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                  <i class="fa-solid fa-location-dot text-[var(--signal-500)] mr-1"></i> Zona a Reportar *
+                </label>
+                <div class="relative">
+                  <select x-model="form.zona" @change="alCambiarZona()" required
+                    class="custom-styled-select w-full rounded-xl px-3.5 py-2.5 text-xs font-bold">
+                    <template x-for="z in zonasDisponibles" :key="z">
+                      <option :value="z" x-text="z"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Renglón 2: Reportador -->
+              <div>
+                <label class="block text-[11px] font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                  <i class="fa-solid fa-user-shield text-[var(--signal-500)] mr-1"></i>Diligenciado por *
+                </label>
+                <input type="text" x-model="form.reportador" required placeholder="Escriba aqui..."
+                  class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs">
+              </div>
+
+            </div>
+
+            <!-- Sección: Identificación y Registro de Vehículos a través del Buscador -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3.5 relative"
+              @click.outside="mostrarDropdownBusqueda = false; mostrarDropdownForaneos = false">
+
+              <!-- Encabezado con contador de vehículos registrados -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-2 uppercase tracking-wide">
+                    <i class="fa-solid fa-square-parking text-[var(--signal-500)] text-base"></i>
+                    <span>Vehículos que pernoctaron en <span class="text-[var(--signal-500)]" x-text="form.zona || 'el patio'"></span></span>
+                  </label>
+                </div>
+
+                <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white border border-white/10 whitespace-nowrap"
+                  x-text="form.vehiculos.length + (form.vehiculos.length === 1 ? ' ingresado' : ' ingresados')">
+                </span>
+              </div>
+
+              <!-- Buscador Principal e Identificador de Placas -->
+              <div class="relative">
+                <div class="relative flex items-center">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-sm pointer-events-none"></i>
+                  
+                  <input type="text"
+                    x-model="busquedaGeneral"
+                    @focus="mostrarDropdownBusqueda = true"
+                    @input="mostrarDropdownBusqueda = true"
+                    @keydown="onKeydownBuscarGeneral($event)"
+                    placeholder="     Escribe la placa..."
+                    autocomplete="off"
+                    style="padding-left: 2.6rem !important;"
+                    class="input-field w-full rounded-xl pr-9 py-2.5 text-xs sm:text-sm uppercase font-mono tracking-wider bg-black/40 border border-white/15 text-white placeholder:normal-case placeholder:font-sans placeholder:tracking-normal focus:border-[var(--signal-500)] focus:ring-1 focus:ring-[var(--signal-500)]/30">
+
+                  <!-- Botón limpiar búsqueda si hay texto -->
+                  <button type="button" x-show="busquedaGeneral" @click="busquedaGeneral = ''; mostrarDropdownBusqueda = false"
+                    class="absolute right-2.5 text-slate-400 hover:text-white p-1 text-xs cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <!-- Dropdown de sugerencias del catálogo con fondo 100% sólido y scroll fluido -->
+                <div x-show="mostrarDropdownBusqueda" x-cloak
+                  class="buscador-general-dropdown absolute z-50 left-0 right-0 mt-1.5 rounded-2xl shadow-2xl">
+                  
+                  <!-- Resultados del catálogo general -->
+                  <template x-for="v in vehiculosFiltrados" :key="v.placa">
+                    <div @click="seleccionarVehiculoGeneral(v)"
+                      class="buscador-general-item px-3.5 py-2.5 flex items-center justify-between cursor-pointer group">
+                      
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <!-- Placa en formato ficha/badge -->
+                        <span class="font-mono font-bold text-xs sm:text-sm px-2.5 py-1 rounded-md bg-black/40 border border-white/10 text-white tracking-wider group-hover:border-[var(--signal-500)]/60 group-hover:text-[var(--signal-500)] transition-colors shrink-0"
+                          x-text="v.placa"></span>
+                        
+                        <!-- Auto-detección: si es de la zona seleccionada -->
+                        <template x-if="esDeEstaZona(v.zona)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 truncate">
+                            <i class="fa-solid fa-circle-check text-[10px] text-emerald-400 shrink-0"></i>
+                            <span class="truncate">De la zona (<span x-text="v.zona"></span>)</span>
+                          </span>
+                        </template>
+
+                        <!-- Auto-detección: si es foráneo (otra zona) -->
+                        <template x-if="!esDeEstaZona(v.zona)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 truncate">
+                            <i class="fa-solid fa-triangle-exclamation text-[10px] text-amber-400 shrink-0"></i>
+                            <span class="truncate">Pertenece a <span x-text="v.zona"></span></span>
+                          </span>
+                        </template>
+                      </div>
+
+                      <!-- Estado: En lista o + Registrar en píldora interactiva -->
+                      <div class="shrink-0 ml-2">
+                        <template x-if="estaEnLista(v.placa)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            <i class="fa-solid fa-check text-[10px]"></i>
+                            <span>Ya ingresado</span>
+                          </span>
+                        </template>
+                        <template x-if="!estaEnLista(v.placa)">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/5 border border-white/10 text-slate-300 group-hover:bg-[var(--signal-500)] group-hover:text-white group-hover:border-[var(--signal-500)] group-hover:shadow-[0_0_12px_rgba(249,115,22,0.4)] transition-all">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>Registrar</span>
+                          </span>
+                        </template>
+                      </div>
+
+                    </div>
+                  </template>
+
+                  <!-- Si no coincide en el catálogo oficial: permitir registrar placa manual -->
+                  <template x-if="vehiculosFiltrados.length === 0 && busquedaGeneral.trim()">
+                    <div @click="seleccionarVehiculoGeneral(busquedaGeneral.trim())"
+                      class="buscador-general-item px-3.5 py-2.5 cursor-pointer flex items-center justify-between text-xs group">
+                      <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                          <i class="fa-solid fa-plus text-[10px]"></i>
+                        </div>
+                        <span class="text-slate-300">Registrar placa manual: <strong class="font-mono text-white text-xs sm:text-sm tracking-wider px-1.5 py-0.5 rounded bg-black/40 border border-white/10" x-text="busquedaGeneral.trim().toUpperCase()"></strong></span>
+                      </div>
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-[9px]"></i> Como foráneo
+                      </span>
+                    </div>
+                  </template>
+
+                  <!-- Si la lista está vacía y no ha escrito -->
+                  <template x-if="vehiculosFiltrados.length === 0 && !busquedaGeneral.trim()">
+                    <div class="py-5 px-3 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-1.5">
+                      <i class="fa-solid fa-car-side text-slate-500 text-base"></i>
+                      <span>Escribe la placa de un vehículo para buscarlo y registrarlo.</span>
+                    </div>
+                  </template>
+
+                </div>
+              </div>
+
+              <!-- Estado Vacío: Ningún vehículo ingresado aún -->
+              <template x-if="form.vehiculos.length === 0">
+                <div class="flex flex-col items-center justify-center py-10 px-4 rounded-2xl border border-dashed border-white/15 bg-black/25 text-center">
+                  <div class="w-12 h-12 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-slate-400 mb-3.5 shadow-inner">
+                    <i class="fa-solid fa-car-side text-xl text-slate-400"></i>
+                  </div>
+                  <p class="font-medium text-xs sm:text-sm text-slate-300">Ningún vehículo registrado en este reporte aún.</p>
+                </div>
+              </template>
+
+              <!-- Listado de Vehículos que Sí Pernoctaron (Ingresados por el usuario) -->
+              <div class="space-y-2 lista-vehiculos-ingresados pr-1" x-show="form.vehiculos.length > 0">
+                <template x-for="(v, idx) in form.vehiculos" :key="v.vehiculo">
+                  <div class="p-3 rounded-xl border flex items-center justify-between gap-3 bg-white/[0.04] border-white/10 hover:border-white/20 transition-all">
+                    
+                    <div class="flex items-center gap-3">
+                      <span class="font-mono font-bold text-sm sm:text-base text-white tracking-wider" x-text="v.vehiculo"></span>
+                      
+                      <!-- Auto-detección visual de la zona -->
+                      <template x-if="!v.es_foraneo">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <i class="fa-solid fa-circle-check text-[9px]"></i>
+                          <span>De la zona (<span x-text="v.zona_asignada"></span>)</span>
+                        </span>
+                      </template>
+                      <template x-if="v.es_foraneo">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
+                          <span>Asignado a <span x-text="v.zona_asignada"></span></span>
+                        </span>
+                      </template>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-check text-[10px]"></i> Pernoctó
+                      </span>
+
+                      <!-- Botón eliminar de este reporte -->
+                      <button type="button" @click="quitarVehiculo(v)"
+                        class="p-1.5 text-rose-400 hover:text-white rounded-lg hover:bg-rose-500/20 transition-colors cursor-pointer"
+                        title="Quitar este vehículo del reporte">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                      </button>
+                    </div>
+
+                  </div>
+                </template>
+              </div>
+
+            </div>
+
+            <!-- Paso 4: Observaciones Generales -->
+            <div>
+              <label class="form-label text-xs">
+                <span>Observaciones o novedades del turno (Opcional)</span>
+              </label>
+              <textarea x-model="form.observaciones" rows="2" placeholder="Ej: Sin novedades, o reporte de vehículo dejado en mantenimiento..."
+                class="input-field w-full rounded-lg px-3 py-2 text-xs resize-y"></textarea>
+            </div>
+
+            <!-- Botón de Envío -->
+            <button type="submit" :disabled="submitting"
+              class="btn-signal btn-shimmer w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 mt-4 cursor-pointer disabled:opacity-50">
+              <i class="fa-solid fa-spinner fa-spin" x-show="submitting"></i>
+              <i class="fa-solid fa-paper-plane text-xs" x-show="!submitting"></i>
+              <span x-text="submitting ? 'Enviando reporte...' : 'Enviar Reporte Nocturno'"></span>
+            </button>
+
+          </form>
+
+        </div>
+
+        <!-- ============ ESTADO 2: PANTALLA DE ÉXITO / CONFIRMACIÓN ============ -->
+        <div x-show="submitted" x-cloak class="text-center py-6">
+
+          <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
+            <i class="fa-solid fa-check text-3xl"></i>
+          </div>
+
+          <h2 class="font-display font-semibold text-2xl text-[var(--ink-900)] mb-1">¡Reporte Guardado Exitosamente!</h2>
+          <p class="text-xs sm:text-sm text-[var(--text-muted)] mb-6">
+            La permanencia nocturna de vehículos ha sido registrada en el sistema.
+          </p>
+
+          <!-- Resumen del Reporte -->
+          <template x-if="resultado">
+            <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 mb-6 text-left space-y-2 text-xs">
+              <div class="flex items-center justify-between pb-2 border-b border-white/10">
+                <span class="text-[var(--text-muted)]">Zona Reportada:</span>
+                <span class="font-bold text-[var(--signal-500)] text-sm" x-text="resultado.zona"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--text-muted)]">Fecha del Reporte:</span>
+                <span class="font-semibold text-white" x-text="resultado.fecha"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--text-muted)]">Reportado por:</span>
+                <span class="font-semibold text-white" x-text="resultado.reportador"></span>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                <span class="text-emerald-400 font-bold">Vehículos que pernoctaron:</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold" x-text="resultado.total_quedados"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-rose-400 font-bold">Vehículos ausentes:</span>
+                <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold" x-text="resultado.total_no_quedados"></span>
+              </div>
+            </div>
+          </template>
+
+          <button type="button" @click="nuevoReporte()"
+            class="btn-signal btn-shimmer w-full rounded-xl py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>Registrar otro reporte de zona</span>
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

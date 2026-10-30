@@ -4,7 +4,7 @@
 
   <!-- Datos + lógica (deben ir antes de Alpine) -->
    {% block extra_js %}
-  <script src="{{ url_for('static', path='js/wizard.js') }}?v=5.0"></script>
+  <script src="{{ url_for('static', path='js/wizard.js') }}?v=5.1"></script>
   {% endblock %}
 
 {% block content %}
@@ -1172,6 +1172,11 @@
          MODAL DE VISUALIZACIÓN DE DOCUMENTOS (WIZARD)
       ============================================================= -->
       {% include 'components/formulario/modal-docs-wizard.html' %}
+
+      <!-- ============================================================
+         MODAL OBLIGATORIO: AVISO 48 HORAS DE PROCESO
+      ============================================================= -->
+      {% include 'components/formulario/modal-aviso-48h.html' %}
     </div>
   </div>
 

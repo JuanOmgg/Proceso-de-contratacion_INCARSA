@@ -38,6 +38,7 @@ from src.routes.superadmin_router import router as superadmin_router
 from src.routes.correspondencia_route import router as correspondencia_router
 from src.routes.dispositivo_router import router as dispositivo_router
 from src.routes.estadisticas_route import router as estadisticas_router
+from src.routes.parqueo_route import router as parqueo_router
 from src.loaders.superadmin_loader import GET_mantenimiento_status
 from src.loaders.formulario_gesco_loader import GET_formulario_gesco_por_id_db, GET_formularios_gesco_db
 from src.utils.security import decode_access_token
@@ -102,6 +103,7 @@ SUBCARPETAS_UPLOADS_DIRECTAS = [
     os.path.join(DOCUMENTOS_DIR, "general"),
     os.path.join(DOCUMENTOS_DIR, "otros"),
     os.path.join(UPLOAD_DIR, "gesco"),
+    os.path.join(UPLOAD_DIR, "gesco", "evidencias"),
     os.path.join(UPLOAD_DIR, "vehiculos"),
     os.path.join(UPLOAD_DIR, "sistema"),
     os.path.join(UPLOAD_DIR, "sistemas"),
@@ -227,7 +229,8 @@ MODULO_NOMBRES = {
     "formulario_temporal": "Solicitudes para Terceros",
     "revision_solicitud": "Revisión y Aprobación de Solicitudes",
     "dispositivos": "Consulta de Dispositivos",
-    "formularios_gesco": "Formularios GESCO"
+    "formularios_gesco": "Formularios GESCO",
+    "parqueos": "Control de Parqueos Nocturnos"
 }
 
 def obtener_modulo_de_ruta(path: str) -> Optional[str]:
@@ -271,6 +274,8 @@ def obtener_modulo_de_ruta(path: str) -> Optional[str]:
         return "formulario_temporal"
     if p.startswith("/formularios-gesco") or p.startswith("/api/v1/formularios-gesco") or p.startswith("/api/v1/preguntas") or p.startswith("/preguntas"):
         return "formularios_gesco"
+    if p.startswith("/parqueos") or p.startswith("/api/v1/parqueos") or p.startswith("/api/parqueos"):
+        return "parqueos"
     return None
 
 # Middleware de modo mantenimiento (Error 503)
@@ -291,7 +296,9 @@ async def modo_mantenimiento_middleware(request: Request, call_next):
             "/api/v1/sistema/mantenimiento",
             "/api/v1/notificaciones/stream",
             "/docs",
-            "/openapi.json"
+            "/openapi.json",
+            "/formulario-parqueo",
+            "/reporte-parqueo"
         ]
         
         # Permitir rutas estáticas, login, estado de mantenimiento y panel administrativo de SuperAdmin
@@ -483,6 +490,8 @@ app.include_router(dispositivo_router, prefix="/api/v1")
 app.include_router(dispositivo_router)
 app.include_router(estadisticas_router, prefix="/api/v1")
 app.include_router(estadisticas_router)
+app.include_router(parqueo_router, prefix="/api/v1")
+app.include_router(parqueo_router)
 
 @app.get("/", tags=["Verificador de servidor"])
 
@@ -758,6 +767,15 @@ async def get_formulario_correspondencia_publico(request: Request):
 @app.get("/correspondencias")
 async def get_correspondencia(request: Request):
     return templates.TemplateResponse(name="correspondencia-listado.html", request=request)
+
+@app.get("/parqueos")
+async def get_parqueos(request: Request):
+    return templates.TemplateResponse(name="parqueos.html", request=request)
+
+@app.get("/formulario-parqueo")
+@app.get("/reporte-parqueo")
+async def get_formulario_parqueo_publico(request: Request):
+    return templates.TemplateResponse(name="parqueo-form.html", request=request)
 
 @app.get("/403")
 @app.get("/error-403")

@@ -850,28 +850,7 @@ def CALCULAR_Y_REGISTRAR_EVALUACION_DB(
                             (id_persona, id_formulario, responsable_form, vigencia_dias)
                         )
 
-                    # 6. Evaluar auto-aprobación GESCO para cualquier solicitud activa de esta persona
-                    try:
-                        cursor.execute(
-                            """
-                            SELECT s.id, s.tipo_personal
-                            FROM solicitudes s
-                            INNER JOIN ingresantes ing ON ing.id_solicitud = s.id
-                            WHERE ing.id_persona = %s AND s.estado NOT IN ('Aprobada', 'Rechazada', 'Cancelada')
-                            GROUP BY s.id
-                            """,
-                            (id_persona,)
-                        )
-                        solicitudes_afectadas = cursor.fetchall() or []
-                        from src.loaders.formulario_gesco_loader import EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO
-                        for sol in solicitudes_afectadas:
-                            EVALUAR_Y_APLICAR_AUTO_APROBACION_GESCO(
-                                cursor,
-                                id_solicitud=sol["id"],
-                                tipo_personal=sol.get("tipo_personal") or "Contratista"
-                            )
-                    except Exception as auto_err:
-                        print(f"⚠️ Aviso evaluando auto-aprobación GESCO tras aprobación de inducción: {auto_err}")
+
 
                 conexion.commit()
 

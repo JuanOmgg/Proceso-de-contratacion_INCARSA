@@ -71,6 +71,17 @@ function formularioTemporal(tokenInicial) {
     solicitudExitosa: false,
     codigoGenerado: '',
 
+    // ========================================================================
+    // AVISO OBLIGATORIO DE TIEMPO DE RESPUESTA (48 HORAS)
+    // ========================================================================
+    mostrarAviso48h: true,
+    get debeMostrarAviso48h() {
+      return Boolean(this.mostrarAviso48h && this.tokenValido && !this.cargando && !this.solicitudExitosa);
+    },
+    confirmarAviso48h() {
+      this.mostrarAviso48h = false;
+    },
+
     fpIngreso: null,
     fpSalida: null,
 

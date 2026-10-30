@@ -30,6 +30,17 @@ function solicitudWizard() {
     cargando: true, // Indicador de carga inicial de catálogos
 
     // ========================================================================
+    // AVISO OBLIGATORIO DE TIEMPO DE RESPUESTA (48 HORAS)
+    // ========================================================================
+    mostrarAviso48h: true,
+    get debeMostrarAviso48h() {
+      return Boolean(this.mostrarAviso48h && !this.isEdit && !this.submitted);
+    },
+    confirmarAviso48h() {
+      this.mostrarAviso48h = false;
+    },
+
+    // ========================================================================
     // 2. MODO EDICIÓN
     // ========================================================================
     isEdit: false, // True si se ingresó con el parámetro ?edit=SOL-XXXX
@@ -298,6 +309,8 @@ function solicitudWizard() {
 
       if (!isEditar) {
         this.form.diligenciadoPor = nombreActual || "Usuario";
+      } else {
+        this.mostrarAviso48h = false;
       }
 
       await this.inicializarModoEdicion();
